@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="cg1" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b5d9f7"/>
+      <stop offset="100%" stop-color="#378add"/>
+    </linearGradient>
+    <linearGradient id="cg2" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#daeeff" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#7dbfe8" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <!-- Dark background circle -->
+  <circle cx="32" cy="32" r="32" fill="#0a1628"/>
+  <!-- Cloud body -->
+  <path d="M48 42H18C11.4 42 6 36.8 6 30.3C6 24.4 10.3 19.5 16 18.5C17.1 13.4 21.7 9.5 27.2 9.5C30.5 9.5 33.5 10.9 35.6 13.2C37.4 11.6 39.8 10.6 42.4 10.6C48.4 10.6 53.2 15.2 53.7 21C58.5 21.9 62 26.1 62 31.1C62 37.1 57.1 42 51 42" fill="url(#cg1)"/>
+  <!-- Wave lines -->
+  <path d="M13 35 Q20 30 27 35 Q34 40 41 35 Q48 30 55 35" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M10 41 Q19 36 28 41 Q37 46 46 41 Q51 38 56 41" stroke="rgba(255,255,255,0.22)" stroke-width="1" fill="none" stroke-linecap="round"/>
+  <!-- Highlight -->
+  <path d="M19 19C21 13.5 26 10.5 31.5 10.5" stroke="rgba(255,255,255,0.55)" stroke-width="2" fill="none" stroke-linecap="round"/>
+</svg>

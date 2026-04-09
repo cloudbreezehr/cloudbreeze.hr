@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cloudbreeze — Seamless Solutions Powered by the Cloud</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sky-0: #f0f7ff;
+    --sky-1: #daeeff;
+    --sky-2: #b5d9f7;
+    --sky-3: #7dbfe8;
+    --sky-4: #378add;
+    --sky-5: #1a5fa8;
+    --sky-6: #0c3d72;
+    --ink: #0a1628;
+    --ink-mid: #1e3a5f;
+    --mist: rgba(255,255,255,0.55);
+    --glass: rgba(255,255,255,0.18);
+    --glass-border: rgba(255,255,255,0.35);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--ink);
+    color: #fff;
+    min-height: 100vh;
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    width: 12px; height: 12px;
+    background: var(--sky-3);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.1s, width 0.3s, height 0.3s, opacity 0.3s;
+    mix-blend-mode: screen;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1px solid rgba(55,138,221,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.18s ease, width 0.3s, height 0.3s, opacity 0.3s;
+  }
+  body:hover #cursor { opacity: 1; }
+
+  /* Canvas background */
+  #bg-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* Grain overlay */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 128px;
+  }
+
+  /* Layout */
+  .page {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+  }
+
+  /* NAV */
+  nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2rem 3rem;
+    position: relative;
+  }
+
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+  }
+
+  /* SVG Cloud Logo */
+  .cloud-svg {
+    width: 44px;
+    height: 32px;
+    filter: drop-shadow(0 0 12px rgba(55,138,221,0.6));
+  }
+
+  .logo-text {
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #fff;
+  }
+  .logo-text span {
+    color: var(--sky-3);
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 2.5rem;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 300;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    transition: color 0.3s;
+    position: relative;
+  }
+  .nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px; left: 0;
+    width: 0; height: 1px;
+    background: var(--sky-3);
+    transition: width 0.3s;
+  }
+  .nav-links a:hover { color: #fff; }
+  .nav-links a:hover::after { width: 100%; }
+
+  .nav-cta {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--sky-3) !important;
+    border: 1px solid rgba(55,138,221,0.4);
+    padding: 0.55rem 1.2rem;
+    border-radius: 100px;
+    transition: background 0.3s, border-color 0.3s, color 0.3s !important;
+  }
+  .nav-cta:hover {
+    background: rgba(55,138,221,0.15) !important;
+    border-color: var(--sky-3) !important;
+  }
+  .nav-cta::after { display: none !important; }
+
+  /* HERO */
+  .hero {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 2rem;
+    position: relative;
+    min-height: calc(100vh - 120px);
+  }
+
+  .hero-tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--sky-3);
+    margin-bottom: 2rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.2s ease forwards;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .hero-tag::before, .hero-tag::after {
+    content: '';
+    display: block;
+    width: 28px; height: 1px;
+    background: var(--sky-4);
+    opacity: 0.5;
+  }
+
+  .hero-title {
+    font-size: clamp(3.2rem, 8vw, 7.5rem);
+    font-weight: 800;
+    line-height: 0.92;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.8rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.4s ease forwards;
+  }
+
+  .hero-title .line-1 { display: block; color: #fff; }
+  .hero-title .line-2 {
+    display: block;
+    background: linear-gradient(135deg, var(--sky-2) 0%, var(--sky-4) 50%, var(--sky-3) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    position: relative;
+  }
+
+  .hero-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.88rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.45);
+    letter-spacing: 0.04em;
+    line-height: 1.7;
+    max-width: 420px;
+    margin-bottom: 3rem;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.6s ease forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.8s ease forwards;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--sky-4), var(--sky-5));
+    color: #fff;
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.9rem 2rem;
+    border-radius: 100px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, box-shadow 0.3s;
+    box-shadow: 0 0 30px rgba(55,138,221,0.35);
+  }
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--sky-3), var(--sky-4));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(55,138,221,0.5); }
+  .btn-primary:hover::before { opacity: 1; }
+  .btn-primary span { position: relative; z-index: 1; }
+
+  .btn-ghost {
+    color: rgba(255,255,255,0.55);
+    text-decoration: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 0.9rem 1.5rem;
+    transition: color 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn-ghost:hover { color: #fff; }
+  .btn-ghost svg { transition: transform 0.3s; }
+  .btn-ghost:hover svg { transform: translateX(4px); }
+
+  /* Floating cloud hero visual */
+  .hero-cloud-wrap {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  /* Scroll indicator */
+  .scroll-hint {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    animation: fadeUp 1s 1.2s ease forwards;
+  }
+  .scroll-hint span {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.25);
+  }
+  .scroll-line {
+    width: 1px;
+    height: 40px;
+    background: linear-gradient(to bottom, rgba(55,138,221,0.6), transparent);
+    animation: scrollPulse 2s ease infinite;
+  }
+
+  /* SECTIONS */
+  section {
+    padding: 6rem 3rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* SERVICES */
+  .services {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--sky-3);
+    margin-bottom: 3.5rem;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .section-label::before {
+    content: '';
+    display: block;
+    width: 20px; height: 1px;
+    background: var(--sky-4);
+  }
+
+  .services-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .service-card {
+    background: rgba(10,22,40,0.7);
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.4s;
+    backdrop-filter: blur(10px);
+  }
+  .service-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(55,138,221,0.4), transparent);
+    transform: scaleX(0);
+    transition: transform 0.5s;
+  }
+  .service-card:hover { background: rgba(55,138,221,0.05); }
+  .service-card:hover::before { transform: scaleX(1); }
+
+  .service-icon {
+    width: 40px; height: 40px;
+    margin-bottom: 1.5rem;
+    color: var(--sky-3);
+    opacity: 0.8;
+  }
+
+  .service-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: rgba(55,138,221,0.4);
+    margin-bottom: 1rem;
+  }
+
+  .service-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 0.75rem;
+    letter-spacing: -0.02em;
+  }
+
+  .service-desc {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 300;
+    line-height: 1.8;
+    color: rgba(255,255,255,0.38);
+  }
+
+  /* ABOUT STRIP */
+  .about-strip {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6rem;
+    align-items: center;
+  }
+
+  .about-heading {
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    color: #fff;
+  }
+  .about-heading em {
+    font-style: normal;
+    background: linear-gradient(135deg, var(--sky-2), var(--sky-4));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .about-body {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 300;
+    line-height: 2;
+    color: rgba(255,255,255,0.42);
+  }
+
+  .about-stats {
+    display: flex;
+    gap: 2.5rem;
+    margin-top: 2.5rem;
+  }
+  .stat-item {}
+  .stat-num {
+    font-size: 2.2rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    color: #fff;
+    line-height: 1;
+  }
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-top: 4px;
+  }
+
+  /* CONTACT */
+  .contact-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .contact-card {
+    background: linear-gradient(135deg, rgba(55,138,221,0.08) 0%, rgba(10,22,40,0.9) 100%);
+    border: 1px solid rgba(55,138,221,0.18);
+    border-radius: 24px;
+    padding: 4rem;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 3rem;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .contact-card::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(55,138,221,0.12), transparent 70%);
+    pointer-events: none;
+  }
+
+  .contact-heading {
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.75rem;
+  }
+  .contact-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 300;
+    color: rgba(255,255,255,0.35);
+    letter-spacing: 0.04em;
+  }
+
+  .contact-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    flex-shrink: 0;
+  }
+
+  .contact-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: rgba(255,255,255,0.55);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    transition: color 0.3s;
+    padding: 0.75rem 1.25rem;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    transition: all 0.3s;
+  }
+  .contact-link:hover {
+    color: #fff;
+    border-color: rgba(55,138,221,0.3);
+    background: rgba(55,138,221,0.08);
+  }
+  .contact-link svg { flex-shrink: 0; color: var(--sky-3); }
+
+  /* FOOTER */
+  footer {
+    position: relative;
+    z-index: 2;
+    padding: 2rem 3rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .footer-copy {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.2);
+  }
+
+  .footer-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: rgba(55,138,221,0.4);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .footer-badge::before {
+    content: '';
+    display: block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--sky-3);
+    animation: pulse 2s ease infinite;
+  }
+
+  /* ANIMATIONS */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.3); }
+  }
+
+  /* Reveal on scroll */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<canvas id="bg-canvas"></canvas>
+
+<div class="page">
+  <nav>
+    <a href="#" class="nav-logo">
+      <!-- SVG Cloud Logo — drawn, not an image -->
+      <svg class="cloud-svg" viewBox="0 0 88 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="cg1" x1="0" y1="0" x2="88" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#b5d9f7"/>
+            <stop offset="100%" stop-color="#378add"/>
+          </linearGradient>
+          <linearGradient id="cg2" x1="0" y1="0" x2="88" y2="64" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stop-color="#daeeff" stop-opacity="0.6"/>
+            <stop offset="100%" stop-color="#7dbfe8" stop-opacity="0.3"/>
+          </linearGradient>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="2" result="blur"/>
+            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <!-- Main cloud body -->
+        <path d="M68 48H22C12.6 48 5 40.6 5 31.5C5 23.2 11.2 16.4 19.3 15.2C20.6 8.8 26.3 4 33 4C37.2 4 41 5.8 43.7 8.7C46 6.7 49 5.5 52.3 5.5C59.8 5.5 65.9 11.3 66.5 18.6C73.4 19.8 78.5 25.8 78.5 33C78.5 41.3 71.9 48 63.5 48" fill="url(#cg1)" filter="url(#glow)"/>
+        <!-- Wave lines suggesting breeze -->
+        <path d="M18 38 Q28 32 38 38 Q48 44 58 38 Q68 32 78 38" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <path d="M14 46 Q26 40 38 46 Q50 52 62 46 Q70 42 76 46" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <!-- Highlight -->
+        <path d="M24 20C26 13 32 9 39 9" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
+      </svg>
+      <span class="logo-text">Cloud<span>breeze</span></span>
+    </a>
+
+    <ul class="nav-links">
+      <li><a href="#services">Services</a></li>
+      <li><a href="#about">About</a></li>
+      <li><a href="#contact" class="nav-cta">Get in touch</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-tag">B2B Cloud Solutions</p>
+    <h1 class="hero-title">
+      <span class="line-1">Seamless</span>
+      <span class="line-2">Solutions</span>
+    </h1>
+    <p class="hero-sub">Powered by the cloud. Built with precision.<br>Delivered without friction.</p>
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary"><span>Start a project</span></a>
+      <a href="#services" class="btn-ghost">
+        See what I do
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </a>
+    </div>
+
+    <div class="scroll-hint">
+      <div class="scroll-line"></div>
+      <span>Scroll</span>
+    </div>
+  </section>
+
+  <!-- SERVICES -->
+  <section id="services">
+    <div class="services">
+      <p class="section-label reveal">What I do</p>
+      <div class="services-grid">
+
+        <div class="service-card reveal reveal-delay-1">
+          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><path d="M8 28C4.7 28 2 25.3 2 22s2.7-6 6-6c.3 0 .6 0 .9.1C10.1 12.6 13.8 10 18 10c5.5 0 10 4.5 10 10h1c2.8 0 5 2.2 5 5s-2.2 5-5 5H8z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M15 22l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <p class="service-num">01</p>
+          <h3 class="service-title">Cloud Architecture</h3>
+          <p class="service-desc">Scalable, resilient infrastructure designed for growth. AWS, GCP, or Azure — whichever fits your stack best.</p>
+        </div>
+
+        <div class="service-card reveal reveal-delay-2">
+          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="8" width="32" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M12 20h16M12 15h8M12 25h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <p class="service-num">02</p>
+          <h3 class="service-title">Systems Integration</h3>
+          <p class="service-desc">APIs, pipelines, and middleware that make your tools talk to each other — seamlessly and reliably.</p>
+        </div>
+
+        <div class="service-card reveal reveal-delay-3">
+          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><path d="M20 4l14 8v16l-14 8L6 28V12l14-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 4v28M6 12l14 8 14-8" stroke="currentColor" stroke-width="1.5"/></svg>
+          <p class="service-num">03</p>
+          <h3 class="service-title">DevOps & Automation</h3>
+          <p class="service-desc">CI/CD pipelines, infrastructure as code, and automated workflows that free your team to focus on what matters.</p>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about">
+    <div class="about-strip">
+      <div class="reveal">
+        <p class="section-label" style="margin-bottom:1.5rem;">About</p>
+        <h2 class="about-heading">One person.<br><em>Full-stack</em><br>expertise.</h2>
+        <div class="about-stats">
+          <div class="stat-item">
+            <p class="stat-num">B2B</p>
+            <p class="stat-label">Focused</p>
+          </div>
+          <div class="stat-item">
+            <p class="stat-num">EU</p>
+            <p class="stat-label">Based</p>
+          </div>
+          <div class="stat-item">
+            <p class="stat-num">∞</p>
+            <p class="stat-label">Scalable</p>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <p class="about-body">
+          Cloudbreeze is a boutique cloud consultancy based in Croatia, EU. No layers of account managers, no inflated teams — just direct, expert collaboration with one person who is fully invested in solving your problem.<br><br>
+          Whether you need a greenfield cloud architecture or want to untangle an existing system, the approach is always the same: thoughtful, lean, and built to last.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTACT -->
+  <section id="contact">
+    <div class="contact-inner">
+      <div class="contact-card reveal">
+        <div>
+          <h2 class="contact-heading">Let's build<br>something.</h2>
+          <p class="contact-sub">Available for B2B engagements · EU timezone</p>
+        </div>
+        <div class="contact-links">
+          <a href="mailto:info@cloudbreeze.hr" class="contact-link">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            info@cloudbreeze.hr
+          </a>
+          <a href="https://www.linkedin.com/company/cloudbreeze" target="_blank" class="contact-link">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 7v5M5 5v.5M8 12V9c0-1.1.9-2 2-2s2 .9 2 2v3M8 7v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            LinkedIn
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p class="footer-copy">© 2025 Cloudbreeze d.o.o. · Zagreb, Croatia · OIB registered</p>
+    <p class="footer-badge">Systems online</p>
+  </footer>
+</div>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursor-ring');
+let mx = 0, my = 0, rx = 0, ry = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+function animRing() {
+  rx += (mx - rx) * 0.12;
+  ry += (my - ry) *.12;
+  ring.style.left = rx + 'px';
+  ring.style.top = ry + 'px';
+  requestAnimationFrame(animRing);
+}
+animRing();
+
+document.querySelectorAll('a, button').forEach(el => {
+  el.addEventListener('mouseenter', () => {
+    cursor.style.width = '6px';
+    cursor.style.height = '6px';
+    ring.style.width = '52px';
+    ring.style.height = '52px';
+  });
+  el.addEventListener('mouseleave', () => {
+    cursor.style.width = '12px';
+    cursor.style.height = '12px';
+    ring.style.width = '36px';
+    ring.style.height = '36px';
+  });
+});
+
+// Animated cloud canvas background
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// Cloud particles
+class CloudPuff {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : canvas.height + 200;
+    this.r = 80 + Math.random() * 200;
+    this.opacity = 0;
+    this.targetOpacity = 0.04 + Math.random() * 0.07;
+    this.speedX = (Math.random() - 0.5) * 0.18;
+    this.speedY = -0.08 - Math.random() * 0.12;
+    this.life = 0;
+    this.maxLife = 800 + Math.random() * 600;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    this.life++;
+    const p = this.life / this.maxLife;
+    if (p < 0.15) this.opacity = (p / 0.15) * this.targetOpacity;
+    else if (p > 0.8) this.opacity = ((1 - p) / 0.2) * this.targetOpacity;
+    else this.opacity = this.targetOpacity;
+    if (this.life > this.maxLife) this.reset(false);
+  }
+  draw() {
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r);
+    grad.addColorStop(0, `rgba(55,138,221,${this.opacity})`);
+    grad.addColorStop(0.5, `rgba(30,80,160,${this.opacity * 0.5})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+// Particle streaks
+class Streak {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : -10;
+    this.len = 40 + Math.random() * 100;
+    this.speed = 0.3 + Math.random() * 0.5;
+    this.opacity = 0.02 + Math.random() * 0.05;
+    this.width = 0.5 + Math.random() * 1;
+    this.angle = -0.1 + Math.random() * 0.2;
+  }
+  update() {
+    this.y += this.speed;
+    this.x += this.angle;
+    if (this.y > canvas.height + this.len) this.reset(false);
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.strokeStyle = `rgba(120,190,240,1)`;
+    ctx.lineWidth = this.width;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y - this.len);
+    ctx.lineTo(this.x + this.angle * this.len, this.y);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
+const puffs = Array.from({length: 18}, () => new CloudPuff());
+const streaks = Array.from({length: 35}, () => new Streak());
+
+// Deep space stars
+const stars = Array.from({length: 120}, () => ({
+  x: Math.random() * 1920,
+  y: Math.random() * 1080,
+  r: 0.3 + Math.random() * 1,
+  opacity: 0.1 + Math.random() * 0.4,
+  twinkle: Math.random() * Math.PI * 2
+}));
+
+let t = 0;
+function render() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Deep gradient base
+  const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  bg.addColorStop(0, 'rgba(8,16,36,1)');
+  bg.addColorStop(0.5, 'rgba(10,22,40,1)');
+  bg.addColorStop(1, 'rgba(6,14,30,1)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Stars
+  t += 0.008;
+  stars.forEach(s => {
+    s.twinkle += 0.02;
+    const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
+    ctx.fillStyle = `rgba(180,210,255,${op})`;
+    ctx.beginPath();
+    ctx.arc(s.x % canvas.width, s.y % canvas.height, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Streaks
+  streaks.forEach(s => { s.update(); s.draw(); });
+
+  // Cloud puffs
+  puffs.forEach(p => { p.update(); p.draw(); });
+
+  // Horizon glow
+  const hg = ctx.createRadialGradient(canvas.width/2, canvas.height * 0.75, 0, canvas.width/2, canvas.height * 0.75, canvas.width * 0.7);
+  hg.addColorStop(0, 'rgba(20,60,120,0.12)');
+  hg.addColorStop(1, 'transparent');
+  ctx.fillStyle = hg;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  requestAnimationFrame(render);
+}
+render();
+
+// Scroll reveal
+const revealEls = document.querySelectorAll('.reveal');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+revealEls.forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
