@@ -693,21 +693,17 @@
     footer { padding: 1.2rem 1rem; }
   }
 
+  /* Nav scroll-driven light transition (applied via JS) */
+  nav.nav-light .logo-text { color: var(--ink); }
+  nav.nav-light .nav-links a { color: rgba(10, 22, 40, 0.55); }
+  nav.nav-light .nav-links a:hover { color: var(--ink); }
+  nav.nav-light .nav-links a::after { background: var(--sky-5); }
+  nav.nav-light .nav-cta { color: var(--sky-5) !important; border-color: rgba(26, 95, 168, 0.4); }
+  nav.nav-light .nav-cta:hover { background: rgba(55, 138, 221, 0.1) !important; }
+
   /* LIGHT MODE */
   @media (prefers-color-scheme: light) {
     body { background: #f0f7ff; }
-
-    /* Nav */
-    nav {
-      background: rgba(240, 247, 255, 0.88);
-      border-bottom-color: rgba(0, 0, 0, 0.06);
-    }
-    .logo-text { color: var(--ink); }
-    .nav-links a { color: rgba(10, 22, 40, 0.55); }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-links a::after { background: var(--sky-5); }
-    .nav-cta { color: var(--sky-5) !important; border-color: rgba(26, 95, 168, 0.4); }
-    .nav-cta:hover { background: rgba(55, 138, 221, 0.1) !important; }
 
     /* Services */
     .section-label { color: var(--sky-5); }
@@ -978,28 +974,9 @@ document.querySelectorAll('a, button').forEach(el => {
   });
 });
 
-// Animated cloud canvas background
-const canvas = document.getElementById('bg-canvas');
-const ctx = canvas.getContext('2d');
+// ── DATA & UTILITIES (no side effects, no DOM access) ──
 
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resize();
-window.addEventListener('resize', resize);
-
-// Scroll tracking
-let scrollProgress = 0;
-function updateScroll() {
-  const scrollTop = window.scrollY || document.documentElement.scrollTop;
-  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-  scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
-}
-window.addEventListener('scroll', updateScroll, { passive: true });
-updateScroll();
-
-// Color interpolation utilities
+// Color interpolation
 function lerpColor(a, b, t) {
   return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t];
 }
@@ -1011,10 +988,6 @@ function multiLerp(stops, p) {
 function toRgba(c) {
   return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${c[3].toFixed(4)})`;
 }
-
-// Theme detection
-let isDarkMode = !window.matchMedia('(prefers-color-scheme: light)').matches;
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => { isDarkMode = e.matches; });
 
 // Sky gradient palettes
 const palettes = {
@@ -1066,6 +1039,60 @@ function getStreakParams(sp) {
   if (sp < 0.75) return { opMul: 0.8, speedMul: 1.5 };
   return { opMul: 0.3, speedMul: 0.5 };
 }
+
+// ── DOM SETUP & STATE ──
+
+const canvas = document.getElementById('bg-canvas');
+const ctx = canvas.getContext('2d');
+const navEl = document.querySelector('nav');
+
+let scrollProgress = 0;
+let isDarkMode = !window.matchMedia('(prefers-color-scheme: light)').matches;
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+function updateScroll() {
+  const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+  scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
+  updateNavTheme();
+}
+
+function updateNavTheme() {
+  if (isDarkMode) {
+    navEl.style.background = '';
+    navEl.style.borderBottomColor = '';
+    navEl.classList.remove('nav-light');
+    return;
+  }
+  // Light mode: derive nav color from the same sky palette the canvas uses
+  const sky = multiLerp(palettes.light.skyTop, scrollProgress);
+  const r = Math.round(sky[0]);
+  const g = Math.round(sky[1]);
+  const b = Math.round(sky[2]);
+  navEl.style.background = `rgba(${r},${g},${b},0.85)`;
+  // Flip text colors when sky is bright enough (perceived luminance)
+  const lum = (r * 0.299 + g * 0.587 + b * 0.114);
+  const bright = lum > 80;
+  navEl.style.borderBottomColor = bright
+    ? `rgba(0,0,0,0.06)` : `rgba(255,255,255,0.05)`;
+  navEl.classList.toggle('nav-light', bright);
+}
+
+// ── INIT & EVENT LISTENERS ──
+
+resize();
+updateScroll();
+updateNavTheme();
+window.addEventListener('resize', resize);
+window.addEventListener('scroll', updateScroll, { passive: true });
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+  isDarkMode = e.matches;
+  updateNavTheme();
+});
 
 // Cloud particles
 class CloudPuff {
