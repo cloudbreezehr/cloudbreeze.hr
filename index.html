@@ -94,8 +94,14 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 2rem 3rem;
-    position: relative;
+    padding: 1.5rem 3rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(10, 22, 40, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
   }
 
   .nav-logo {
