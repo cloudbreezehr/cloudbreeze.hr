@@ -180,6 +180,21 @@
   }
   .nav-cta::after { display: none !important; }
 
+  /* Hamburger menu */
+  .nav-burger {
+    display: none;
+    background: none;
+    border: none;
+    padding: 4px;
+    color: rgba(255,255,255,0.7);
+    transition: color 0.3s;
+  }
+  .nav-burger:hover { color: #fff; }
+  .nav-burger svg { width: 20px; height: 20px; }
+  .nav-burger .burger-close { display: none; }
+  .nav-burger.active .burger-open { display: none; }
+  .nav-burger.active .burger-close { display: block; }
+
   /* HERO */
   .hero {
     display: flex;
@@ -683,11 +698,46 @@
     footer { padding: 1.5rem 1.5rem; }
   }
 
+  @media (max-width: 700px) {
+    .nav-burger { display: flex; align-items: center; }
+    .nav-links {
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--nav-bg, rgba(10, 22, 40, 0.97));
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 1rem 1.5rem;
+      gap: 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-8px);
+      transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+      pointer-events: none;
+    }
+    .nav-links.open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+      pointer-events: auto;
+    }
+    .nav-links li {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .nav-links li:last-child { border-bottom: none; }
+    .nav-cta { display: inline-block; }
+    .theme-toggle { border-color: transparent; padding: 4px 0; }
+    .theme-toggle::after { top: auto; left: calc(100% + 8px); transform: none; }
+    body.light-mode .nav-links { border-bottom-color: rgba(0,0,0,0.06); }
+    body.light-mode .nav-links li { border-bottom-color: rgba(0,0,0,0.04); }
+  }
+
   @media (max-width: 560px) {
     nav { padding: 1rem 1rem; }
-    .nav-links { gap: 1rem; }
-    .nav-links a { font-size: 0.65rem; letter-spacing: 0.08em; }
-    .nav-cta { padding: 0.45rem 0.9rem; }
     section { padding: 3rem 1rem; }
     .hero { padding: 0 1rem; }
     .hero-actions { flex-direction: column; }
@@ -706,6 +756,8 @@
   nav.nav-light .nav-links a::after { background: var(--sky-5); }
   nav.nav-light .nav-cta { color: var(--sky-5) !important; border-color: rgba(26, 95, 168, 0.4); }
   nav.nav-light .nav-cta:hover { background: rgba(55, 138, 221, 0.1) !important; }
+  nav.nav-light .nav-burger { color: rgba(10,22,40,0.6); }
+  nav.nav-light .nav-burger:hover { color: var(--ink); }
 
   /* Theme toggle */
   .theme-toggle {
@@ -857,6 +909,10 @@
       </li>
       <li><a href="#contact" class="nav-cta">Get in touch</a></li>
     </ul>
+    <button class="nav-burger" aria-label="Menu">
+      <svg class="burger-open" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+      <svg class="burger-close" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M4 16L16 4"/></svg>
+    </button>
   </nav>
 
   <!-- HERO -->
@@ -1125,6 +1181,7 @@ function updateNavTheme() {
   if (isDarkMode) {
     navEl.style.background = '';
     navEl.style.borderBottomColor = '';
+    navEl.style.setProperty('--nav-bg', 'rgba(10,22,40,0.97)');
     navEl.classList.remove('nav-light');
     return;
   }
@@ -1134,6 +1191,7 @@ function updateNavTheme() {
   const g = Math.round(sky[1]);
   const b = Math.round(sky[2]);
   navEl.style.background = `rgba(${r},${g},${b},0.85)`;
+  navEl.style.setProperty('--nav-bg', `rgba(${r},${g},${b},0.97)`);
   // Flip text colors when sky is bright enough (perceived luminance)
   const lum = (r * 0.299 + g * 0.587 + b * 0.114);
   const bright = lum > 80;
@@ -1181,6 +1239,26 @@ themeToggle.addEventListener('click', () => {
   localStorage.setItem('theme', next);
   applyTheme(next);
 });
+
+// Hamburger menu
+const burger = document.querySelector('.nav-burger');
+const navLinksEl = document.querySelector('.nav-links');
+burger.addEventListener('click', () => {
+  burger.classList.toggle('active');
+  navLinksEl.classList.toggle('open');
+});
+navLinksEl.querySelectorAll('a').forEach(link => {
+  link.addEventListener('click', () => {
+    burger.classList.remove('active');
+    navLinksEl.classList.remove('open');
+  });
+});
+window.addEventListener('scroll', () => {
+  if (navLinksEl.classList.contains('open')) {
+    burger.classList.remove('active');
+    navLinksEl.classList.remove('open');
+  }
+}, { passive: true });
 
 // Cloud particles
 class CloudPuff {
