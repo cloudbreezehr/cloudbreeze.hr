@@ -707,68 +707,108 @@
   nav.nav-light .nav-cta { color: var(--sky-5) !important; border-color: rgba(26, 95, 168, 0.4); }
   nav.nav-light .nav-cta:hover { background: rgba(55, 138, 221, 0.1) !important; }
 
-  /* LIGHT MODE */
-  @media (prefers-color-scheme: light) {
-    body { background: #f0f7ff; }
-
-    /* Services */
-    .section-label { color: var(--sky-5); }
-    .section-label::before { background: var(--sky-5); }
-    .services-grid { background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.06); }
-    .service-card { background: rgba(255, 255, 255, 0.75); }
-    .service-card:hover { background: rgba(255, 255, 255, 0.9); }
-    .service-card::before { background: linear-gradient(90deg, transparent, rgba(55,138,221,0.3), transparent); }
-    .service-num { color: rgba(26, 95, 168, 0.5); }
-    .service-title { color: var(--ink); }
-    .service-desc { color: rgba(10, 22, 40, 0.55); }
-
-    /* About */
-    .about-heading { color: var(--ink); }
-    .about-body { color: rgba(10, 22, 40, 0.6); }
-    .stat-num { color: var(--ink); }
-    .stat-label { color: rgba(10, 22, 40, 0.45); }
-
-    /* Contact */
-    .contact-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(240,247,255,0.9) 100%);
-      border-color: rgba(55, 138, 221, 0.2);
-    }
-    .contact-card::before { background: radial-gradient(circle, rgba(55,138,221,0.08), transparent 70%); }
-    .contact-heading { color: var(--ink); }
-    .contact-sub { color: rgba(10, 22, 40, 0.5); }
-    .contact-link {
-      color: rgba(10, 22, 40, 0.65);
-      border-color: rgba(0, 0, 0, 0.08);
-      background: rgba(255, 255, 255, 0.6);
-    }
-    .contact-link:hover {
-      color: var(--ink);
-      border-color: rgba(55, 138, 221, 0.3);
-      background: rgba(255, 255, 255, 0.85);
-    }
-    .contact-link svg { color: var(--sky-5); }
-
-    /* Footer info */
-    .footer-info { border-top-color: rgba(0, 0, 0, 0.06); }
-    .footer-brand { color: var(--ink); }
-    .footer-col-title { color: var(--sky-5); }
-    .footer-text { color: rgba(10, 22, 40, 0.5); }
-    .footer-link { color: rgba(10, 22, 40, 0.5); }
-    .footer-link:hover { color: var(--sky-5); }
-
-    /* Footer bar */
-    footer { border-top-color: rgba(0, 0, 0, 0.05); }
-    .footer-copy { color: rgba(10, 22, 40, 0.3); }
-    .footer-badge { color: rgba(55, 138, 221, 0.5); }
-
-    /* Grain + cursor */
-    body::after { opacity: 0.015; }
-    #cursor { mix-blend-mode: multiply; background: var(--sky-5); }
-    #cursor-ring { border-color: rgba(26, 95, 168, 0.4); }
+  /* Theme toggle */
+  .theme-toggle {
+    background: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 5px;
+    cursor: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.5);
+    transition: color 0.3s, border-color 0.3s, background 0.3s;
+    position: relative;
   }
+  .theme-toggle:hover {
+    color: #fff;
+    border-color: rgba(55,138,221,0.4);
+    background: rgba(55,138,221,0.08);
+  }
+  .theme-toggle svg { width: 14px; height: 14px; display: none; }
+  .theme-toggle[data-theme="light"] .icon-sun { display: block; }
+  .theme-toggle[data-theme="dark"] .icon-moon { display: block; }
+  .theme-toggle[data-theme="auto"] .icon-auto { display: block; }
+  .theme-toggle::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 0.55rem;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: rgba(255,255,255,0.65);
+    background: rgba(10,22,40,0.92);
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .theme-toggle:hover::after { opacity: 1; }
+  nav.nav-light .theme-toggle { color: rgba(10,22,40,0.5); border-color: rgba(0,0,0,0.1); }
+  nav.nav-light .theme-toggle:hover { color: var(--ink); border-color: rgba(26,95,168,0.4); background: rgba(55,138,221,0.08); }
+  nav.nav-light .theme-toggle::after { color: rgba(10,22,40,0.7); background: rgba(255,255,255,0.92); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  @media (hover: none), (pointer: coarse) { .theme-toggle { cursor: auto; } }
+
+  /* LIGHT MODE (class-based for manual toggle support) */
+  body.light-mode { background: #f0f7ff; }
+
+  body.light-mode .section-label { color: var(--sky-5); }
+  body.light-mode .section-label::before { background: var(--sky-5); }
+  body.light-mode .services-grid { background: rgba(0, 0, 0, 0.04); border-color: rgba(0, 0, 0, 0.06); }
+  body.light-mode .service-card { background: rgba(255, 255, 255, 0.75); }
+  body.light-mode .service-card:hover { background: rgba(255, 255, 255, 0.9); }
+  body.light-mode .service-card::before { background: linear-gradient(90deg, transparent, rgba(55,138,221,0.3), transparent); }
+  body.light-mode .service-num { color: rgba(26, 95, 168, 0.5); }
+  body.light-mode .service-title { color: var(--ink); }
+  body.light-mode .service-desc { color: rgba(10, 22, 40, 0.55); }
+
+  body.light-mode .about-heading { color: var(--ink); }
+  body.light-mode .about-body { color: rgba(10, 22, 40, 0.6); }
+  body.light-mode .stat-num { color: var(--ink); }
+  body.light-mode .stat-label { color: rgba(10, 22, 40, 0.45); }
+
+  body.light-mode .contact-card {
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(240,247,255,0.9) 100%);
+    border-color: rgba(55, 138, 221, 0.2);
+  }
+  body.light-mode .contact-card::before { background: radial-gradient(circle, rgba(55,138,221,0.08), transparent 70%); }
+  body.light-mode .contact-heading { color: var(--ink); }
+  body.light-mode .contact-sub { color: rgba(10, 22, 40, 0.5); }
+  body.light-mode .contact-link {
+    color: rgba(10, 22, 40, 0.65);
+    border-color: rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.6);
+  }
+  body.light-mode .contact-link:hover {
+    color: var(--ink);
+    border-color: rgba(55, 138, 221, 0.3);
+    background: rgba(255, 255, 255, 0.85);
+  }
+  body.light-mode .contact-link svg { color: var(--sky-5); }
+
+  body.light-mode .footer-info { border-top-color: rgba(0, 0, 0, 0.06); }
+  body.light-mode .footer-brand { color: var(--ink); }
+  body.light-mode .footer-col-title { color: var(--sky-5); }
+  body.light-mode .footer-text { color: rgba(10, 22, 40, 0.5); }
+  body.light-mode .footer-link { color: rgba(10, 22, 40, 0.5); }
+  body.light-mode .footer-link:hover { color: var(--sky-5); }
+
+  body.light-mode footer { border-top-color: rgba(0, 0, 0, 0.05); }
+  body.light-mode .footer-copy { color: rgba(10, 22, 40, 0.3); }
+  body.light-mode .footer-badge { color: rgba(55, 138, 221, 0.5); }
+
+  body.light-mode::after { opacity: 0.015; }
+  body.light-mode #cursor { mix-blend-mode: multiply; background: var(--sky-5); }
+  body.light-mode #cursor-ring { border-color: rgba(26, 95, 168, 0.4); }
 </style>
 </head>
 <body>
+<script>!function(){var t=localStorage.getItem('theme'),l=t==='light'||(t!=='dark'&&window.matchMedia('(prefers-color-scheme: light)').matches);if(l)document.body.classList.add('light-mode')}()</script>
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
@@ -808,6 +848,13 @@
     <ul class="nav-links">
       <li><a href="#services">Services</a></li>
       <li><a href="#about">About</a></li>
+      <li>
+        <button class="theme-toggle" data-theme="auto" data-tooltip="System theme" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"/></svg>
+          <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 9A5 5 0 117 3a4 4 0 006 6z"/></svg>
+          <svg class="icon-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1.5"/><path d="M6 14h4M8 11v3"/></svg>
+        </button>
+      </li>
       <li><a href="#contact" class="nav-cta">Get in touch</a></li>
     </ul>
   </nav>
@@ -1060,7 +1107,7 @@ const ctx = canvas.getContext('2d');
 const navEl = document.querySelector('nav');
 
 let scrollProgress = 0;
-let isDarkMode = !window.matchMedia('(prefers-color-scheme: light)').matches;
+let isDarkMode = !document.body.classList.contains('light-mode');
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -1103,8 +1150,36 @@ updateNavTheme();
 window.addEventListener('resize', resize);
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-  isDarkMode = e.matches;
+  if ((localStorage.getItem('theme') || 'auto') === 'auto') {
+    isDarkMode = e.matches;
+    document.body.classList.toggle('light-mode', !isDarkMode);
+    updateNavTheme();
+  }
+});
+
+// Theme toggle
+const themeToggle = document.querySelector('.theme-toggle');
+const themeOrder = ['auto', 'light', 'dark'];
+const themeTooltips = { auto: 'System theme', light: 'Light mode', dark: 'Dark mode' };
+
+function applyTheme(pref) {
+  if (pref === 'light') isDarkMode = false;
+  else if (pref === 'dark') isDarkMode = true;
+  else isDarkMode = !window.matchMedia('(prefers-color-scheme: light)').matches;
+  document.body.classList.toggle('light-mode', !isDarkMode);
+  themeToggle.setAttribute('data-theme', pref);
+  themeToggle.setAttribute('data-tooltip', themeTooltips[pref]);
   updateNavTheme();
+}
+
+// Apply stored preference (button state — body class already set by blocking script)
+applyTheme(localStorage.getItem('theme') || 'auto');
+
+themeToggle.addEventListener('click', () => {
+  const current = localStorage.getItem('theme') || 'auto';
+  const next = themeOrder[(themeOrder.indexOf(current) + 1) % themeOrder.length];
+  localStorage.setItem('theme', next);
+  applyTheme(next);
 });
 
 // Cloud particles
