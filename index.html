@@ -61,6 +61,10 @@
     opacity: 0;
   }
   #cursor.visible, #cursor-ring.visible { opacity: 1; }
+  @media (hover: none), (pointer: coarse) {
+    #cursor, #cursor-ring { display: none !important; }
+    body { cursor: auto; }
+  }
 
   /* Canvas background */
   #bg-canvas {
