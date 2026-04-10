@@ -134,6 +134,12 @@
     color: var(--sky-3);
   }
 
+  .nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
   .nav-links {
     display: flex;
     align-items: center;
@@ -730,8 +736,7 @@
     }
     .nav-links li:last-child { border-bottom: none; }
     .nav-cta { display: inline-block; }
-    .theme-toggle { border-color: transparent; padding: 4px 0; }
-    .theme-toggle::after { top: auto; left: calc(100% + 8px); transform: none; }
+    .nav-actions { gap: 1rem; }
     body.light-mode .nav-links { border-bottom-color: rgba(0,0,0,0.06); }
     body.light-mode .nav-links li { border-bottom-color: rgba(0,0,0,0.04); }
   }
@@ -897,22 +902,22 @@
       <span class="logo-text">Cloud<span>breeze</span></span>
     </a>
 
-    <ul class="nav-links">
-      <li><a href="#services">Services</a></li>
-      <li><a href="#about">About</a></li>
-      <li>
-        <button class="theme-toggle" data-theme="dark" data-tooltip="Dark mode" aria-label="Toggle theme">
-          <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"/></svg>
-          <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 9A5 5 0 117 3a4 4 0 006 6z"/></svg>
-          <svg class="icon-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1.5"/><path d="M6 14h4M8 11v3"/></svg>
-        </button>
-      </li>
-      <li><a href="#contact" class="nav-cta">Get in touch</a></li>
-    </ul>
-    <button class="nav-burger" aria-label="Menu">
-      <svg class="burger-open" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
-      <svg class="burger-close" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M4 16L16 4"/></svg>
-    </button>
+    <div class="nav-actions">
+      <button class="theme-toggle" data-theme="dark" data-tooltip="Dark mode" aria-label="Toggle theme">
+        <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"/></svg>
+        <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 9A5 5 0 117 3a4 4 0 006 6z"/></svg>
+        <svg class="icon-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1.5"/><path d="M6 14h4M8 11v3"/></svg>
+      </button>
+      <ul class="nav-links">
+        <li><a href="#services">Services</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#contact" class="nav-cta">Get in touch</a></li>
+      </ul>
+      <button class="nav-burger" aria-label="Menu">
+        <svg class="burger-open" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
+        <svg class="burger-close" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M4 16L16 4"/></svg>
+      </button>
+    </div>
   </nav>
 
   <!-- HERO -->
