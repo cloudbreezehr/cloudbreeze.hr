@@ -1418,6 +1418,12 @@ const streaks = Array.from({length: 35}, () => new Streak());
 const wisps = Array.from({length: 12}, () => new BreezeWisp());
 const motes = Array.from({length: 35}, () => new ScrollMote());
 
+// Edge gusts — pool of reusable wind lines that spawn from screen edges
+const gusts = Array.from({length: 24}, () => ({
+  active: false, x: 0, y: 0, len: 0, angle: 0,
+  opacity: 0, life: 0, maxLife: 0, width: 0
+}));
+
 // Deep space stars
 const stars = Array.from({length: 120}, () => ({
   x: Math.random() * 1920,
@@ -1483,8 +1489,50 @@ function render() {
   ctx.fillStyle = hg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Scroll-reactive particles — blown by scroll, settle with gravity
+  // Edge breeze — wind lines from screen edges during scroll
   scrollVelocity *= 0.92;
+  const absSv = Math.abs(scrollVelocity);
+  if (absSv > 1.5) {
+    const spawnCount = Math.min(2, Math.floor(absSv / 4));
+    for (let i = 0; i < spawnCount; i++) {
+      const g = gusts.find(g => !g.active);
+      if (!g) break;
+      const side = Math.random();
+      if (side < 0.35) { g.x = Math.random() * 50; g.y = Math.random() * canvas.height; }
+      else if (side < 0.7) { g.x = canvas.width - Math.random() * 50; g.y = Math.random() * canvas.height; }
+      else if (side < 0.85) { g.x = Math.random() * canvas.width; g.y = Math.random() * 30; }
+      else { g.x = Math.random() * canvas.width; g.y = canvas.height - Math.random() * 30; }
+      const dir = scrollVelocity > 0 ? -Math.PI / 2 : Math.PI / 2;
+      g.angle = dir + (Math.random() - 0.5) * 0.7;
+      g.len = 25 + Math.random() * 45;
+      g.opacity = 0.05 + Math.random() * 0.08;
+      g.width = 0.4 + Math.random() * 0.6;
+      g.life = 0;
+      g.maxLife = 18 + Math.random() * 14;
+      g.active = true;
+    }
+  }
+  const gustCol = isDarkMode ? '180,220,255' : '80,150,220';
+  gusts.forEach(g => {
+    if (!g.active) return;
+    g.life++;
+    if (g.life > g.maxLife) { g.active = false; return; }
+    const p = g.life / g.maxLife;
+    const op = g.opacity * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8);
+    const progress = 0.4 + p * 0.6;
+    ctx.save();
+    ctx.globalAlpha = op;
+    ctx.strokeStyle = `rgba(${gustCol},1)`;
+    ctx.lineWidth = g.width;
+    ctx.beginPath();
+    ctx.moveTo(g.x, g.y);
+    ctx.lineTo(g.x + Math.cos(g.angle) * g.len * progress,
+               g.y + Math.sin(g.angle) * g.len * progress);
+    ctx.stroke();
+    ctx.restore();
+  });
+
+  // Scroll-reactive particles — blown by scroll, settle with gravity
   motes.forEach(m => { m.update(scrollVelocity); m.draw(isDarkMode); });
 
   requestAnimationFrame(render);
