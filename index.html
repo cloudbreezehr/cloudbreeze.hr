@@ -808,7 +808,7 @@
 </style>
 </head>
 <body>
-<script>!function(){var t=localStorage.getItem('theme'),l=t==='light'||(t!=='dark'&&window.matchMedia('(prefers-color-scheme: light)').matches);if(l)document.body.classList.add('light-mode')}()</script>
+<script>!function(){var t=localStorage.getItem('theme'),l=t==='light'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: light)').matches);if(l)document.body.classList.add('light-mode')}()</script>
 
 <div id="cursor"></div>
 <div id="cursor-ring"></div>
@@ -849,7 +849,7 @@
       <li><a href="#services">Services</a></li>
       <li><a href="#about">About</a></li>
       <li>
-        <button class="theme-toggle" data-theme="auto" data-tooltip="System theme" aria-label="Toggle theme">
+        <button class="theme-toggle" data-theme="dark" data-tooltip="Dark mode" aria-label="Toggle theme">
           <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"/></svg>
           <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 9A5 5 0 117 3a4 4 0 006 6z"/></svg>
           <svg class="icon-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1.5"/><path d="M6 14h4M8 11v3"/></svg>
@@ -1150,7 +1150,7 @@ updateNavTheme();
 window.addEventListener('resize', resize);
 window.addEventListener('scroll', updateScroll, { passive: true });
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-  if ((localStorage.getItem('theme') || 'auto') === 'auto') {
+  if ((localStorage.getItem('theme') || 'dark') === 'auto') {
     isDarkMode = e.matches;
     document.body.classList.toggle('light-mode', !isDarkMode);
     updateNavTheme();
@@ -1173,10 +1173,10 @@ function applyTheme(pref) {
 }
 
 // Apply stored preference (button state — body class already set by blocking script)
-applyTheme(localStorage.getItem('theme') || 'auto');
+applyTheme(localStorage.getItem('theme') || 'dark');
 
 themeToggle.addEventListener('click', () => {
-  const current = localStorage.getItem('theme') || 'auto';
+  const current = localStorage.getItem('theme') || 'dark';
   const next = themeOrder[(themeOrder.indexOf(current) + 1) % themeOrder.length];
   localStorage.setItem('theme', next);
   applyTheme(next);
