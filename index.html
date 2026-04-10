@@ -47,6 +47,7 @@
     transform: translate(-50%,-50%);
     transition: transform 0.1s, width 0.3s, height 0.3s, opacity 0.3s;
     mix-blend-mode: screen;
+    opacity: 0;
   }
   #cursor-ring {
     position: fixed;
@@ -57,8 +58,9 @@
     z-index: 9998;
     transform: translate(-50%,-50%);
     transition: transform 0.18s ease, width 0.3s, height 0.3s, opacity 0.3s;
+    opacity: 0;
   }
-  body:hover #cursor { opacity: 1; }
+  #cursor.visible, #cursor-ring.visible { opacity: 1; }
 
   /* Canvas background */
   #bg-canvas {
@@ -948,6 +950,13 @@ document.addEventListener('mousemove', e => {
   mx = e.clientX; my = e.clientY;
   cursor.style.left = mx + 'px';
   cursor.style.top = my + 'px';
+  if (!cursor.classList.contains('visible')) {
+    rx = mx; ry = my;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    cursor.classList.add('visible');
+    ring.classList.add('visible');
+  }
 });
 
 function animRing() {
