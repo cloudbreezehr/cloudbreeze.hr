@@ -924,17 +924,16 @@ body.light-mode #cursor-ring {
 }
 
 /* Transition flash */
-.ud-flash {
+.ud-wipe {
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgb(200, 30, 30);
-  opacity: 0;
-  transition: opacity 0.3s ease-in;
   pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(180, 0, 0, 0.3) 0%, #1a0505 60%);
 }
-.ud-flash.active { opacity: 1; }
-.ud-flash-return { background: rgb(55, 138, 221); }
+.ud-wipe-return {
+  background: radial-gradient(ellipse at center, rgba(55, 138, 221, 0.3) 0%, #051020 60%);
+}
 
 @keyframes ud-glitch {
   0%, 100% { transform: translate(0, 0); }

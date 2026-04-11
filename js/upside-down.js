@@ -83,27 +83,24 @@ export function initUpsideDown() {
 
     const entering = !isFlipped;
 
-    // Flash — fully opaque so scroll-position swap is invisible
-    const flash = document.createElement('div');
-    flash.className = entering ? 'ud-flash' : 'ud-flash ud-flash-return';
-    document.body.appendChild(flash);
-    requestAnimationFrame(() => flash.classList.add('active'));
+    // Dark wipe — sweeps across the screen in the direction of travel
+    const wipe = document.createElement('div');
+    wipe.className = 'ud-wipe' + (entering ? '' : ' ud-wipe-return');
+    wipe.style.transform = entering ? 'translateY(100%)' : 'translateY(-100%)';
+    document.body.appendChild(wipe);
+    void wipe.offsetHeight;
 
-    // Phase 1: Collapse into the floor (entering) or through the ceiling (exiting)
-    pageEl.style.transformOrigin = entering ? 'center bottom' : 'center top';
-    pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
-    void pageEl.offsetHeight;
-    pageEl.style.transition = 'transform 0.4s ease-in';
-    pageEl.style.transform = 'scaleY(0)';
+    // Phase 1: Wipe covers the screen
+    wipe.style.transition = 'transform 0.5s ease-in';
+    wipe.style.transform = 'translateY(0)';
 
-    // Phase 2: Swap state while page is invisible behind opaque flash
+    // Phase 2: Swap state while fully covered
     setTimeout(() => {
-      pageEl.style.transition = 'none';
       isFlipped = !isFlipped;
       document.body.classList.toggle('upside-down', isFlipped);
+      pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
       overlay.style.background = 'none';
 
-      // Move nav out of / back into .page
       if (isFlipped) {
         document.body.appendChild(navEl);
         window.scrollTo(0, 0);
@@ -112,26 +109,17 @@ export function initUpsideDown() {
         window.scrollTo(0, document.documentElement.scrollHeight);
       }
 
-      // Phase 3: Emerge from the portal — expand from the opposite edge
-      pageEl.style.transformOrigin = entering ? 'center top' : 'center bottom';
-      pageEl.style.transform = 'scaleY(0)';
-      void pageEl.offsetHeight;
-      pageEl.style.transition = 'transform 0.4s ease-out';
-      pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
+      // Phase 3: Wipe continues through, revealing the new world
+      requestAnimationFrame(() => {
+        wipe.style.transition = 'transform 0.5s ease-out';
+        wipe.style.transform = entering ? 'translateY(-100%)' : 'translateY(100%)';
 
-      // Phase 4: Fade flash to reveal the new world
-      setTimeout(() => {
-        pageEl.style.transition = '';
-        pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
-        pageEl.style.transformOrigin = '';
-        flash.style.transition = 'opacity 0.5s ease-out';
-        flash.style.opacity = '0';
         setTimeout(() => {
-          flash.remove();
+          wipe.remove();
           isTransitioning = false;
-        }, 500);
-      }, 450);
-    }, 450);
+        }, 550);
+      });
+    }, 550);
   }
 
   // Track overscroll at the bottom of the page.
