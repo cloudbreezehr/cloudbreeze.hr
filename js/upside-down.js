@@ -5,6 +5,7 @@ export function initUpsideDown() {
   let warningVisible = false;
   let lastForceTime = 0;
   let warningShowTime = 0;
+  let lastEdgeWasBottom = true;
 
   // Tuning — each accepted hit adds a fixed chunk, with a cooldown between hits
   // so a single trackpad swipe (dozens of rapid events) only counts once.
@@ -82,11 +83,13 @@ export function initUpsideDown() {
     force = 0;
 
     const entering = !isFlipped;
+    // Wipe direction: from bottom if triggered at bottom edge, from top if at top edge
+    const wipeFromBottom = lastEdgeWasBottom;
 
     // Dark wipe — sweeps across the screen in the direction of travel
     const wipe = document.createElement('div');
     wipe.className = 'ud-wipe' + (entering ? '' : ' ud-wipe-return');
-    wipe.style.transform = entering ? 'translateY(100%)' : 'translateY(-100%)';
+    wipe.style.transform = wipeFromBottom ? 'translateY(100%)' : 'translateY(-100%)';
     document.body.appendChild(wipe);
     void wipe.offsetHeight;
 
@@ -112,7 +115,7 @@ export function initUpsideDown() {
       // Phase 3: Wipe continues through, revealing the new world
       requestAnimationFrame(() => {
         wipe.style.transition = 'transform 0.5s ease-out';
-        wipe.style.transform = entering ? 'translateY(-100%)' : 'translateY(100%)';
+        wipe.style.transform = wipeFromBottom ? 'translateY(-100%)' : 'translateY(100%)';
 
         setTimeout(() => {
           wipe.remove();
@@ -129,14 +132,15 @@ export function initUpsideDown() {
 
     const scrollTop = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const atEdge = isFlipped
-      ? scrollTop <= 30 && e.deltaY < 0              // upside-down: overscroll upward at top
-      : scrollTop >= maxScroll - 30 && e.deltaY > 0;  // normal: overscroll downward at bottom
+    const atBottom = scrollTop >= maxScroll - 30 && e.deltaY > 0;
+    const atTop = scrollTop <= 30 && e.deltaY < 0;
+    const atEdge = isFlipped ? (atBottom || atTop) : atBottom;
 
     if (atEdge) {
       const now = Date.now();
       if (now - lastForceTime < COOLDOWN) return;
       lastForceTime = now;
+      lastEdgeWasBottom = atBottom;
 
       force = Math.min(1, force + (isFlipped ? FORCE_PER_HIT * 2 : FORCE_PER_HIT));
       updateVisuals();
