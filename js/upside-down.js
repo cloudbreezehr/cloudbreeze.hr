@@ -15,6 +15,7 @@ export function initUpsideDown() {
   const WARNING_MIN_MS = 2000; // warning must be visible 2s before flip
 
   const pageEl = document.querySelector('.page');
+  const navEl = document.querySelector('nav');
 
   // Red vignette overlay
   const overlay = document.createElement('div');
@@ -92,11 +93,12 @@ export function initUpsideDown() {
       pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
       overlay.style.background = 'none';
 
-      // Entering: start at top (footer visible — you fell through the floor)
-      // Exiting: land at bottom (where you started)
+      // Move nav out of .page so the scaleY(-1) transform doesn't break sticky
       if (isFlipped) {
+        document.body.appendChild(navEl);
         window.scrollTo(0, 0);
       } else {
+        pageEl.insertBefore(navEl, pageEl.firstChild);
         window.scrollTo(0, document.documentElement.scrollHeight);
       }
 

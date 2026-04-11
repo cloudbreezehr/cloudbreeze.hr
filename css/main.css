@@ -961,6 +961,17 @@ body.upside-down .page {
   transform: scaleY(-1);
 }
 
+/* Nav is moved out of .page during flip so sticky isn't broken by the transform.
+   Pin it to the visual bottom, flipped to match the upside-down world. */
+body.upside-down > nav {
+  position: fixed;
+  bottom: 0;
+  top: auto;
+  left: 0;
+  right: 0;
+  transform: scaleY(-1);
+}
+
 body.upside-down #bg-canvas {
   transform: scaleY(-1);
   filter: hue-rotate(160deg) saturate(1.3) brightness(0.6);
