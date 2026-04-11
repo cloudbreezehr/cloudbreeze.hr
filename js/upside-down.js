@@ -9,11 +9,11 @@ export function initUpsideDown() {
   // Tuning — each accepted hit adds a fixed chunk, with a cooldown between hits
   // so a single trackpad swipe (dozens of rapid events) only counts once.
   // Linear drain runs constantly, so you need sustained aggressive scrolling.
-  const COOLDOWN = 150;       // ms between accepted hits
-  const FORCE_PER_HIT = 0.04; // ~25 hits to fill from 0→1
-  const DRAIN_PER_FRAME = 0.002; // ~0.12/s drain → need ~7s sustained effort
+  const COOLDOWN = 100;        // ms between accepted hits
+  const FORCE_PER_HIT = 0.05;  // each accepted hit adds 5%
+  const DRAIN_PER_FRAME = 0.0015; // ~0.09/s drain
   const WARNING_AT = 0.6;
-  const WARNING_MIN_MS = 1500; // warning must be visible 1.5s before flip
+  const WARNING_MIN_MS = 2000; // warning must be visible 2s before flip
 
   const pageEl = document.querySelector('.page');
 
@@ -115,7 +115,7 @@ export function initUpsideDown() {
 
     const scrollTop = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const atBottom = scrollTop >= maxScroll - 5 && e.deltaY > 0;
+    const atBottom = scrollTop >= maxScroll - 30 && e.deltaY > 0;
 
     if (atBottom) {
       const now = Date.now();
