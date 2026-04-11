@@ -3,14 +3,16 @@ export function initCursor(dotEl, ringEl) {
 
   let mx = 0, my = 0, rx = 0, ry = 0;
 
+  function setPos(el, x, y) {
+    el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+  }
+
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
-    dotEl.style.left = mx + 'px';
-    dotEl.style.top = my + 'px';
+    setPos(dotEl, mx, my);
     if (!dotEl.classList.contains('visible')) {
       rx = mx; ry = my;
-      ringEl.style.left = rx + 'px';
-      ringEl.style.top = ry + 'px';
+      setPos(ringEl, rx, ry);
       dotEl.classList.add('visible');
       ringEl.classList.add('visible');
     }
@@ -19,8 +21,7 @@ export function initCursor(dotEl, ringEl) {
   function animRing() {
     rx += (mx - rx) * 0.12;
     ry += (my - ry) * 0.12;
-    ringEl.style.left = rx + 'px';
-    ringEl.style.top = ry + 'px';
+    setPos(ringEl, rx, ry);
     requestAnimationFrame(animRing);
   }
   animRing();
