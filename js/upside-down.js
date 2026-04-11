@@ -136,10 +136,15 @@ export function initUpsideDown() {
   }, { passive: true });
 
   // Dynamic drain — fast at low force (early damage clears quickly),
-  // slow at high force (sustained effort is rewarded, warning sticks around)
+  // slow at high force (sustained effort is rewarded, warning sticks around).
+  // Time-based so drain rate is consistent regardless of browser FPS.
+  let lastTick = performance.now();
   function tick() {
+    const now = performance.now();
+    const dt = (now - lastTick) / 16.667; // normalize to 60fps baseline
+    lastTick = now;
     if (force > 0 && !isTransitioning) {
-      const drain = 0.0015 - force * 0.00075;
+      const drain = (0.0015 - force * 0.00075) * dt;
       force = Math.max(0, force - drain);
       if (force < WARNING_AT - 0.1 && warningVisible) hideWarning();
       updateVisuals();
