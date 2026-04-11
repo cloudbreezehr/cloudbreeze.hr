@@ -123,7 +123,7 @@ export function initUpsideDown() {
       if (now - lastForceTime < COOLDOWN) return;
       lastForceTime = now;
 
-      force = Math.min(1, force + FORCE_PER_HIT);
+      force = Math.min(1, force + (isFlipped ? FORCE_PER_HIT * 2 : FORCE_PER_HIT));
       updateVisuals();
 
       if (force >= WARNING_AT && !warningVisible) {
