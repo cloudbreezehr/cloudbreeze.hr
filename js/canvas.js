@@ -165,9 +165,18 @@ class ScrollMote {
   }
 }
 
-export function initCanvas(canvasEl, theme) {
+const defaults = {
+  sky: true,       stars: true,     streaks: true,
+  clouds: true,    wisps: true,     horizon: true,
+  gusts: true,     motes: true,
+  starCount: 120,  streakCount: 35, cloudCount: 18,
+  wispCount: 12,   gustCount: 24,   moteCount: 35,
+};
+
+export function initCanvas(canvasEl, theme, options) {
   canvas = canvasEl;
   ctx = canvas.getContext('2d');
+  const opts = Object.assign({}, defaults, options);
 
   let isDarkMode = theme.isDark();
   let scrollProgress = 0;
@@ -194,23 +203,23 @@ export function initCanvas(canvasEl, theme) {
   window.addEventListener('resize', resize);
   window.addEventListener('scroll', updateScroll, { passive: true });
 
-  const clouds = Array.from({length: 18}, (_, i) => new Cloud(i, 18));
-  const streaks = Array.from({length: 35}, () => new Streak());
-  const wisps = Array.from({length: 12}, () => new BreezeWisp());
-  const motes = Array.from({length: 35}, () => new ScrollMote());
+  const clouds = opts.clouds ? Array.from({length: opts.cloudCount}, (_, i) => new Cloud(i, opts.cloudCount)) : [];
+  const streaks = opts.streaks ? Array.from({length: opts.streakCount}, () => new Streak()) : [];
+  const wisps = opts.wisps ? Array.from({length: opts.wispCount}, () => new BreezeWisp()) : [];
+  const motes = opts.motes ? Array.from({length: opts.moteCount}, () => new ScrollMote()) : [];
 
-  const gusts = Array.from({length: 24}, () => ({
+  const gusts = opts.gusts ? Array.from({length: opts.gustCount}, () => ({
     active: false, x: 0, y: 0, len: 0, angle: 0,
     opacity: 0, life: 0, maxLife: 0, width: 0
-  }));
+  })) : [];
 
-  const stars = Array.from({length: 120}, () => ({
+  const stars = opts.stars ? Array.from({length: opts.starCount}, () => ({
     x: Math.random() * 1920,
     y: Math.random() * 1080,
     r: 0.3 + Math.random() * 1,
     opacity: 0.1 + Math.random() * 0.4,
     twinkle: Math.random() * Math.PI * 2
-  }));
+  })) : [];
 
   let t = 0;
   function render() {
@@ -219,100 +228,116 @@ export function initCanvas(canvasEl, theme) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient
-    const skyTop = multiLerp(pal.skyTop, sp);
-    const skyBot = multiLerp(pal.skyBot, sp);
-    const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    bg.addColorStop(0, toRgba(skyTop));
-    bg.addColorStop(0.5, toRgba(lerpColor(skyTop, skyBot, 0.5)));
-    bg.addColorStop(1, toRgba(skyBot));
-    ctx.fillStyle = bg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (opts.sky) {
+      const skyTop = multiLerp(pal.skyTop, sp);
+      const skyBot = multiLerp(pal.skyBot, sp);
+      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      bg.addColorStop(0, toRgba(skyTop));
+      bg.addColorStop(0.5, toRgba(lerpColor(skyTop, skyBot, 0.5)));
+      bg.addColorStop(1, toRgba(skyBot));
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Stars — fade out between 20-50% scroll
-    const starVis = sp < 0.2 ? 1.0 : sp < 0.5 ? 1.0 - (sp - 0.2) / 0.3 : 0.0;
-    if (starVis > 0) {
-      t += 0.008;
-      stars.forEach(s => {
-        s.twinkle += 0.02;
-        const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle)) * starVis;
-        ctx.fillStyle = `rgba(180,210,255,${op})`;
-        ctx.beginPath();
-        ctx.arc(s.x % canvas.width, s.y % canvas.height, s.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
+    if (opts.stars) {
+      const starVis = sp < 0.2 ? 1.0 : sp < 0.5 ? 1.0 - (sp - 0.2) / 0.3 : 0.0;
+      if (starVis > 0) {
+        t += 0.008;
+        stars.forEach(s => {
+          s.twinkle += 0.02;
+          const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle)) * starVis;
+          ctx.fillStyle = `rgba(180,210,255,${op})`;
+          ctx.beginPath();
+          ctx.arc(s.x % canvas.width, s.y % canvas.height, s.r, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
     }
 
     // Streaks — evolve with scroll
-    const streakP = getStreakParams(sp);
-    streaks.forEach(s => { s.update(streakP); s.draw(streakP); });
+    if (opts.streaks) {
+      const streakP = getStreakParams(sp);
+      streaks.forEach(s => { s.update(streakP); s.draw(streakP); });
+    }
 
     // Cloud layer — clouds live at a fixed altitude, viewport scrolls past them
-    const cloudYOffset = -(sp - 0.38) * canvas.height * 4;
-    const cloudVis = sp < 0.12 ? 0 : sp < 0.22 ? (sp - 0.12) / 0.1
-      : sp < 0.65 ? 1.0 : sp < 0.82 ? 1.0 - (sp - 0.65) / 0.17 : 0;
-    clouds.forEach(c => { c.update(); c.draw(cloudYOffset, cloudVis, pal); });
+    if (opts.clouds) {
+      const cloudYOffset = -(sp - 0.38) * canvas.height * 4;
+      const cloudVis = sp < 0.12 ? 0 : sp < 0.22 ? (sp - 0.12) / 0.1
+        : sp < 0.65 ? 1.0 : sp < 0.82 ? 1.0 - (sp - 0.65) / 0.17 : 0;
+      clouds.forEach(c => { c.update(); c.draw(cloudYOffset, cloudVis, pal); });
+    }
 
     // Breeze wisps — horizontal wind, also scroll with atmosphere
-    const wispYOffset = -(sp - 0.45) * canvas.height * 2.5;
-    const wispVis = sp < 0.15 ? 0 : sp < 0.25 ? (sp - 0.15) / 0.1
-      : sp < 0.70 ? 1.0 : sp < 0.85 ? 1.0 - (sp - 0.70) / 0.15 : 0;
-    wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
+    if (opts.wisps) {
+      const wispYOffset = -(sp - 0.45) * canvas.height * 2.5;
+      const wispVis = sp < 0.15 ? 0 : sp < 0.25 ? (sp - 0.15) / 0.1
+        : sp < 0.70 ? 1.0 : sp < 0.85 ? 1.0 - (sp - 0.70) / 0.15 : 0;
+      wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
+    }
 
     // Horizon glow — shifts with descent
-    const glowY = canvas.height * (0.75 - sp * 0.25);
-    const glowIntensity = 0.12 + sp * 0.10 - Math.max(0, sp - 0.75) * 0.15;
-    const hc = pal.horizonColor;
-    const hg = ctx.createRadialGradient(canvas.width/2, glowY, 0, canvas.width/2, glowY, canvas.width * (0.7 + sp * 0.2));
-    hg.addColorStop(0, `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity.toFixed(3)})`);
-    hg.addColorStop(1, 'transparent');
-    ctx.fillStyle = hg;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    if (opts.horizon) {
+      const glowY = canvas.height * (0.75 - sp * 0.25);
+      const glowIntensity = 0.12 + sp * 0.10 - Math.max(0, sp - 0.75) * 0.15;
+      const hc = pal.horizonColor;
+      const hg = ctx.createRadialGradient(canvas.width/2, glowY, 0, canvas.width/2, glowY, canvas.width * (0.7 + sp * 0.2));
+      hg.addColorStop(0, `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity.toFixed(3)})`);
+      hg.addColorStop(1, 'transparent');
+      ctx.fillStyle = hg;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     // Edge breeze — wind lines from screen edges during scroll
     scrollVelocity *= 0.92;
-    const absSv = Math.abs(scrollVelocity);
-    if (absSv > 1.5) {
-      const spawnCount = Math.min(2, Math.floor(absSv / 4));
-      for (let i = 0; i < spawnCount; i++) {
-        const g = gusts.find(g => !g.active);
-        if (!g) break;
-        const side = Math.random();
-        if (side < 0.35) { g.x = Math.random() * 50; g.y = Math.random() * canvas.height; }
-        else if (side < 0.7) { g.x = canvas.width - Math.random() * 50; g.y = Math.random() * canvas.height; }
-        else if (side < 0.85) { g.x = Math.random() * canvas.width; g.y = Math.random() * 30; }
-        else { g.x = Math.random() * canvas.width; g.y = canvas.height - Math.random() * 30; }
-        const dir = scrollVelocity > 0 ? -Math.PI / 2 : Math.PI / 2;
-        g.angle = dir + (Math.random() - 0.5) * 0.7;
-        g.len = 25 + Math.random() * 45;
-        g.opacity = 0.05 + Math.random() * 0.08;
-        g.width = 0.4 + Math.random() * 0.6;
-        g.life = 0;
-        g.maxLife = 18 + Math.random() * 14;
-        g.active = true;
+    if (opts.gusts) {
+      const absSv = Math.abs(scrollVelocity);
+      if (absSv > 1.5) {
+        const spawnCount = Math.min(2, Math.floor(absSv / 4));
+        for (let i = 0; i < spawnCount; i++) {
+          const g = gusts.find(g => !g.active);
+          if (!g) break;
+          const side = Math.random();
+          if (side < 0.35) { g.x = Math.random() * 50; g.y = Math.random() * canvas.height; }
+          else if (side < 0.7) { g.x = canvas.width - Math.random() * 50; g.y = Math.random() * canvas.height; }
+          else if (side < 0.85) { g.x = Math.random() * canvas.width; g.y = Math.random() * 30; }
+          else { g.x = Math.random() * canvas.width; g.y = canvas.height - Math.random() * 30; }
+          const dir = scrollVelocity > 0 ? -Math.PI / 2 : Math.PI / 2;
+          g.angle = dir + (Math.random() - 0.5) * 0.7;
+          g.len = 25 + Math.random() * 45;
+          g.opacity = 0.05 + Math.random() * 0.08;
+          g.width = 0.4 + Math.random() * 0.6;
+          g.life = 0;
+          g.maxLife = 18 + Math.random() * 14;
+          g.active = true;
+        }
       }
+      const gustCol = isDarkMode ? '180,220,255' : '80,150,220';
+      gusts.forEach(g => {
+        if (!g.active) return;
+        g.life++;
+        if (g.life > g.maxLife) { g.active = false; return; }
+        const p = g.life / g.maxLife;
+        const op = g.opacity * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8);
+        const progress = 0.4 + p * 0.6;
+        ctx.save();
+        ctx.globalAlpha = op;
+        ctx.strokeStyle = `rgba(${gustCol},1)`;
+        ctx.lineWidth = g.width;
+        ctx.beginPath();
+        ctx.moveTo(g.x, g.y);
+        ctx.lineTo(g.x + Math.cos(g.angle) * g.len * progress,
+                   g.y + Math.sin(g.angle) * g.len * progress);
+        ctx.stroke();
+        ctx.restore();
+      });
     }
-    const gustCol = isDarkMode ? '180,220,255' : '80,150,220';
-    gusts.forEach(g => {
-      if (!g.active) return;
-      g.life++;
-      if (g.life > g.maxLife) { g.active = false; return; }
-      const p = g.life / g.maxLife;
-      const op = g.opacity * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8);
-      const progress = 0.4 + p * 0.6;
-      ctx.save();
-      ctx.globalAlpha = op;
-      ctx.strokeStyle = `rgba(${gustCol},1)`;
-      ctx.lineWidth = g.width;
-      ctx.beginPath();
-      ctx.moveTo(g.x, g.y);
-      ctx.lineTo(g.x + Math.cos(g.angle) * g.len * progress,
-                 g.y + Math.sin(g.angle) * g.len * progress);
-      ctx.stroke();
-      ctx.restore();
-    });
 
     // Scroll-reactive particles — blown by scroll, settle with gravity
-    motes.forEach(m => { m.update(scrollVelocity); m.draw(isDarkMode); });
+    if (opts.motes) {
+      motes.forEach(m => { m.update(scrollVelocity); m.draw(isDarkMode); });
+    }
 
     requestAnimationFrame(render);
   }
