@@ -213,15 +213,19 @@ export function initCanvas(canvasEl, theme, options) {
     opacity: 0, life: 0, maxLife: 0, width: 0
   })) : [];
 
-  const stars = opts.stars ? Array.from({length: opts.starCount}, () => ({
-    x: Math.random() * 1920,
-    y: Math.random() * 1080,
-    r: 0.3 + Math.random() * 1,
-    opacity: 0.1 + Math.random() * 0.4,
-    twinkle: Math.random() * Math.PI * 2,
-    twinkleSpeed: 0.008 + Math.random() * 0.03,
-    flash: 0,
-  })) : [];
+  const stars = opts.stars ? Array.from({length: opts.starCount}, () => {
+    const r = 0.3 + Math.random() * 1;
+    return {
+      x: Math.random() * 1920,
+      y: Math.random() * 1080,
+      r,
+      opacity: 0.1 + Math.random() * 0.4,
+      twinkle: Math.random() * Math.PI * 2,
+      twinkleSpeed: 0.008 + Math.random() * 0.03,
+      flash: 0,
+      depth: 0.1 + Math.random() * 0.9,
+    };
+  }) : [];
 
   // Shooting stars — small reusable pool
   const shootingStars = opts.stars ? Array.from({length: 3}, () => ({
@@ -263,9 +267,12 @@ export function initCanvas(canvasEl, theme, options) {
           }
           const base = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
           const op = Math.min(1, base + s.flash) * starVis;
+          // Parallax — closer stars (higher depth) shift more on scroll
+          const shift = s.depth * sp * canvas.height * 0.4;
+          const py = ((s.y - shift) % canvas.height + canvas.height) % canvas.height;
           ctx.fillStyle = `rgba(180,210,255,${op})`;
           ctx.beginPath();
-          ctx.arc(s.x % canvas.width, s.y % canvas.height, s.r, 0, Math.PI * 2);
+          ctx.arc(s.x % canvas.width, py, s.r, 0, Math.PI * 2);
           ctx.fill();
         });
       }
