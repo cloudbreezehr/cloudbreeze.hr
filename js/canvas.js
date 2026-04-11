@@ -218,7 +218,9 @@ export function initCanvas(canvasEl, theme, options) {
     y: Math.random() * 1080,
     r: 0.3 + Math.random() * 1,
     opacity: 0.1 + Math.random() * 0.4,
-    twinkle: Math.random() * Math.PI * 2
+    twinkle: Math.random() * Math.PI * 2,
+    twinkleSpeed: 0.008 + Math.random() * 0.03,
+    flash: 0,
   })) : [];
 
   let t = 0;
@@ -245,8 +247,16 @@ export function initCanvas(canvasEl, theme, options) {
       if (starVis > 0) {
         t += 0.008;
         stars.forEach(s => {
-          s.twinkle += 0.02;
-          const op = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle)) * starVis;
+          s.twinkle += s.twinkleSpeed;
+          // Random bright flash — rare, brief spike
+          if (s.flash > 0) {
+            s.flash *= 0.92;
+            if (s.flash < 0.01) s.flash = 0;
+          } else if (Math.random() < 0.0003) {
+            s.flash = 0.6 + Math.random() * 0.4;
+          }
+          const base = s.opacity * (0.7 + 0.3 * Math.sin(s.twinkle));
+          const op = Math.min(1, base + s.flash) * starVis;
           ctx.fillStyle = `rgba(180,210,255,${op})`;
           ctx.beginPath();
           ctx.arc(s.x % canvas.width, s.y % canvas.height, s.r, 0, Math.PI * 2);
