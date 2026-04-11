@@ -850,8 +850,15 @@ body.light-mode .footer-copy { color: rgba(10, 22, 40, 0.3); }
 body.light-mode .footer-badge { color: rgba(55, 138, 221, 0.5); }
 
 body.light-mode::after { opacity: 0.015; }
-body.light-mode #cursor { mix-blend-mode: multiply; background: var(--sky-5); }
-body.light-mode #cursor-ring { border-color: rgba(26, 95, 168, 0.4); }
+body.light-mode #cursor {
+  background: var(--sky-4);
+  mix-blend-mode: normal;
+  box-shadow: 0 0 6px rgba(55, 138, 221, 0.5), 0 0 2px rgba(255, 255, 255, 0.7);
+}
+body.light-mode #cursor-ring {
+  border-color: rgba(55, 138, 221, 0.5);
+  box-shadow: 0 0 4px rgba(55, 138, 221, 0.15);
+}
 
 /* ═══ UPSIDE DOWN ═══ */
 
