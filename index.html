@@ -198,17 +198,19 @@
 </div>
 
 <script type="module">
-  import { initTheme }  from './js/theme.js';
-  import { initNav }    from './js/nav.js';
-  import { initCanvas } from './js/canvas.js';
-  import { initCursor } from './js/cursor.js';
-  import { initReveal } from './js/reveal.js';
+  import { initTheme }      from './js/theme.js';
+  import { initNav }        from './js/nav.js';
+  import { initCanvas }     from './js/canvas.js';
+  import { initCursor }     from './js/cursor.js';
+  import { initReveal }     from './js/reveal.js';
+  import { initUpsideDown } from './js/upside-down.js';
 
   const theme = initTheme(document.querySelector('.theme-toggle'));
   initNav(document.querySelector('nav'), theme);
   initCanvas(document.getElementById('bg-canvas'), theme);
   initCursor(document.getElementById('cursor'), document.getElementById('cursor-ring'));
   initReveal();
+  initUpsideDown();
 </script>
 </body>
 </html>
