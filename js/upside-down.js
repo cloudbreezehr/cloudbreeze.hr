@@ -3,6 +3,17 @@ export function initUpsideDown() {
   let isFlipped = false;
   let isTransitioning = false;
   let warningVisible = false;
+  let lastForceTime = 0;
+  let warningShowTime = 0;
+
+  // Tuning — each accepted hit adds a fixed chunk, with a cooldown between hits
+  // so a single trackpad swipe (dozens of rapid events) only counts once.
+  // Linear drain runs constantly, so you need sustained aggressive scrolling.
+  const COOLDOWN = 150;       // ms between accepted hits
+  const FORCE_PER_HIT = 0.04; // ~25 hits to fill from 0→1
+  const DRAIN_PER_FRAME = 0.002; // ~0.12/s drain → need ~7s sustained effort
+  const WARNING_AT = 0.6;
+  const WARNING_MIN_MS = 1500; // warning must be visible 1.5s before flip
 
   const pageEl = document.querySelector('.page');
 
@@ -13,13 +24,13 @@ export function initUpsideDown() {
 
   function updateVisuals() {
     // Red vignette intensity
-    const intensity = Math.min(1, force / 0.7);
+    const intensity = Math.min(1, force / WARNING_AT);
     overlay.style.background = force > 0.01
       ? `radial-gradient(ellipse at center, transparent 30%, rgba(180,0,0,${intensity * 0.5}) 100%)`
       : 'none';
 
     // Screen shake on .page — compose with flip transform
-    if (force > 0.15 && !isTransitioning) {
+    if (force > 0.2 && !isTransitioning) {
       const shake = force * 6;
       const dx = (Math.random() - 0.5) * shake;
       const dy = (Math.random() - 0.5) * shake;
@@ -53,6 +64,7 @@ export function initUpsideDown() {
     `;
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add('visible'));
+    warningShowTime = Date.now();
   }
 
   function hideWarning() {
@@ -96,7 +108,8 @@ export function initUpsideDown() {
     }, 350);
   }
 
-  // Track overscroll at the bottom of the page
+  // Track overscroll at the bottom of the page.
+  // Cooldown ensures a single trackpad swipe (many rapid events) counts as one hit.
   window.addEventListener('wheel', e => {
     if (isTransitioning) return;
 
@@ -105,25 +118,27 @@ export function initUpsideDown() {
     const atBottom = scrollTop >= maxScroll - 5 && e.deltaY > 0;
 
     if (atBottom) {
-      force += Math.min(Math.abs(e.deltaY), 150) * 0.0025;
-      force = Math.min(1, force);
+      const now = Date.now();
+      if (now - lastForceTime < COOLDOWN) return;
+      lastForceTime = now;
+
+      force = Math.min(1, force + FORCE_PER_HIT);
       updateVisuals();
 
-      if (force > 0.7 && !warningVisible) {
+      if (force >= WARNING_AT && !warningVisible) {
         showWarning();
       }
-      if (force >= 1.0) {
+      if (force >= 1.0 && warningVisible && now - warningShowTime >= WARNING_MIN_MS) {
         triggerFlip();
       }
     }
   }, { passive: true });
 
-  // Force decays over time — casual scrolling never accumulates enough
+  // Constant linear drain — force bleeds away when you stop scrolling
   function tick() {
     if (force > 0 && !isTransitioning) {
-      force *= 0.97;
-      if (force < 0.01) force = 0;
-      if (force < 0.6 && warningVisible) hideWarning();
+      force = Math.max(0, force - DRAIN_PER_FRAME);
+      if (force < WARNING_AT - 0.1 && warningVisible) hideWarning();
       updateVisuals();
     }
     requestAnimationFrame(tick);
