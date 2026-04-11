@@ -223,6 +223,12 @@ export function initCanvas(canvasEl, theme, options) {
     flash: 0,
   })) : [];
 
+  // Shooting stars — small reusable pool
+  const shootingStars = opts.stars ? Array.from({length: 3}, () => ({
+    active: false, x: 0, y: 0, angle: 0, speed: 0,
+    len: 0, life: 0, maxLife: 0, opacity: 0,
+  })) : [];
+
   let t = 0;
   function render() {
     const sp = scrollProgress;
@@ -263,6 +269,52 @@ export function initCanvas(canvasEl, theme, options) {
           ctx.fill();
         });
       }
+    }
+
+    // Shooting stars — rare fast arcs across the sky
+    if (opts.stars) {
+      const starVis2 = sp < 0.2 ? 1.0 : sp < 0.5 ? 1.0 - (sp - 0.2) / 0.3 : 0.0;
+      if (starVis2 > 0 && Math.random() < 0.003) {
+        const ss = shootingStars.find(s => !s.active);
+        if (ss) {
+          ss.x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+          ss.y = Math.random() * canvas.height * 0.4;
+          ss.angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.2;
+          ss.speed = 6 + Math.random() * 8;
+          ss.len = 40 + Math.random() * 60;
+          ss.opacity = 0.3 + Math.random() * 0.4;
+          ss.life = 0;
+          ss.maxLife = 20 + Math.random() * 20;
+          ss.active = true;
+        }
+      }
+      shootingStars.forEach(ss => {
+        if (!ss.active) return;
+        ss.life++;
+        if (ss.life > ss.maxLife) { ss.active = false; return; }
+        const p = ss.life / ss.maxLife;
+        ss.x += Math.cos(ss.angle) * ss.speed;
+        ss.y += Math.sin(ss.angle) * ss.speed;
+        // Fade in quickly, fade out slowly
+        const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
+        const op = ss.opacity * fade * starVis2;
+        // Draw a tapered line with a bright head
+        const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
+        const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
+        const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+        grad.addColorStop(0, `rgba(180,210,255,0)`);
+        grad.addColorStop(0.7, `rgba(200,225,255,${op * 0.3})`);
+        grad.addColorStop(1, `rgba(230,240,255,${op})`);
+        ctx.save();
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.2;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(ss.x, ss.y);
+        ctx.stroke();
+        ctx.restore();
+      });
     }
 
     // Streaks — evolve with scroll
