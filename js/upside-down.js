@@ -9,9 +9,8 @@ export function initUpsideDown() {
   // Tuning — each accepted hit adds a fixed chunk, with a cooldown between hits
   // so a single trackpad swipe (dozens of rapid events) only counts once.
   // Linear drain runs constantly, so you need sustained aggressive scrolling.
-  const COOLDOWN = 100;        // ms between accepted hits
+  const COOLDOWN = 300;        // ms — long enough that trackpad momentum counts as ~4 hits, not 15
   const FORCE_PER_HIT = 0.05;  // each accepted hit adds 5%
-  const DRAIN_PER_FRAME = 0.0015; // ~0.09/s drain
   const WARNING_AT = 0.6;
   const WARNING_MIN_MS = 2000; // warning must be visible 2s before flip
 
@@ -134,10 +133,12 @@ export function initUpsideDown() {
     }
   }, { passive: true });
 
-  // Constant linear drain — force bleeds away when you stop scrolling
+  // Dynamic drain — fast at low force (early damage clears quickly),
+  // slow at high force (sustained effort is rewarded, warning sticks around)
   function tick() {
     if (force > 0 && !isTransitioning) {
-      force = Math.max(0, force - DRAIN_PER_FRAME);
+      const drain = 0.0015 - force * 0.00075;
+      force = Math.max(0, force - drain);
       if (force < WARNING_AT - 0.1 && warningVisible) hideWarning();
       updateVisuals();
     }
