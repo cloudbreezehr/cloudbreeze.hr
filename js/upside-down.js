@@ -154,6 +154,51 @@ export function initUpsideDown() {
     }
   }, { passive: true });
 
+  // Touch support — detect overscroll via touch drag at the scroll boundary.
+  // Only uses bottom-edge detection to avoid conflicting with pull-to-refresh.
+  let touchStartY = 0;
+  let touchAccum = 0;
+
+  window.addEventListener('touchstart', e => {
+    touchStartY = e.touches[0].clientY;
+    touchAccum = 0;
+  }, { passive: true });
+
+  window.addEventListener('touchmove', e => {
+    if (isTransitioning) return;
+
+    const scrollTop = window.scrollY;
+    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+    const atBottom = scrollTop >= maxScroll - 30;
+
+    if (!atBottom) { touchAccum = 0; return; }
+
+    const touchY = e.touches[0].clientY;
+    const delta = touchStartY - touchY; // positive = dragging up = scrolling down
+    if (delta <= 0) { touchAccum = 0; return; }
+
+    // Accumulate drag distance, apply force in chunks matching desktop feel
+    touchAccum += delta;
+    touchStartY = touchY;
+
+    const now = Date.now();
+    if (touchAccum > 60 && now - lastForceTime >= COOLDOWN) {
+      lastForceTime = now;
+      lastEdgeWasBottom = true;
+      touchAccum = 0;
+
+      force = Math.min(1, force + (isFlipped ? FORCE_PER_HIT * 2 : FORCE_PER_HIT));
+      updateVisuals();
+
+      if (force >= WARNING_AT && !warningVisible) {
+        showWarning();
+      }
+      if (force >= 1.0 && warningVisible && now - warningShowTime >= WARNING_MIN_MS) {
+        triggerFlip();
+      }
+    }
+  }, { passive: true });
+
   // Dynamic drain — fast at low force (early damage clears quickly),
   // slow at high force (sustained effort is rewarded, warning sticks around).
   // Time-based so drain rate is consistent regardless of browser FPS.
