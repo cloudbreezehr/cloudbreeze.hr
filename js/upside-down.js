@@ -81,19 +81,28 @@ export function initUpsideDown() {
     hideWarning();
     force = 0;
 
+    const entering = !isFlipped;
+
     // Flash — red entering, blue returning
     const flash = document.createElement('div');
-    flash.className = isFlipped ? 'ud-flash ud-flash-return' : 'ud-flash';
+    flash.className = entering ? 'ud-flash' : 'ud-flash ud-flash-return';
     document.body.appendChild(flash);
     requestAnimationFrame(() => flash.classList.add('active'));
 
+    // Phase 1: Collapse page through the portal
+    pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
+    void pageEl.offsetHeight;
+    pageEl.style.transition = 'transform 0.4s ease-in';
+    pageEl.style.transform = 'scaleY(0)';
+
+    // Phase 2: At midpoint, switch state while page is invisible
     setTimeout(() => {
+      pageEl.style.transition = 'none';
       isFlipped = !isFlipped;
       document.body.classList.toggle('upside-down', isFlipped);
-      pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
       overlay.style.background = 'none';
 
-      // Move nav out of .page so the scaleY(-1) transform doesn't break sticky
+      // Move nav out of / back into .page
       if (isFlipped) {
         document.body.appendChild(navEl);
         window.scrollTo(0, 0);
@@ -102,11 +111,19 @@ export function initUpsideDown() {
         window.scrollTo(0, document.documentElement.scrollHeight);
       }
 
+      // Phase 3: Expand from portal into the new world
+      pageEl.style.transform = 'scaleY(0)';
+      void pageEl.offsetHeight;
+      pageEl.style.transition = 'transform 0.4s ease-out';
+      pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
+
       setTimeout(() => {
+        pageEl.style.transition = '';
+        pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
         flash.remove();
         isTransitioning = false;
-      }, 500);
-    }, 350);
+      }, 450);
+    }, 450);
   }
 
   // Track overscroll at the bottom of the page.
@@ -116,9 +133,11 @@ export function initUpsideDown() {
 
     const scrollTop = window.scrollY;
     const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    const atBottom = scrollTop >= maxScroll - 30 && e.deltaY > 0;
+    const atEdge = isFlipped
+      ? scrollTop <= 30 && e.deltaY < 0              // upside-down: overscroll upward at top
+      : scrollTop >= maxScroll - 30 && e.deltaY > 0;  // normal: overscroll downward at bottom
 
-    if (atBottom) {
+    if (atEdge) {
       const now = Date.now();
       if (now - lastForceTime < COOLDOWN) return;
       lastForceTime = now;
