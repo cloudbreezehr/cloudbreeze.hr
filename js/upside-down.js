@@ -83,19 +83,20 @@ export function initUpsideDown() {
 
     const entering = !isFlipped;
 
-    // Flash — red entering, blue returning
+    // Flash — fully opaque so scroll-position swap is invisible
     const flash = document.createElement('div');
     flash.className = entering ? 'ud-flash' : 'ud-flash ud-flash-return';
     document.body.appendChild(flash);
     requestAnimationFrame(() => flash.classList.add('active'));
 
-    // Phase 1: Collapse page through the portal
+    // Phase 1: Collapse into the floor (entering) or through the ceiling (exiting)
+    pageEl.style.transformOrigin = entering ? 'center bottom' : 'center top';
     pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
     void pageEl.offsetHeight;
     pageEl.style.transition = 'transform 0.4s ease-in';
     pageEl.style.transform = 'scaleY(0)';
 
-    // Phase 2: At midpoint, switch state while page is invisible
+    // Phase 2: Swap state while page is invisible behind opaque flash
     setTimeout(() => {
       pageEl.style.transition = 'none';
       isFlipped = !isFlipped;
@@ -111,17 +112,24 @@ export function initUpsideDown() {
         window.scrollTo(0, document.documentElement.scrollHeight);
       }
 
-      // Phase 3: Expand from portal into the new world
+      // Phase 3: Emerge from the portal — expand from the opposite edge
+      pageEl.style.transformOrigin = entering ? 'center top' : 'center bottom';
       pageEl.style.transform = 'scaleY(0)';
       void pageEl.offsetHeight;
       pageEl.style.transition = 'transform 0.4s ease-out';
       pageEl.style.transform = isFlipped ? 'scaleY(-1)' : 'scaleY(1)';
 
+      // Phase 4: Fade flash to reveal the new world
       setTimeout(() => {
         pageEl.style.transition = '';
         pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
-        flash.remove();
-        isTransitioning = false;
+        pageEl.style.transformOrigin = '';
+        flash.style.transition = 'opacity 0.5s ease-out';
+        flash.style.opacity = '0';
+        setTimeout(() => {
+          flash.remove();
+          isTransitioning = false;
+        }, 500);
       }, 450);
     }, 450);
   }

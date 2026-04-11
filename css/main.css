@@ -928,13 +928,13 @@ body.light-mode #cursor-ring {
   position: fixed;
   inset: 0;
   z-index: 300;
-  background: rgba(200, 30, 30, 0.8);
+  background: rgb(200, 30, 30);
   opacity: 0;
   transition: opacity 0.3s ease-in;
   pointer-events: none;
 }
 .ud-flash.active { opacity: 1; }
-.ud-flash-return { background: rgba(55, 138, 221, 0.6); }
+.ud-flash-return { background: rgb(55, 138, 221); }
 
 @keyframes ud-glitch {
   0%, 100% { transform: translate(0, 0); }
