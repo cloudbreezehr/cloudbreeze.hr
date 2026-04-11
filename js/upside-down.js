@@ -109,7 +109,8 @@ export function initUpsideDown() {
         window.scrollTo(0, 0);
       } else {
         pageEl.insertBefore(navEl, pageEl.firstChild);
-        window.scrollTo(0, document.documentElement.scrollHeight);
+        // Bottom edge → land on top (mirror of where we left), top edge → land on bottom
+        window.scrollTo(0, wipeFromBottom ? 0 : document.documentElement.scrollHeight);
       }
 
       // Phase 3: Wipe continues through, revealing the new world
