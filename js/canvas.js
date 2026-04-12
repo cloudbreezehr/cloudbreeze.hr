@@ -365,8 +365,8 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.restore();
     }
 
-    // Tier 2: Aurora borealis (clickFury >= 10)
-    const auroraTarget = clickFury >= 10 ? Math.min((clickFury - 10) / 8, 1) : 0;
+    // Tier 2: Aurora borealis (clickFury >= 40)
+    const auroraTarget = clickFury >= 40 ? Math.min((clickFury - 40) / 10, 1) : 0;
     auroraIntensity += (auroraTarget - auroraIntensity) * 0.02;
     if (auroraIntensity > 0.01) {
       // Seed waves if needed
@@ -702,7 +702,7 @@ export function initCanvas(canvasEl, theme, options) {
   const isUpside = () => document.body.classList.contains('upside-down');
 
   // Click fury — rapid clicking triggers escalating sky effects
-  let clickFury = 0;                // decays ~1/sec
+  let clickFury = 0;
   const lightningBolts = [];        // Tier 1: active bolt segments
   const auroraWaves = [];           // Tier 2: flowing ribbon control points
   let auroraIntensity = 0;          // fades in/out smoothly
@@ -736,19 +736,19 @@ export function initCanvas(canvasEl, theme, options) {
     clickImpulse.x = e.clientX;
     clickImpulse.y = e.clientY;
     clickImpulse.strength = 3;
-    clickFury = Math.min(clickFury + 1, 25);
+    clickFury = Math.min(clickFury + 1, 60);
 
     const upside = isUpside();
 
-    // Tier 1: Lightning (5+ clicks, capped to avoid flooding)
-    if (clickFury >= 5 && lightningBolts.length < 6) {
+    // Tier 1: Lightning (25+ clicks, capped to avoid flooding)
+    if (clickFury >= 25 && lightningBolts.length < 6) {
       const startX = e.clientX + (Math.random() - 0.5) * 200;
       const startY = Math.random() * canvas.height * 0.2;
       spawnLightning(startX, startY, e.clientX, e.clientY, 0);
     }
 
-    // Tier 3: Meteor shower burst (18+ clicks, only when stars visible sp < 0.5)
-    if (clickFury >= 18 && scrollProgress < 0.5) {
+    // Tier 3: Meteor shower burst (55+ clicks, only when stars visible sp < 0.5)
+    if (clickFury >= 55 && scrollProgress < 0.5) {
       const count = 2 + Math.floor(Math.random() * 3);
       for (let i = 0; i < count; i++) {
         const m = meteorPool.find(m => !m.active);
