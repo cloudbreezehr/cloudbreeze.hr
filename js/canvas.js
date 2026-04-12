@@ -333,10 +333,12 @@ export function initCanvas(canvasEl, theme, options) {
     const upsd = isUpside();
 
     // Tier 1: Lightning bolts (clickFury >= 5)
+    let flashThisFrame = false;
     for (let i = lightningBolts.length - 1; i >= 0; i--) {
       const bolt = lightningBolts[i];
       bolt.life++;
       if (bolt.life > bolt.maxLife) { lightningBolts.splice(i, 1); continue; }
+      if (bolt.life === 1) flashThisFrame = true;
       const fade = bolt.life < 2 ? 1 : Math.max(0, 1 - (bolt.life - 2) / (bolt.maxLife - 2));
       const col = upsd ? [255, 120, 80] : [200, 225, 255];
       ctx.save();
@@ -346,21 +348,21 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.lineCap = 'round';
       ctx.shadowColor = upsd ? 'rgba(255,80,40,0.8)' : 'rgba(180,210,255,0.8)';
       ctx.shadowBlur = 12;
+      // Batch all segments into one path — one stroke call with shadow
+      ctx.beginPath();
       bolt.segments.forEach(s => {
-        ctx.beginPath();
         ctx.moveTo(s.x1, s.y1);
         ctx.lineTo(s.x2, s.y2);
-        ctx.stroke();
       });
+      ctx.stroke();
       ctx.restore();
-      // Brief flash on first frame
-      if (bolt.life === 1) {
-        ctx.save();
-        ctx.globalAlpha = 0.06;
-        ctx.fillStyle = upsd ? 'rgba(255,100,50,1)' : 'rgba(200,220,255,1)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-      }
+    }
+    if (flashThisFrame) {
+      ctx.save();
+      ctx.globalAlpha = 0.06;
+      ctx.fillStyle = upsd ? 'rgba(255,100,50,1)' : 'rgba(200,220,255,1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
     }
 
     // Tier 2: Aurora borealis (clickFury >= 10)
@@ -738,8 +740,8 @@ export function initCanvas(canvasEl, theme, options) {
 
     const upside = isUpside();
 
-    // Tier 1: Lightning (5+ clicks)
-    if (clickFury >= 5) {
+    // Tier 1: Lightning (5+ clicks, capped to avoid flooding)
+    if (clickFury >= 5 && lightningBolts.length < 6) {
       const startX = e.clientX + (Math.random() - 0.5) * 200;
       const startY = Math.random() * canvas.height * 0.2;
       spawnLightning(startX, startY, e.clientX, e.clientY, 0);
