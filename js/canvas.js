@@ -737,9 +737,14 @@ export function initCanvas(canvasEl, theme, options) {
     lightningBolts.push({ segments, life: 0, maxLife: 12 + Math.random() * 8, width: depth === 0 ? 2 : 1 });
   }
 
+  // In upside-down mode the page is flipped via scaleY(-1), so canvas Y must mirror
+  const canvasY = y => isUpside() ? canvas.height - y : y;
+
   document.addEventListener('click', e => {
-    clickImpulse.x = e.clientX;
-    clickImpulse.y = e.clientY;
+    const cx = e.clientX;
+    const cy = canvasY(e.clientY);
+    clickImpulse.x = cx;
+    clickImpulse.y = cy;
     clickImpulse.strength = 3;
     clickFury = Math.min(clickFury + 1, 60);
     lastClickTime = performance.now();
@@ -748,9 +753,9 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Tier 1: Lightning (25+ clicks, capped to avoid flooding)
     if (clickFury >= 25 && lightningBolts.length < 6) {
-      const startX = e.clientX + (Math.random() - 0.5) * 200;
+      const startX = cx + (Math.random() - 0.5) * 200;
       const startY = Math.random() * canvas.height * 0.2;
-      spawnLightning(startX, startY, e.clientX, e.clientY, 0);
+      spawnLightning(startX, startY, cx, cy, 0);
     }
 
     // Tier 3: Meteor shower burst (55+ clicks, only when stars visible sp < 0.5)
@@ -777,8 +782,8 @@ export function initCanvas(canvasEl, theme, options) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.5 + Math.random() * 3;
       clickParticles.push({
-        x: e.clientX,
-        y: e.clientY,
+        x: cx,
+        y: cy,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         r: 1 + Math.random() * 2,
@@ -801,23 +806,25 @@ export function initCanvas(canvasEl, theme, options) {
   document.addEventListener('mousedown', e => {
     isDragging = true;
     holdStart = performance.now();
-    dragPos.x = e.clientX;
-    dragPos.y = e.clientY;
-    lastTrail = { x: e.clientX, y: e.clientY };
+    const cx = e.clientX, cy = canvasY(e.clientY);
+    dragPos.x = cx;
+    dragPos.y = cy;
+    lastTrail = { x: cx, y: cy };
     trailDist = 0;
   });
 
   document.addEventListener('mousemove', e => {
     if (!isDragging) return;
-    dragPos.x = e.clientX;
-    dragPos.y = e.clientY;
-    const dx = e.clientX - lastTrail.x;
-    const dy = e.clientY - lastTrail.y;
+    const cx = e.clientX, cy = canvasY(e.clientY);
+    dragPos.x = cx;
+    dragPos.y = cy;
+    const dx = cx - lastTrail.x;
+    const dy = cy - lastTrail.y;
     trailDist += Math.sqrt(dx * dx + dy * dy);
     if (trailDist > 8) {
       trailSegments.push({
-        x: e.clientX,
-        y: e.clientY,
+        x: cx,
+        y: cy,
         prev: { x: lastTrail.x, y: lastTrail.y },
         width: 1 + Math.random() * 1.5,
         opacity: 0.15 + Math.random() * 0.1,
@@ -825,7 +832,7 @@ export function initCanvas(canvasEl, theme, options) {
         maxLife: 25 + Math.random() * 15,
         phase: Math.random() * Math.PI * 2,
       });
-      lastTrail = { x: e.clientX, y: e.clientY };
+      lastTrail = { x: cx, y: cy };
       trailDist = 0;
     }
   });
