@@ -433,6 +433,33 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.fill();
     });
 
+    // Drag breeze trail
+    for (let i = trailSegments.length - 1; i >= 0; i--) {
+      const s = trailSegments[i];
+      s.life++;
+      if (s.life > s.maxLife) { trailSegments.splice(i, 1); continue; }
+      s.x += Math.sin(s.life * 0.06 + s.phase) * 0.4;
+      s.y += Math.cos(s.life * 0.05 + s.phase) * 0.2;
+      const fade = 1 - s.life / s.maxLife;
+      const op = s.opacity * fade;
+      if (op < 0.005 || !s.prev) continue;
+      const c = isDarkMode ? [180, 220, 255] : [55, 120, 200];
+      ctx.save();
+      ctx.globalAlpha = op;
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
+      ctx.lineWidth = s.width * fade;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(s.prev.x, s.prev.y);
+      ctx.quadraticCurveTo(
+        (s.prev.x + s.x) / 2 + Math.sin(s.phase) * 6,
+        (s.prev.y + s.y) / 2 + Math.cos(s.phase) * 6,
+        s.x, s.y
+      );
+      ctx.stroke();
+      ctx.restore();
+    }
+
     requestAnimationFrame(render);
   }
 
@@ -461,6 +488,41 @@ export function initCanvas(canvasEl, theme, options) {
       });
     }
   });
+
+  // Drag trail — flowing wispy segments along the drag path
+  const trailSegments = [];
+  let isDragging = false;
+  let lastTrail = { x: 0, y: 0 };
+  let trailDist = 0;
+
+  document.addEventListener('mousedown', e => {
+    isDragging = true;
+    lastTrail = { x: e.clientX, y: e.clientY };
+    trailDist = 0;
+  });
+
+  document.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastTrail.x;
+    const dy = e.clientY - lastTrail.y;
+    trailDist += Math.sqrt(dx * dx + dy * dy);
+    if (trailDist > 8) {
+      trailSegments.push({
+        x: e.clientX,
+        y: e.clientY,
+        prev: { x: lastTrail.x, y: lastTrail.y },
+        width: 1 + Math.random() * 1.5,
+        opacity: 0.15 + Math.random() * 0.1,
+        life: 0,
+        maxLife: 25 + Math.random() * 15,
+        phase: Math.random() * Math.PI * 2,
+      });
+      lastTrail = { x: e.clientX, y: e.clientY };
+      trailDist = 0;
+    }
+  });
+
+  document.addEventListener('mouseup', () => { isDragging = false; });
 
   render();
 }
