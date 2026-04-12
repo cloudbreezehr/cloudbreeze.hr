@@ -234,7 +234,11 @@ export function initCanvas(canvasEl, theme, options) {
   })) : [];
 
   let t = 0;
+  let lastFrameTime = performance.now();
   function render() {
+    const now = performance.now();
+    const dt = (now - lastFrameTime) / 1000; // seconds since last frame
+    lastFrameTime = now;
     const sp = scrollProgress;
     const pal = palettes[isDarkMode ? 'dark' : 'light'];
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -323,6 +327,117 @@ export function initCanvas(canvasEl, theme, options) {
         ctx.restore();
       });
     }
+
+    // Click fury — decay counter, drive escalating effects
+    clickFury = Math.max(0, clickFury - dt); // ~1/sec, time-based
+    const upsd = isUpside();
+
+    // Tier 1: Lightning bolts (clickFury >= 5)
+    for (let i = lightningBolts.length - 1; i >= 0; i--) {
+      const bolt = lightningBolts[i];
+      bolt.life++;
+      if (bolt.life > bolt.maxLife) { lightningBolts.splice(i, 1); continue; }
+      const fade = bolt.life < 2 ? 1 : Math.max(0, 1 - (bolt.life - 2) / (bolt.maxLife - 2));
+      const col = upsd ? [255, 120, 80] : [200, 225, 255];
+      ctx.save();
+      ctx.globalAlpha = fade * 0.9;
+      ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+      ctx.lineWidth = bolt.width;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = upsd ? 'rgba(255,80,40,0.8)' : 'rgba(180,210,255,0.8)';
+      ctx.shadowBlur = 12;
+      bolt.segments.forEach(s => {
+        ctx.beginPath();
+        ctx.moveTo(s.x1, s.y1);
+        ctx.lineTo(s.x2, s.y2);
+        ctx.stroke();
+      });
+      ctx.restore();
+      // Brief flash on first frame
+      if (bolt.life === 1) {
+        ctx.save();
+        ctx.globalAlpha = 0.06;
+        ctx.fillStyle = upsd ? 'rgba(255,100,50,1)' : 'rgba(200,220,255,1)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+    }
+
+    // Tier 2: Aurora borealis (clickFury >= 10)
+    const auroraTarget = clickFury >= 10 ? Math.min((clickFury - 10) / 8, 1) : 0;
+    auroraIntensity += (auroraTarget - auroraIntensity) * 0.02;
+    if (auroraIntensity > 0.01) {
+      // Seed waves if needed
+      while (auroraWaves.length < 4) {
+        auroraWaves.push({
+          y: canvas.height * (0.05 + Math.random() * 0.2),
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.005 + Math.random() * 0.008,
+          amp: 15 + Math.random() * 25,
+          width: 40 + Math.random() * 60,
+          hue: upsd ? 0 + Math.random() * 30 : 120 + Math.random() * 80,
+        });
+      }
+      auroraWaves.forEach(w => {
+        w.phase += w.speed;
+        // In upside-down, shift hues to red/orange
+        if (upsd && w.hue > 60) w.hue = (w.hue - 120 + 360) % 360;
+        if (!upsd && w.hue < 60) w.hue = 120 + Math.random() * 80;
+        ctx.save();
+        ctx.globalAlpha = auroraIntensity * 0.15;
+        const grad = ctx.createLinearGradient(0, w.y - w.width, 0, w.y + w.width);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(0.3, `hsla(${w.hue}, 80%, 60%, 0.6)`);
+        grad.addColorStop(0.5, `hsla(${w.hue + 20}, 70%, 50%, 0.8)`);
+        grad.addColorStop(0.7, `hsla(${w.hue + 40}, 80%, 60%, 0.6)`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, w.y + Math.sin(w.phase) * w.amp);
+        for (let x = 0; x <= canvas.width; x += 20) {
+          const t = x / canvas.width;
+          const yOff = Math.sin(w.phase + t * 6) * w.amp + Math.sin(w.phase * 1.3 + t * 3) * w.amp * 0.5;
+          ctx.lineTo(x, w.y + yOff);
+        }
+        // Close the shape with a band
+        for (let x = canvas.width; x >= 0; x -= 20) {
+          const t = x / canvas.width;
+          const yOff = Math.sin(w.phase + t * 6) * w.amp * 0.6 + Math.sin(w.phase * 1.3 + t * 3) * w.amp * 0.3;
+          ctx.lineTo(x, w.y + yOff + w.width * 0.4);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    // Tier 3: Meteor shower (clickFury >= 18) — rendered alongside normal shooting stars
+    meteorPool.forEach(m => {
+      if (!m.active) return;
+      m.life++;
+      if (m.life > m.maxLife) { m.active = false; return; }
+      const p = m.life / m.maxLife;
+      m.x += Math.cos(m.angle) * m.speed;
+      m.y += Math.sin(m.angle) * m.speed;
+      const fade = p < 0.08 ? p / 0.08 : (1 - p) / 0.92;
+      const op = m.opacity * fade;
+      const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
+      const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
+      const mc = upsd ? [[255,150,100],[255,180,130],[255,200,160]] : [[180,210,255],[200,225,255],[230,240,255]];
+      const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
+      grad.addColorStop(0, `rgba(${mc[0]},0)`);
+      grad.addColorStop(0.7, `rgba(${mc[1]},${op * 0.3})`);
+      grad.addColorStop(1, `rgba(${mc[2]},${op})`);
+      ctx.save();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = 1.8;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(m.x, m.y);
+      ctx.stroke();
+      ctx.restore();
+    });
 
     // Streaks — evolve with scroll
     if (opts.streaks) {
@@ -584,13 +699,72 @@ export function initCanvas(canvasEl, theme, options) {
   const clickParticles = [];
   const isUpside = () => document.body.classList.contains('upside-down');
 
+  // Click fury — rapid clicking triggers escalating sky effects
+  let clickFury = 0;                // decays ~1/sec
+  const lightningBolts = [];        // Tier 1: active bolt segments
+  const auroraWaves = [];           // Tier 2: flowing ribbon control points
+  let auroraIntensity = 0;          // fades in/out smoothly
+  const meteorPool = Array.from({length: 20}, () => ({
+    active: false, x: 0, y: 0, angle: 0, speed: 0,
+    len: 0, life: 0, maxLife: 0, opacity: 0,
+  }));
+
+  // Generate a branching lightning bolt from (x1,y1) to (x2,y2)
+  function spawnLightning(x1, y1, x2, y2, depth) {
+    const segments = [];
+    const steps = 8 + Math.floor(Math.random() * 6);
+    let cx = x1, cy = y1;
+    for (let i = 1; i <= steps; i++) {
+      const t = i / steps;
+      const nx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * 80 * (1 - t);
+      const ny = y1 + (y2 - y1) * t + (Math.random() - 0.5) * 40;
+      segments.push({ x1: cx, y1: cy, x2: nx, y2: ny });
+      // Random branch
+      if (depth < 2 && Math.random() < 0.3) {
+        const bAngle = Math.atan2(ny - cy, nx - cx) + (Math.random() - 0.5) * 1.2;
+        const bLen = 30 + Math.random() * 50;
+        spawnLightning(cx, cy, cx + Math.cos(bAngle) * bLen, cy + Math.sin(bAngle) * bLen, depth + 1);
+      }
+      cx = nx; cy = ny;
+    }
+    lightningBolts.push({ segments, life: 0, maxLife: 12 + Math.random() * 8, width: depth === 0 ? 2 : 1 });
+  }
+
   document.addEventListener('click', e => {
     clickImpulse.x = e.clientX;
     clickImpulse.y = e.clientY;
     clickImpulse.strength = 3;
+    clickFury = Math.min(clickFury + 1, 25);
 
-    const count = 6 + Math.floor(Math.random() * 5);
     const upside = isUpside();
+
+    // Tier 1: Lightning (5+ clicks)
+    if (clickFury >= 5) {
+      const startX = e.clientX + (Math.random() - 0.5) * 200;
+      const startY = Math.random() * canvas.height * 0.2;
+      spawnLightning(startX, startY, e.clientX, e.clientY, 0);
+    }
+
+    // Tier 3: Meteor shower burst (18+ clicks, only when stars visible sp < 0.5)
+    if (clickFury >= 18 && scrollProgress < 0.5) {
+      const count = 2 + Math.floor(Math.random() * 3);
+      for (let i = 0; i < count; i++) {
+        const m = meteorPool.find(m => !m.active);
+        if (!m) break;
+        m.x = Math.random() * canvas.width * 0.8 + canvas.width * 0.1;
+        m.y = Math.random() * canvas.height * 0.3;
+        m.angle = Math.PI * 0.15 + Math.random() * Math.PI * 0.25;
+        m.speed = 8 + Math.random() * 12;
+        m.len = 50 + Math.random() * 80;
+        m.opacity = 0.4 + Math.random() * 0.4;
+        m.life = 0;
+        m.maxLife = 18 + Math.random() * 18;
+        m.active = true;
+      }
+    }
+
+    // Normal click burst particles
+    const count = 6 + Math.floor(Math.random() * 5);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.5 + Math.random() * 3;
