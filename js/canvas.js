@@ -408,7 +408,59 @@ export function initCanvas(canvasEl, theme, options) {
       motes.forEach(m => { m.update(scrollVelocity); m.draw(isDarkMode); });
     }
 
+    // Click burst particles
+    clickParticles.forEach((p, i) => {
+      p.life++;
+      if (p.life > p.maxLife) { clickParticles.splice(i, 1); return; }
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vx *= 0.97;
+      p.vy *= 0.97;
+      p.vy += 0.02; // gentle gravity
+      // Breeze curve
+      p.x += Math.sin(p.life * 0.08 + p.phase) * 0.3;
+      const fade = 1 - p.life / p.maxLife;
+      const op = p.opacity * fade;
+      if (op < 0.005) return;
+      const c = isDarkMode ? p.color : p.colorLight;
+      const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 3);
+      grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${op})`);
+      grad.addColorStop(0.4, `rgba(${c[0]},${c[1]},${c[2]},${op * 0.4})`);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * 3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
     requestAnimationFrame(render);
   }
+
+  // Click burst — scatter luminous motes from click point
+  const clickParticles = [];
+  const isUpside = () => document.body.classList.contains('upside-down');
+
+  document.addEventListener('click', e => {
+    const count = 6 + Math.floor(Math.random() * 5);
+    const upside = isUpside();
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 3;
+      clickParticles.push({
+        x: e.clientX,
+        y: e.clientY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1 + Math.random() * 2,
+        opacity: 0.3 + Math.random() * 0.4,
+        life: 0,
+        maxLife: 40 + Math.random() * 30,
+        phase: Math.random() * Math.PI * 2,
+        color: upside ? [255, 130, 130] : [150, 210, 255],
+        colorLight: upside ? [200, 60, 60] : [55, 120, 200],
+      });
+    }
+  });
+
   render();
 }
