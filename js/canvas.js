@@ -329,7 +329,7 @@ export function initCanvas(canvasEl, theme, options) {
     }
 
     // Click fury — decay counter, drive escalating effects
-    clickFury = Math.max(0, clickFury - dt); // ~1/sec, time-based
+    clickFury = Math.max(0, clickFury - dt * 4); // ~4/sec, requires rapid clicking
     const upsd = isUpside();
 
     // Tier 1: Lightning bolts (clickFury >= 5)
