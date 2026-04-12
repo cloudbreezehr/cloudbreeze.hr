@@ -24,11 +24,28 @@ export function initNav(navEl, theme) {
     navEl.classList.toggle('nav-light', bright);
   }
 
+  // Active section highlighting
+  const sectionIds = ['services', 'about', 'contact'];
+  const sectionLinks = sectionIds.map(id => navEl.querySelector(`a[href="#${id}"]`));
+  const sectionEls = sectionIds.map(id => document.getElementById(id));
+
+  function updateActiveLink() {
+    const scrollY = window.scrollY + window.innerHeight * 0.4;
+    let activeIdx = -1;
+    sectionEls.forEach((el, i) => {
+      if (el && el.offsetTop <= scrollY) activeIdx = i;
+    });
+    sectionLinks.forEach((link, i) => {
+      if (link) link.classList.toggle('active', i === activeIdx);
+    });
+  }
+
   function updateScroll() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
     updateNavTheme();
+    updateActiveLink();
   }
 
   updateScroll();
