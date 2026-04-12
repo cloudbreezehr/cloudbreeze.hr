@@ -335,7 +335,30 @@ export function initCanvas(canvasEl, theme, options) {
       const cloudYOffset = -(sp - 0.38) * canvas.height * 4;
       const cloudVis = sp < 0.12 ? 0 : sp < 0.22 ? (sp - 0.12) / 0.1
         : sp < 0.65 ? 1.0 : sp < 0.82 ? 1.0 - (sp - 0.65) / 0.17 : 0;
-      clouds.forEach(c => { c.update(); c.draw(cloudYOffset, cloudVis, pal); });
+      clouds.forEach(c => {
+        c.update();
+        // Click gently pushes nearby clouds sideways
+        if (clickImpulse.strength > 0.1) {
+          const cy = c.baseY + cloudYOffset;
+          const dx = c.x - clickImpulse.x;
+          const dy = cy - clickImpulse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 300 && dist > 1) {
+            c.x += (dx / dist) * clickImpulse.strength * 0.8;
+          }
+        }
+        // Drag gently pulls nearby clouds
+        if (isDragging) {
+          const cy = c.baseY + cloudYOffset;
+          const dx = dragPos.x - c.x;
+          const dy = dragPos.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 300 && dist > 1) {
+            c.x += (dx / dist) * 0.15;
+          }
+        }
+        c.draw(cloudYOffset, cloudVis, pal);
+      });
     }
 
     // Breeze wisps — horizontal wind, also scroll with atmosphere
@@ -404,9 +427,36 @@ export function initCanvas(canvasEl, theme, options) {
     }
 
     // Scroll-reactive particles — blown by scroll, settle with gravity
+    // Also react to click (repel) and drag (attract)
     if (opts.motes) {
-      motes.forEach(m => { m.update(scrollVelocity); m.draw(isDarkMode); });
+      motes.forEach(m => {
+        m.update(scrollVelocity);
+        if (clickImpulse.strength > 0.05) {
+          const dx = m.x - clickImpulse.x;
+          const dy = m.y - clickImpulse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 200 && dist > 1) {
+            const f = clickImpulse.strength * (1 - dist / 200);
+            m.vx += (dx / dist) * f;
+            m.vy += (dy / dist) * f;
+            m.opacity = Math.min(0.5, m.opacity + f * 0.1);
+          }
+        }
+        if (isDragging) {
+          const dx = dragPos.x - m.x;
+          const dy = dragPos.y - m.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 250 && dist > 5) {
+            const f = 0.12 * (1 - dist / 250);
+            m.vx += (dx / dist) * f;
+            m.vy += (dy / dist) * f;
+            m.opacity = Math.min(0.4, m.opacity + 0.004);
+          }
+        }
+        m.draw(isDarkMode);
+      });
     }
+    clickImpulse.strength *= 0.88;
 
     // Click burst particles
     clickParticles.forEach((p, i) => {
@@ -463,11 +513,19 @@ export function initCanvas(canvasEl, theme, options) {
     requestAnimationFrame(render);
   }
 
+  // Interaction forces — click repels, drag attracts
+  const clickImpulse = { x: 0, y: 0, strength: 0 };
+  const dragPos = { x: 0, y: 0 };
+
   // Click burst — scatter luminous motes from click point
   const clickParticles = [];
   const isUpside = () => document.body.classList.contains('upside-down');
 
   document.addEventListener('click', e => {
+    clickImpulse.x = e.clientX;
+    clickImpulse.y = e.clientY;
+    clickImpulse.strength = 3;
+
     const count = 6 + Math.floor(Math.random() * 5);
     const upside = isUpside();
     for (let i = 0; i < count; i++) {
@@ -503,6 +561,8 @@ export function initCanvas(canvasEl, theme, options) {
 
   document.addEventListener('mousemove', e => {
     if (!isDragging) return;
+    dragPos.x = e.clientX;
+    dragPos.y = e.clientY;
     const dx = e.clientX - lastTrail.x;
     const dy = e.clientY - lastTrail.y;
     trailDist += Math.sqrt(dx * dx + dy * dy);
