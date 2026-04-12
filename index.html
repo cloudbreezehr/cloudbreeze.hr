@@ -214,6 +214,23 @@
   initTilt();
   initUpsideDown();
 
+  // Subtle parallax on hero elements — each layer drifts at a different rate.
+  // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.
+  const parallaxEls = [
+    { el: document.querySelector('.hero-tag'),           rate: 0.12 },
+    { el: document.querySelector('.hero-title .line-1'), rate: 0.06 },
+    { el: document.querySelector('.hero-title .line-2'), rate: 0.10 },
+    { el: document.querySelector('.hero-sub'),           rate: 0.14 },
+    { el: document.querySelector('.hero-actions'),       rate: 0.18 },
+  ];
+  window.addEventListener('scroll', () => {
+    const y = window.scrollY;
+    if (y > window.innerHeight) return;
+    for (const p of parallaxEls) {
+      if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
+    }
+  }, { passive: true });
+
   // Fade out scroll hint once the user starts scrolling
   const scrollHint = document.querySelector('.scroll-hint');
   if (scrollHint) {
