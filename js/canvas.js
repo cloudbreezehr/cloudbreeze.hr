@@ -329,7 +329,10 @@ export function initCanvas(canvasEl, theme, options) {
     }
 
     // Click fury — decay counter, drive escalating effects
-    clickFury = Math.max(0, clickFury - dt * 4); // ~4/sec, requires rapid clicking
+    // Decay faster once clicking stops — ramps from 4/sec to 20/sec after 0.5s idle
+    const idleSec = (now - lastClickTime) / 1000;
+    const decayRate = idleSec < 0.5 ? 4 : 4 + (idleSec - 0.5) * 32;
+    clickFury = Math.max(0, clickFury - dt * decayRate);
     const upsd = isUpside();
 
     // Tier 1: Lightning bolts (clickFury >= 5)
@@ -703,6 +706,7 @@ export function initCanvas(canvasEl, theme, options) {
 
   // Click fury — rapid clicking triggers escalating sky effects
   let clickFury = 0;
+  let lastClickTime = 0;
   const lightningBolts = [];        // Tier 1: active bolt segments
   const auroraWaves = [];           // Tier 2: flowing ribbon control points
   let auroraIntensity = 0;          // fades in/out smoothly
@@ -737,6 +741,7 @@ export function initCanvas(canvasEl, theme, options) {
     clickImpulse.y = e.clientY;
     clickImpulse.strength = 3;
     clickFury = Math.min(clickFury + 1, 60);
+    lastClickTime = performance.now();
 
     const upside = isUpside();
 
