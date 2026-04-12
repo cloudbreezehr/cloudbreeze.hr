@@ -328,11 +328,12 @@ export function initCanvas(canvasEl, theme, options) {
       });
     }
 
-    // Click fury — decay counter, drive escalating effects
-    // Decay faster once clicking stops — ramps from 4/sec to 20/sec after 0.5s idle
+    // Click fury — no decay while actively clicking, then ramps up fast once idle
     const idleSec = (now - lastClickTime) / 1000;
-    const decayRate = idleSec < 0.5 ? 4 : 4 + (idleSec - 0.5) * 32;
-    clickFury = Math.max(0, clickFury - dt * decayRate);
+    if (idleSec >= 0.4) {
+      const decayRate = 4 + (idleSec - 0.4) * 32;
+      clickFury = Math.max(0, clickFury - dt * decayRate);
+    }
     const upsd = isUpside();
 
     // Tier 1: Lightning bolts (clickFury >= 5)
