@@ -203,6 +203,7 @@
   import { initCanvas }     from './js/canvas.js';
   import { initCursor }     from './js/cursor.js';
   import { initReveal }     from './js/reveal.js';
+  import { initTilt }       from './js/tilt.js';
   import { initUpsideDown } from './js/upside-down.js';
 
   const theme = initTheme(document.querySelector('.theme-toggle'));
@@ -210,6 +211,7 @@
   initCanvas(document.getElementById('bg-canvas'), theme);
   initCursor(document.getElementById('cursor'), document.getElementById('cursor-ring'));
   initReveal();
+  initTilt();
   initUpsideDown();
 
   // Fade out scroll hint once the user starts scrolling
