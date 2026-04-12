@@ -427,7 +427,13 @@ export function initCanvas(canvasEl, theme, options) {
     }
 
     // Scroll-reactive particles — blown by scroll, settle with gravity
-    // Also react to click (repel) and drag (attract)
+    // Also react to click (repel) and drag (attract, scaled by hold duration)
+    if (isDragging) {
+      holdStrength = Math.min((performance.now() - holdStart) / 3000, 1);
+    }
+    const attractRadius = 250 + holdStrength * 200;
+    const attractForce = 0.12 + holdStrength * 0.4;
+
     if (opts.motes) {
       motes.forEach(m => {
         m.update(scrollVelocity);
@@ -435,8 +441,8 @@ export function initCanvas(canvasEl, theme, options) {
           const dx = m.x - clickImpulse.x;
           const dy = m.y - clickImpulse.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 200 && dist > 1) {
-            const f = clickImpulse.strength * (1 - dist / 200);
+          if (dist < 200 + clickImpulse.strength * 20 && dist > 1) {
+            const f = clickImpulse.strength * (1 - dist / (200 + clickImpulse.strength * 20));
             m.vx += (dx / dist) * f;
             m.vy += (dy / dist) * f;
             m.opacity = Math.min(0.5, m.opacity + f * 0.1);
@@ -446,11 +452,14 @@ export function initCanvas(canvasEl, theme, options) {
           const dx = dragPos.x - m.x;
           const dy = dragPos.y - m.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 250 && dist > 5) {
-            const f = 0.12 * (1 - dist / 250);
-            m.vx += (dx / dist) * f;
-            m.vy += (dy / dist) * f;
-            m.opacity = Math.min(0.4, m.opacity + 0.004);
+          if (dist < attractRadius && dist > 5) {
+            const f = attractForce * (1 - dist / attractRadius);
+            const nx = dx / dist;
+            const ny = dy / dist;
+            // Radial pull + tangential orbit (orbit grows with hold strength)
+            m.vx += nx * f + (-ny) * f * holdStrength * 0.6;
+            m.vy += ny * f + nx * f * holdStrength * 0.6;
+            m.opacity = Math.min(0.5, m.opacity + 0.005 + holdStrength * 0.01);
           }
         }
         m.draw(isDarkMode);
@@ -483,6 +492,57 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.fill();
     });
 
+    // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
+    if (isDragging && holdStrength > 0.1) {
+      // Spawn new orbit particles
+      const spawnChance = holdStrength * 0.35;
+      if (Math.random() < spawnChance && orbitParticles.length < 60) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 20 + Math.random() * (60 + holdStrength * 40);
+        orbitParticles.push({
+          x: dragPos.x + Math.cos(angle) * dist,
+          y: dragPos.y + Math.sin(angle) * dist,
+          vx: 0, vy: 0,
+          r: 0.8 + Math.random() * 1.8,
+          opacity: 0,
+          targetOpacity: 0.15 + holdStrength * 0.3,
+        });
+      }
+    }
+    // Update and draw orbit particles
+    const oc = isDarkMode
+      ? (isUpside() ? [255, 150, 150] : [180, 220, 255])
+      : (isUpside() ? [200, 60, 60] : [55, 130, 210]);
+    for (let i = orbitParticles.length - 1; i >= 0; i--) {
+      const p = orbitParticles[i];
+      const dx = dragPos.x - p.x;
+      const dy = dragPos.y - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = dx / dist;
+      const ny = dy / dist;
+      // Pull inward + orbit tangent
+      const pull = 0.08 + holdStrength * 0.2;
+      const orbit = 0.06 + holdStrength * 0.18;
+      p.vx += nx * pull + (-ny) * orbit;
+      p.vy += ny * pull + nx * orbit;
+      p.vx *= 0.94;
+      p.vy *= 0.94;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.opacity += (p.targetOpacity - p.opacity) * 0.06;
+      // Draw with glow
+      if (p.opacity > 0.005) {
+        const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 4);
+        grad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity})`);
+        grad.addColorStop(0.3, `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity * 0.4})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
     // Drag breeze trail
     for (let i = trailSegments.length - 1; i >= 0; i--) {
       const s = trailSegments[i];
@@ -513,9 +573,12 @@ export function initCanvas(canvasEl, theme, options) {
     requestAnimationFrame(render);
   }
 
-  // Interaction forces — click repels, drag attracts
+  // Interaction forces — click repels, drag attracts, hold charges
   const clickImpulse = { x: 0, y: 0, strength: 0 };
   const dragPos = { x: 0, y: 0 };
+  const orbitParticles = [];
+  let holdStart = 0;
+  let holdStrength = 0;
 
   // Click burst — scatter luminous motes from click point
   const clickParticles = [];
@@ -555,6 +618,9 @@ export function initCanvas(canvasEl, theme, options) {
 
   document.addEventListener('mousedown', e => {
     isDragging = true;
+    holdStart = performance.now();
+    dragPos.x = e.clientX;
+    dragPos.y = e.clientY;
     lastTrail = { x: e.clientX, y: e.clientY };
     trailDist = 0;
   });
@@ -582,7 +648,60 @@ export function initCanvas(canvasEl, theme, options) {
     }
   });
 
-  document.addEventListener('mouseup', () => { isDragging = false; });
+  document.addEventListener('mouseup', () => {
+    if (!isDragging) return;
+    const heldSec = (performance.now() - holdStart) / 1000;
+    const blast = Math.min(3 + heldSec * 4, 15);
+    const upside = isUpside();
+
+    // Repel all nearby motes
+    clickImpulse.x = dragPos.x;
+    clickImpulse.y = dragPos.y;
+    clickImpulse.strength = blast;
+
+    // Convert orbit particles into burst particles
+    orbitParticles.forEach(p => {
+      const dx = p.x - dragPos.x;
+      const dy = p.y - dragPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const speed = blast * (0.4 + Math.random() * 0.6);
+      clickParticles.push({
+        x: p.x, y: p.y,
+        vx: (dx / dist) * speed + p.vx,
+        vy: (dy / dist) * speed + p.vy,
+        r: p.r,
+        opacity: p.opacity + 0.1,
+        life: 0,
+        maxLife: 50 + Math.random() * 30,
+        phase: Math.random() * Math.PI * 2,
+        color: upside ? [255, 130, 130] : [150, 210, 255],
+        colorLight: upside ? [200, 60, 60] : [55, 120, 200],
+      });
+    });
+    orbitParticles.length = 0;
+
+    // Extra burst particles proportional to hold time
+    const extraCount = Math.min(Math.floor(heldSec * 5), 20);
+    for (let i = 0; i < extraCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = blast * (0.3 + Math.random() * 0.7);
+      clickParticles.push({
+        x: dragPos.x, y: dragPos.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1 + Math.random() * 2.5,
+        opacity: 0.3 + Math.random() * 0.4,
+        life: 0,
+        maxLife: 50 + Math.random() * 40,
+        phase: Math.random() * Math.PI * 2,
+        color: upside ? [255, 130, 130] : [150, 210, 255],
+        colorLight: upside ? [200, 60, 60] : [55, 120, 200],
+      });
+    }
+
+    isDragging = false;
+    holdStrength = 0;
+  });
 
   render();
 }
