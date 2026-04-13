@@ -253,8 +253,6 @@ const METEOR_LIFE_RANGE = 18;
 const METEOR_BURST_MIN = 2;
 const METEOR_BURST_RANGE = 3;
 const METEOR_LINE_WIDTH = 1.8;
-const METEOR_OUTER_WIDTH = 10;
-const METEOR_CORE_WIDTH = 0.8;
 
 // ── Orbit Particles ──
 const ORBIT_MAX = 60;
@@ -1298,8 +1296,20 @@ export function initCanvas(canvasEl, theme, options) {
       const op = m.opacity * fade;
       const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
       const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
-      drawGlowTrail(m.x, m.y, tailX, tailY, pal.meteorColors, op,
-        METEOR_OUTER_WIDTH, METEOR_LINE_WIDTH, METEOR_CORE_WIDTH);
+      const mc = pal.meteorColors;
+      const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
+      grad.addColorStop(0, `rgba(${mc[0]},0)`);
+      grad.addColorStop(0.7, `rgba(${mc[1]},${op * 0.3})`);
+      grad.addColorStop(1, `rgba(${mc[2]},${op})`);
+      ctx.save();
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = METEOR_LINE_WIDTH;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(tailX, tailY);
+      ctx.lineTo(m.x, m.y);
+      ctx.stroke();
+      ctx.restore();
     });
 
     // Streaks — evolve with scroll
