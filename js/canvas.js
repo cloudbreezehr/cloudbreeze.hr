@@ -228,6 +228,16 @@ const AURORA_AMP_MIN = 15;
 const AURORA_AMP_RANGE = 25;
 const AURORA_WIDTH_MIN = 40;
 const AURORA_WIDTH_RANGE = 60;
+const AURORA_STEP = 24;
+const AURORA_WAVE_FREQ = 6;
+const AURORA_HARMONIC_PHASE = 1.3;
+const AURORA_HARMONIC_FREQ = 3;
+const AURORA_HARMONIC_AMP = 0.5;
+const AURORA_BAND_MAIN_RATIO = 0.6;
+const AURORA_BAND_HARMONIC_RATIO = 0.3;
+const AURORA_BAND_OFFSET = 0.4;
+const AURORA_HUE_SHIFT_MID = 20;
+const AURORA_HUE_SHIFT_EDGE = 40;
 
 // ── Meteors (Tier 3) ──
 const FURY_TIER3 = 55;
@@ -1222,33 +1232,54 @@ export function initCanvas(canvasEl, theme, options) {
           hue: pal.auroraHueBase + Math.random() * pal.auroraHueRange,
         });
       }
+      // Wave Y offset for a given position ratio t (0–1 across viewport width)
+      const waveY = (w, t, mainScale, harmonicScale) =>
+        Math.sin(w.phase + t * AURORA_WAVE_FREQ) * w.amp * mainScale
+        + Math.sin(w.phase * AURORA_HARMONIC_PHASE + t * AURORA_HARMONIC_FREQ) * w.amp * harmonicScale;
+
+      // Trace one edge of the aurora band as a smooth quadratic curve.
+      // When reverse=true, traces right-to-left for closing the bottom edge.
+      const traceEdge = (w, mainScale, harmonicScale, yBase, reverse) => {
+        const steps = Math.ceil(canvas.width / AURORA_STEP);
+        for (let i = 1; i <= steps; i++) {
+          const x = reverse
+            ? Math.max(canvas.width - i * AURORA_STEP, 0)
+            : Math.min(i * AURORA_STEP, canvas.width);
+          const y = yBase + waveY(w, x / canvas.width, mainScale, harmonicScale);
+          if (i < steps) {
+            const nx = reverse
+              ? Math.max(canvas.width - (i + 1) * AURORA_STEP, 0)
+              : Math.min((i + 1) * AURORA_STEP, canvas.width);
+            const ny = yBase + waveY(w, nx / canvas.width, mainScale, harmonicScale);
+            ctx.quadraticCurveTo(x, y, (x + nx) * 0.5, (y + ny) * 0.5);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+      };
+
       auroraWaves.forEach(w => {
         w.phase += w.speed;
         // Shift existing wave hues to match current mode
         if (pal.auroraHueBase < 60 && w.hue > 60) w.hue = (w.hue - 120 + 360) % 360;
         if (pal.auroraHueBase >= 60 && w.hue < 60) w.hue = pal.auroraHueBase + Math.random() * pal.auroraHueRange;
         ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
         ctx.globalAlpha = auroraIntensity * AURORA_ALPHA;
         const grad = ctx.createLinearGradient(0, w.y - w.width, 0, w.y + w.width);
         grad.addColorStop(0, 'transparent');
         grad.addColorStop(0.3, `hsla(${w.hue}, 80%, 60%, 0.6)`);
-        grad.addColorStop(0.5, `hsla(${w.hue + 20}, 70%, 50%, 0.8)`);
-        grad.addColorStop(0.7, `hsla(${w.hue + 40}, 80%, 60%, 0.6)`);
+        grad.addColorStop(0.5, `hsla(${w.hue + AURORA_HUE_SHIFT_MID}, 70%, 50%, 0.8)`);
+        grad.addColorStop(0.7, `hsla(${w.hue + AURORA_HUE_SHIFT_EDGE}, 80%, 60%, 0.6)`);
         grad.addColorStop(1, 'transparent');
         ctx.fillStyle = grad;
+        // Smooth closed path: top edge forward, bottom edge backward
+        const botBase = w.y + w.width * AURORA_BAND_OFFSET;
         ctx.beginPath();
-        ctx.moveTo(0, w.y + Math.sin(w.phase) * w.amp);
-        for (let x = 0; x <= canvas.width; x += 20) {
-          const t = x / canvas.width;
-          const yOff = Math.sin(w.phase + t * 6) * w.amp + Math.sin(w.phase * 1.3 + t * 3) * w.amp * 0.5;
-          ctx.lineTo(x, w.y + yOff);
-        }
-        // Close the shape with a band
-        for (let x = canvas.width; x >= 0; x -= 20) {
-          const t = x / canvas.width;
-          const yOff = Math.sin(w.phase + t * 6) * w.amp * 0.6 + Math.sin(w.phase * 1.3 + t * 3) * w.amp * 0.3;
-          ctx.lineTo(x, w.y + yOff + w.width * 0.4);
-        }
+        ctx.moveTo(0, w.y + waveY(w, 0, 1, AURORA_HARMONIC_AMP));
+        traceEdge(w, 1, AURORA_HARMONIC_AMP, w.y, false);
+        ctx.lineTo(canvas.width, botBase + waveY(w, 1, AURORA_BAND_MAIN_RATIO, AURORA_BAND_HARMONIC_RATIO));
+        traceEdge(w, AURORA_BAND_MAIN_RATIO, AURORA_BAND_HARMONIC_RATIO, botBase, true);
         ctx.closePath();
         ctx.fill();
         ctx.restore();
