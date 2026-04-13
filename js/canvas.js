@@ -892,5 +892,94 @@ export function initCanvas(canvasEl, theme, options) {
     holdStrength = 0;
   });
 
+  // Touch equivalents for hold-to-charge and drag trail
+  document.addEventListener('touchstart', e => {
+    const touch = e.touches[0];
+    const cx = touch.clientX, cy = canvasY(touch.clientY);
+    isDragging = true;
+    holdStart = performance.now();
+    dragPos.x = cx;
+    dragPos.y = cy;
+    lastTrail = { x: cx, y: cy };
+    trailDist = 0;
+  }, { passive: true });
+
+  document.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    const cx = touch.clientX, cy = canvasY(touch.clientY);
+    dragPos.x = cx;
+    dragPos.y = cy;
+    const dx = cx - lastTrail.x;
+    const dy = cy - lastTrail.y;
+    trailDist += Math.sqrt(dx * dx + dy * dy);
+    if (trailDist > 8) {
+      trailSegments.push({
+        x: cx,
+        y: cy,
+        prev: { x: lastTrail.x, y: lastTrail.y },
+        width: 1 + Math.random() * 1.5,
+        opacity: 0.15 + Math.random() * 0.1,
+        life: 0,
+        maxLife: 25 + Math.random() * 15,
+        phase: Math.random() * Math.PI * 2,
+      });
+      lastTrail = { x: cx, y: cy };
+      trailDist = 0;
+    }
+  }, { passive: true });
+
+  document.addEventListener('touchend', () => {
+    if (!isDragging) return;
+    const heldSec = (performance.now() - holdStart) / 1000;
+    const blast = Math.min(3 + heldSec * 4, 15);
+    const upside = isUpside();
+
+    clickImpulse.x = dragPos.x;
+    clickImpulse.y = dragPos.y;
+    clickImpulse.strength = blast;
+
+    orbitParticles.forEach(p => {
+      const dx = p.x - dragPos.x;
+      const dy = p.y - dragPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      const speed = blast * (0.4 + Math.random() * 0.6);
+      clickParticles.push({
+        x: p.x, y: p.y,
+        vx: (dx / dist) * speed + p.vx,
+        vy: (dy / dist) * speed + p.vy,
+        r: p.r,
+        opacity: p.opacity + 0.1,
+        life: 0,
+        maxLife: 50 + Math.random() * 30,
+        phase: Math.random() * Math.PI * 2,
+        color: upside ? [255, 130, 130] : [150, 210, 255],
+        colorLight: upside ? [200, 60, 60] : [55, 120, 200],
+      });
+    });
+    orbitParticles.length = 0;
+
+    const extraCount = Math.min(Math.floor(heldSec * 5), 20);
+    for (let i = 0; i < extraCount; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = blast * (0.3 + Math.random() * 0.7);
+      clickParticles.push({
+        x: dragPos.x, y: dragPos.y,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        r: 1 + Math.random() * 2.5,
+        opacity: 0.3 + Math.random() * 0.4,
+        life: 0,
+        maxLife: 50 + Math.random() * 40,
+        phase: Math.random() * Math.PI * 2,
+        color: upside ? [255, 130, 130] : [150, 210, 255],
+        colorLight: upside ? [200, 60, 60] : [55, 120, 200],
+      });
+    }
+
+    isDragging = false;
+    holdStrength = 0;
+  });
+
   render();
 }
