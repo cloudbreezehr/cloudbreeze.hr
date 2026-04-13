@@ -1366,3 +1366,161 @@ body[data-active-theme="deep-sea"] footer { border-top-color: rgba(0,200,160,0.0
 body[data-active-theme="deep-sea"] .footer-badge::before { background: rgb(0,200,160); }
 
 body[data-active-theme="deep-sea"]::after { opacity: 0.04; }
+
+/* ═══════════════════════════════════════════════════════════════
+   Blocky Mode — "Voxelbreeze"
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Progressive indicator overlays ── */
+.blocky-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.15) 2px,
+    rgba(0,0,0,0.15) 4px
+  );
+}
+.blocky-grid {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background-image:
+    linear-gradient(rgba(100,255,100,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100,255,100,0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+}
+.blocky-static {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255,255,255,0.03) 0px,
+    rgba(0,0,0,0.05) 1px,
+    rgba(255,255,255,0.02) 2px,
+    transparent 3px
+  );
+}
+
+/* ── Blocky wipe transition — resolution cascade ── */
+.blocky-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: radial-gradient(ellipse at center, rgba(90,180,60,0.95), rgba(60,40,20,0.98));
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+  pointer-events: none;
+}
+.blocky-wipe.unblocky {
+  background: radial-gradient(ellipse at center, rgba(160,200,240,0.95), rgba(20,40,80,0.98));
+  transition: opacity 0.4s ease-in;
+}
+
+/* ── Blocky — visual theme (only when active theme) ── */
+body[data-active-theme="blocky"] {
+  background: #0a1230;
+}
+
+body[data-active-theme="blocky"] #bg-canvas {
+  filter: contrast(1.15) saturate(1.3);
+  image-rendering: pixelated;
+}
+
+body[data-active-theme="blocky"] .nav-logo {
+  filter: saturate(0.8) brightness(1.1);
+}
+body[data-active-theme="blocky"] .cloud-svg {
+  filter: drop-shadow(0 0 10px rgba(100,255,100,0.4));
+}
+
+body[data-active-theme="blocky"] { --cursor-glow: 100, 255, 100; }
+body[data-active-theme="blocky"] #cursor { background: rgb(100,255,100); border-radius: 0; }
+body[data-active-theme="blocky"] #cursor-ring { border-color: rgba(100,255,100,0.4); border-radius: 0; }
+
+body[data-active-theme="blocky"] .hero-title .line-2 {
+  background: linear-gradient(135deg, #a0ff80 0%, #60d040 50%, #40b030 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="blocky"] .btn-primary {
+  background: linear-gradient(135deg, #2d8a2e, #1a6b1b);
+  box-shadow: 0 0 30px rgba(100,255,100,0.25);
+}
+body[data-active-theme="blocky"] .btn-primary::before {
+  background: linear-gradient(135deg, #40b040, #2d8a2e);
+}
+body[data-active-theme="blocky"] .btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(100,255,100,0.4);
+}
+
+body[data-active-theme="blocky"] .about-heading em {
+  background: linear-gradient(135deg, #a0ff80, #60d040);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="blocky"] .services-grid {
+  background: rgba(100,255,100,0.04);
+  border-color: rgba(100,255,100,0.06);
+}
+
+body[data-active-theme="blocky"] .service-card:hover { background: rgba(100,255,100,0.05); }
+body[data-active-theme="blocky"] .service-card::before {
+  background: linear-gradient(90deg, transparent, rgba(100,255,100,0.3), transparent);
+}
+
+/* Card pixel interaction — pulsing selection border */
+body.blocky .pixel-card:hover {
+  outline: 2px dashed rgba(100,255,100,0.5);
+  outline-offset: 2px;
+  animation: pixelPulse 1s ease-in-out infinite alternate;
+}
+@keyframes pixelPulse {
+  0%   { outline-offset: 2px; outline-color: rgba(100,255,100,0.3); }
+  100% { outline-offset: 4px; outline-color: rgba(100,255,100,0.6); }
+}
+
+body[data-active-theme="blocky"] .nav-cta { color: rgb(100,255,100) !important; border-color: rgba(100,255,100,0.4); }
+body[data-active-theme="blocky"] .nav-cta:hover {
+  background: rgba(100,255,100,0.15) !important;
+  border-color: rgb(100,255,100) !important;
+}
+
+body[data-active-theme="blocky"] .contact-card {
+  background: linear-gradient(135deg, rgba(100,255,100,0.06) 0%, rgba(10,18,48,0.92) 100%);
+  border-color: rgba(100,255,100,0.12);
+}
+body[data-active-theme="blocky"] .contact-card::before {
+  background: radial-gradient(circle, rgba(100,255,100,0.08), transparent 70%);
+}
+
+body[data-active-theme="blocky"] .footer-info { border-top-color: rgba(100,255,100,0.06); }
+body[data-active-theme="blocky"] footer { border-top-color: rgba(100,255,100,0.05); }
+body[data-active-theme="blocky"] .footer-badge::before { background: rgb(100,255,100); }
+
+body[data-active-theme="blocky"]::after { opacity: 0.03; }
+
+/* ── Light mode overrides for blocky ── */
+body.light-mode[data-active-theme="blocky"] {
+  background: #e8f0ff;
+}
+body.light-mode[data-active-theme="blocky"] #bg-canvas {
+  filter: contrast(1.1) saturate(1.2);
+  image-rendering: pixelated;
+}
+body.light-mode[data-active-theme="blocky"] #cursor { background: rgb(60,200,60); }
+body.light-mode[data-active-theme="blocky"] #cursor-ring { border-color: rgba(60,200,60,0.4); }

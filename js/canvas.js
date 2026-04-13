@@ -356,7 +356,78 @@ const SHAKE_OPACITY_BOOST = 0.15;   // temporary opacity increase during turbule
 // ── Sub-mode registry ──
 // Body class names for each easter-egg mode. Used for active mode detection
 // and palette resolution. Adding a new mode: push its body class here.
-const SUBMODES = ['deep-sea', 'frozen', 'upside-down'];
+const SUBMODES = ['deep-sea', 'frozen', 'blocky', 'upside-down'];
+
+// ── Blocky Pixelation ──
+const PIXEL_SCALE = 6;
+
+// ── Terrain (Blocky mode) ──
+const TERRAIN_HEIGHT_RATIO = 0.20;       // terrain occupies bottom 20% of canvas
+const TERRAIN_BLOCK_SIZE = 6;            // matches pixel scale for crisp alignment
+const TERRAIN_TREE_CHANCE = 0.06;        // chance per column to have a tree
+const TERRAIN_TREE_MIN_GAP = 10;         // minimum columns between trees
+const TERRAIN_ORE_CHANCE = 0.02;         // chance per stone block for ore pixel
+const TERRAIN_BACK_SPEED = 0.20;         // parallax speed for back mountains
+const TERRAIN_MID_SPEED = 0.50;          // parallax speed for mid hills
+const TERRAIN_FRONT_SPEED = 0.80;        // parallax speed for front terrain
+const TERRAIN_POP_MAX = 10;              // max simultaneous popping blocks
+const TERRAIN_POP_DIST = 80;             // click radius for block pops
+const TERRAIN_POP_DURATION = 20;         // frames for a pop animation
+const TERRAIN_FADE_IN_START = 0.55;      // scroll position where terrain starts to appear
+const TERRAIN_FADE_IN_END = 0.70;        // scroll position where terrain is fully visible
+
+// Terrain colors (used directly by terrain renderer)
+const TERRAIN_GRASS     = [90, 140, 60];
+const TERRAIN_GRASS_ALT = [70, 115, 45];
+const TERRAIN_DIRT      = [140, 100, 55];
+const TERRAIN_DIRT_ALT  = [110, 80, 40];
+const TERRAIN_STONE     = [120, 120, 120];
+const TERRAIN_STONE_ALT = [90, 90, 90];
+const TERRAIN_DEEP      = [80, 80, 80];
+const TERRAIN_ORE       = [200, 160, 60];
+const TERRAIN_TRUNK     = [90, 60, 30];
+const TERRAIN_LEAVES    = [60, 130, 40];
+const TERRAIN_MOUNTAIN  = [50, 55, 80];
+const TERRAIN_HILLS     = [60, 90, 50];
+
+// ── Fireflies (Blocky mode) ──
+const FIREFLY_COUNT = 28;
+const FIREFLY_RADIUS = 2;               // drawn at pixel-scale after pixelation
+const FIREFLY_PULSE_MIN = 0.3;
+const FIREFLY_PULSE_SPEED_MIN = 0.01;
+const FIREFLY_PULSE_SPEED_RANGE = 0.02;
+const FIREFLY_DRIFT = 0.3;              // random walk velocity per frame
+const FIREFLY_FRICTION = 0.96;
+const FIREFLY_OPACITY_MIN = 0.4;
+const FIREFLY_OPACITY_RANGE = 0.4;
+const FIREFLY_REPEL_RADIUS = 120;
+const FIREFLY_REPEL_DAMPEN = 1.2;
+const FIREFLY_ATTRACT_RADIUS = 180;
+const FIREFLY_ATTRACT_STRENGTH = 0.15;
+const FIREFLY_SCROLL_VX = 0.02;
+const FIREFLY_SCROLL_THRESHOLD = 0.5;
+const FIREFLY_COLOR = [255, 240, 100];
+const FIREFLY_TRAIL_ALPHA = 0.3;
+
+// ── Butterflies (Blocky light mode) ──
+const BUTTERFLY_COLORS = [
+  [255, 80, 80],    // red
+  [80, 120, 255],   // blue
+  [255, 220, 60],   // yellow
+  [180, 80, 255],   // purple
+];
+const BUTTERFLY_FLAP_SPEED = 0.08;
+
+// ── Block Fragments (Blocky click effect) ──
+const BLOCK_FRAG_COUNT_MIN = 8;
+const BLOCK_FRAG_COUNT_RANGE = 5;
+const BLOCK_FRAG_SIZE = 3;              // pixel block size at display scale
+const BLOCK_FRAG_SPEED_MIN = 2;
+const BLOCK_FRAG_SPEED_RANGE = 4;
+const BLOCK_FRAG_GRAVITY = 0.12;
+const BLOCK_FRAG_LIFE = 48;             // ~800ms at 60fps
+const BLOCK_FRAG_TUMBLE_INTERVAL = 9;   // frames between 90° rotations
+const BLOCK_FRAG_MAX = 80;              // pool cap for block fragments
 
 // ── Bubbles (Deep Sea mode) ──
 const BUBBLE_COUNT = 30;
@@ -906,6 +977,229 @@ class Jellyfish {
   }
 }
 
+class Firefly {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * (canvas ? canvas.width : 1920);
+    this.y = init
+      ? (canvas ? canvas.height : 1080) * (0.5 + Math.random() * 0.5)
+      : (canvas ? canvas.height : 1080) * (0.6 + Math.random() * 0.4);
+    this.vx = 0;
+    this.vy = 0;
+    this.phase = Math.random() * Math.PI * 2;
+    this.pulseSpeed = FIREFLY_PULSE_SPEED_MIN + Math.random() * FIREFLY_PULSE_SPEED_RANGE;
+    this.opacity = FIREFLY_OPACITY_MIN + Math.random() * FIREFLY_OPACITY_RANGE;
+    this.colorVariant = Math.random();  // 0-1: determines rare color variants
+    this.prevX = this.x;
+    this.prevY = this.y;
+    // Butterfly state (light mode)
+    this.flapPhase = Math.random() * Math.PI * 2;
+    this.butterflyColor = BUTTERFLY_COLORS[Math.floor(Math.random() * BUTTERFLY_COLORS.length)];
+  }
+  update() {
+    this.prevX = this.x;
+    this.prevY = this.y;
+    this.phase += this.pulseSpeed;
+    this.flapPhase += BUTTERFLY_FLAP_SPEED;
+    // Random walk
+    this.vx += (Math.random() - 0.5) * FIREFLY_DRIFT;
+    this.vy += (Math.random() - 0.5) * FIREFLY_DRIFT;
+    // Slight downward bias near terrain
+    if (this.y > (canvas ? canvas.height * 0.7 : 700)) {
+      this.vy -= 0.02;
+    }
+    this.vx *= FIREFLY_FRICTION;
+    this.vy *= FIREFLY_FRICTION;
+    this.x += this.vx;
+    this.y += this.vy;
+    // Wrap
+    if (this.x < -20) this.x += canvas.width + 40;
+    if (this.x > canvas.width + 20) this.x -= canvas.width + 40;
+    if (this.y < canvas.height * 0.3) this.y = canvas.height * 0.3 + 10;
+    if (this.y > canvas.height + 10) this.reset(false);
+  }
+  drawFirefly(targetCtx) {
+    const pulse = FIREFLY_PULSE_MIN + (1 - FIREFLY_PULSE_MIN) * (0.5 + 0.5 * Math.sin(this.phase));
+    const op = this.opacity * pulse;
+    // Pick color: mostly warm yellow, rare green or orange
+    let c = FIREFLY_COLOR;
+    if (this.colorVariant > 0.92) c = [100, 255, 80];      // green
+    else if (this.colorVariant > 0.85) c = [255, 180, 50];  // orange
+
+    // Bright pixel core
+    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op.toFixed(3)})`;
+    targetCtx.fillRect(
+      Math.round(this.x) - 1,
+      Math.round(this.y) - 1,
+      FIREFLY_RADIUS, FIREFLY_RADIUS
+    );
+
+    // Trail — dim pixel at previous position
+    const trailOp = op * FIREFLY_TRAIL_ALPHA;
+    if (trailOp > 0.02) {
+      targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${trailOp.toFixed(3)})`;
+      targetCtx.fillRect(
+        Math.round(this.prevX) - 1,
+        Math.round(this.prevY) - 1,
+        FIREFLY_RADIUS, FIREFLY_RADIUS
+      );
+    }
+  }
+  drawButterfly(targetCtx) {
+    const c = this.butterflyColor;
+    const op = this.opacity * 0.8;
+    const flap = Math.sin(this.flapPhase);
+    const px = Math.round(this.x);
+    const py = Math.round(this.y);
+    const s = 2; // wing pixel size
+
+    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op.toFixed(3)})`;
+    // Body
+    targetCtx.fillRect(px, py, s, s);
+    // Wings — spread depends on flap phase
+    const wingSpread = Math.abs(flap);
+    if (wingSpread > 0.3) {
+      targetCtx.fillRect(px - s * 2, py - s, s * 2, s * 2); // left wing
+      targetCtx.fillRect(px + s, py - s, s * 2, s * 2);     // right wing
+    } else {
+      targetCtx.fillRect(px - s, py, s, s);                  // folded left
+      targetCtx.fillRect(px + s, py, s, s);                  // folded right
+    }
+  }
+}
+
+// ── Terrain generation ──
+let terrainHeightMap = null;     // array of heights per column
+let terrainBuffer = null;        // offscreen canvas for front terrain
+let terrainMidBuffer = null;     // offscreen canvas for mid hills
+let terrainBackBuffer = null;    // offscreen canvas for back mountains
+let terrainTrees = [];           // [{col, height}] tree positions
+let terrainPops = [];            // [{col, frame}] active block pop animations
+let terrainNeedsRegen = true;
+
+function generateTerrain(w, h) {
+  const bs = TERRAIN_BLOCK_SIZE;
+  // Extra columns to cover the maximum parallax shift so terrain fills edge-to-edge
+  const maxParallaxPx = Math.ceil(w * Math.max(TERRAIN_FRONT_SPEED, TERRAIN_MID_SPEED, TERRAIN_BACK_SPEED) * 0.05);
+  const extraCols = Math.ceil(maxParallaxPx / bs);
+  const cols = Math.ceil(w / bs) + extraCols;
+  const maxH = Math.floor(h * TERRAIN_HEIGHT_RATIO / bs);
+
+  // Height map from layered sine waves
+  terrainHeightMap = new Array(cols);
+  for (let i = 0; i < cols; i++) {
+    const x = i / cols;
+    terrainHeightMap[i] = Math.floor(
+      maxH * 0.5
+      + Math.sin(x * Math.PI * 2.5) * maxH * 0.15
+      + Math.sin(x * Math.PI * 5.7 + 1.3) * maxH * 0.1
+      + Math.sin(x * Math.PI * 11.3 + 2.7) * maxH * 0.05
+    );
+    terrainHeightMap[i] = Math.max(3, Math.min(maxH, terrainHeightMap[i]));
+  }
+
+  // Place trees
+  terrainTrees = [];
+  let lastTree = -TERRAIN_TREE_MIN_GAP;
+  for (let i = 0; i < cols; i++) {
+    if (i - lastTree >= TERRAIN_TREE_MIN_GAP && Math.random() < TERRAIN_TREE_CHANCE) {
+      terrainTrees.push({ col: i, trunkH: 3 + Math.floor(Math.random() * 2) });
+      lastTree = i;
+    }
+  }
+
+  // Render front terrain to buffer
+  terrainBuffer = document.createElement('canvas');
+  terrainBuffer.width = cols * bs;
+  terrainBuffer.height = h * TERRAIN_HEIGHT_RATIO + bs * 10;
+  const tctx = terrainBuffer.getContext('2d');
+  const bufH = terrainBuffer.height;
+
+  for (let i = 0; i < cols; i++) {
+    const colH = terrainHeightMap[i];
+    for (let row = 0; row < colH; row++) {
+      const bx = i * bs;
+      const by = bufH - (row + 1) * bs;
+      let color;
+      if (row >= colH - 1) {
+        color = (i + row) % 3 === 0 ? TERRAIN_GRASS_ALT : TERRAIN_GRASS;
+      } else if (row >= colH - 4) {
+        color = (i + row) % 4 === 0 ? TERRAIN_DIRT_ALT : TERRAIN_DIRT;
+      } else if (row > 1) {
+        if (Math.random() < TERRAIN_ORE_CHANCE) {
+          color = TERRAIN_ORE;
+        } else {
+          color = (i + row) % 3 === 0 ? TERRAIN_STONE_ALT : TERRAIN_STONE;
+        }
+      } else {
+        color = TERRAIN_DEEP;
+      }
+      tctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+      tctx.fillRect(bx, by, bs, bs);
+    }
+  }
+
+  // Render trees
+  terrainTrees.forEach(tree => {
+    const bx = tree.col * bs;
+    const groundY = bufH - terrainHeightMap[tree.col] * bs;
+    // Trunk
+    for (let r = 0; r < tree.trunkH; r++) {
+      tctx.fillStyle = `rgb(${TERRAIN_TRUNK[0]},${TERRAIN_TRUNK[1]},${TERRAIN_TRUNK[2]})`;
+      tctx.fillRect(bx, groundY - (r + 1) * bs, bs, bs);
+    }
+    // Canopy — 3-wide dome
+    const canopyY = groundY - (tree.trunkH + 1) * bs;
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = 0; dy <= 1; dy++) {
+        tctx.fillStyle = `rgb(${TERRAIN_LEAVES[0]},${TERRAIN_LEAVES[1]},${TERRAIN_LEAVES[2]})`;
+        tctx.fillRect(bx + dx * bs, canopyY - dy * bs, bs, bs);
+      }
+    }
+    // Top cap
+    tctx.fillStyle = `rgb(${TERRAIN_LEAVES[0]},${TERRAIN_LEAVES[1]},${TERRAIN_LEAVES[2]})`;
+    tctx.fillRect(bx, canopyY - 2 * bs, bs, bs);
+  });
+
+  // Render mid hills to buffer
+  terrainMidBuffer = document.createElement('canvas');
+  terrainMidBuffer.width = cols * bs;
+  terrainMidBuffer.height = Math.floor(h * 0.12);
+  const mctx = terrainMidBuffer.getContext('2d');
+  const mH = terrainMidBuffer.height;
+  const midCols = cols;
+  mctx.fillStyle = `rgb(${TERRAIN_HILLS[0]},${TERRAIN_HILLS[1]},${TERRAIN_HILLS[2]})`;
+  for (let i = 0; i < midCols; i++) {
+    const x = i / midCols;
+    const height = Math.floor(
+      mH * 0.4
+      + Math.sin(x * Math.PI * 3.1 + 0.8) * mH * 0.25
+      + Math.sin(x * Math.PI * 7.2 + 2.1) * mH * 0.1
+    );
+    mctx.fillRect(i * bs, mH - height, bs, height);
+  }
+
+  // Render back mountains to buffer
+  terrainBackBuffer = document.createElement('canvas');
+  terrainBackBuffer.width = cols * bs;
+  terrainBackBuffer.height = Math.floor(h * 0.15);
+  const bctx = terrainBackBuffer.getContext('2d');
+  const bH = terrainBackBuffer.height;
+  const backCols = cols;
+  bctx.fillStyle = `rgb(${TERRAIN_MOUNTAIN[0]},${TERRAIN_MOUNTAIN[1]},${TERRAIN_MOUNTAIN[2]})`;
+  for (let i = 0; i < backCols; i++) {
+    const x = i / backCols;
+    const height = Math.floor(
+      bH * 0.35
+      + Math.sin(x * Math.PI * 2.3 + 0.5) * bH * 0.3
+      + Math.sin(x * Math.PI * 4.8 + 1.7) * bH * 0.15
+    );
+    bctx.fillRect(i * bs, bH - height, bs, height);
+  }
+
+  terrainNeedsRegen = false;
+}
+
 const defaults = {
   sky: true,       stars: true,     streaks: true,
   clouds: true,    wisps: true,     horizon: true,
@@ -945,6 +1239,8 @@ export function initCanvas(canvasEl, theme, options) {
   function resize() {
     canvas.width = window.innerWidth;
     canvas.height = stableHeight();
+    resizePixelCanvas();
+    terrainNeedsRegen = true;
   }
 
   function updateScroll() {
@@ -972,6 +1268,20 @@ export function initCanvas(canvasEl, theme, options) {
     }
   }
 
+  // Offscreen canvas for blocky pixelation post-process
+  let pixelCanvas = null;
+  let pixelCtx = null;
+
+  function initPixelCanvas() {
+    pixelCanvas = document.createElement('canvas');
+    pixelCtx = pixelCanvas.getContext('2d');
+  }
+  function resizePixelCanvas() {
+    if (!pixelCanvas) initPixelCanvas();
+    pixelCanvas.width = Math.ceil(canvas.width / PIXEL_SCALE);
+    pixelCanvas.height = Math.ceil(canvas.height / PIXEL_SCALE);
+  }
+
   resize();
   updateScroll();
   window.addEventListener('resize', resize);
@@ -984,7 +1294,9 @@ export function initCanvas(canvasEl, theme, options) {
   const snowflakes = Array.from({length: SNOW_COUNT}, () => new Snowflake());
   const bubbles = Array.from({length: BUBBLE_COUNT}, () => new Bubble());
   const jellyfish = Array.from({length: JELLY_COUNT}, () => new Jellyfish());
+  const fireflies = Array.from({length: FIREFLY_COUNT}, () => new Firefly());
   let bubbleSpawnAccum = 0; // accumulates fractional bubble spawns
+  const blockFragments = [];  // active block fragment particles
 
   const gusts = opts.gusts ? Array.from({length: opts.gustCount}, () => ({
     active: false, x: 0, y: 0, len: 0, angle: 0,
@@ -1022,6 +1334,7 @@ export function initCanvas(canvasEl, theme, options) {
     const frozen = document.body.classList.contains('frozen');
     const deepSea = document.body.classList.contains('deep-sea');
     const upsd = document.body.classList.contains('upside-down');
+    const blocky = document.body.classList.contains('blocky');
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeModes = SUBMODES.filter(m => document.body.classList.contains(m));
     const lastSub = document.body.dataset.lastSubmode;
@@ -1365,8 +1678,8 @@ export function initCanvas(canvasEl, theme, options) {
       wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
     }
 
-    // Horizon glow — shifts with descent
-    if (opts.horizon) {
+    // Horizon glow — shifts with descent (skipped in blocky mode, terrain replaces it)
+    if (opts.horizon && !blocky) {
       const glowY = canvas.height * (HORIZON_Y_BASE - sp * HORIZON_Y_SHIFT);
       const glowIntensity = HORIZON_INTENSITY_BASE + sp * HORIZON_INTENSITY_SCROLL - Math.max(0, sp - HORIZON_Y_BASE) * HORIZON_INTENSITY_FALLOFF;
       const hc = pal.horizonColor;
@@ -1656,6 +1969,118 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.restore();
     }
 
+    // ── Blocky mode: pixelation post-process + terrain + fireflies ──
+    if (blocky) {
+      // Regenerate terrain on first frame or resize
+      if (terrainNeedsRegen) generateTerrain(canvas.width, canvas.height);
+
+      // Pixelation post-process: downsample then scale back up
+      const pw = pixelCanvas.width;
+      const ph = pixelCanvas.height;
+      pixelCtx.clearRect(0, 0, pw, ph);
+      pixelCtx.drawImage(canvas, 0, 0, pw, ph);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(pixelCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = true;
+
+      // Terrain — rendered crisp on top of pixelated sky
+      // When upside-down, the canvas is CSS-flipped so terrain (drawn at bottom)
+      // appears at the visual top. Invert scroll so it's visible near sp=0.
+      const terrainSp = upsd ? 1 - sp : sp;
+      const terrainVis = scrollFade(terrainSp, TERRAIN_FADE_IN_START, TERRAIN_FADE_IN_END, 2, 2);
+      if (terrainVis > 0 && terrainBackBuffer && terrainMidBuffer && terrainBuffer) {
+        ctx.save();
+        ctx.globalAlpha = terrainVis;
+
+        // Back mountains (slowest parallax — slight horizontal offset from scroll)
+        const backY = canvas.height - terrainBackBuffer.height;
+        const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * 0.05;
+        ctx.drawImage(terrainBackBuffer, -backShift, backY);
+
+        // Mid hills
+        const midY = canvas.height - terrainMidBuffer.height;
+        const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * 0.05;
+        ctx.drawImage(terrainMidBuffer, -midShift, midY);
+
+        // Front terrain
+        const frontY = canvas.height - terrainBuffer.height;
+        const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
+        ctx.drawImage(terrainBuffer, -frontShift, frontY);
+
+        ctx.restore();
+
+        // Block pop animations
+        for (let i = terrainPops.length - 1; i >= 0; i--) {
+          const pop = terrainPops[i];
+          pop.frame++;
+          if (pop.frame > TERRAIN_POP_DURATION) {
+            terrainPops.splice(i, 1);
+            continue;
+          }
+          const t = pop.frame / TERRAIN_POP_DURATION;
+          const lift = Math.sin(t * Math.PI) * 3 * TERRAIN_BLOCK_SIZE;
+          ctx.globalAlpha = terrainVis * (1 - t * 0.5);
+          ctx.fillStyle = `rgb(${pop.color[0]},${pop.color[1]},${pop.color[2]})`;
+          ctx.fillRect(pop.x, pop.y - lift, TERRAIN_BLOCK_SIZE, TERRAIN_BLOCK_SIZE);
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      // Terrain collision for motes — push particles above terrain surface
+      if (terrainHeightMap && terrainVis > 0) {
+        const bs = TERRAIN_BLOCK_SIZE;
+        const bufH = terrainBuffer ? terrainBuffer.height : canvas.height * TERRAIN_HEIGHT_RATIO;
+        const terrainTop = canvas.height - bufH;
+        const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
+        motes.forEach(m => {
+          const col = Math.floor((m.x + shift) / bs);
+          if (col >= 0 && col < terrainHeightMap.length) {
+            const surfaceY = canvas.height - terrainHeightMap[col] * bs;
+            if (m.y > surfaceY * terrainVis + terrainTop * (1 - terrainVis)) {
+              m.y = surfaceY;
+              m.vy = -Math.abs(m.vy) * 0.3;
+            }
+          }
+        });
+      }
+
+      // Block fragments — update and draw
+      for (let i = blockFragments.length - 1; i >= 0; i--) {
+        const f = blockFragments[i];
+        f.life++;
+        if (f.life > BLOCK_FRAG_LIFE) { blockFragments.splice(i, 1); continue; }
+        f.x += f.vx;
+        f.y += f.vy;
+        f.vy += BLOCK_FRAG_GRAVITY;
+        // Hard 90° tumble
+        if (f.life % BLOCK_FRAG_TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
+        const c = f.color;
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate(f.rot * Math.PI / 2);
+        ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.fillRect(-BLOCK_FRAG_SIZE / 2, -BLOCK_FRAG_SIZE / 2, BLOCK_FRAG_SIZE, BLOCK_FRAG_SIZE);
+        ctx.restore();
+      }
+
+      // Fireflies / Butterflies — rendered crisp post-pixelation
+      fireflies.forEach(f => {
+        f.update();
+        applyRepulsion(f, FIREFLY_REPEL_RADIUS, FIREFLY_REPEL_DAMPEN);
+        applyAttraction(f, FIREFLY_ATTRACT_RADIUS, FIREFLY_ATTRACT_STRENGTH, 0.3);
+        applyWellForce(f);
+        if (Math.abs(scrollVelocity) > FIREFLY_SCROLL_THRESHOLD) {
+          f.vx += scrollVelocity * FIREFLY_SCROLL_VX;
+        }
+        if (isDarkMode) {
+          f.drawFirefly(ctx);
+        } else {
+          f.drawButterfly(ctx);
+        }
+      });
+    }
+
     requestAnimationFrame(render);
   }
 
@@ -1817,8 +2242,51 @@ export function initCanvas(canvasEl, theme, options) {
       }
     }
 
-    // Normal click burst particles
-    const count = CLICK_COUNT_MIN + Math.floor(Math.random() * CLICK_COUNT_RANGE);
+    // Blocky click burst — block fragments instead of smooth particles
+    if (document.body.classList.contains('blocky')) {
+      const fragCount = BLOCK_FRAG_COUNT_MIN + Math.floor(Math.random() * BLOCK_FRAG_COUNT_RANGE);
+      // Pick colors based on click zone
+      const inTerrainZone = cy > canvas.height * 0.65;
+      const skyColors = [[80, 120, 200], [100, 140, 220], [60, 100, 180]];
+      const groundColors = [TERRAIN_GRASS, TERRAIN_DIRT, TERRAIN_STONE];
+      const colorSet = inTerrainZone ? groundColors : skyColors;
+      for (let i = 0; i < fragCount && blockFragments.length < BLOCK_FRAG_MAX; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = BLOCK_FRAG_SPEED_MIN + Math.random() * BLOCK_FRAG_SPEED_RANGE;
+        blockFragments.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.5,
+          color: colorSet[Math.floor(Math.random() * colorSet.length)],
+          life: 0, rot: 0,
+        });
+      }
+      // Also trigger terrain block pops if near terrain
+      if (inTerrainZone && terrainHeightMap) {
+        const bs = TERRAIN_BLOCK_SIZE;
+        const centerCol = Math.floor(cx / bs);
+        for (let dc = -2; dc <= 2; dc++) {
+          const col = centerCol + dc;
+          if (col >= 0 && col < terrainHeightMap.length && terrainPops.length < TERRAIN_POP_MAX) {
+            const dist = Math.abs(dc) * bs;
+            if (dist < TERRAIN_POP_DIST && Math.random() < 0.6) {
+              const surfaceRow = terrainHeightMap[col] - 1;
+              terrainPops.push({
+                x: col * bs,
+                y: canvas.height - (surfaceRow + 1) * bs,
+                color: TERRAIN_GRASS,
+                frame: 0,
+              });
+            }
+          }
+        }
+      }
+    }
+
+    // Normal click burst particles (skipped in blocky — block fragments replace them)
+    const count = document.body.classList.contains('blocky')
+      ? 0
+      : CLICK_COUNT_MIN + Math.floor(Math.random() * CLICK_COUNT_RANGE);
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = CLICK_SPEED_MIN + Math.random() * CLICK_SPEED_RANGE;
