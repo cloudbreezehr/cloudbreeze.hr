@@ -369,9 +369,10 @@ const TERRAIN_BLOCK_SIZE = 6;            // matches pixel scale for crisp alignm
 const TERRAIN_TREE_CHANCE = 0.06;        // chance per column to have a tree
 const TERRAIN_TREE_MIN_GAP = 10;         // minimum columns between trees
 const TERRAIN_ORE_CHANCE = 0.02;         // chance per stone block for ore pixel
-const TERRAIN_BACK_SPEED = 0.20;         // parallax speed for back mountains
-const TERRAIN_MID_SPEED = 0.50;          // parallax speed for mid hills
-const TERRAIN_FRONT_SPEED = 0.80;        // parallax speed for front terrain
+const TERRAIN_BACK_SPEED = 0.20;         // horizontal parallax speed for back mountains
+const TERRAIN_MID_SPEED = 0.50;          // horizontal parallax speed for mid hills
+const TERRAIN_FRONT_SPEED = 0.80;        // horizontal parallax speed for front terrain
+const TERRAIN_SCROLL_RANGE = 0.40;       // scroll-to-pixel multiplier (higher = more horizontal travel)
 const TERRAIN_POP_MAX = 10;              // max simultaneous popping blocks
 const TERRAIN_POP_DIST = 80;             // click radius for block pops
 const TERRAIN_POP_DURATION = 20;         // frames for a pop animation
@@ -1099,7 +1100,7 @@ function drawBeveledBlock(targetCtx, bx, by, size, color) {
 function generateTerrain(w, h) {
   const bs = TERRAIN_BLOCK_SIZE;
   // Extra columns to cover the maximum horizontal parallax shift so terrain fills edge-to-edge
-  const maxParallaxPx = Math.ceil(w * Math.max(TERRAIN_FRONT_SPEED, TERRAIN_MID_SPEED, TERRAIN_BACK_SPEED) * 0.05);
+  const maxParallaxPx = Math.ceil(w * Math.max(TERRAIN_FRONT_SPEED, TERRAIN_MID_SPEED, TERRAIN_BACK_SPEED) * TERRAIN_SCROLL_RANGE);
   const extraCols = Math.ceil(maxParallaxPx / bs);
   const cols = Math.ceil(w / bs) + extraCols;
   const maxH = Math.floor(h * TERRAIN_HEIGHT_RATIO / bs);
@@ -2013,15 +2014,15 @@ export function initCanvas(canvasEl, theme, options) {
         ctx.globalAlpha = terrainVis;
 
         // Back mountains (slowest horizontal parallax)
-        const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * 0.05;
+        const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * TERRAIN_SCROLL_RANGE;
         ctx.drawImage(terrainBackBuffer, -backShift, canvas.height - terrainBackBuffer.height);
 
         // Mid hills (moderate horizontal parallax)
-        const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * 0.05;
+        const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * TERRAIN_SCROLL_RANGE;
         ctx.drawImage(terrainMidBuffer, -midShift, canvas.height - terrainMidBuffer.height);
 
         // Front terrain (fastest horizontal parallax)
-        const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
+        const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * TERRAIN_SCROLL_RANGE;
         ctx.drawImage(terrainBuffer, -frontShift, canvas.height - terrainBuffer.height);
 
         ctx.restore();
@@ -2047,7 +2048,7 @@ export function initCanvas(canvasEl, theme, options) {
         const bs = TERRAIN_BLOCK_SIZE;
         const bufH = terrainBuffer ? terrainBuffer.height : canvas.height * TERRAIN_HEIGHT_RATIO;
         const terrainTop = canvas.height - bufH;
-        const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
+        const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * TERRAIN_SCROLL_RANGE;
         motes.forEach(m => {
           const col = Math.floor((m.x + shift) / bs);
           if (col >= 0 && col < terrainHeightMap.length) {
