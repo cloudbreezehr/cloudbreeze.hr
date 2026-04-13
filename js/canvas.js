@@ -294,6 +294,14 @@ const SNOW_SCROLL_THRESHOLD = 0.5;
 const SNOW_SCROLL_VY = 0.03;
 const SNOW_SCROLL_VX = 0.02;
 
+// ── Snow Globe Shake ──
+const SHAKE_REVERSAL_WINDOW = 500;  // ms — direction changes within this window count
+const SHAKE_REVERSALS_NEEDED = 3;   // rapid reversals to trigger a shake
+const SHAKE_MIN_DELTA = 3;          // minimum scroll delta to count as directional
+const SHAKE_TURBULENCE = 4;         // velocity burst per snowflake on shake
+const SHAKE_DECAY = 0.97;           // turbulence multiplier decays per frame
+const SHAKE_OPACITY_BOOST = 0.15;   // temporary opacity increase during turbulence
+
 let canvas, ctx;
 
 function getStreakParams(sp) {
@@ -519,6 +527,11 @@ export function initCanvas(canvasEl, theme, options) {
   let scrollVelocity = 0;
   let lastScrollTop = window.scrollY || 0;
 
+  // Snow globe shake detection — track scroll direction reversals
+  let lastScrollDir = 0;       // -1 = up, 1 = down, 0 = idle
+  let reversalTimes = [];      // timestamps of recent direction changes
+  let snowTurbulence = 0;      // current turbulence intensity, decays per frame
+
   theme.onChange(dark => { isDarkMode = dark; });
 
   function resize() {
@@ -530,8 +543,25 @@ export function initCanvas(canvasEl, theme, options) {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - window.innerHeight;
     scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
-    scrollVelocity += (scrollTop - lastScrollTop) * SCROLL_VEL_GAIN;
+    const delta = scrollTop - lastScrollTop;
+    scrollVelocity += delta * SCROLL_VEL_GAIN;
     lastScrollTop = scrollTop;
+
+    // Detect direction reversals for snow globe shake
+    if (Math.abs(delta) >= SHAKE_MIN_DELTA) {
+      const dir = delta > 0 ? 1 : -1;
+      if (lastScrollDir !== 0 && dir !== lastScrollDir) {
+        const now = performance.now();
+        reversalTimes.push(now);
+        // Prune old reversals outside the window
+        reversalTimes = reversalTimes.filter(t => now - t < SHAKE_REVERSAL_WINDOW);
+        if (reversalTimes.length >= SHAKE_REVERSALS_NEEDED) {
+          snowTurbulence = 1;
+          reversalTimes.length = 0;
+        }
+      }
+      lastScrollDir = dir;
+    }
   }
 
   resize();
@@ -936,8 +966,17 @@ export function initCanvas(canvasEl, theme, options) {
         m.draw(pal);
       });
     }
-    // Snowflakes — frozen mode ambient snow with pointer interaction
+    // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe
     if (frozen) {
+      // Snow globe turbulence — burst then decay
+      if (snowTurbulence > 0.01) {
+        snowflakes.forEach(s => {
+          s.vx += (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence;
+          s.vy += (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence;
+          s.opacity = Math.min(1, s.opacity + SHAKE_OPACITY_BOOST * snowTurbulence);
+        });
+        snowTurbulence *= SHAKE_DECAY;
+      }
       snowflakes.forEach(s => {
         s.update();
         // Click repels nearby snowflakes
