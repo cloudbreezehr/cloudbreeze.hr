@@ -362,7 +362,7 @@ const SUBMODES = ['deep-sea', 'frozen', 'blocky', 'upside-down'];
 const PIXEL_SCALE = 6;
 
 // ── Terrain (Blocky mode) ──
-const TERRAIN_HEIGHT_RATIO = 0.20;       // terrain occupies bottom 20% of canvas
+const TERRAIN_HEIGHT_RATIO = 0.35;       // terrain occupies bottom 35% of canvas
 const TERRAIN_BLOCK_SIZE = 6;            // matches pixel scale for crisp alignment
 const TERRAIN_TREE_CHANCE = 0.06;        // chance per column to have a tree
 const TERRAIN_TREE_MIN_GAP = 10;         // minimum columns between trees
@@ -375,12 +375,15 @@ const TERRAIN_POP_DIST = 80;             // click radius for block pops
 const TERRAIN_POP_DURATION = 20;         // frames for a pop animation
 const TERRAIN_FADE_IN_START = 0.55;      // scroll position where terrain starts to appear
 const TERRAIN_FADE_IN_END = 0.70;        // scroll position where terrain is fully visible
-const TERRAIN_BEVEL_SIZE = 1;            // pixel width of highlight/shadow edges
-const TERRAIN_BEVEL_HIGHLIGHT = 35;      // RGB increase for top-edge highlight
-const TERRAIN_BEVEL_SHADOW = 30;         // RGB decrease for right/bottom-edge shadow
-const TERRAIN_BACK_Y_PARALLAX = 0.02;   // vertical rise rate for back mountains
-const TERRAIN_MID_Y_PARALLAX = 0.06;    // vertical rise rate for mid hills
-const TERRAIN_FRONT_Y_PARALLAX = 0.12;  // vertical rise rate for front terrain
+const TERRAIN_BEVEL_SIZE = 2;            // pixel width of highlight/shadow edges
+const TERRAIN_BEVEL_HIGHLIGHT = 40;      // RGB increase for top/left-edge highlight
+const TERRAIN_BEVEL_SHADOW = 40;         // RGB decrease for right/bottom-edge shadow
+const TERRAIN_BACK_Y_PARALLAX = 0.03;   // vertical rise rate for back mountains
+const TERRAIN_MID_Y_PARALLAX = 0.15;    // vertical rise rate for mid hills
+const TERRAIN_FRONT_Y_PARALLAX = 0.35;  // vertical rise rate for front terrain
+const TERRAIN_FRONT_SCALE_BASE = 1.0;   // front layer scale at terrain fade-in start
+const TERRAIN_FRONT_SCALE_GROW = 0.08;  // additional scale at max parallax driver
+const TERRAIN_POP_LIFT_BLOCKS = 3;      // pop lifts this many block-sizes above surface
 
 // Terrain colors (used directly by terrain renderer)
 const TERRAIN_GRASS     = [90, 140, 60];
@@ -1084,12 +1087,13 @@ let terrainPops = [];            // [{col, frame}] active block pop animations
 let terrainNeedsRegen = true;
 
 // Renders a single terrain block with isometric bevel edges:
-// lighter top edge (light source above) + darker right/bottom edges (shadow).
+// lighter top + left edges (lit faces) + darker right + bottom edges (shadow faces).
 function drawBeveledBlock(targetCtx, bx, by, size, color) {
   targetCtx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
   targetCtx.fillRect(bx, by, size, size);
   targetCtx.fillStyle = `rgb(${Math.min(255, color[0] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[1] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[2] + TERRAIN_BEVEL_HIGHLIGHT)})`;
   targetCtx.fillRect(bx, by, size, TERRAIN_BEVEL_SIZE);
+  targetCtx.fillRect(bx, by, TERRAIN_BEVEL_SIZE, size);
   targetCtx.fillStyle = `rgb(${Math.max(0, color[0] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[1] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[2] - TERRAIN_BEVEL_SHADOW)})`;
   targetCtx.fillRect(bx + size - TERRAIN_BEVEL_SIZE, by, TERRAIN_BEVEL_SIZE, size);
   targetCtx.fillRect(bx, by + size - TERRAIN_BEVEL_SIZE, size, TERRAIN_BEVEL_SIZE);
@@ -1097,9 +1101,10 @@ function drawBeveledBlock(targetCtx, bx, by, size, color) {
 
 function generateTerrain(w, h) {
   const bs = TERRAIN_BLOCK_SIZE;
-  // Extra columns to cover the maximum parallax shift so terrain fills edge-to-edge
+  // Extra columns to cover horizontal parallax shift + front-layer scale growth
   const maxParallaxPx = Math.ceil(w * Math.max(TERRAIN_FRONT_SPEED, TERRAIN_MID_SPEED, TERRAIN_BACK_SPEED) * 0.05);
-  const extraCols = Math.ceil(maxParallaxPx / bs);
+  const scaleMarginPx = Math.ceil(w * TERRAIN_FRONT_SCALE_GROW * 0.5);
+  const extraCols = Math.ceil((maxParallaxPx + scaleMarginPx) / bs);
   const cols = Math.ceil(w / bs) + extraCols;
   const maxH = Math.floor(h * TERRAIN_HEIGHT_RATIO / bs);
 
@@ -2008,29 +2013,35 @@ export function initCanvas(canvasEl, theme, options) {
       const terrainSp = upsd ? 1 - sp : sp;
       const terrainVis = scrollFade(terrainSp, TERRAIN_FADE_IN_START, TERRAIN_FADE_IN_END, 2, 2);
       const parallaxDriver = Math.max(0, terrainSp - TERRAIN_FADE_IN_START);
+      const backYOff = parallaxDriver * TERRAIN_BACK_Y_PARALLAX * canvas.height;
+      const midYOff = parallaxDriver * TERRAIN_MID_Y_PARALLAX * canvas.height;
+      const frontYOff = parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
       if (terrainVis > 0 && terrainBackBuffer && terrainMidBuffer && terrainBuffer) {
         ctx.save();
         ctx.globalAlpha = terrainVis;
 
         // Back mountains (slowest parallax — barely rises)
-        const backY = canvas.height - terrainBackBuffer.height - parallaxDriver * TERRAIN_BACK_Y_PARALLAX * canvas.height;
         const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * 0.05;
-        ctx.drawImage(terrainBackBuffer, -backShift, backY);
+        ctx.drawImage(terrainBackBuffer, -backShift, canvas.height - terrainBackBuffer.height - backYOff);
 
         // Mid hills (moderate rise)
-        const midY = canvas.height - terrainMidBuffer.height - parallaxDriver * TERRAIN_MID_Y_PARALLAX * canvas.height;
         const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * 0.05;
-        ctx.drawImage(terrainMidBuffer, -midShift, midY);
+        ctx.drawImage(terrainMidBuffer, -midShift, canvas.height - terrainMidBuffer.height - midYOff);
 
-        // Front terrain (rises the most)
-        const frontY = canvas.height - terrainBuffer.height - parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
+        // Front terrain (rises the most, scales up for perspective)
+        const frontY = canvas.height - terrainBuffer.height - frontYOff;
         const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
+        const frontScale = TERRAIN_FRONT_SCALE_BASE + parallaxDriver * TERRAIN_FRONT_SCALE_GROW;
+        ctx.save();
+        ctx.translate(canvas.width * 0.5, canvas.height);
+        ctx.scale(frontScale, frontScale);
+        ctx.translate(-canvas.width * 0.5, -canvas.height);
         ctx.drawImage(terrainBuffer, -frontShift, frontY);
+        ctx.restore();
 
         ctx.restore();
 
         // Block pop animations
-        const popYOff = parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
         for (let i = terrainPops.length - 1; i >= 0; i--) {
           const pop = terrainPops[i];
           pop.frame++;
@@ -2039,9 +2050,9 @@ export function initCanvas(canvasEl, theme, options) {
             continue;
           }
           const t = pop.frame / TERRAIN_POP_DURATION;
-          const lift = Math.sin(t * Math.PI) * 3 * TERRAIN_BLOCK_SIZE;
+          const lift = Math.sin(t * Math.PI) * TERRAIN_POP_LIFT_BLOCKS * TERRAIN_BLOCK_SIZE;
           ctx.globalAlpha = terrainVis * (1 - t * 0.5);
-          drawBeveledBlock(ctx, pop.x, pop.y - popYOff - lift, TERRAIN_BLOCK_SIZE, pop.color);
+          drawBeveledBlock(ctx, pop.x, pop.y - frontYOff - lift, TERRAIN_BLOCK_SIZE, pop.color);
           ctx.globalAlpha = 1;
         }
       }
@@ -2050,7 +2061,6 @@ export function initCanvas(canvasEl, theme, options) {
       if (terrainHeightMap && terrainVis > 0) {
         const bs = TERRAIN_BLOCK_SIZE;
         const bufH = terrainBuffer ? terrainBuffer.height : canvas.height * TERRAIN_HEIGHT_RATIO;
-        const frontYOff = parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
         const terrainTop = canvas.height - bufH - frontYOff;
         const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
         motes.forEach(m => {
