@@ -286,6 +286,23 @@ const EXTRA_BURST_MAX = 20;
 const EXTRA_BURST_LIFE_MIN = 50;
 const EXTRA_BURST_LIFE_RANGE = 40;
 
+// ── Gravity Well (long-press phase 2) ──
+const WELL_ACTIVATE_MS = 10000;
+const WELL_RAMP_MS = 10000;
+const WELL_FORCE_MAX = 0.6;
+const WELL_TANGENT = 0.4;
+const WELL_DISTANCE_DECAY = 0.002;
+const WELL_BLAST_MIN = 20;
+const WELL_BLAST_MAX = 50;
+const WELL_BURST_MAX = 40;
+const WELL_BURST_LIFE_MIN = 60;
+const WELL_BURST_LIFE_RANGE = 50;
+const WELL_ORBIT_SPAWN_BOOST = 3;
+const WELL_ORBIT_MAX_BOOST = 30;
+const WELL_AURA_RADIUS = 80;
+const WELL_AURA_OPACITY = 0.15;
+const WELL_AURA_PULSE_SPEED = 2;
+
 // ── Drag Trail ──
 const TRAIL_SPACING = 8;
 const TRAIL_WIDTH_MIN = 1;
@@ -1408,7 +1425,20 @@ export function initCanvas(canvasEl, theme, options) {
     // Scroll-reactive particles — blown by scroll, settle with gravity
     // Also react to click (repel) and drag (attract, scaled by hold duration)
     if (isDragging) {
-      holdStrength = Math.min((performance.now() - holdStart) / HOLD_RAMP_MS, 1);
+      const heldMs = performance.now() - holdStart;
+      holdStrength = Math.min(heldMs / HOLD_RAMP_MS, 1);
+      const prevWell = wellStrength;
+      wellStrength = heldMs > WELL_ACTIVATE_MS
+        ? Math.min((heldMs - WELL_ACTIVATE_MS) / WELL_RAMP_MS, 1)
+        : 0;
+      if (wellStrength > 0 && prevWell === 0) {
+        cursorDot?.classList.add('gravity-well');
+        cursorRing?.classList.add('gravity-well');
+      }
+      if (wellStrength > 0) {
+        cursorDot?.style.setProperty('--well-strength', wellStrength.toFixed(3));
+        cursorRing?.style.setProperty('--well-strength', wellStrength.toFixed(3));
+      }
     }
     const attractRadius = ATTRACT_RADIUS_BASE + holdStrength * ATTRACT_RADIUS_HOLD;
     const attractForce = ATTRACT_FORCE_BASE + holdStrength * ATTRACT_FORCE_HOLD;
@@ -1442,6 +1472,7 @@ export function initCanvas(canvasEl, theme, options) {
             m.opacity = Math.min(0.5, m.opacity + 0.005 + holdStrength * 0.01);
           }
         }
+        applyWellForce(m);
         m.draw(pal);
       });
     }
@@ -1460,6 +1491,7 @@ export function initCanvas(canvasEl, theme, options) {
         s.update();
         applyRepulsion(s, SNOW_REPEL_RADIUS, SNOW_REPEL_DAMPEN);
         applyAttraction(s, SNOW_ATTRACT_RADIUS, SNOW_ATTRACT_STRENGTH, SNOW_ATTRACT_TANGENT);
+        applyWellForce(s);
         // Scroll pushes snowflakes
         if (Math.abs(scrollVelocity) > SNOW_SCROLL_THRESHOLD) {
           s.vy -= scrollVelocity * SNOW_SCROLL_VY;
@@ -1484,6 +1516,7 @@ export function initCanvas(canvasEl, theme, options) {
         b.update();
         applyRepulsion(b, BUBBLE_REPEL_RADIUS, BUBBLE_REPEL_DAMPEN);
         applyAttraction(b, BUBBLE_ATTRACT_RADIUS, BUBBLE_ATTRACT_STRENGTH, BUBBLE_ATTRACT_TANGENT);
+        applyWellForce(b);
         // Scroll pushes laterally
         if (Math.abs(scrollVelocity) > BUBBLE_SCROLL_THRESHOLD) {
           b.vx += scrollVelocity * BUBBLE_SCROLL_VX;
@@ -1495,6 +1528,7 @@ export function initCanvas(canvasEl, theme, options) {
         j.update();
         applyRepulsion(j, JELLY_REPEL_RADIUS, JELLY_REPEL_DAMPEN);
         applyAttraction(j, JELLY_ATTRACT_RADIUS, JELLY_ATTRACT_STRENGTH, 0);
+        applyWellForce(j);
         j.draw();
       });
     }
@@ -1528,9 +1562,11 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
     if (isDragging && holdStrength > 0.1) {
-      // Spawn new orbit particles
-      const spawnChance = holdStrength * ORBIT_SPAWN_FACTOR;
-      if (Math.random() < spawnChance && orbitParticles.length < ORBIT_MAX) {
+      // Spawn new orbit particles (boosted during gravity well)
+      const spawnMul = wellStrength > 0 ? 1 + wellStrength * WELL_ORBIT_SPAWN_BOOST : 1;
+      const maxOrbit = ORBIT_MAX + (wellStrength > 0 ? Math.floor(wellStrength * WELL_ORBIT_MAX_BOOST) : 0);
+      const spawnChance = holdStrength * ORBIT_SPAWN_FACTOR * spawnMul;
+      if (Math.random() < spawnChance && orbitParticles.length < maxOrbit) {
         const angle = Math.random() * Math.PI * 2;
         const dist = ORBIT_DIST_MIN + Math.random() * (ORBIT_DIST_RANGE + holdStrength * ORBIT_DIST_HOLD);
         orbitParticles.push({
@@ -1575,6 +1611,24 @@ export function initCanvas(canvasEl, theme, options) {
       }
     }
 
+    // Gravity well aura — pulsing radial glow at cursor
+    if (wellStrength > 0 && isDragging) {
+      const auraR = WELL_AURA_RADIUS * (1 + wellStrength);
+      const pulse = 0.8 + 0.2 * Math.sin(performance.now() / 1000 * WELL_AURA_PULSE_SPEED);
+      const auraOp = WELL_AURA_OPACITY * wellStrength * pulse;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      const auraGrad = ctx.createRadialGradient(dragPos.x, dragPos.y, 0, dragPos.x, dragPos.y, auraR);
+      auraGrad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp})`);
+      auraGrad.addColorStop(0.5, `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp * 0.3})`);
+      auraGrad.addColorStop(1, 'transparent');
+      ctx.fillStyle = auraGrad;
+      ctx.beginPath();
+      ctx.arc(dragPos.x, dragPos.y, auraR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Drag breeze trail
     for (let i = trailSegments.length - 1; i >= 0; i--) {
       const s = trailSegments[i];
@@ -1611,6 +1665,9 @@ export function initCanvas(canvasEl, theme, options) {
   const orbitParticles = [];
   let holdStart = 0;
   let holdStrength = 0;
+  let wellStrength = 0;
+  const cursorDot = document.getElementById('cursor');
+  const cursorRing = document.getElementById('cursor-ring');
 
   // Shared pointer-interaction helpers (snow, bubbles, jellyfish)
   function applyRepulsion(p, radius, damping) {
@@ -1639,6 +1696,18 @@ export function initCanvas(canvasEl, theme, options) {
         p.vy += ny * f + nx * f * holdStrength * tangentFactor;
       }
     }
+  }
+
+  function applyWellForce(p) {
+    if (wellStrength <= 0) return;
+    const dx = dragPos.x - p.x;
+    const dy = dragPos.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const f = wellStrength * WELL_FORCE_MAX / (1 + dist * WELL_DISTANCE_DECAY);
+    const nx = dx / dist;
+    const ny = dy / dist;
+    p.vx += nx * f + (-ny) * f * WELL_TANGENT;
+    p.vy += ny * f + nx * f * WELL_TANGENT;
   }
 
   // Click burst — scatter luminous motes from click point
@@ -1824,7 +1893,11 @@ export function initCanvas(canvasEl, theme, options) {
   function releaseDrag() {
     if (!isDragging) return;
     const heldSec = (performance.now() - holdStart) / 1000;
-    const blast = Math.min(BLAST_BASE + heldSec * BLAST_PER_SEC, BLAST_MAX);
+    const normalBlast = Math.min(BLAST_BASE + heldSec * BLAST_PER_SEC, BLAST_MAX);
+    const wellBlast = wellStrength > 0
+      ? WELL_BLAST_MIN + wellStrength * (WELL_BLAST_MAX - WELL_BLAST_MIN)
+      : 0;
+    const blast = Math.max(normalBlast, wellBlast);
 
     // Repel all nearby motes
     clickImpulse.x = dragPos.x;
@@ -1869,8 +1942,33 @@ export function initCanvas(canvasEl, theme, options) {
       });
     }
 
+    // Gravity well burst — massive particle explosion on release
+    if (wellStrength > 0) {
+      const wellBurst = Math.floor(wellStrength * WELL_BURST_MAX);
+      for (let i = 0; i < wellBurst; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = blast * (0.5 + Math.random() * 0.8);
+        clickParticles.push({
+          x: dragPos.x, y: dragPos.y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: CLICK_RADIUS_MIN + Math.random() * 3,
+          opacity: 0.4 + Math.random() * 0.4,
+          life: 0,
+          maxLife: WELL_BURST_LIFE_MIN + Math.random() * WELL_BURST_LIFE_RANGE,
+          phase: Math.random() * Math.PI * 2,
+          color: currentPal.clickColor,
+        });
+      }
+      cursorDot?.classList.remove('gravity-well');
+      cursorRing?.classList.remove('gravity-well');
+      cursorDot?.style.removeProperty('--well-strength');
+      cursorRing?.style.removeProperty('--well-strength');
+    }
+
     isDragging = false;
     holdStrength = 0;
+    wellStrength = 0;
   }
 
   document.addEventListener('pointerup', releaseDrag);
