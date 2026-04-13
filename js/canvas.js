@@ -1,4 +1,4 @@
-import { lerpColor, multiLerp, toRgba, palettes } from './colors.js';
+import { lerpColor, multiLerp, toRgba, resolvePalette } from './colors.js';
 
 // ── Stars ──
 const STAR_RADIUS_MIN = 0.3;
@@ -17,7 +17,6 @@ const STAR_FLASH_THRESHOLD = 0.01;
 const STAR_TWINKLE_BASE = 0.7;
 const STAR_TWINKLE_RANGE = 0.3;
 const STAR_PARALLAX_SCALE = 0.4;
-const STAR_COLOR = [180, 210, 255];
 const STAR_FADE_START = 0.2;
 const STAR_FADE_END = 0.5;
 const STAR_TIME_STEP = 0.008;
@@ -39,7 +38,6 @@ const SHOOTING_OPACITY_RANGE = 0.4;
 const SHOOTING_LIFE_MIN = 20;
 const SHOOTING_LIFE_RANGE = 20;
 const SHOOTING_LINE_WIDTH = 1.2;
-const SHOOTING_COLORS = [[180, 210, 255], [200, 225, 255], [230, 240, 255]];
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -52,7 +50,6 @@ const STREAK_WIDTH_MIN = 0.5;
 const STREAK_WIDTH_RANGE = 1;
 const STREAK_ANGLE_MIN = -0.1;
 const STREAK_ANGLE_RANGE = 0.2;
-const STREAK_COLOR = [120, 190, 240];
 
 // ── Clouds ──
 const CLOUD_X_SPREAD = 1.4;
@@ -124,10 +121,6 @@ const MOTE_DRAW_THRESHOLD = 0.005;
 const MOTE_GLOW_RADIUS = 4;
 const MOTE_GRAD_MID = 0.3;
 const MOTE_GRAD_MID_OPACITY = 0.4;
-const MOTE_COLOR_DARK = [200, 230, 255];
-const MOTE_COLOR_LIGHT = [80, 150, 220];
-const MOTE_GLOW_DARK = [130, 195, 255];
-const MOTE_GLOW_LIGHT = [55, 120, 200];
 
 // ── Horizon ──
 const HORIZON_Y_BASE = 0.75;
@@ -150,8 +143,6 @@ const GUST_WIDTH_MIN = 0.4;
 const GUST_WIDTH_RANGE = 0.6;
 const GUST_LIFE_MIN = 18;
 const GUST_LIFE_RANGE = 14;
-const GUST_COLOR_DARK = [180, 220, 255];
-const GUST_COLOR_LIGHT = [80, 150, 220];
 
 // ── Click Particles ──
 const CLICK_COUNT_MIN = 6;
@@ -170,10 +161,6 @@ const CLICK_GLOW_RADIUS = 3;
 const CLICK_DRAW_THRESHOLD = 0.005;
 const CLICK_BREEZE_FREQ = 0.08;
 const CLICK_BREEZE_AMP = 0.3;
-const CLICK_COLOR_DARK = [150, 210, 255];
-const CLICK_COLOR_LIGHT = [55, 120, 200];
-const CLICK_COLOR_UPSIDE_DARK = [255, 130, 130];
-const CLICK_COLOR_UPSIDE_LIGHT = [200, 60, 60];
 
 // ── Click Fury ──
 const FURY_MAX = 60;
@@ -199,12 +186,6 @@ const LIGHTNING_WIDTH_MAIN = 2;
 const LIGHTNING_WIDTH_BRANCH = 1;
 const LIGHTNING_SHADOW_BLUR = 12;
 const LIGHTNING_FLASH_ALPHA = 0.06;
-const LIGHTNING_COLOR = [200, 225, 255];
-const LIGHTNING_SHADOW_COLOR = [180, 210, 255, 0.8];
-const LIGHTNING_FLASH_COLOR = [200, 220, 255];
-const LIGHTNING_COLOR_UPSIDE = [255, 120, 80];
-const LIGHTNING_SHADOW_UPSIDE = [255, 80, 40, 0.8];
-const LIGHTNING_FLASH_UPSIDE = [255, 100, 50];
 const LIGHTNING_START_SPREAD = 200;
 const LIGHTNING_START_Y = 0.2;
 const LIGHTNING_OPACITY = 0.9;
@@ -223,10 +204,6 @@ const AURORA_AMP_MIN = 15;
 const AURORA_AMP_RANGE = 25;
 const AURORA_WIDTH_MIN = 40;
 const AURORA_WIDTH_RANGE = 60;
-const AURORA_HUE_BASE = 120;
-const AURORA_HUE_RANGE = 80;
-const AURORA_HUE_UPSIDE_BASE = 0;
-const AURORA_HUE_UPSIDE_RANGE = 30;
 
 // ── Meteors (Tier 3) ──
 const FURY_TIER3 = 55;
@@ -242,8 +219,6 @@ const METEOR_LIFE_RANGE = 18;
 const METEOR_BURST_MIN = 2;
 const METEOR_BURST_RANGE = 3;
 const METEOR_LINE_WIDTH = 1.8;
-const METEOR_COLORS = [[180, 210, 255], [200, 225, 255], [230, 240, 255]];
-const METEOR_COLORS_UPSIDE = [[255, 150, 100], [255, 180, 130], [255, 200, 160]];
 
 // ── Orbit Particles ──
 const ORBIT_MAX = 60;
@@ -263,10 +238,6 @@ const ORBIT_FRICTION = 0.94;
 const ORBIT_OPACITY_EASE = 0.06;
 const ORBIT_GLOW_RADIUS = 4;
 const ORBIT_DRAW_THRESHOLD = 0.005;
-const ORBIT_COLOR_DARK = [180, 220, 255];
-const ORBIT_COLOR_LIGHT = [55, 130, 210];
-const ORBIT_COLOR_UPSIDE_DARK = [255, 150, 150];
-const ORBIT_COLOR_UPSIDE_LIGHT = [200, 60, 60];
 
 // ── Hold & Attract ──
 const HOLD_RAMP_MS = 3000;
@@ -292,8 +263,6 @@ const TRAIL_OPACITY_RANGE = 0.1;
 const TRAIL_LIFE_MIN = 25;
 const TRAIL_LIFE_RANGE = 15;
 const TRAIL_CURVE_JITTER = 6;
-const TRAIL_COLOR_DARK = [180, 220, 255];
-const TRAIL_COLOR_LIGHT = [55, 120, 200];
 
 // ── Impulse & Scroll ──
 const IMPULSE_DECAY = 0.88;
@@ -372,10 +341,10 @@ class Streak {
     this.x += this.angle;
     if (this.y > canvas.height + this.len) this.reset(false);
   }
-  draw(sp) {
+  draw(sp, pal) {
     ctx.save();
     ctx.globalAlpha = this.opacity * sp.opMul;
-    ctx.strokeStyle = `rgba(${STREAK_COLOR},1)`;
+    ctx.strokeStyle = `rgba(${pal.streakColor},1)`;
     ctx.lineWidth = this.width;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y - this.len);
@@ -453,10 +422,10 @@ class ScrollMote {
       this.vy = 0;
     }
   }
-  draw(dark) {
+  draw(pal) {
     if (this.opacity < MOTE_DRAW_THRESHOLD) return;
-    const c = dark ? MOTE_COLOR_DARK : MOTE_COLOR_LIGHT;
-    const g = dark ? MOTE_GLOW_DARK : MOTE_GLOW_LIGHT;
+    const c = pal.moteColor;
+    const g = pal.moteGlow;
     const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * MOTE_GLOW_RADIUS);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${this.opacity})`);
     grad.addColorStop(MOTE_GRAD_MID, `rgba(${g[0]},${g[1]},${g[2]},${this.opacity * MOTE_GRAD_MID_OPACITY})`);
@@ -543,7 +512,9 @@ export function initCanvas(canvasEl, theme, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const pal = palettes[isDarkMode ? 'dark' : 'light'];
+    const upsd = isUpside();
+    const pal = resolvePalette(isDarkMode ? 'dark' : 'light', upsd ? 'upside-down' : null);
+    currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient
@@ -578,7 +549,7 @@ export function initCanvas(canvasEl, theme, options) {
           // Parallax — closer stars (higher depth) shift more on scroll
           const shift = s.depth * sp * canvas.height * STAR_PARALLAX_SCALE;
           const py = ((s.y - shift) % canvas.height + canvas.height) % canvas.height;
-          ctx.fillStyle = `rgba(${STAR_COLOR},${op})`;
+          ctx.fillStyle = `rgba(${pal.starColor},${op})`;
           ctx.beginPath();
           ctx.arc(s.x % canvas.width, py, s.r, 0, Math.PI * 2);
           ctx.fill();
@@ -617,7 +588,7 @@ export function initCanvas(canvasEl, theme, options) {
         // Draw a tapered line with a bright head
         const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
         const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        const sc = SHOOTING_COLORS;
+        const sc = pal.shootingColors;
         const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
         grad.addColorStop(0, `rgba(${sc[0]},0)`);
         grad.addColorStop(0.7, `rgba(${sc[1]},${op * 0.3})`);
@@ -640,7 +611,6 @@ export function initCanvas(canvasEl, theme, options) {
       const decayRate = FURY_DECAY_BASE + (idleSec - FURY_IDLE_GRACE) * FURY_DECAY_ACCEL;
       clickFury = Math.max(0, clickFury - dt * decayRate);
     }
-    const upsd = isUpside();
 
     // Tier 1: Lightning bolts
     let flashThisFrame = false;
@@ -650,8 +620,8 @@ export function initCanvas(canvasEl, theme, options) {
       if (bolt.life > bolt.maxLife) { lightningBolts.splice(i, 1); continue; }
       if (bolt.life === 1) flashThisFrame = true;
       const fade = bolt.life < 2 ? 1 : Math.max(0, 1 - (bolt.life - 2) / (bolt.maxLife - 2));
-      const col = upsd ? LIGHTNING_COLOR_UPSIDE : LIGHTNING_COLOR;
-      const sc = upsd ? LIGHTNING_SHADOW_UPSIDE : LIGHTNING_SHADOW_COLOR;
+      const col = pal.lightningColor;
+      const sc = pal.lightningShadow;
       ctx.save();
       ctx.globalAlpha = fade * LIGHTNING_OPACITY;
       ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
@@ -669,7 +639,7 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.restore();
     }
     if (flashThisFrame) {
-      const fc = upsd ? LIGHTNING_FLASH_UPSIDE : LIGHTNING_FLASH_COLOR;
+      const fc = pal.lightningFlash;
       ctx.save();
       ctx.globalAlpha = LIGHTNING_FLASH_ALPHA;
       ctx.fillStyle = `rgba(${fc[0]},${fc[1]},${fc[2]},1)`;
@@ -689,14 +659,14 @@ export function initCanvas(canvasEl, theme, options) {
           speed: AURORA_SPEED_MIN + Math.random() * AURORA_SPEED_RANGE,
           amp: AURORA_AMP_MIN + Math.random() * AURORA_AMP_RANGE,
           width: AURORA_WIDTH_MIN + Math.random() * AURORA_WIDTH_RANGE,
-          hue: upsd ? AURORA_HUE_UPSIDE_BASE + Math.random() * AURORA_HUE_UPSIDE_RANGE : AURORA_HUE_BASE + Math.random() * AURORA_HUE_RANGE,
+          hue: pal.auroraHueBase + Math.random() * pal.auroraHueRange,
         });
       }
       auroraWaves.forEach(w => {
         w.phase += w.speed;
-        // In upside-down, shift hues to red/orange
-        if (upsd && w.hue > 60) w.hue = (w.hue - AURORA_HUE_BASE + 360) % 360;
-        if (!upsd && w.hue < 60) w.hue = AURORA_HUE_BASE + Math.random() * AURORA_HUE_RANGE;
+        // Shift existing wave hues to match current mode
+        if (pal.auroraHueBase < 60 && w.hue > 60) w.hue = (w.hue - 120 + 360) % 360;
+        if (pal.auroraHueBase >= 60 && w.hue < 60) w.hue = pal.auroraHueBase + Math.random() * pal.auroraHueRange;
         ctx.save();
         ctx.globalAlpha = auroraIntensity * AURORA_ALPHA;
         const grad = ctx.createLinearGradient(0, w.y - w.width, 0, w.y + w.width);
@@ -737,7 +707,7 @@ export function initCanvas(canvasEl, theme, options) {
       const op = m.opacity * fade;
       const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
       const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
-      const mc = upsd ? METEOR_COLORS_UPSIDE : METEOR_COLORS;
+      const mc = pal.meteorColors;
       const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
       grad.addColorStop(0, `rgba(${mc[0]},0)`);
       grad.addColorStop(0.7, `rgba(${mc[1]},${op * 0.3})`);
@@ -756,7 +726,7 @@ export function initCanvas(canvasEl, theme, options) {
     // Streaks — evolve with scroll
     if (opts.streaks) {
       const streakP = getStreakParams(sp);
-      streaks.forEach(s => { s.update(streakP); s.draw(streakP); });
+      streaks.forEach(s => { s.update(streakP); s.draw(streakP, pal); });
     }
 
     // Cloud layer — clouds live at a fixed altitude, viewport scrolls past them
@@ -838,7 +808,7 @@ export function initCanvas(canvasEl, theme, options) {
           g.active = true;
         }
       }
-      const gc = isDarkMode ? GUST_COLOR_DARK : GUST_COLOR_LIGHT;
+      const gc = pal.gustColor;
       gusts.forEach(g => {
         if (!g.active) return;
         g.life++;
@@ -896,7 +866,7 @@ export function initCanvas(canvasEl, theme, options) {
             m.opacity = Math.min(0.5, m.opacity + 0.005 + holdStrength * 0.01);
           }
         }
-        m.draw(isDarkMode);
+        m.draw(pal);
       });
     }
     clickImpulse.strength *= IMPULSE_DECAY;
@@ -915,7 +885,7 @@ export function initCanvas(canvasEl, theme, options) {
       const fade = 1 - p.life / p.maxLife;
       const op = p.opacity * fade;
       if (op < CLICK_DRAW_THRESHOLD) return;
-      const c = isDarkMode ? p.color : p.colorLight;
+      const c = p.color;
       const grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * CLICK_GLOW_RADIUS);
       grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${op})`);
       grad.addColorStop(0.4, `rgba(${c[0]},${c[1]},${c[2]},${op * 0.4})`);
@@ -944,9 +914,7 @@ export function initCanvas(canvasEl, theme, options) {
       }
     }
     // Update and draw orbit particles
-    const oc = isDarkMode
-      ? (isUpside() ? ORBIT_COLOR_UPSIDE_DARK : ORBIT_COLOR_DARK)
-      : (isUpside() ? ORBIT_COLOR_UPSIDE_LIGHT : ORBIT_COLOR_LIGHT);
+    const oc = pal.orbitColor;
     for (let i = orbitParticles.length - 1; i >= 0; i--) {
       const p = orbitParticles[i];
       const dx = dragPos.x - p.x;
@@ -987,7 +955,7 @@ export function initCanvas(canvasEl, theme, options) {
       const fade = 1 - s.life / s.maxLife;
       const op = s.opacity * fade;
       if (op < CLICK_DRAW_THRESHOLD || !s.prev) continue;
-      const c = isDarkMode ? TRAIL_COLOR_DARK : TRAIL_COLOR_LIGHT;
+      const c = pal.trailColor;
       ctx.save();
       ctx.globalAlpha = op;
       ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
@@ -1017,6 +985,7 @@ export function initCanvas(canvasEl, theme, options) {
   // Click burst — scatter luminous motes from click point
   const clickParticles = [];
   const isUpside = () => document.body.classList.contains('upside-down');
+  let currentPal = resolvePalette(isDarkMode ? 'dark' : 'light', null);
 
   // Click fury — rapid clicking triggers escalating sky effects
   let clickFury = 0;
@@ -1062,8 +1031,6 @@ export function initCanvas(canvasEl, theme, options) {
     clickFury = Math.min(clickFury + FURY_PER_CLICK, FURY_MAX);
     lastClickTime = performance.now();
 
-    const upside = isUpside();
-
     // Tier 1: Lightning
     if (clickFury >= FURY_TIER1 && lightningBolts.length < LIGHTNING_MAX_BOLTS) {
       const startX = cx + (Math.random() - 0.5) * LIGHTNING_START_SPREAD;
@@ -1104,8 +1071,7 @@ export function initCanvas(canvasEl, theme, options) {
         life: 0,
         maxLife: CLICK_LIFE_MIN + Math.random() * CLICK_LIFE_RANGE,
         phase: Math.random() * Math.PI * 2,
-        color: upside ? CLICK_COLOR_UPSIDE_DARK : CLICK_COLOR_DARK,
-        colorLight: upside ? CLICK_COLOR_UPSIDE_LIGHT : CLICK_COLOR_LIGHT,
+        color: currentPal.clickColor,
       });
     }
   });
@@ -1155,7 +1121,6 @@ export function initCanvas(canvasEl, theme, options) {
     if (!isDragging) return;
     const heldSec = (performance.now() - holdStart) / 1000;
     const blast = Math.min(BLAST_BASE + heldSec * BLAST_PER_SEC, BLAST_MAX);
-    const upside = isUpside();
 
     // Repel all nearby motes
     clickImpulse.x = dragPos.x;
@@ -1177,8 +1142,7 @@ export function initCanvas(canvasEl, theme, options) {
         life: 0,
         maxLife: EXTRA_BURST_LIFE_MIN + Math.random() * 30,
         phase: Math.random() * Math.PI * 2,
-        color: upside ? CLICK_COLOR_UPSIDE_DARK : CLICK_COLOR_DARK,
-        colorLight: upside ? CLICK_COLOR_UPSIDE_LIGHT : CLICK_COLOR_LIGHT,
+        color: currentPal.clickColor,
       });
     });
     orbitParticles.length = 0;
@@ -1197,8 +1161,7 @@ export function initCanvas(canvasEl, theme, options) {
         life: 0,
         maxLife: EXTRA_BURST_LIFE_MIN + Math.random() * EXTRA_BURST_LIFE_RANGE,
         phase: Math.random() * Math.PI * 2,
-        color: upside ? CLICK_COLOR_UPSIDE_DARK : CLICK_COLOR_DARK,
-        colorLight: upside ? CLICK_COLOR_UPSIDE_LIGHT : CLICK_COLOR_LIGHT,
+        color: currentPal.clickColor,
       });
     }
 
