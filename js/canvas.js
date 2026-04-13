@@ -375,6 +375,12 @@ const TERRAIN_POP_DIST = 80;             // click radius for block pops
 const TERRAIN_POP_DURATION = 20;         // frames for a pop animation
 const TERRAIN_FADE_IN_START = 0.55;      // scroll position where terrain starts to appear
 const TERRAIN_FADE_IN_END = 0.70;        // scroll position where terrain is fully visible
+const TERRAIN_BEVEL_SIZE = 1;            // pixel width of highlight/shadow edges
+const TERRAIN_BEVEL_HIGHLIGHT = 35;      // RGB increase for top-edge highlight
+const TERRAIN_BEVEL_SHADOW = 30;         // RGB decrease for right/bottom-edge shadow
+const TERRAIN_BACK_Y_PARALLAX = 0.02;   // vertical rise rate for back mountains
+const TERRAIN_MID_Y_PARALLAX = 0.06;    // vertical rise rate for mid hills
+const TERRAIN_FRONT_Y_PARALLAX = 0.12;  // vertical rise rate for front terrain
 
 // Terrain colors (used directly by terrain renderer)
 const TERRAIN_GRASS     = [90, 140, 60];
@@ -1077,6 +1083,18 @@ let terrainTrees = [];           // [{col, height}] tree positions
 let terrainPops = [];            // [{col, frame}] active block pop animations
 let terrainNeedsRegen = true;
 
+// Renders a single terrain block with isometric bevel edges:
+// lighter top edge (light source above) + darker right/bottom edges (shadow).
+function drawBeveledBlock(targetCtx, bx, by, size, color) {
+  targetCtx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
+  targetCtx.fillRect(bx, by, size, size);
+  targetCtx.fillStyle = `rgb(${Math.min(255, color[0] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[1] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[2] + TERRAIN_BEVEL_HIGHLIGHT)})`;
+  targetCtx.fillRect(bx, by, size, TERRAIN_BEVEL_SIZE);
+  targetCtx.fillStyle = `rgb(${Math.max(0, color[0] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[1] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[2] - TERRAIN_BEVEL_SHADOW)})`;
+  targetCtx.fillRect(bx + size - TERRAIN_BEVEL_SIZE, by, TERRAIN_BEVEL_SIZE, size);
+  targetCtx.fillRect(bx, by + size - TERRAIN_BEVEL_SIZE, size, TERRAIN_BEVEL_SIZE);
+}
+
 function generateTerrain(w, h) {
   const bs = TERRAIN_BLOCK_SIZE;
   // Extra columns to cover the maximum parallax shift so terrain fills edge-to-edge
@@ -1134,8 +1152,7 @@ function generateTerrain(w, h) {
       } else {
         color = TERRAIN_DEEP;
       }
-      tctx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
-      tctx.fillRect(bx, by, bs, bs);
+      drawBeveledBlock(tctx, bx, by, bs, color);
     }
   }
 
@@ -1145,30 +1162,26 @@ function generateTerrain(w, h) {
     const groundY = bufH - terrainHeightMap[tree.col] * bs;
     // Trunk
     for (let r = 0; r < tree.trunkH; r++) {
-      tctx.fillStyle = `rgb(${TERRAIN_TRUNK[0]},${TERRAIN_TRUNK[1]},${TERRAIN_TRUNK[2]})`;
-      tctx.fillRect(bx, groundY - (r + 1) * bs, bs, bs);
+      drawBeveledBlock(tctx, bx, groundY - (r + 1) * bs, bs, TERRAIN_TRUNK);
     }
     // Canopy — 3-wide dome
     const canopyY = groundY - (tree.trunkH + 1) * bs;
     for (let dx = -1; dx <= 1; dx++) {
       for (let dy = 0; dy <= 1; dy++) {
-        tctx.fillStyle = `rgb(${TERRAIN_LEAVES[0]},${TERRAIN_LEAVES[1]},${TERRAIN_LEAVES[2]})`;
-        tctx.fillRect(bx + dx * bs, canopyY - dy * bs, bs, bs);
+        drawBeveledBlock(tctx, bx + dx * bs, canopyY - dy * bs, bs, TERRAIN_LEAVES);
       }
     }
     // Top cap
-    tctx.fillStyle = `rgb(${TERRAIN_LEAVES[0]},${TERRAIN_LEAVES[1]},${TERRAIN_LEAVES[2]})`;
-    tctx.fillRect(bx, canopyY - 2 * bs, bs, bs);
+    drawBeveledBlock(tctx, bx, canopyY - 2 * bs, bs, TERRAIN_LEAVES);
   });
 
-  // Render mid hills to buffer
+  // Render mid hills to buffer (individual blocks with bevels)
   terrainMidBuffer = document.createElement('canvas');
   terrainMidBuffer.width = cols * bs;
   terrainMidBuffer.height = Math.floor(h * 0.12);
   const mctx = terrainMidBuffer.getContext('2d');
   const mH = terrainMidBuffer.height;
   const midCols = cols;
-  mctx.fillStyle = `rgb(${TERRAIN_HILLS[0]},${TERRAIN_HILLS[1]},${TERRAIN_HILLS[2]})`;
   for (let i = 0; i < midCols; i++) {
     const x = i / midCols;
     const height = Math.floor(
@@ -1176,17 +1189,19 @@ function generateTerrain(w, h) {
       + Math.sin(x * Math.PI * 3.1 + 0.8) * mH * 0.25
       + Math.sin(x * Math.PI * 7.2 + 2.1) * mH * 0.1
     );
-    mctx.fillRect(i * bs, mH - height, bs, height);
+    const numRows = Math.ceil(height / bs);
+    for (let row = 0; row < numRows; row++) {
+      drawBeveledBlock(mctx, i * bs, mH - (row + 1) * bs, bs, TERRAIN_HILLS);
+    }
   }
 
-  // Render back mountains to buffer
+  // Render back mountains to buffer (individual blocks with bevels)
   terrainBackBuffer = document.createElement('canvas');
   terrainBackBuffer.width = cols * bs;
   terrainBackBuffer.height = Math.floor(h * 0.15);
   const bctx = terrainBackBuffer.getContext('2d');
   const bH = terrainBackBuffer.height;
   const backCols = cols;
-  bctx.fillStyle = `rgb(${TERRAIN_MOUNTAIN[0]},${TERRAIN_MOUNTAIN[1]},${TERRAIN_MOUNTAIN[2]})`;
   for (let i = 0; i < backCols; i++) {
     const x = i / backCols;
     const height = Math.floor(
@@ -1194,7 +1209,10 @@ function generateTerrain(w, h) {
       + Math.sin(x * Math.PI * 2.3 + 0.5) * bH * 0.3
       + Math.sin(x * Math.PI * 4.8 + 1.7) * bH * 0.15
     );
-    bctx.fillRect(i * bs, bH - height, bs, height);
+    const numRows = Math.ceil(height / bs);
+    for (let row = 0; row < numRows; row++) {
+      drawBeveledBlock(bctx, i * bs, bH - (row + 1) * bs, bs, TERRAIN_MOUNTAIN);
+    }
   }
 
   terrainNeedsRegen = false;
@@ -1989,28 +2007,30 @@ export function initCanvas(canvasEl, theme, options) {
       // appears at the visual top. Invert scroll so it's visible near sp=0.
       const terrainSp = upsd ? 1 - sp : sp;
       const terrainVis = scrollFade(terrainSp, TERRAIN_FADE_IN_START, TERRAIN_FADE_IN_END, 2, 2);
+      const parallaxDriver = Math.max(0, terrainSp - TERRAIN_FADE_IN_START);
       if (terrainVis > 0 && terrainBackBuffer && terrainMidBuffer && terrainBuffer) {
         ctx.save();
         ctx.globalAlpha = terrainVis;
 
-        // Back mountains (slowest parallax — slight horizontal offset from scroll)
-        const backY = canvas.height - terrainBackBuffer.height;
+        // Back mountains (slowest parallax — barely rises)
+        const backY = canvas.height - terrainBackBuffer.height - parallaxDriver * TERRAIN_BACK_Y_PARALLAX * canvas.height;
         const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * 0.05;
         ctx.drawImage(terrainBackBuffer, -backShift, backY);
 
-        // Mid hills
-        const midY = canvas.height - terrainMidBuffer.height;
+        // Mid hills (moderate rise)
+        const midY = canvas.height - terrainMidBuffer.height - parallaxDriver * TERRAIN_MID_Y_PARALLAX * canvas.height;
         const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * 0.05;
         ctx.drawImage(terrainMidBuffer, -midShift, midY);
 
-        // Front terrain
-        const frontY = canvas.height - terrainBuffer.height;
+        // Front terrain (rises the most)
+        const frontY = canvas.height - terrainBuffer.height - parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
         const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
         ctx.drawImage(terrainBuffer, -frontShift, frontY);
 
         ctx.restore();
 
         // Block pop animations
+        const popYOff = parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
         for (let i = terrainPops.length - 1; i >= 0; i--) {
           const pop = terrainPops[i];
           pop.frame++;
@@ -2021,8 +2041,7 @@ export function initCanvas(canvasEl, theme, options) {
           const t = pop.frame / TERRAIN_POP_DURATION;
           const lift = Math.sin(t * Math.PI) * 3 * TERRAIN_BLOCK_SIZE;
           ctx.globalAlpha = terrainVis * (1 - t * 0.5);
-          ctx.fillStyle = `rgb(${pop.color[0]},${pop.color[1]},${pop.color[2]})`;
-          ctx.fillRect(pop.x, pop.y - lift, TERRAIN_BLOCK_SIZE, TERRAIN_BLOCK_SIZE);
+          drawBeveledBlock(ctx, pop.x, pop.y - popYOff - lift, TERRAIN_BLOCK_SIZE, pop.color);
           ctx.globalAlpha = 1;
         }
       }
@@ -2031,12 +2050,13 @@ export function initCanvas(canvasEl, theme, options) {
       if (terrainHeightMap && terrainVis > 0) {
         const bs = TERRAIN_BLOCK_SIZE;
         const bufH = terrainBuffer ? terrainBuffer.height : canvas.height * TERRAIN_HEIGHT_RATIO;
-        const terrainTop = canvas.height - bufH;
+        const frontYOff = parallaxDriver * TERRAIN_FRONT_Y_PARALLAX * canvas.height;
+        const terrainTop = canvas.height - bufH - frontYOff;
         const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * 0.05;
         motes.forEach(m => {
           const col = Math.floor((m.x + shift) / bs);
           if (col >= 0 && col < terrainHeightMap.length) {
-            const surfaceY = canvas.height - terrainHeightMap[col] * bs;
+            const surfaceY = canvas.height - terrainHeightMap[col] * bs - frontYOff;
             if (m.y > surfaceY * terrainVis + terrainTop * (1 - terrainVis)) {
               m.y = surfaceY;
               m.vy = -Math.abs(m.vy) * 0.3;
