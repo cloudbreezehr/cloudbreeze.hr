@@ -848,16 +848,27 @@ export function initCanvas(canvasEl, theme, options) {
   let reversalTimes = [];      // timestamps of recent direction changes
   let snowTurbulence = 0;      // current turbulence intensity, decays per frame
 
+  // Stable viewport height that ignores the mobile browser toolbar.
+  // CSS `lvh` resolves to the large viewport (toolbar hidden).
+  // Using it prevents particles from teleporting when the toolbar
+  // collapses/expands on scroll.
+  const lvhProbe = document.createElement('div');
+  lvhProbe.style.cssText = 'position:fixed;height:100lvh;pointer-events:none;visibility:hidden';
+  document.body.appendChild(lvhProbe);
+  function stableHeight() {
+    return lvhProbe.offsetHeight || window.innerHeight;
+  }
+
   theme.onChange(dark => { isDarkMode = dark; });
 
   function resize() {
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    canvas.height = stableHeight();
   }
 
   function updateScroll() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
-    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight - stableHeight();
     scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
     const delta = scrollTop - lastScrollTop;
     scrollVelocity += delta * SCROLL_VEL_GAIN;
