@@ -403,6 +403,24 @@ const JELLY_COLORS = [
 
 let canvas, ctx;
 
+// Tapered gradient trail shared by shooting stars and meteors.
+// colors is a 3-element array: [tail, mid, head] RGB strings.
+function drawTrail(headX, headY, tailX, tailY, colors, opacity, lineWidth) {
+  const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
+  grad.addColorStop(0, `rgba(${colors[0]},0)`);
+  grad.addColorStop(0.7, `rgba(${colors[1]},${opacity * 0.3})`);
+  grad.addColorStop(1, `rgba(${colors[2]},${opacity})`);
+  ctx.save();
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = lineWidth;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(tailX, tailY);
+  ctx.lineTo(headX, headY);
+  ctx.stroke();
+  ctx.restore();
+}
+
 function getStreakParams(sp) {
   if (sp < 0.2) return { opMul: 1.0, speedMul: 1.0 };
   if (sp < 0.5) return { opMul: 1.3, speedMul: 1.2 };
@@ -1098,20 +1116,7 @@ export function initCanvas(canvasEl, theme, options) {
         const op = ss.opacity * fade * starVis2;
         const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
         const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        const sc2 = pal.shootingColors;
-        const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
-        grad.addColorStop(0, `rgba(${sc2[0]},0)`);
-        grad.addColorStop(0.7, `rgba(${sc2[1]},${op * 0.3})`);
-        grad.addColorStop(1, `rgba(${sc2[2]},${op})`);
-        ctx.save();
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = SHOOTING_LINE_WIDTH;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(tailX, tailY);
-        ctx.lineTo(ss.x, ss.y);
-        ctx.stroke();
-        ctx.restore();
+        drawTrail(ss.x, ss.y, tailX, tailY, pal.shootingColors, op, SHOOTING_LINE_WIDTH);
       });
     }
 
@@ -1285,20 +1290,7 @@ export function initCanvas(canvasEl, theme, options) {
       const op = m.opacity * fade;
       const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
       const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
-      const mc = pal.meteorColors;
-      const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
-      grad.addColorStop(0, `rgba(${mc[0]},0)`);
-      grad.addColorStop(0.7, `rgba(${mc[1]},${op * 0.3})`);
-      grad.addColorStop(1, `rgba(${mc[2]},${op})`);
-      ctx.save();
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = METEOR_LINE_WIDTH;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(tailX, tailY);
-      ctx.lineTo(m.x, m.y);
-      ctx.stroke();
-      ctx.restore();
+      drawTrail(m.x, m.y, tailX, tailY, pal.meteorColors, op, METEOR_LINE_WIDTH);
     });
 
     // Streaks — evolve with scroll
