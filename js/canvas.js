@@ -20,6 +20,10 @@ const STAR_PARALLAX_SCALE = 0.4;
 const STAR_FADE_START = 0.2;
 const STAR_FADE_END = 0.5;
 const STAR_TIME_STEP = 0.008;
+const STAR_GLOW_THRESHOLD = 0.8;
+const STAR_GLOW_RADIUS = 2.5;
+const STAR_GLOW_MID = 0.35;
+const STAR_GLOW_MID_ALPHA = 0.4;
 
 // ── Shooting Stars ──
 const SHOOTING_POOL_SIZE = 3;
@@ -1057,10 +1061,25 @@ export function initCanvas(canvasEl, theme, options) {
           // Parallax — closer stars (higher depth) shift more on scroll
           const shift = s.depth * sp * canvas.height * STAR_PARALLAX_SCALE;
           const py = ((s.y - shift) % canvas.height + canvas.height) % canvas.height;
-          ctx.fillStyle = `rgba(${pal.starColor},${op})`;
-          ctx.beginPath();
-          ctx.arc(s.x % canvas.width, py, s.r, 0, Math.PI * 2);
-          ctx.fill();
+          const sx = s.x % canvas.width;
+          const sc = pal.starColor;
+          // Larger stars get a soft radial glow halo
+          if (s.r >= STAR_GLOW_THRESHOLD) {
+            const gr = s.r * STAR_GLOW_RADIUS;
+            const grad = ctx.createRadialGradient(sx, py, 0, sx, py, gr);
+            grad.addColorStop(0, `rgba(${sc},${op})`);
+            grad.addColorStop(STAR_GLOW_MID, `rgba(${sc},${op * STAR_GLOW_MID_ALPHA})`);
+            grad.addColorStop(1, `rgba(${sc},0)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(sx, py, gr, 0, Math.PI * 2);
+            ctx.fill();
+          } else {
+            ctx.fillStyle = `rgba(${sc},${op})`;
+            ctx.beginPath();
+            ctx.arc(sx, py, s.r, 0, Math.PI * 2);
+            ctx.fill();
+          }
         });
       }
     }
