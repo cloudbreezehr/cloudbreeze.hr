@@ -24,6 +24,10 @@ const STAR_GLOW_THRESHOLD = 0.8;
 const STAR_GLOW_RADIUS = 2.5;
 const STAR_GLOW_MID = 0.35;
 const STAR_GLOW_MID_ALPHA = 0.4;
+const STAR_GLARE_THRESHOLD = 1.0;
+const STAR_GLARE_SPIKE_LENGTH = 14;
+const STAR_GLARE_WIDTH = 0.6;
+const STAR_GLARE_ROTATION_SPEED = 0.15;
 
 // ── Shooting Stars ──
 const SHOOTING_POOL_SIZE = 3;
@@ -1010,6 +1014,7 @@ export function initCanvas(canvasEl, theme, options) {
       twinkleSpeed: STAR_TWINKLE_SPEED_MIN + Math.random() * STAR_TWINKLE_SPEED_RANGE,
       flash: 0,
       depth: STAR_DEPTH_MIN + Math.random() * STAR_DEPTH_RANGE,
+      glarePhase: Math.random() * Math.PI,
     };
   }) : [];
 
@@ -1093,6 +1098,31 @@ export function initCanvas(canvasEl, theme, options) {
             ctx.beginPath();
             ctx.arc(sx, py, s.r, 0, Math.PI * 2);
             ctx.fill();
+          }
+          // Cross-flare glare on bright flashing stars
+          if (s.r >= STAR_GLARE_THRESHOLD && s.flash > STAR_FLASH_THRESHOLD) {
+            const glareLen = s.r * STAR_GLARE_SPIKE_LENGTH * s.flash;
+            const angle = t * STAR_GLARE_ROTATION_SPEED + s.glarePhase;
+            ctx.save();
+            ctx.globalCompositeOperation = 'lighter';
+            ctx.globalAlpha = s.flash * starVis;
+            ctx.lineWidth = STAR_GLARE_WIDTH;
+            ctx.lineCap = 'round';
+            for (let i = 0; i < 2; i++) {
+              const a = angle + i * Math.PI * 0.5;
+              const dx = Math.cos(a) * glareLen;
+              const dy = Math.sin(a) * glareLen;
+              const grad = ctx.createLinearGradient(sx - dx, py - dy, sx + dx, py + dy);
+              grad.addColorStop(0, `rgba(${sc},0)`);
+              grad.addColorStop(0.5, `rgba(${sc},1)`);
+              grad.addColorStop(1, `rgba(${sc},0)`);
+              ctx.strokeStyle = grad;
+              ctx.beginPath();
+              ctx.moveTo(sx - dx, py - dy);
+              ctx.lineTo(sx + dx, py + dy);
+              ctx.stroke();
+            }
+            ctx.restore();
           }
         });
       }
