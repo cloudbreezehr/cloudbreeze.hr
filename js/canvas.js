@@ -47,14 +47,6 @@ const SHOOTING_OPACITY_RANGE = 0.4;
 const SHOOTING_LIFE_MIN = 20;
 const SHOOTING_LIFE_RANGE = 20;
 const SHOOTING_LINE_WIDTH = 1.2;
-const SHOOTING_OUTER_WIDTH = 6;
-const SHOOTING_CORE_WIDTH = 0.5;
-
-// ── Trail Glow (shooting stars) ──
-const TRAIL_BLOOM_SCALE = 2.5;
-const TRAIL_BLOOM_ALPHA = 0.1;
-const TRAIL_OUTER_ALPHA = 0.25;
-const TRAIL_CORE_ALPHA = 0.9;
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -410,60 +402,6 @@ const JELLY_COLORS = [
 ];
 
 let canvas, ctx;
-
-// Multi-layer trail rendering for shooting stars.
-// Four passes with additive blending, no shadowBlur (GPU-expensive).
-// Bloom + outer glow + gradient trail + white core.
-function drawGlowTrail(headX, headY, tailX, tailY, colors, opacity, outerWidth, trailWidth, coreWidth) {
-  const head = colors[2];
-
-  ctx.save();
-  ctx.lineCap = 'round';
-  ctx.globalCompositeOperation = 'lighter';
-
-  // Layer 1: Wide bloom (replaces expensive shadowBlur)
-  ctx.globalAlpha = opacity * TRAIL_BLOOM_ALPHA;
-  ctx.strokeStyle = `rgb(${head[0]},${head[1]},${head[2]})`;
-  ctx.lineWidth = outerWidth * TRAIL_BLOOM_SCALE;
-  ctx.beginPath();
-  ctx.moveTo(tailX, tailY);
-  ctx.lineTo(headX, headY);
-  ctx.stroke();
-
-  // Layer 2: Outer glow
-  ctx.globalAlpha = opacity * TRAIL_OUTER_ALPHA;
-  ctx.lineWidth = outerWidth;
-  ctx.beginPath();
-  ctx.moveTo(tailX, tailY);
-  ctx.lineTo(headX, headY);
-  ctx.stroke();
-
-  // Layer 3: Color gradient trail
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.globalAlpha = 1;
-  const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
-  grad.addColorStop(0, `rgba(${colors[0]},0)`);
-  grad.addColorStop(0.7, `rgba(${colors[1]},${opacity * 0.3})`);
-  grad.addColorStop(1, `rgba(${colors[2]},${opacity})`);
-  ctx.strokeStyle = grad;
-  ctx.lineWidth = trailWidth;
-  ctx.beginPath();
-  ctx.moveTo(tailX, tailY);
-  ctx.lineTo(headX, headY);
-  ctx.stroke();
-
-  // Layer 4: Bright white-hot core
-  ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = opacity * TRAIL_CORE_ALPHA;
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = coreWidth;
-  ctx.beginPath();
-  ctx.moveTo(tailX, tailY);
-  ctx.lineTo(headX, headY);
-  ctx.stroke();
-
-  ctx.restore();
-}
 
 function getStreakParams(sp) {
   if (sp < 0.2) return { opMul: 1.0, speedMul: 1.0 };
@@ -1160,8 +1098,20 @@ export function initCanvas(canvasEl, theme, options) {
         const op = ss.opacity * fade * starVis2;
         const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
         const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        drawGlowTrail(ss.x, ss.y, tailX, tailY, pal.shootingColors, op,
-          SHOOTING_OUTER_WIDTH, SHOOTING_LINE_WIDTH, SHOOTING_CORE_WIDTH);
+        const sc2 = pal.shootingColors;
+        const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+        grad.addColorStop(0, `rgba(${sc2[0]},0)`);
+        grad.addColorStop(0.7, `rgba(${sc2[1]},${op * 0.3})`);
+        grad.addColorStop(1, `rgba(${sc2[2]},${op})`);
+        ctx.save();
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = SHOOTING_LINE_WIDTH;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(tailX, tailY);
+        ctx.lineTo(ss.x, ss.y);
+        ctx.stroke();
+        ctx.restore();
       });
     }
 
