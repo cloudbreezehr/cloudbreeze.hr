@@ -1350,8 +1350,18 @@ export function initCanvas(canvasEl, theme, options) {
   }
 
   document.addEventListener('pointerup', releaseDrag);
-  // Touch scroll: browser fires pointercancel (not pointerup) when it takes over the touch
-  document.addEventListener('pointercancel', releaseDrag);
+
+  // Touch fallback — after the browser takes over a touch for scrolling it fires
+  // pointercancel and stops sending pointermove/pointerup.  Touch events still
+  // fire though, so we use touchmove to keep tracking the finger and touchend
+  // to release.  On desktop these never fire so there's no impact.
+  document.addEventListener('touchmove', e => {
+    if (!isDragging || !e.touches.length) return;
+    dragPos.x = e.touches[0].clientX;
+    dragPos.y = canvasY(e.touches[0].clientY);
+  }, { passive: true });
+
+  document.addEventListener('touchend', releaseDrag);
 
   render();
 }
