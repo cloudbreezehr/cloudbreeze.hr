@@ -467,6 +467,10 @@ class ScrollMote {
   }
 }
 
+const SNOW_CRYSTAL_THRESHOLD = 3;  // flakes with r >= this get crystalline arms
+const SNOW_BRANCH_RATIO = 0.35;    // branch length relative to arm
+const SNOW_BRANCH_ANGLE = Math.PI / 4;
+
 class Snowflake {
   constructor() { this.reset(true); }
   reset(init) {
@@ -480,9 +484,12 @@ class Snowflake {
     this.swaySpeed = SNOW_SWAY_SPEED_MIN + Math.random() * SNOW_SWAY_SPEED_RANGE;
     this.swayAmp = SNOW_SWAY_AMP_MIN + Math.random() * SNOW_SWAY_AMP_RANGE;
     this.opacity = SNOW_OPACITY_MIN + Math.random() * SNOW_OPACITY_RANGE;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotSpeed = (Math.random() - 0.5) * 0.01;
   }
   update() {
     this.sway += this.swaySpeed;
+    this.rotation += this.rotSpeed;
     this.x += Math.sin(this.sway) * this.swayAmp + this.vx;
     this.y += this.fallSpeed + this.vy;
     this.vx *= SNOW_FRICTION;
@@ -494,17 +501,46 @@ class Snowflake {
   draw() {
     ctx.save();
     ctx.globalAlpha = this.opacity;
-    ctx.fillStyle = 'rgba(220,240,255,1)';
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fill();
-    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * SNOW_GLOW_RADIUS);
-    grad.addColorStop(0, `rgba(200,230,255,${SNOW_GLOW_OPACITY})`);
-    grad.addColorStop(1, 'transparent');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r * SNOW_GLOW_RADIUS, 0, Math.PI * 2);
-    ctx.fill();
+    if (this.r >= SNOW_CRYSTAL_THRESHOLD) {
+      // Crystalline snowflake — 6 arms with branches, slow rotation
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.rotation);
+      ctx.strokeStyle = 'rgba(220,240,255,1)';
+      ctx.lineWidth = 0.6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      const arm = this.r;
+      const branch = arm * SNOW_BRANCH_RATIO;
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i;
+        const ax = Math.cos(a) * arm;
+        const ay = Math.sin(a) * arm;
+        ctx.moveTo(0, 0);
+        ctx.lineTo(ax, ay);
+        // Two branches at 2/3 along the arm
+        const mx = Math.cos(a) * arm * 0.6;
+        const my = Math.sin(a) * arm * 0.6;
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx + Math.cos(a + SNOW_BRANCH_ANGLE) * branch, my + Math.sin(a + SNOW_BRANCH_ANGLE) * branch);
+        ctx.moveTo(mx, my);
+        ctx.lineTo(mx + Math.cos(a - SNOW_BRANCH_ANGLE) * branch, my + Math.sin(a - SNOW_BRANCH_ANGLE) * branch);
+      }
+      ctx.stroke();
+      // Subtle glow for larger crystalline flakes
+      const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * SNOW_GLOW_RADIUS);
+      grad.addColorStop(0, `rgba(200,230,255,${SNOW_GLOW_OPACITY})`);
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.r * SNOW_GLOW_RADIUS, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Small flakes — simple glowing dots
+      ctx.fillStyle = 'rgba(220,240,255,1)';
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 }
