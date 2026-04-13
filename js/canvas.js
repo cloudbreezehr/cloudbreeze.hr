@@ -1,4 +1,4 @@
-import { lerpColor, multiLerp, toRgba, palettes, warmShift } from './colors.js';
+import { lerpColor, multiLerp, toRgba, palettes } from './colors.js';
 
 // ── Stars ──
 const STAR_RADIUS_MIN = 0.3;
@@ -18,7 +18,6 @@ const STAR_TWINKLE_BASE = 0.7;
 const STAR_TWINKLE_RANGE = 0.3;
 const STAR_PARALLAX_SCALE = 0.4;
 const STAR_COLOR = [180, 210, 255];
-const STAR_COLOR_UPSIDE = warmShift(STAR_COLOR);
 const STAR_FADE_START = 0.2;
 const STAR_FADE_END = 0.5;
 const STAR_TIME_STEP = 0.008;
@@ -41,7 +40,6 @@ const SHOOTING_LIFE_MIN = 20;
 const SHOOTING_LIFE_RANGE = 20;
 const SHOOTING_LINE_WIDTH = 1.2;
 const SHOOTING_COLORS = [[180, 210, 255], [200, 225, 255], [230, 240, 255]];
-const SHOOTING_COLORS_UPSIDE = SHOOTING_COLORS.map(c => warmShift(c));
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -55,7 +53,6 @@ const STREAK_WIDTH_RANGE = 1;
 const STREAK_ANGLE_MIN = -0.1;
 const STREAK_ANGLE_RANGE = 0.2;
 const STREAK_COLOR = [120, 190, 240];
-const STREAK_COLOR_UPSIDE = warmShift(STREAK_COLOR);
 
 // ── Clouds ──
 const CLOUD_X_SPREAD = 1.4;
@@ -104,8 +101,6 @@ const WISP_WIDTH_MIN = 0.8;
 const WISP_WIDTH_RANGE = 1.5;
 const WISP_PHASE_SPEED = 0.01;
 const WISP_FALLBACK_COLOR = [180, 215, 245];
-const WISP_COLOR_DARK_UPSIDE = warmShift(palettes.dark.wispColor);
-const WISP_COLOR_LIGHT_UPSIDE = warmShift(palettes.light.wispColor);
 const WISP_Y_PIVOT = 0.45;
 const WISP_Y_SCALE = 2.5;
 const WISP_FADE_IN_START = 0.15;
@@ -133,10 +128,6 @@ const MOTE_COLOR_DARK = [200, 230, 255];
 const MOTE_COLOR_LIGHT = [80, 150, 220];
 const MOTE_GLOW_DARK = [130, 195, 255];
 const MOTE_GLOW_LIGHT = [55, 120, 200];
-const MOTE_COLOR_UPSIDE_DARK = warmShift(MOTE_COLOR_DARK);
-const MOTE_COLOR_UPSIDE_LIGHT = warmShift(MOTE_COLOR_LIGHT);
-const MOTE_GLOW_UPSIDE_DARK = warmShift(MOTE_GLOW_DARK);
-const MOTE_GLOW_UPSIDE_LIGHT = warmShift(MOTE_GLOW_LIGHT);
 
 // ── Horizon ──
 const HORIZON_Y_BASE = 0.75;
@@ -161,8 +152,6 @@ const GUST_LIFE_MIN = 18;
 const GUST_LIFE_RANGE = 14;
 const GUST_COLOR_DARK = [180, 220, 255];
 const GUST_COLOR_LIGHT = [80, 150, 220];
-const GUST_COLOR_UPSIDE_DARK = warmShift(GUST_COLOR_DARK);
-const GUST_COLOR_UPSIDE_LIGHT = warmShift(GUST_COLOR_LIGHT);
 
 // ── Click Particles ──
 const CLICK_COUNT_MIN = 6;
@@ -183,8 +172,8 @@ const CLICK_BREEZE_FREQ = 0.08;
 const CLICK_BREEZE_AMP = 0.3;
 const CLICK_COLOR_DARK = [150, 210, 255];
 const CLICK_COLOR_LIGHT = [55, 120, 200];
-const CLICK_COLOR_UPSIDE_DARK = warmShift(CLICK_COLOR_DARK);
-const CLICK_COLOR_UPSIDE_LIGHT = warmShift(CLICK_COLOR_LIGHT);
+const CLICK_COLOR_UPSIDE_DARK = [255, 130, 130];
+const CLICK_COLOR_UPSIDE_LIGHT = [200, 60, 60];
 
 // ── Click Fury ──
 const FURY_MAX = 60;
@@ -213,9 +202,9 @@ const LIGHTNING_FLASH_ALPHA = 0.06;
 const LIGHTNING_COLOR = [200, 225, 255];
 const LIGHTNING_SHADOW_COLOR = [180, 210, 255, 0.8];
 const LIGHTNING_FLASH_COLOR = [200, 220, 255];
-const LIGHTNING_COLOR_UPSIDE = warmShift(LIGHTNING_COLOR);
-const LIGHTNING_SHADOW_UPSIDE = [...warmShift(LIGHTNING_SHADOW_COLOR.slice(0, 3)), LIGHTNING_SHADOW_COLOR[3]];
-const LIGHTNING_FLASH_UPSIDE = warmShift(LIGHTNING_FLASH_COLOR);
+const LIGHTNING_COLOR_UPSIDE = [255, 120, 80];
+const LIGHTNING_SHADOW_UPSIDE = [255, 80, 40, 0.8];
+const LIGHTNING_FLASH_UPSIDE = [255, 100, 50];
 const LIGHTNING_START_SPREAD = 200;
 const LIGHTNING_START_Y = 0.2;
 const LIGHTNING_OPACITY = 0.9;
@@ -254,7 +243,7 @@ const METEOR_BURST_MIN = 2;
 const METEOR_BURST_RANGE = 3;
 const METEOR_LINE_WIDTH = 1.8;
 const METEOR_COLORS = [[180, 210, 255], [200, 225, 255], [230, 240, 255]];
-const METEOR_COLORS_UPSIDE = METEOR_COLORS.map(c => warmShift(c));
+const METEOR_COLORS_UPSIDE = [[255, 150, 100], [255, 180, 130], [255, 200, 160]];
 
 // ── Orbit Particles ──
 const ORBIT_MAX = 60;
@@ -276,8 +265,8 @@ const ORBIT_GLOW_RADIUS = 4;
 const ORBIT_DRAW_THRESHOLD = 0.005;
 const ORBIT_COLOR_DARK = [180, 220, 255];
 const ORBIT_COLOR_LIGHT = [55, 130, 210];
-const ORBIT_COLOR_UPSIDE_DARK = warmShift(ORBIT_COLOR_DARK);
-const ORBIT_COLOR_UPSIDE_LIGHT = warmShift(ORBIT_COLOR_LIGHT);
+const ORBIT_COLOR_UPSIDE_DARK = [255, 150, 150];
+const ORBIT_COLOR_UPSIDE_LIGHT = [200, 60, 60];
 
 // ── Hold & Attract ──
 const HOLD_RAMP_MS = 3000;
@@ -305,8 +294,6 @@ const TRAIL_LIFE_RANGE = 15;
 const TRAIL_CURVE_JITTER = 6;
 const TRAIL_COLOR_DARK = [180, 220, 255];
 const TRAIL_COLOR_LIGHT = [55, 120, 200];
-const TRAIL_COLOR_UPSIDE_DARK = warmShift(TRAIL_COLOR_DARK);
-const TRAIL_COLOR_UPSIDE_LIGHT = warmShift(TRAIL_COLOR_LIGHT);
 
 // ── Impulse & Scroll ──
 const IMPULSE_DECAY = 0.88;
@@ -385,11 +372,10 @@ class Streak {
     this.x += this.angle;
     if (this.y > canvas.height + this.len) this.reset(false);
   }
-  draw(sp, upside) {
+  draw(sp) {
     ctx.save();
     ctx.globalAlpha = this.opacity * sp.opMul;
-    const col = upside ? STREAK_COLOR_UPSIDE : STREAK_COLOR;
-    ctx.strokeStyle = `rgba(${col},1)`;
+    ctx.strokeStyle = `rgba(${STREAK_COLOR},1)`;
     ctx.lineWidth = this.width;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y - this.len);
@@ -416,9 +402,9 @@ class BreezeWisp {
     this.phase += WISP_PHASE_SPEED;
     if (this.x > canvas.width + this.len) this.reset(false);
   }
-  draw(vis, color, yOffset) {
+  draw(vis, pal, yOffset) {
     if (vis <= 0) return;
-    const wc = color || WISP_FALLBACK_COLOR;
+    const wc = pal ? pal.wispColor : WISP_FALLBACK_COLOR;
     const dy = this.y + (yOffset || 0);
     if (dy < -50 || dy > canvas.height + 50) return;
     ctx.save();
@@ -467,14 +453,10 @@ class ScrollMote {
       this.vy = 0;
     }
   }
-  draw(dark, upside) {
+  draw(dark) {
     if (this.opacity < MOTE_DRAW_THRESHOLD) return;
-    const c = dark
-      ? (upside ? MOTE_COLOR_UPSIDE_DARK : MOTE_COLOR_DARK)
-      : (upside ? MOTE_COLOR_UPSIDE_LIGHT : MOTE_COLOR_LIGHT);
-    const g = dark
-      ? (upside ? MOTE_GLOW_UPSIDE_DARK : MOTE_GLOW_DARK)
-      : (upside ? MOTE_GLOW_UPSIDE_LIGHT : MOTE_GLOW_LIGHT);
+    const c = dark ? MOTE_COLOR_DARK : MOTE_COLOR_LIGHT;
+    const g = dark ? MOTE_GLOW_DARK : MOTE_GLOW_LIGHT;
     const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * MOTE_GLOW_RADIUS);
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${this.opacity})`);
     grad.addColorStop(MOTE_GRAD_MID, `rgba(${g[0]},${g[1]},${g[2]},${this.opacity * MOTE_GRAD_MID_OPACITY})`);
@@ -562,7 +544,6 @@ export function initCanvas(canvasEl, theme, options) {
     lastFrameTime = now;
     const sp = scrollProgress;
     const pal = palettes[isDarkMode ? 'dark' : 'light'];
-    const upsd = isUpside();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient
@@ -597,8 +578,7 @@ export function initCanvas(canvasEl, theme, options) {
           // Parallax — closer stars (higher depth) shift more on scroll
           const shift = s.depth * sp * canvas.height * STAR_PARALLAX_SCALE;
           const py = ((s.y - shift) % canvas.height + canvas.height) % canvas.height;
-          const sc = upsd ? STAR_COLOR_UPSIDE : STAR_COLOR;
-          ctx.fillStyle = `rgba(${sc},${op})`;
+          ctx.fillStyle = `rgba(${STAR_COLOR},${op})`;
           ctx.beginPath();
           ctx.arc(s.x % canvas.width, py, s.r, 0, Math.PI * 2);
           ctx.fill();
@@ -637,9 +617,9 @@ export function initCanvas(canvasEl, theme, options) {
         // Draw a tapered line with a bright head
         const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
         const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        const shc = upsd ? SHOOTING_COLORS_UPSIDE : SHOOTING_COLORS;
+        const sc = SHOOTING_COLORS;
         const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
-        grad.addColorStop(0, `rgba(${shc[0]},0)`);
+        grad.addColorStop(0, `rgba(${sc[0]},0)`);
         grad.addColorStop(0.7, `rgba(${sc[1]},${op * 0.3})`);
         grad.addColorStop(1, `rgba(${sc[2]},${op})`);
         ctx.save();
@@ -660,6 +640,7 @@ export function initCanvas(canvasEl, theme, options) {
       const decayRate = FURY_DECAY_BASE + (idleSec - FURY_IDLE_GRACE) * FURY_DECAY_ACCEL;
       clickFury = Math.max(0, clickFury - dt * decayRate);
     }
+    const upsd = isUpside();
 
     // Tier 1: Lightning bolts
     let flashThisFrame = false;
@@ -775,7 +756,7 @@ export function initCanvas(canvasEl, theme, options) {
     // Streaks — evolve with scroll
     if (opts.streaks) {
       const streakP = getStreakParams(sp);
-      streaks.forEach(s => { s.update(streakP); s.draw(streakP, upsd); });
+      streaks.forEach(s => { s.update(streakP); s.draw(streakP); });
     }
 
     // Cloud layer — clouds live at a fixed altitude, viewport scrolls past them
@@ -818,8 +799,7 @@ export function initCanvas(canvasEl, theme, options) {
       const wispFadeOutRange = WISP_FADE_OUT_END - WISP_FADE_OUT_START;
       const wispVis = sp < WISP_FADE_IN_START ? 0 : sp < WISP_FADE_IN_END ? (sp - WISP_FADE_IN_START) / wispFadeInRange
         : sp < WISP_FADE_OUT_START ? 1.0 : sp < WISP_FADE_OUT_END ? 1.0 - (sp - WISP_FADE_OUT_START) / wispFadeOutRange : 0;
-      const wispCol = upsd ? (isDarkMode ? WISP_COLOR_DARK_UPSIDE : WISP_COLOR_LIGHT_UPSIDE) : pal.wispColor;
-      wisps.forEach(w => { w.update(); w.draw(wispVis, wispCol, wispYOffset); });
+      wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
     }
 
     // Horizon glow — shifts with descent
@@ -858,9 +838,7 @@ export function initCanvas(canvasEl, theme, options) {
           g.active = true;
         }
       }
-      const gc = isDarkMode
-        ? (upsd ? GUST_COLOR_UPSIDE_DARK : GUST_COLOR_DARK)
-        : (upsd ? GUST_COLOR_UPSIDE_LIGHT : GUST_COLOR_LIGHT);
+      const gc = isDarkMode ? GUST_COLOR_DARK : GUST_COLOR_LIGHT;
       gusts.forEach(g => {
         if (!g.active) return;
         g.life++;
@@ -918,7 +896,7 @@ export function initCanvas(canvasEl, theme, options) {
             m.opacity = Math.min(0.5, m.opacity + 0.005 + holdStrength * 0.01);
           }
         }
-        m.draw(isDarkMode, upsd);
+        m.draw(isDarkMode);
       });
     }
     clickImpulse.strength *= IMPULSE_DECAY;
@@ -967,8 +945,8 @@ export function initCanvas(canvasEl, theme, options) {
     }
     // Update and draw orbit particles
     const oc = isDarkMode
-      ? (upsd ? ORBIT_COLOR_UPSIDE_DARK : ORBIT_COLOR_DARK)
-      : (upsd ? ORBIT_COLOR_UPSIDE_LIGHT : ORBIT_COLOR_LIGHT);
+      ? (isUpside() ? ORBIT_COLOR_UPSIDE_DARK : ORBIT_COLOR_DARK)
+      : (isUpside() ? ORBIT_COLOR_UPSIDE_LIGHT : ORBIT_COLOR_LIGHT);
     for (let i = orbitParticles.length - 1; i >= 0; i--) {
       const p = orbitParticles[i];
       const dx = dragPos.x - p.x;
@@ -1009,9 +987,7 @@ export function initCanvas(canvasEl, theme, options) {
       const fade = 1 - s.life / s.maxLife;
       const op = s.opacity * fade;
       if (op < CLICK_DRAW_THRESHOLD || !s.prev) continue;
-      const c = isDarkMode
-        ? (upsd ? TRAIL_COLOR_UPSIDE_DARK : TRAIL_COLOR_DARK)
-        : (upsd ? TRAIL_COLOR_UPSIDE_LIGHT : TRAIL_COLOR_LIGHT);
+      const c = isDarkMode ? TRAIL_COLOR_DARK : TRAIL_COLOR_LIGHT;
       ctx.save();
       ctx.globalAlpha = op;
       ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
