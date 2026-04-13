@@ -172,23 +172,35 @@ const FURY_DECAY_ACCEL = 32;
 // ── Lightning (Tier 1) ──
 const FURY_TIER1 = 25;
 const LIGHTNING_MAX_BOLTS = 6;
-const LIGHTNING_STEPS_MIN = 8;
-const LIGHTNING_STEPS_RANGE = 6;
-const LIGHTNING_JITTER_X = 80;
-const LIGHTNING_JITTER_Y = 40;
-const LIGHTNING_BRANCH_CHANCE = 0.3;
-const LIGHTNING_BRANCH_ANGLE = 1.2;
-const LIGHTNING_BRANCH_LEN_MIN = 30;
-const LIGHTNING_BRANCH_LEN_RANGE = 50;
-const LIGHTNING_LIFE_MIN = 12;
-const LIGHTNING_LIFE_RANGE = 8;
-const LIGHTNING_WIDTH_MAIN = 2;
-const LIGHTNING_WIDTH_BRANCH = 1;
-const LIGHTNING_SHADOW_BLUR = 12;
-const LIGHTNING_FLASH_ALPHA = 0.06;
+const LIGHTNING_STEPS_MIN = 14;
+const LIGHTNING_STEPS_RANGE = 8;
+const LIGHTNING_JITTER_X = 90;
+const LIGHTNING_JITTER_Y = 30;
+const LIGHTNING_BRANCH_CHANCE = 0.35;
+const LIGHTNING_BRANCH_ANGLE = 0.9;
+const LIGHTNING_BRANCH_LEN_MIN = 40;
+const LIGHTNING_BRANCH_LEN_RANGE = 80;
+const LIGHTNING_BRANCH_STEPS_MIN = 5;
+const LIGHTNING_BRANCH_STEPS_RANGE = 4;
+const LIGHTNING_BRANCH_JITTER_X = 40;
+const LIGHTNING_BRANCH_JITTER_Y = 20;
+const LIGHTNING_LIFE_MIN = 14;
+const LIGHTNING_LIFE_RANGE = 10;
+const LIGHTNING_FLASH_ALPHA = 0.08;
 const LIGHTNING_START_SPREAD = 200;
 const LIGHTNING_START_Y = 0.2;
-const LIGHTNING_OPACITY = 0.9;
+const LIGHTNING_OPACITY = 0.95;
+const LIGHTNING_OUTER_WIDTH = 12;
+const LIGHTNING_OUTER_ALPHA = 0.15;
+const LIGHTNING_MID_WIDTH = 5;
+const LIGHTNING_MID_ALPHA = 0.5;
+const LIGHTNING_CORE_WIDTH = 1.5;
+const LIGHTNING_CORE_ALPHA = 1.0;
+const LIGHTNING_FLICKER_COUNT_MIN = 1;
+const LIGHTNING_FLICKER_COUNT_RANGE = 2;
+const LIGHTNING_FLICKER_ALPHA = 0.6;
+const LIGHTNING_GLOW_BLUR = 20;
+const LIGHTNING_MICRO_JITTER = 1.5;
 
 // ── Aurora (Tier 2) ──
 const FURY_TIER2 = 40;
@@ -1049,30 +1061,76 @@ export function initCanvas(canvasEl, theme, options) {
       clickFury = Math.max(0, clickFury - dt * decayRate);
     }
 
-    // Tier 1: Lightning bolts
+    // Tier 1: Lightning bolts — multi-layer rendering
     let flashThisFrame = false;
     for (let i = lightningBolts.length - 1; i >= 0; i--) {
       const bolt = lightningBolts[i];
       bolt.life++;
       if (bolt.life > bolt.maxLife) { lightningBolts.splice(i, 1); continue; }
       if (bolt.life === 1) flashThisFrame = true;
-      const fade = bolt.life < 2 ? 1 : Math.max(0, 1 - (bolt.life - 2) / (bolt.maxLife - 2));
+
+      // Exponential fade with flicker re-strikes
+      const t = bolt.life / bolt.maxLife;
+      let fade = Math.pow(1 - t, 2.5);
+      const isFlicker = bolt.flickerFrames.indexOf(bolt.life) !== -1;
+      if (isFlicker) fade = Math.max(fade, LIGHTNING_FLICKER_ALPHA);
+
       const col = pal.lightningColor;
       const sc = pal.lightningShadow;
+      const branchScale = bolt.depth === 0 ? 1 : 0.45;
+      // Per-frame micro-jitter seed for alive feel
+      const jitterSeed = bolt.life * 7.13;
+
+      // Helper: trace the polyline path with optional micro-jitter
+      const tracePath = (jitter) => {
+        const pts = bolt.points;
+        ctx.beginPath();
+        ctx.moveTo(pts[0].x, pts[0].y);
+        for (let p = 1; p < pts.length; p++) {
+          const jx = jitter ? Math.sin(jitterSeed + p * 3.7) * LIGHTNING_MICRO_JITTER : 0;
+          const jy = jitter ? Math.cos(jitterSeed + p * 2.3) * LIGHTNING_MICRO_JITTER : 0;
+          // Smooth: use midpoints as control points for quadratic curves
+          if (p < pts.length - 1) {
+            const mx = (pts[p].x + jx + pts[p + 1].x) * 0.5;
+            const my = (pts[p].y + jy + pts[p + 1].y) * 0.5;
+            ctx.quadraticCurveTo(pts[p].x + jx, pts[p].y + jy, mx, my);
+          } else {
+            ctx.lineTo(pts[p].x + jx, pts[p].y + jy);
+          }
+        }
+      };
+
       ctx.save();
-      ctx.globalAlpha = fade * LIGHTNING_OPACITY;
-      ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-      ctx.lineWidth = bolt.width;
       ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.globalCompositeOperation = 'lighter';
+
+      // Layer 1: Wide outer glow
+      ctx.globalAlpha = fade * LIGHTNING_OUTER_ALPHA * branchScale * LIGHTNING_OPACITY;
+      ctx.strokeStyle = `rgb(${sc[0]},${sc[1]},${sc[2]})`;
+      ctx.lineWidth = LIGHTNING_OUTER_WIDTH * branchScale;
       ctx.shadowColor = `rgba(${sc[0]},${sc[1]},${sc[2]},${sc[3]})`;
-      ctx.shadowBlur = LIGHTNING_SHADOW_BLUR;
-      // Batch all segments into one path — one stroke call with shadow
-      ctx.beginPath();
-      bolt.segments.forEach(s => {
-        ctx.moveTo(s.x1, s.y1);
-        ctx.lineTo(s.x2, s.y2);
-      });
+      ctx.shadowBlur = LIGHTNING_GLOW_BLUR * branchScale;
+      tracePath(false);
       ctx.stroke();
+
+      // Layer 2: Medium inner glow
+      ctx.globalAlpha = fade * LIGHTNING_MID_ALPHA * branchScale * LIGHTNING_OPACITY;
+      ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+      ctx.lineWidth = LIGHTNING_MID_WIDTH * branchScale;
+      ctx.shadowBlur = LIGHTNING_GLOW_BLUR * 0.5 * branchScale;
+      tracePath(true);
+      ctx.stroke();
+
+      // Layer 3: Bright hot core
+      ctx.globalAlpha = fade * LIGHTNING_CORE_ALPHA * LIGHTNING_OPACITY;
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = LIGHTNING_CORE_WIDTH * branchScale;
+      ctx.shadowColor = `rgba(${col[0]},${col[1]},${col[2]},1)`;
+      ctx.shadowBlur = 6;
+      tracePath(true);
+      ctx.stroke();
+
       ctx.restore();
     }
     if (flashThisFrame) {
@@ -1556,23 +1614,37 @@ export function initCanvas(canvasEl, theme, options) {
 
   // Generate a branching lightning bolt from (x1,y1) to (x2,y2)
   function spawnLightning(x1, y1, x2, y2, depth) {
-    const segments = [];
-    const steps = LIGHTNING_STEPS_MIN + Math.floor(Math.random() * LIGHTNING_STEPS_RANGE);
-    let cx = x1, cy = y1;
+    const isBranch = depth > 0;
+    const stepsMin = isBranch ? LIGHTNING_BRANCH_STEPS_MIN : LIGHTNING_STEPS_MIN;
+    const stepsRange = isBranch ? LIGHTNING_BRANCH_STEPS_RANGE : LIGHTNING_STEPS_RANGE;
+    const jitterX = isBranch ? LIGHTNING_BRANCH_JITTER_X : LIGHTNING_JITTER_X;
+    const jitterY = isBranch ? LIGHTNING_BRANCH_JITTER_Y : LIGHTNING_JITTER_Y;
+    const steps = stepsMin + Math.floor(Math.random() * stepsRange);
+    // Build polyline as array of points
+    const points = [{x: x1, y: y1}];
     for (let i = 1; i <= steps; i++) {
       const t = i / steps;
-      const nx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * LIGHTNING_JITTER_X * (1 - t);
-      const ny = y1 + (y2 - y1) * t + (Math.random() - 0.5) * LIGHTNING_JITTER_Y;
-      segments.push({ x1: cx, y1: cy, x2: nx, y2: ny });
-      // Random branch
+      // Jitter peaks in the middle of the bolt and tapers at endpoints
+      const envelope = Math.sin(t * Math.PI);
+      const nx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * jitterX * envelope;
+      const ny = y1 + (y2 - y1) * t + (Math.random() - 0.5) * jitterY * envelope;
+      points.push({x: nx, y: ny});
+      // Random branch (main bolt and first-level branches only)
       if (depth < 2 && Math.random() < LIGHTNING_BRANCH_CHANCE) {
-        const bAngle = Math.atan2(ny - cy, nx - cx) + (Math.random() - 0.5) * LIGHTNING_BRANCH_ANGLE;
+        const bAngle = Math.atan2(ny - points[points.length - 2].y, nx - points[points.length - 2].x)
+                      + (Math.random() - 0.5) * LIGHTNING_BRANCH_ANGLE;
         const bLen = LIGHTNING_BRANCH_LEN_MIN + Math.random() * LIGHTNING_BRANCH_LEN_RANGE;
-        spawnLightning(cx, cy, cx + Math.cos(bAngle) * bLen, cy + Math.sin(bAngle) * bLen, depth + 1);
+        spawnLightning(nx, ny, nx + Math.cos(bAngle) * bLen, ny + Math.sin(bAngle) * bLen, depth + 1);
       }
-      cx = nx; cy = ny;
     }
-    lightningBolts.push({ segments, life: 0, maxLife: LIGHTNING_LIFE_MIN + Math.random() * LIGHTNING_LIFE_RANGE, width: depth === 0 ? LIGHTNING_WIDTH_MAIN : LIGHTNING_WIDTH_BRANCH });
+    // Pre-compute flicker frames (frames where the bolt re-strikes at higher brightness)
+    const maxLife = LIGHTNING_LIFE_MIN + Math.random() * LIGHTNING_LIFE_RANGE;
+    const flickerCount = LIGHTNING_FLICKER_COUNT_MIN + Math.floor(Math.random() * LIGHTNING_FLICKER_COUNT_RANGE);
+    const flickerFrames = [];
+    for (let f = 0; f < flickerCount; f++) {
+      flickerFrames.push(2 + Math.floor(Math.random() * (maxLife * 0.6)));
+    }
+    lightningBolts.push({ points, depth, life: 0, maxLife, flickerFrames });
   }
 
   // In upside-down mode the page is flipped via scaleY(-1), so canvas Y must mirror
