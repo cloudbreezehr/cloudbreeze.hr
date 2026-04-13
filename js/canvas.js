@@ -1297,7 +1297,7 @@ export function initCanvas(canvasEl, theme, options) {
     }
   });
 
-  document.addEventListener('pointerup', () => {
+  function releaseDrag() {
     if (!isDragging) return;
     const heldSec = (performance.now() - holdStart) / 1000;
     const blast = Math.min(BLAST_BASE + heldSec * BLAST_PER_SEC, BLAST_MAX);
@@ -1347,7 +1347,11 @@ export function initCanvas(canvasEl, theme, options) {
 
     isDragging = false;
     holdStrength = 0;
-  });
+  }
+
+  document.addEventListener('pointerup', releaseDrag);
+  // Touch scroll: browser fires pointercancel (not pointerup) when it takes over the touch
+  document.addEventListener('pointercancel', releaseDrag);
 
   render();
 }
