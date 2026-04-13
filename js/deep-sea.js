@@ -3,7 +3,6 @@ export function initDeepSea() {
   const HOLD_TO_DIVE_MS = 10000;
   const HOLD_TO_SURFACE_MS = 5000;
   const DECAY_RATE = 0.15;          // force/sec after release
-  const EDGE_TOLERANCE = 30;
 
   // ── Indicator thresholds (fraction of 1.0) ──
   const WATER_CREEP_AT = 0.20;
@@ -28,6 +27,7 @@ export function initDeepSea() {
   const canvasEl = document.getElementById('bg-canvas');
   const cloudSvg = document.querySelector('.cloud-svg');
   const logoEl = document.querySelector('.nav-logo');
+  const footerEl = document.querySelector('footer');
 
   // ── Water creep overlay ──
   const waterOverlay = document.createElement('div');
@@ -39,11 +39,12 @@ export function initDeepSea() {
   vignetteOverlay.className = 'deep-sea-vignette';
   document.body.appendChild(vignetteOverlay);
 
-  // ── Helper: is user at the bottom of the page? ──
-  function atBottom() {
-    const scrollTop = window.scrollY;
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    return scrollTop >= maxScroll - EDGE_TOLERANCE;
+  // ── Helper: is pointer inside the footer strip? ──
+  function inFooter(e) {
+    if (!footerEl) return false;
+    const rect = footerEl.getBoundingClientRect();
+    return e.clientX >= rect.left && e.clientX <= rect.right &&
+           e.clientY >= rect.top && e.clientY <= rect.bottom;
   }
 
   // ── 1. Ripple rings from cursor ──
@@ -229,7 +230,7 @@ export function initDeepSea() {
 
   // ── Hold detection via pointer events ──
   function onPointerDown(e) {
-    if (isTransitioning || !atBottom()) return;
+    if (isTransitioning || !inFooter(e)) return;
 
     isHolding = true;
     holdStartTime = performance.now();
