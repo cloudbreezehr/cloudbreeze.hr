@@ -45,11 +45,11 @@ const SHOOTING_LINE_WIDTH = 1.2;
 const SHOOTING_OUTER_WIDTH = 6;
 const SHOOTING_CORE_WIDTH = 0.5;
 
-// ── Trail Glow (shared by shooting stars + meteors) ──
+// ── Trail Glow (shooting stars) ──
+const TRAIL_BLOOM_SCALE = 2.5;
+const TRAIL_BLOOM_ALPHA = 0.1;
 const TRAIL_OUTER_ALPHA = 0.25;
-const TRAIL_OUTER_BLUR = 14;
 const TRAIL_CORE_ALPHA = 0.9;
-const TRAIL_CORE_BLUR = 4;
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -202,6 +202,8 @@ const LIGHTNING_FLASH_ALPHA = 0.08;
 const LIGHTNING_START_SPREAD = 200;
 const LIGHTNING_START_Y = 0.2;
 const LIGHTNING_OPACITY = 0.95;
+const LIGHTNING_BLOOM_WIDTH = 28;
+const LIGHTNING_BLOOM_ALPHA = 0.07;
 const LIGHTNING_OUTER_WIDTH = 12;
 const LIGHTNING_OUTER_ALPHA = 0.15;
 const LIGHTNING_MID_WIDTH = 5;
@@ -211,7 +213,6 @@ const LIGHTNING_CORE_ALPHA = 1.0;
 const LIGHTNING_FLICKER_COUNT_MIN = 1;
 const LIGHTNING_FLICKER_COUNT_RANGE = 2;
 const LIGHTNING_FLICKER_ALPHA = 0.6;
-const LIGHTNING_GLOW_BLUR = 20;
 const LIGHTNING_MICRO_JITTER = 1.5;
 
 // ── Aurora (Tier 2) ──
@@ -405,29 +406,36 @@ const JELLY_COLORS = [
 
 let canvas, ctx;
 
-// Multi-layer trail rendering for shooting stars and meteors.
-// Three passes: wide outer glow → gradient color trail → thin bright core.
+// Multi-layer trail rendering for shooting stars.
+// Four passes with additive blending, no shadowBlur (GPU-expensive).
+// Bloom + outer glow + gradient trail + white core.
 function drawGlowTrail(headX, headY, tailX, tailY, colors, opacity, outerWidth, trailWidth, coreWidth) {
   const head = colors[2];
 
-  // Layer 1: Wide outer glow (additive, blurred)
   ctx.save();
   ctx.lineCap = 'round';
   ctx.globalCompositeOperation = 'lighter';
-  ctx.globalAlpha = opacity * TRAIL_OUTER_ALPHA;
+
+  // Layer 1: Wide bloom (replaces expensive shadowBlur)
+  ctx.globalAlpha = opacity * TRAIL_BLOOM_ALPHA;
   ctx.strokeStyle = `rgb(${head[0]},${head[1]},${head[2]})`;
-  ctx.lineWidth = outerWidth;
-  ctx.shadowColor = `rgba(${head[0]},${head[1]},${head[2]},0.6)`;
-  ctx.shadowBlur = TRAIL_OUTER_BLUR;
+  ctx.lineWidth = outerWidth * TRAIL_BLOOM_SCALE;
   ctx.beginPath();
   ctx.moveTo(tailX, tailY);
   ctx.lineTo(headX, headY);
   ctx.stroke();
 
-  // Layer 2: Color gradient trail
+  // Layer 2: Outer glow
+  ctx.globalAlpha = opacity * TRAIL_OUTER_ALPHA;
+  ctx.lineWidth = outerWidth;
+  ctx.beginPath();
+  ctx.moveTo(tailX, tailY);
+  ctx.lineTo(headX, headY);
+  ctx.stroke();
+
+  // Layer 3: Color gradient trail
   ctx.globalCompositeOperation = 'source-over';
   ctx.globalAlpha = 1;
-  ctx.shadowBlur = 0;
   const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
   grad.addColorStop(0, `rgba(${colors[0]},0)`);
   grad.addColorStop(0.7, `rgba(${colors[1]},${opacity * 0.3})`);
@@ -439,13 +447,11 @@ function drawGlowTrail(headX, headY, tailX, tailY, colors, opacity, outerWidth, 
   ctx.lineTo(headX, headY);
   ctx.stroke();
 
-  // Layer 3: Bright white-hot core
+  // Layer 4: Bright white-hot core
   ctx.globalCompositeOperation = 'lighter';
   ctx.globalAlpha = opacity * TRAIL_CORE_ALPHA;
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = coreWidth;
-  ctx.shadowColor = `rgba(${head[0]},${head[1]},${head[2]},1)`;
-  ctx.shadowBlur = TRAIL_CORE_BLUR;
   ctx.beginPath();
   ctx.moveTo(tailX, tailY);
   ctx.lineTo(headX, headY);
@@ -1178,29 +1184,30 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.lineJoin = 'round';
       ctx.globalCompositeOperation = 'lighter';
 
-      // Layer 1: Wide outer glow
-      ctx.globalAlpha = fade * LIGHTNING_OUTER_ALPHA * branchScale * LIGHTNING_OPACITY;
+      // Layer 1: Wide bloom (replaces expensive shadowBlur)
+      ctx.globalAlpha = fade * LIGHTNING_BLOOM_ALPHA * branchScale * LIGHTNING_OPACITY;
       ctx.strokeStyle = `rgb(${sc[0]},${sc[1]},${sc[2]})`;
-      ctx.lineWidth = LIGHTNING_OUTER_WIDTH * branchScale;
-      ctx.shadowColor = `rgba(${sc[0]},${sc[1]},${sc[2]},${sc[3]})`;
-      ctx.shadowBlur = LIGHTNING_GLOW_BLUR * branchScale;
+      ctx.lineWidth = LIGHTNING_BLOOM_WIDTH * branchScale;
       tracePath(false);
       ctx.stroke();
 
-      // Layer 2: Medium inner glow
+      // Layer 2: Outer glow
+      ctx.globalAlpha = fade * LIGHTNING_OUTER_ALPHA * branchScale * LIGHTNING_OPACITY;
+      ctx.lineWidth = LIGHTNING_OUTER_WIDTH * branchScale;
+      tracePath(false);
+      ctx.stroke();
+
+      // Layer 3: Medium inner glow
       ctx.globalAlpha = fade * LIGHTNING_MID_ALPHA * branchScale * LIGHTNING_OPACITY;
       ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
       ctx.lineWidth = LIGHTNING_MID_WIDTH * branchScale;
-      ctx.shadowBlur = LIGHTNING_GLOW_BLUR * 0.5 * branchScale;
       tracePath(true);
       ctx.stroke();
 
-      // Layer 3: Bright hot core
+      // Layer 4: Bright hot core
       ctx.globalAlpha = fade * LIGHTNING_CORE_ALPHA * LIGHTNING_OPACITY;
       ctx.strokeStyle = '#fff';
       ctx.lineWidth = LIGHTNING_CORE_WIDTH * branchScale;
-      ctx.shadowColor = `rgba(${col[0]},${col[1]},${col[2]},1)`;
-      ctx.shadowBlur = 6;
       tracePath(true);
       ctx.stroke();
 
