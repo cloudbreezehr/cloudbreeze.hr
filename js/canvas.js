@@ -25,6 +25,7 @@ const STAR_GLOW_RADIUS = 2.5;
 const STAR_GLOW_MID = 0.35;
 const STAR_GLOW_MID_ALPHA = 0.4;
 const STAR_GLARE_THRESHOLD = 1.0;
+const STAR_GLARE_CHANCE = 0.15;
 const STAR_GLARE_SPIKE_LENGTH = 14;
 const STAR_GLARE_WIDTH = 0.6;
 const STAR_GLARE_ROTATION_SPEED = 0.15;
@@ -1074,6 +1075,7 @@ export function initCanvas(canvasEl, theme, options) {
             if (s.flash < STAR_FLASH_THRESHOLD) s.flash = 0;
           } else if (Math.random() < STAR_FLASH_CHANCE) {
             s.flash = STAR_FLASH_MIN + Math.random() * STAR_FLASH_RANGE;
+            s.glare = s.r >= STAR_GLARE_THRESHOLD && Math.random() < STAR_GLARE_CHANCE;
           }
           const base = s.opacity * (STAR_TWINKLE_BASE + STAR_TWINKLE_RANGE * Math.sin(s.twinkle));
           const op = Math.min(1, base + s.flash) * starVis;
@@ -1099,8 +1101,8 @@ export function initCanvas(canvasEl, theme, options) {
             ctx.arc(sx, py, s.r, 0, Math.PI * 2);
             ctx.fill();
           }
-          // Cross-flare glare on bright flashing stars
-          if (s.r >= STAR_GLARE_THRESHOLD && s.flash > STAR_FLASH_THRESHOLD) {
+          // Cross-flare glare on rare bright flashing stars
+          if (s.glare && s.flash > STAR_FLASH_THRESHOLD) {
             const glareLen = s.r * STAR_GLARE_SPIKE_LENGTH * s.flash;
             const angle = t * STAR_GLARE_ROTATION_SPEED + s.glarePhase;
             ctx.save();
