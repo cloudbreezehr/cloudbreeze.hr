@@ -513,7 +513,9 @@ export function initCanvas(canvasEl, theme, options) {
     lastFrameTime = now;
     const sp = scrollProgress;
     const upsd = isUpside();
-    const pal = resolvePalette(isDarkMode ? 'dark' : 'light', upsd ? 'upside-down' : null);
+    const frozen = document.body.classList.contains('frozen');
+    const submode = frozen ? 'frozen' : (upsd ? 'upside-down' : null);
+    const pal = resolvePalette(isDarkMode ? 'dark' : 'light', submode);
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -985,6 +987,7 @@ export function initCanvas(canvasEl, theme, options) {
   // Click burst — scatter luminous motes from click point
   const clickParticles = [];
   const isUpside = () => document.body.classList.contains('upside-down');
+  const isFrozen = () => document.body.classList.contains('frozen');
   let currentPal = resolvePalette(isDarkMode ? 'dark' : 'light', null);
 
   // Click fury — rapid clicking triggers escalating sky effects

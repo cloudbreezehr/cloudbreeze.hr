@@ -95,6 +95,30 @@ const overrides = {
       meteorColors: [[255, 150, 100], [255, 180, 130], [255, 200, 160]],
     },
   },
+  'frozen': {
+    dark: {
+      clickColor: [0, 220, 255],
+      orbitColor: [50, 230, 255],
+      trailColor: [100, 220, 255],
+      lightningColor: [150, 240, 255],
+      lightningShadow: [100, 220, 255, 0.8],
+      lightningFlash: [200, 245, 255],
+      auroraHueBase: 180,
+      auroraHueRange: 40,
+      meteorColors: [[180, 230, 255], [210, 240, 255], [240, 250, 255]],
+    },
+    light: {
+      clickColor: [0, 160, 220],
+      orbitColor: [30, 170, 230],
+      trailColor: [60, 160, 220],
+      lightningColor: [150, 240, 255],
+      lightningShadow: [100, 220, 255, 0.8],
+      lightningFlash: [200, 245, 255],
+      auroraHueBase: 180,
+      auroraHueRange: 40,
+      meteorColors: [[180, 230, 255], [210, 240, 255], [240, 250, 255]],
+    },
+  },
 };
 
 export function resolvePalette(theme, submode) {
