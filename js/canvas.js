@@ -38,6 +38,14 @@ const SHOOTING_OPACITY_RANGE = 0.4;
 const SHOOTING_LIFE_MIN = 20;
 const SHOOTING_LIFE_RANGE = 20;
 const SHOOTING_LINE_WIDTH = 1.2;
+const SHOOTING_OUTER_WIDTH = 6;
+const SHOOTING_CORE_WIDTH = 0.5;
+
+// ── Trail Glow (shared by shooting stars + meteors) ──
+const TRAIL_OUTER_ALPHA = 0.25;
+const TRAIL_OUTER_BLUR = 14;
+const TRAIL_CORE_ALPHA = 0.9;
+const TRAIL_CORE_BLUR = 4;
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -231,6 +239,8 @@ const METEOR_LIFE_RANGE = 18;
 const METEOR_BURST_MIN = 2;
 const METEOR_BURST_RANGE = 3;
 const METEOR_LINE_WIDTH = 1.8;
+const METEOR_OUTER_WIDTH = 10;
+const METEOR_CORE_WIDTH = 0.8;
 
 // ── Orbit Particles ──
 const ORBIT_MAX = 60;
@@ -382,6 +392,55 @@ const JELLY_COLORS = [
 ];
 
 let canvas, ctx;
+
+// Multi-layer trail rendering for shooting stars and meteors.
+// Three passes: wide outer glow → gradient color trail → thin bright core.
+function drawGlowTrail(headX, headY, tailX, tailY, colors, opacity, outerWidth, trailWidth, coreWidth) {
+  const head = colors[2];
+
+  // Layer 1: Wide outer glow (additive, blurred)
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = opacity * TRAIL_OUTER_ALPHA;
+  ctx.strokeStyle = `rgb(${head[0]},${head[1]},${head[2]})`;
+  ctx.lineWidth = outerWidth;
+  ctx.shadowColor = `rgba(${head[0]},${head[1]},${head[2]},0.6)`;
+  ctx.shadowBlur = TRAIL_OUTER_BLUR;
+  ctx.beginPath();
+  ctx.moveTo(tailX, tailY);
+  ctx.lineTo(headX, headY);
+  ctx.stroke();
+
+  // Layer 2: Color gradient trail
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
+  grad.addColorStop(0, `rgba(${colors[0]},0)`);
+  grad.addColorStop(0.7, `rgba(${colors[1]},${opacity * 0.3})`);
+  grad.addColorStop(1, `rgba(${colors[2]},${opacity})`);
+  ctx.strokeStyle = grad;
+  ctx.lineWidth = trailWidth;
+  ctx.beginPath();
+  ctx.moveTo(tailX, tailY);
+  ctx.lineTo(headX, headY);
+  ctx.stroke();
+
+  // Layer 3: Bright white-hot core
+  ctx.globalCompositeOperation = 'lighter';
+  ctx.globalAlpha = opacity * TRAIL_CORE_ALPHA;
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = coreWidth;
+  ctx.shadowColor = `rgba(${head[0]},${head[1]},${head[2]},1)`;
+  ctx.shadowBlur = TRAIL_CORE_BLUR;
+  ctx.beginPath();
+  ctx.moveTo(tailX, tailY);
+  ctx.lineTo(headX, headY);
+  ctx.stroke();
+
+  ctx.restore();
+}
 
 function getStreakParams(sp) {
   if (sp < 0.2) return { opMul: 1.0, speedMul: 1.0 };
@@ -1034,23 +1093,10 @@ export function initCanvas(canvasEl, theme, options) {
         // Fade in quickly, fade out slowly
         const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
         const op = ss.opacity * fade * starVis2;
-        // Draw a tapered line with a bright head
         const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
         const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        const sc = pal.shootingColors;
-        const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
-        grad.addColorStop(0, `rgba(${sc[0]},0)`);
-        grad.addColorStop(0.7, `rgba(${sc[1]},${op * 0.3})`);
-        grad.addColorStop(1, `rgba(${sc[2]},${op})`);
-        ctx.save();
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = SHOOTING_LINE_WIDTH;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        ctx.moveTo(tailX, tailY);
-        ctx.lineTo(ss.x, ss.y);
-        ctx.stroke();
-        ctx.restore();
+        drawGlowTrail(ss.x, ss.y, tailX, tailY, pal.shootingColors, op,
+          SHOOTING_OUTER_WIDTH, SHOOTING_LINE_WIDTH, SHOOTING_CORE_WIDTH);
       });
     }
 
@@ -1202,20 +1248,8 @@ export function initCanvas(canvasEl, theme, options) {
       const op = m.opacity * fade;
       const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
       const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
-      const mc = pal.meteorColors;
-      const grad = ctx.createLinearGradient(tailX, tailY, m.x, m.y);
-      grad.addColorStop(0, `rgba(${mc[0]},0)`);
-      grad.addColorStop(0.7, `rgba(${mc[1]},${op * 0.3})`);
-      grad.addColorStop(1, `rgba(${mc[2]},${op})`);
-      ctx.save();
-      ctx.strokeStyle = grad;
-      ctx.lineWidth = METEOR_LINE_WIDTH;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(tailX, tailY);
-      ctx.lineTo(m.x, m.y);
-      ctx.stroke();
-      ctx.restore();
+      drawGlowTrail(m.x, m.y, tailX, tailY, pal.meteorColors, op,
+        METEOR_OUTER_WIDTH, METEOR_LINE_WIDTH, METEOR_CORE_WIDTH);
     });
 
     // Streaks — evolve with scroll
