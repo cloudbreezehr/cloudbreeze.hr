@@ -1,3 +1,5 @@
+import { bindPointer } from './pointer.js';
+
 export function initDeepSea() {
   // ── Trigger tuning ──
   const HOLD_TO_DIVE_MS = 10000;
@@ -40,11 +42,11 @@ export function initDeepSea() {
   document.body.appendChild(vignetteOverlay);
 
   // ── Helper: is pointer inside the footer strip? ──
-  function inFooter(e) {
+  function inFooter(x, y) {
     if (!footerEl) return false;
     const rect = footerEl.getBoundingClientRect();
-    return e.clientX >= rect.left && e.clientX <= rect.right &&
-           e.clientY >= rect.top && e.clientY <= rect.bottom;
+    return x >= rect.left && x <= rect.right &&
+           y >= rect.top && y <= rect.bottom;
   }
 
   // ── 1. Ripple rings from cursor ──
@@ -228,30 +230,7 @@ export function initDeepSea() {
     }, 400);
   }
 
-  // ── Hold detection via pointer events ──
-  function onPointerDown(e) {
-    if (isTransitioning || !inFooter(e)) return;
-
-    isHolding = true;
-    holdStartTime = performance.now();
-    holdX = e.clientX;
-    holdY = e.clientY;
-    startRipples(e.clientX, e.clientY);
-    updateHold();
-  }
-
-  function onPointerMove(e) {
-    if (!isHolding) return;
-    holdX = e.clientX;
-    holdY = e.clientY;
-  }
-
-  function onPointerUp() {
-    if (!isHolding) return;
-    isHolding = false;
-    stopRipples();
-  }
-
+  // ── Hold detection ──
   function updateHold() {
     if (!isHolding || isTransitioning) return;
 
@@ -290,22 +269,24 @@ export function initDeepSea() {
   }
   tick();
 
-  // ── Bind events ──
-  document.addEventListener('pointerdown', onPointerDown);
-  document.addEventListener('pointermove', onPointerMove);
-  document.addEventListener('pointerup', onPointerUp);
-
-  // Touch fallback — after the browser takes over a touch for scrolling it fires
-  // pointercancel and stops sending pointermove/pointerup.  Touch events still
-  // fire though, so we use touchmove to keep tracking the finger and touchend
-  // to release.  On desktop these never fire so there's no impact.
-  document.addEventListener('touchmove', e => {
-    if (!isHolding || !e.touches.length) return;
-    holdX = e.touches[0].clientX;
-    holdY = e.touches[0].clientY;
-  }, { passive: true });
-
-  document.addEventListener('touchend', () => {
-    if (isHolding) onPointerUp();
+  // ── Bind events (touch fallback handled by bindPointer) ──
+  bindPointer(document, {
+    onDown(x, y) {
+      if (isTransitioning || !inFooter(x, y)) return false;
+      isHolding = true;
+      holdStartTime = performance.now();
+      holdX = x;
+      holdY = y;
+      startRipples(x, y);
+      updateHold();
+    },
+    onMove(x, y) {
+      holdX = x;
+      holdY = y;
+    },
+    onUp() {
+      isHolding = false;
+      stopRipples();
+    },
   });
 }

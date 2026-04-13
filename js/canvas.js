@@ -1,4 +1,5 @@
 import { lerpColor, multiLerp, toRgba, resolvePalette } from './colors.js';
+import { bindPointer } from './pointer.js';
 
 // ── Stars ──
 const STAR_RADIUS_MIN = 0.3;
@@ -2327,53 +2328,7 @@ export function initCanvas(canvasEl, theme, options) {
   let lastTrail = { x: 0, y: 0 };
   let trailDist = 0;
 
-  // Pointer events — unified mouse + touch + pen handling
-  document.addEventListener('pointerdown', e => {
-    isDragging = true;
-    holdStart = performance.now();
-    const cx = e.clientX, cy = canvasY(e.clientY);
-    dragPos.x = cx;
-    dragPos.y = cy;
-    lastTrail = { x: cx, y: cy };
-    trailDist = 0;
-  });
-
-  document.addEventListener('pointermove', e => {
-    if (!isDragging) return;
-    const cx = e.clientX, cy = canvasY(e.clientY);
-    dragPos.x = cx;
-    dragPos.y = cy;
-    const dx = cx - lastTrail.x;
-    const dy = cy - lastTrail.y;
-    trailDist += Math.sqrt(dx * dx + dy * dy);
-    if (trailDist > TRAIL_SPACING) {
-      trailSegments.push({
-        x: cx,
-        y: cy,
-        prev: { x: lastTrail.x, y: lastTrail.y },
-        width: TRAIL_WIDTH_MIN + Math.random() * TRAIL_WIDTH_RANGE,
-        opacity: TRAIL_OPACITY_MIN + Math.random() * TRAIL_OPACITY_RANGE,
-        life: 0,
-        maxLife: TRAIL_LIFE_MIN + Math.random() * TRAIL_LIFE_RANGE,
-        phase: Math.random() * Math.PI * 2,
-      });
-      // Drag spawns small bubbles in deep-sea mode
-      if (document.body.classList.contains('deep-sea') && Math.random() < BUBBLE_DRAG_RATE) {
-        const b = bubbles.find(b => !b.active);
-        if (b) {
-          b.reset(false);
-          b.x = cx + (Math.random() - 0.5) * 10;
-          b.y = cy + (Math.random() - 0.5) * 10;
-          b.baseR = BUBBLE_RADIUS_MIN + Math.random() * 4; // small drag bubbles
-          b.r = b.baseR;
-          b.active = true;
-        }
-      }
-      lastTrail = { x: cx, y: cy };
-      trailDist = 0;
-    }
-  });
-
+  // Pointer events with touch fallback (handled by bindPointer)
   function releaseDrag() {
     if (!isDragging) return;
     const heldSec = (performance.now() - holdStart) / 1000;
@@ -2455,19 +2410,54 @@ export function initCanvas(canvasEl, theme, options) {
     wellStrength = 0;
   }
 
-  document.addEventListener('pointerup', releaseDrag);
+  function handleMove(x, y) {
+    const cx = x, cy = canvasY(y);
+    dragPos.x = cx;
+    dragPos.y = cy;
+    const dx = cx - lastTrail.x;
+    const dy = cy - lastTrail.y;
+    trailDist += Math.sqrt(dx * dx + dy * dy);
+    if (trailDist > TRAIL_SPACING) {
+      trailSegments.push({
+        x: cx,
+        y: cy,
+        prev: { x: lastTrail.x, y: lastTrail.y },
+        width: TRAIL_WIDTH_MIN + Math.random() * TRAIL_WIDTH_RANGE,
+        opacity: TRAIL_OPACITY_MIN + Math.random() * TRAIL_OPACITY_RANGE,
+        life: 0,
+        maxLife: TRAIL_LIFE_MIN + Math.random() * TRAIL_LIFE_RANGE,
+        phase: Math.random() * Math.PI * 2,
+      });
+      // Drag spawns small bubbles in deep-sea mode
+      if (document.body.classList.contains('deep-sea') && Math.random() < BUBBLE_DRAG_RATE) {
+        const b = bubbles.find(b => !b.active);
+        if (b) {
+          b.reset(false);
+          b.x = cx + (Math.random() - 0.5) * 10;
+          b.y = cy + (Math.random() - 0.5) * 10;
+          b.baseR = BUBBLE_RADIUS_MIN + Math.random() * 4; // small drag bubbles
+          b.r = b.baseR;
+          b.active = true;
+        }
+      }
+      lastTrail = { x: cx, y: cy };
+      trailDist = 0;
+    }
+  }
 
-  // Touch fallback — after the browser takes over a touch for scrolling it fires
-  // pointercancel and stops sending pointermove/pointerup.  Touch events still
-  // fire though, so we use touchmove to keep tracking the finger and touchend
-  // to release.  On desktop these never fire so there's no impact.
-  document.addEventListener('touchmove', e => {
-    if (!isDragging || !e.touches.length) return;
-    dragPos.x = e.touches[0].clientX;
-    dragPos.y = canvasY(e.touches[0].clientY);
-  }, { passive: true });
-
-  document.addEventListener('touchend', releaseDrag);
+  bindPointer(document, {
+    onDown(x, y) {
+      isDragging = true;
+      holdStart = performance.now();
+      const cx = x, cy = canvasY(y);
+      dragPos.x = cx;
+      dragPos.y = cy;
+      lastTrail = { x: cx, y: cy };
+      trailDist = 0;
+    },
+    onMove: handleMove,
+    onUp: releaseDrag,
+  });
 
   render();
 }
