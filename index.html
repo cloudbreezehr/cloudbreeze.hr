@@ -206,6 +206,7 @@
   import { initTilt }       from './js/tilt.js';
   import { initUpsideDown } from './js/upside-down.js';
   import { initFrozen }     from './js/frozen.js';
+  import { initDeepSea }    from './js/deep-sea.js';
 
   const theme = initTheme(document.querySelector('.theme-toggle'));
   initNav(document.querySelector('nav'), theme);
@@ -215,6 +216,7 @@
   initTilt();
   initUpsideDown();
   initFrozen();
+  initDeepSea();
 
   // Subtle parallax on hero elements — each layer drifts at a different rate.
   // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.

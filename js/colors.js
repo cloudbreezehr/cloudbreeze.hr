@@ -119,6 +119,36 @@ const overrides = {
       meteorColors: [[180, 230, 255], [210, 240, 255], [240, 250, 255]],
     },
   },
+  'deep-sea': {
+    dark: {
+      clickColor: [0, 255, 180],
+      orbitColor: [0, 230, 200],
+      trailColor: [0, 200, 180],
+      lightningColor: [100, 200, 255],
+      lightningShadow: [0, 150, 255, 0.8],
+      lightningFlash: [80, 180, 255],
+      auroraHueBase: 160,
+      auroraHueRange: 60,
+      meteorColors: [[100, 200, 220], [150, 220, 230], [200, 240, 245]],
+      streakColor: [0, 180, 200],
+      moteColor: [0, 255, 180],
+      moteGlow: [0, 200, 150],
+    },
+    light: {
+      clickColor: [0, 200, 150],
+      orbitColor: [0, 200, 170],
+      trailColor: [0, 170, 150],
+      lightningColor: [100, 200, 255],
+      lightningShadow: [0, 150, 255, 0.8],
+      lightningFlash: [80, 180, 255],
+      auroraHueBase: 160,
+      auroraHueRange: 60,
+      meteorColors: [[100, 200, 220], [150, 220, 230], [200, 240, 245]],
+      streakColor: [0, 180, 200],
+      moteColor: [0, 200, 150],
+      moteGlow: [0, 170, 130],
+    },
+  },
 };
 
 export function resolvePalette(theme, submode) {
