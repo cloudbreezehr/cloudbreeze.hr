@@ -118,6 +118,7 @@ export function initUpsideDown() {
     setTimeout(() => {
       isFlipped = !isFlipped;
       document.body.classList.toggle('upside-down', isFlipped);
+      if (isFlipped) document.body.dataset.lastSubmode = 'upside-down';
       pageEl.style.transform = isFlipped ? 'scaleY(-1)' : '';
       overlay.style.background = 'none';
 

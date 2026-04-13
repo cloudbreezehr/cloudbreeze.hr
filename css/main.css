@@ -957,15 +957,7 @@ body.light-mode #cursor-ring {
   50% { opacity: 0.7; }
 }
 
-/* Upside Down active state */
-body.upside-down {
-  --sky-3: #e87d7d;
-  --sky-4: #dd3838;
-  --sky-5: #a81a1a;
-  --sky-6: #720c0c;
-  background: #280a0a;
-}
-
+/* Upside Down — structural rules (always apply when flipped) */
 body.upside-down .page {
   transform: scaleY(-1);
 }
@@ -983,65 +975,77 @@ body.upside-down > nav {
 
 body.upside-down #bg-canvas {
   transform: scaleY(-1);
+}
+
+/* Upside Down — visual theme (only when active theme) */
+body[data-active-theme="upside-down"] {
+  --sky-3: #e87d7d;
+  --sky-4: #dd3838;
+  --sky-5: #a81a1a;
+  --sky-6: #720c0c;
+  background: #280a0a;
+}
+
+body[data-active-theme="upside-down"] #bg-canvas {
   filter: hue-rotate(160deg) saturate(1.3) brightness(0.6);
 }
 
-body.upside-down #cursor { background: var(--sky-3); }
-body.upside-down #cursor-ring { border-color: rgba(221, 55, 55, 0.5); }
+body[data-active-theme="upside-down"] #cursor { background: var(--sky-3); }
+body[data-active-theme="upside-down"] #cursor-ring { border-color: rgba(221, 55, 55, 0.5); }
 
-body.upside-down .cloud-svg { filter: drop-shadow(0 0 12px rgba(221, 55, 55, 0.6)); }
+body[data-active-theme="upside-down"] .cloud-svg { filter: drop-shadow(0 0 12px rgba(221, 55, 55, 0.6)); }
 
-body.upside-down .hero-title .line-2 {
+body[data-active-theme="upside-down"] .hero-title .line-2 {
   background: linear-gradient(135deg, #f7b5b5 0%, #dd3838 50%, #e87d7d 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.upside-down .btn-primary {
+body[data-active-theme="upside-down"] .btn-primary {
   background: linear-gradient(135deg, #dd3838, #a81a1a);
   box-shadow: 0 0 30px rgba(221, 55, 55, 0.35);
 }
-body.upside-down .btn-primary::before {
+body[data-active-theme="upside-down"] .btn-primary::before {
   background: linear-gradient(135deg, #e87d7d, #dd3838);
 }
-body.upside-down .btn-primary:hover {
+body[data-active-theme="upside-down"] .btn-primary:hover {
   box-shadow: 0 8px 40px rgba(221, 55, 55, 0.5);
 }
 
-body.upside-down .about-heading em {
+body[data-active-theme="upside-down"] .about-heading em {
   background: linear-gradient(135deg, #f7b5b5, #dd3838);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.upside-down .services-grid {
+body[data-active-theme="upside-down"] .services-grid {
   background: rgba(255, 50, 50, 0.06);
   border-color: rgba(255, 50, 50, 0.06);
 }
-body.upside-down .service-card:hover { background: rgba(221, 55, 55, 0.05); }
-body.upside-down .service-card::before {
+body[data-active-theme="upside-down"] .service-card:hover { background: rgba(221, 55, 55, 0.05); }
+body[data-active-theme="upside-down"] .service-card::before {
   background: linear-gradient(90deg, transparent, rgba(221, 55, 55, 0.4), transparent);
 }
 
-body.upside-down .nav-cta { color: var(--sky-3) !important; border-color: rgba(221, 55, 55, 0.4); }
-body.upside-down .nav-cta:hover {
+body[data-active-theme="upside-down"] .nav-cta { color: var(--sky-3) !important; border-color: rgba(221, 55, 55, 0.4); }
+body[data-active-theme="upside-down"] .nav-cta:hover {
   background: rgba(221, 55, 55, 0.15) !important;
   border-color: var(--sky-3) !important;
 }
 
-body.upside-down .contact-card {
+body[data-active-theme="upside-down"] .contact-card {
   background: linear-gradient(135deg, rgba(221, 55, 55, 0.08) 0%, rgba(40, 10, 10, 0.9) 100%);
   border-color: rgba(221, 55, 55, 0.18);
 }
-body.upside-down .contact-card::before {
+body[data-active-theme="upside-down"] .contact-card::before {
   background: radial-gradient(circle, rgba(221, 55, 55, 0.12), transparent 70%);
 }
 
-body.upside-down .footer-info { border-top-color: rgba(255, 50, 50, 0.06); }
-body.upside-down footer { border-top-color: rgba(255, 50, 50, 0.05); }
-body.upside-down .footer-badge::before { background: #dd3737; }
+body[data-active-theme="upside-down"] .footer-info { border-top-color: rgba(255, 50, 50, 0.06); }
+body[data-active-theme="upside-down"] footer { border-top-color: rgba(255, 50, 50, 0.05); }
+body[data-active-theme="upside-down"] .footer-badge::before { background: #dd3737; }
 
-body.upside-down::after { opacity: 0.04; }
+body[data-active-theme="upside-down"]::after { opacity: 0.04; }
 
 /* ═══════════════════════════════════════════════
    Frozen Theme
@@ -1099,55 +1103,55 @@ body.upside-down::after { opacity: 0.04; }
   pointer-events: none;
 }
 
-/* ── Frozen active state ── */
-body.frozen #bg-canvas {
+/* ── Frozen — visual theme (only when active theme) ── */
+body[data-active-theme="frozen"] #bg-canvas {
   filter: saturate(0.4) brightness(1.25);
 }
 
-body.frozen .nav-logo {
+body[data-active-theme="frozen"] .nav-logo {
   filter: saturate(0.2) brightness(1.4);
 }
-body.frozen .cloud-svg {
+body[data-active-theme="frozen"] .cloud-svg {
   filter: drop-shadow(0 0 14px rgba(0,220,255,0.7));
 }
 
-body.frozen #cursor { background: rgb(0,200,240); }
-body.frozen #cursor-ring { border-color: rgba(0,220,255,0.5); }
+body[data-active-theme="frozen"] #cursor { background: rgb(0,200,240); }
+body[data-active-theme="frozen"] #cursor-ring { border-color: rgba(0,220,255,0.5); }
 
-body.frozen .hero-title .line-2 {
+body[data-active-theme="frozen"] .hero-title .line-2 {
   background: linear-gradient(135deg, #b5f0ff 0%, #00c8ff 50%, #60d8f0 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.frozen .btn-primary {
+body[data-active-theme="frozen"] .btn-primary {
   background: linear-gradient(135deg, #00b8e8, #0090c0);
   box-shadow: 0 0 30px rgba(0,200,240,0.35);
 }
-body.frozen .btn-primary::before {
+body[data-active-theme="frozen"] .btn-primary::before {
   background: linear-gradient(135deg, #40d0f0, #00b8e8);
 }
-body.frozen .btn-primary:hover {
+body[data-active-theme="frozen"] .btn-primary:hover {
   box-shadow: 0 8px 40px rgba(0,200,240,0.5);
 }
 
-body.frozen .about-heading em {
+body[data-active-theme="frozen"] .about-heading em {
   background: linear-gradient(135deg, #b5f0ff, #00c8ff);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.frozen .services-grid {
+body[data-active-theme="frozen"] .services-grid {
   background: rgba(0,200,240,0.06);
   border-color: rgba(0,200,240,0.06);
 }
 
-body.frozen .service-card:hover { background: rgba(0,200,240,0.05); }
-body.frozen .service-card::before {
+body[data-active-theme="frozen"] .service-card:hover { background: rgba(0,200,240,0.05); }
+body[data-active-theme="frozen"] .service-card::before {
   background: linear-gradient(90deg, transparent, rgba(0,200,240,0.4), transparent);
 }
 
-/* Card frost interaction — mouse-tracking gradient */
+/* Card frost interaction — mouse-tracking gradient (mode-specific, always when frozen) */
 body.frozen .frost-card::after {
   content: '';
   position: absolute;
@@ -1171,25 +1175,25 @@ body.frozen .card-frozen::before {
   background: linear-gradient(90deg, transparent, rgba(0,220,255,0.6), transparent) !important;
 }
 
-body.frozen .nav-cta { color: rgb(0,200,240) !important; border-color: rgba(0,200,240,0.4); }
-body.frozen .nav-cta:hover {
+body[data-active-theme="frozen"] .nav-cta { color: rgb(0,200,240) !important; border-color: rgba(0,200,240,0.4); }
+body[data-active-theme="frozen"] .nav-cta:hover {
   background: rgba(0,200,240,0.15) !important;
   border-color: rgb(0,200,240) !important;
 }
 
-body.frozen .contact-card {
+body[data-active-theme="frozen"] .contact-card {
   background: linear-gradient(135deg, rgba(0,200,240,0.08) 0%, rgba(10,22,40,0.9) 100%);
   border-color: rgba(0,200,240,0.18);
 }
-body.frozen .contact-card::before {
+body[data-active-theme="frozen"] .contact-card::before {
   background: radial-gradient(circle, rgba(0,200,240,0.12), transparent 70%);
 }
 
-body.frozen .footer-info { border-top-color: rgba(0,200,240,0.06); }
-body.frozen footer { border-top-color: rgba(0,200,240,0.05); }
-body.frozen .footer-badge::before { background: rgb(0,200,240); }
+body[data-active-theme="frozen"] .footer-info { border-top-color: rgba(0,200,240,0.06); }
+body[data-active-theme="frozen"] footer { border-top-color: rgba(0,200,240,0.05); }
+body[data-active-theme="frozen"] .footer-badge::before { background: rgb(0,200,240); }
 
-body.frozen::after { opacity: 0.04; }
+body[data-active-theme="frozen"]::after { opacity: 0.04; }
 
 /* ═══════════════════════════════════════════════
    Deep Sea Theme
@@ -1247,8 +1251,8 @@ body.frozen::after { opacity: 0.04; }
   background: linear-gradient(180deg, rgba(180,220,240,0.95), rgba(255,240,200,0.95), rgba(180,220,240,0.95));
 }
 
-/* ── Deep Sea active state ── */
-body.deep-sea {
+/* ── Deep Sea — visual theme (only when active theme) ── */
+body[data-active-theme="deep-sea"] {
   --sky-3: #0a5060;
   --sky-4: #064050;
   --sky-5: #003040;
@@ -1256,54 +1260,54 @@ body.deep-sea {
   background: #001018;
 }
 
-body.deep-sea #bg-canvas {
+body[data-active-theme="deep-sea"] #bg-canvas {
   filter: hue-rotate(310deg) saturate(1.4) brightness(0.35);
 }
 
-body.deep-sea .nav-logo {
+body[data-active-theme="deep-sea"] .nav-logo {
   filter: saturate(0.6) brightness(0.8);
 }
-body.deep-sea .cloud-svg {
+body[data-active-theme="deep-sea"] .cloud-svg {
   filter: drop-shadow(0 0 14px rgba(0,255,180,0.5));
 }
 
-body.deep-sea #cursor { background: rgb(0,200,160); }
-body.deep-sea #cursor-ring { border-color: rgba(0,255,180,0.4); }
+body[data-active-theme="deep-sea"] #cursor { background: rgb(0,200,160); }
+body[data-active-theme="deep-sea"] #cursor-ring { border-color: rgba(0,255,180,0.4); }
 
-body.deep-sea .hero-title .line-2 {
+body[data-active-theme="deep-sea"] .hero-title .line-2 {
   background: linear-gradient(135deg, #80ffd4 0%, #00c8a0 50%, #00a080 100%);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.deep-sea .btn-primary {
+body[data-active-theme="deep-sea"] .btn-primary {
   background: linear-gradient(135deg, #00806a, #005848);
   box-shadow: 0 0 30px rgba(0,200,160,0.3);
 }
-body.deep-sea .btn-primary::before {
+body[data-active-theme="deep-sea"] .btn-primary::before {
   background: linear-gradient(135deg, #00a088, #00806a);
 }
-body.deep-sea .btn-primary:hover {
+body[data-active-theme="deep-sea"] .btn-primary:hover {
   box-shadow: 0 8px 40px rgba(0,200,160,0.45);
 }
 
-body.deep-sea .about-heading em {
+body[data-active-theme="deep-sea"] .about-heading em {
   background: linear-gradient(135deg, #80ffd4, #00c8a0);
   -webkit-background-clip: text;
   background-clip: text;
 }
 
-body.deep-sea .services-grid {
+body[data-active-theme="deep-sea"] .services-grid {
   background: rgba(0,200,160,0.04);
   border-color: rgba(0,200,160,0.06);
 }
 
-body.deep-sea .service-card:hover { background: rgba(0,200,160,0.05); }
-body.deep-sea .service-card::before {
+body[data-active-theme="deep-sea"] .service-card:hover { background: rgba(0,200,160,0.05); }
+body[data-active-theme="deep-sea"] .service-card::before {
   background: linear-gradient(90deg, transparent, rgba(0,200,160,0.35), transparent);
 }
 
-/* Card caustic interaction — animated water-light ripple on hover */
+/* Card caustic interaction — animated water-light ripple (mode-specific, always when deep-sea) */
 body.deep-sea .caustic-card::after {
   content: '';
   position: absolute;
@@ -1318,22 +1322,22 @@ body.deep-sea .caustic-card:hover::after {
   opacity: 1;
 }
 
-body.deep-sea .nav-cta { color: rgb(0,200,160) !important; border-color: rgba(0,200,160,0.4); }
-body.deep-sea .nav-cta:hover {
+body[data-active-theme="deep-sea"] .nav-cta { color: rgb(0,200,160) !important; border-color: rgba(0,200,160,0.4); }
+body[data-active-theme="deep-sea"] .nav-cta:hover {
   background: rgba(0,200,160,0.15) !important;
   border-color: rgb(0,200,160) !important;
 }
 
-body.deep-sea .contact-card {
+body[data-active-theme="deep-sea"] .contact-card {
   background: linear-gradient(135deg, rgba(0,200,160,0.06) 0%, rgba(0,16,24,0.92) 100%);
   border-color: rgba(0,200,160,0.15);
 }
-body.deep-sea .contact-card::before {
+body[data-active-theme="deep-sea"] .contact-card::before {
   background: radial-gradient(circle, rgba(0,200,160,0.1), transparent 70%);
 }
 
-body.deep-sea .footer-info { border-top-color: rgba(0,200,160,0.06); }
-body.deep-sea footer { border-top-color: rgba(0,200,160,0.05); }
-body.deep-sea .footer-badge::before { background: rgb(0,200,160); }
+body[data-active-theme="deep-sea"] .footer-info { border-top-color: rgba(0,200,160,0.06); }
+body[data-active-theme="deep-sea"] footer { border-top-color: rgba(0,200,160,0.05); }
+body[data-active-theme="deep-sea"] .footer-badge::before { background: rgb(0,200,160); }
 
-body.deep-sea::after { opacity: 0.04; }
+body[data-active-theme="deep-sea"]::after { opacity: 0.04; }

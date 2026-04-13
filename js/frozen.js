@@ -201,6 +201,7 @@ export function initFrozen() {
       // Phase 2: swap state while covered
       isFrozen = true;
       document.body.classList.add('frozen');
+      document.body.dataset.lastSubmode = 'frozen';
       clearIndicators();
       enableCardFrost();
 

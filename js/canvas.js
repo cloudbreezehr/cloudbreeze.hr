@@ -302,6 +302,11 @@ const SHAKE_TURBULENCE = 4;         // velocity burst per snowflake on shake
 const SHAKE_DECAY = 0.97;           // turbulence multiplier decays per frame
 const SHAKE_OPACITY_BOOST = 0.15;   // temporary opacity increase during turbulence
 
+// ── Sub-mode registry ──
+// Body class names for each easter-egg mode. Used for active mode detection
+// and palette resolution. Adding a new mode: push its body class here.
+const SUBMODES = ['deep-sea', 'frozen', 'upside-down'];
+
 // ── Bubbles (Deep Sea mode) ──
 const BUBBLE_COUNT = 30;
 const BUBBLE_AMBIENT_RATE = 2.5;     // bubbles per second from bottom
@@ -921,10 +926,19 @@ export function initCanvas(canvasEl, theme, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const upsd = isUpside();
     const frozen = document.body.classList.contains('frozen');
     const deepSea = document.body.classList.contains('deep-sea');
-    const submode = deepSea ? 'deep-sea' : (frozen ? 'frozen' : (upsd ? 'upside-down' : null));
+    const upsd = document.body.classList.contains('upside-down');
+    // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
+    const activeModes = SUBMODES.filter(m => document.body.classList.contains(m));
+    const lastSub = document.body.dataset.lastSubmode;
+    const submode = (lastSub && activeModes.includes(lastSub)) ? lastSub : (activeModes[0] || null);
+    // Sync active theme to body for CSS visual rules
+    const prevTheme = document.body.dataset.activeTheme || null;
+    if (submode !== prevTheme) {
+      if (submode) document.body.dataset.activeTheme = submode;
+      else delete document.body.dataset.activeTheme;
+    }
     const pal = resolvePalette(isDarkMode ? 'dark' : 'light', submode);
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);

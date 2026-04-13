@@ -185,6 +185,7 @@ export function initDeepSea() {
     setTimeout(() => {
       isSubmerged = true;
       document.body.classList.add('deep-sea');
+      document.body.dataset.lastSubmode = 'deep-sea';
       clearIndicators();
       enableCardCaustics();
 
