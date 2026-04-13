@@ -1,3 +1,9 @@
+const RING_EASING = 0.12;
+const DOT_SIZE_DEFAULT = 12;
+const DOT_SIZE_HOVER = 6;
+const RING_SIZE_DEFAULT = 36;
+const RING_SIZE_HOVER = 52;
+
 export function initCursor(dotEl, ringEl) {
   if (!dotEl || !ringEl) return;
 
@@ -19,8 +25,8 @@ export function initCursor(dotEl, ringEl) {
   });
 
   function animRing() {
-    rx += (mx - rx) * 0.12;
-    ry += (my - ry) * 0.12;
+    rx += (mx - rx) * RING_EASING;
+    ry += (my - ry) * RING_EASING;
     setPos(ringEl, rx, ry);
     requestAnimationFrame(animRing);
   }
@@ -28,16 +34,16 @@ export function initCursor(dotEl, ringEl) {
 
   document.querySelectorAll('a, button').forEach(el => {
     el.addEventListener('mouseenter', () => {
-      dotEl.style.width = '6px';
-      dotEl.style.height = '6px';
-      ringEl.style.width = '52px';
-      ringEl.style.height = '52px';
+      dotEl.style.width = `${DOT_SIZE_HOVER}px`;
+      dotEl.style.height = `${DOT_SIZE_HOVER}px`;
+      ringEl.style.width = `${RING_SIZE_HOVER}px`;
+      ringEl.style.height = `${RING_SIZE_HOVER}px`;
     });
     el.addEventListener('mouseleave', () => {
-      dotEl.style.width = '12px';
-      dotEl.style.height = '12px';
-      ringEl.style.width = '36px';
-      ringEl.style.height = '36px';
+      dotEl.style.width = `${DOT_SIZE_DEFAULT}px`;
+      dotEl.style.height = `${DOT_SIZE_DEFAULT}px`;
+      ringEl.style.width = `${RING_SIZE_DEFAULT}px`;
+      ringEl.style.height = `${RING_SIZE_DEFAULT}px`;
     });
   });
 }

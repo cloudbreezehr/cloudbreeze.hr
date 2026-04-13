@@ -1,5 +1,13 @@
 import { multiLerp, palettes } from './colors.js';
 
+const NAV_BG_DARK = 'rgba(10,22,40,0.97)';
+const NAV_BG_ALPHA = 0.85;
+const NAV_BG_OPAQUE = 0.97;
+const LUMINANCE_THRESHOLD = 80;
+const BORDER_BRIGHT = 'rgba(0,0,0,0.06)';
+const BORDER_DARK = 'rgba(255,255,255,0.05)';
+const ACTIVE_OFFSET = 0.4;
+
 export function initNav(navEl, theme) {
   let scrollProgress = 0;
 
@@ -7,7 +15,7 @@ export function initNav(navEl, theme) {
     if (theme.isDark()) {
       navEl.style.background = '';
       navEl.style.borderBottomColor = '';
-      navEl.style.setProperty('--nav-bg', 'rgba(10,22,40,0.97)');
+      navEl.style.setProperty('--nav-bg', NAV_BG_DARK);
       navEl.classList.remove('nav-light');
       return;
     }
@@ -15,12 +23,11 @@ export function initNav(navEl, theme) {
     const r = Math.round(sky[0]);
     const g = Math.round(sky[1]);
     const b = Math.round(sky[2]);
-    navEl.style.background = `rgba(${r},${g},${b},0.85)`;
-    navEl.style.setProperty('--nav-bg', `rgba(${r},${g},${b},0.97)`);
+    navEl.style.background = `rgba(${r},${g},${b},${NAV_BG_ALPHA})`;
+    navEl.style.setProperty('--nav-bg', `rgba(${r},${g},${b},${NAV_BG_OPAQUE})`);
     const lum = (r * 0.299 + g * 0.587 + b * 0.114);
-    const bright = lum > 80;
-    navEl.style.borderBottomColor = bright
-      ? `rgba(0,0,0,0.06)` : `rgba(255,255,255,0.05)`;
+    const bright = lum > LUMINANCE_THRESHOLD;
+    navEl.style.borderBottomColor = bright ? BORDER_BRIGHT : BORDER_DARK;
     navEl.classList.toggle('nav-light', bright);
   }
 
@@ -30,7 +37,7 @@ export function initNav(navEl, theme) {
   const sectionEls = sectionIds.map(id => document.getElementById(id));
 
   function updateActiveLink() {
-    const scrollY = window.scrollY + window.innerHeight * 0.4;
+    const scrollY = window.scrollY + window.innerHeight * ACTIVE_OFFSET;
     let activeIdx = -1;
     sectionEls.forEach((el, i) => {
       if (el && el.offsetTop <= scrollY) activeIdx = i;
