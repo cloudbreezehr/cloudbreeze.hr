@@ -320,7 +320,9 @@ const SNOW_GLOW_RADIUS = 3;
 const SNOW_GLOW_OPACITY = 0.25;
 const SNOW_FRICTION = 0.96;
 const SNOW_REPEL_RADIUS = 150;
+const SNOW_REPEL_DAMPEN = 0.8;
 const SNOW_ATTRACT_RADIUS = 150;
+const SNOW_ATTRACT_STRENGTH = 0.1;
 const SNOW_ATTRACT_TANGENT = 0.6;
 const SNOW_SCROLL_THRESHOLD = 0.5;
 const SNOW_SCROLL_VY = 0.03;
@@ -355,7 +357,9 @@ const BUBBLE_OPACITY_RANGE = 0.4;
 const BUBBLE_GROWTH_RATE = 0.001;    // radius growth per frame
 const BUBBLE_FRICTION = 0.96;
 const BUBBLE_REPEL_RADIUS = 150;
+const BUBBLE_REPEL_DAMPEN = 0.8;
 const BUBBLE_ATTRACT_RADIUS = 150;
+const BUBBLE_ATTRACT_STRENGTH = 0.1;
 const BUBBLE_ATTRACT_TANGENT = 0.6;
 const BUBBLE_SCROLL_THRESHOLD = 0.5;
 const BUBBLE_SCROLL_VX = 0.03;
@@ -426,6 +430,16 @@ function getStreakParams(sp) {
   if (sp < 0.5) return { opMul: 1.3, speedMul: 1.2 };
   if (sp < 0.75) return { opMul: 0.8, speedMul: 1.5 };
   return { opMul: 0.3, speedMul: 0.5 };
+}
+
+// Trapezoidal scroll-visibility fade: 0 → fade in → 1 → fade out → 0.
+// For fade-out-only (e.g. stars), pass inStart = inEnd = 0.
+function scrollFade(sp, inStart, inEnd, outStart, outEnd) {
+  if (sp < inStart) return 0;
+  if (sp < inEnd) return (inEnd === inStart) ? 1 : (sp - inStart) / (inEnd - inStart);
+  if (sp < outStart) return 1;
+  if (sp < outEnd) return 1 - (sp - outStart) / (outEnd - outStart);
+  return 0;
 }
 
 class Cloud {
@@ -1019,8 +1033,7 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Stars — fade out between 20-50% scroll
     if (opts.stars) {
-      const starFadeRange = STAR_FADE_END - STAR_FADE_START;
-      const starVis = sp < STAR_FADE_START ? 1.0 : sp < STAR_FADE_END ? 1.0 - (sp - STAR_FADE_START) / starFadeRange : 0.0;
+      const starVis = scrollFade(sp, 0, 0, STAR_FADE_START, STAR_FADE_END);
       if (starVis > 0) {
         t += STAR_TIME_STEP;
         stars.forEach(s => {
@@ -1088,8 +1101,7 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Shooting stars — rare fast arcs across the sky
     if (opts.stars) {
-      const starFadeRange2 = STAR_FADE_END - STAR_FADE_START;
-      const starVis2 = sp < STAR_FADE_START ? 1.0 : sp < STAR_FADE_END ? 1.0 - (sp - STAR_FADE_START) / starFadeRange2 : 0.0;
+      const starVis2 = scrollFade(sp, 0, 0, STAR_FADE_START, STAR_FADE_END);
       if (starVis2 > 0 && Math.random() < SHOOTING_SPAWN_CHANCE) {
         const ss = shootingStars.find(s => !s.active);
         if (ss) {
@@ -1302,10 +1314,7 @@ export function initCanvas(canvasEl, theme, options) {
     // Cloud layer — clouds live at a fixed altitude, viewport scrolls past them
     if (opts.clouds) {
       const cloudYOffset = -(sp - CLOUD_Y_PIVOT) * canvas.height * CLOUD_Y_SCALE;
-      const cloudFadeInRange = CLOUD_FADE_IN_END - CLOUD_FADE_IN_START;
-      const cloudFadeOutRange = CLOUD_FADE_OUT_END - CLOUD_FADE_OUT_START;
-      const cloudVis = sp < CLOUD_FADE_IN_START ? 0 : sp < CLOUD_FADE_IN_END ? (sp - CLOUD_FADE_IN_START) / cloudFadeInRange
-        : sp < CLOUD_FADE_OUT_START ? 1.0 : sp < CLOUD_FADE_OUT_END ? 1.0 - (sp - CLOUD_FADE_OUT_START) / cloudFadeOutRange : 0;
+      const cloudVis = scrollFade(sp, CLOUD_FADE_IN_START, CLOUD_FADE_IN_END, CLOUD_FADE_OUT_START, CLOUD_FADE_OUT_END);
       clouds.forEach(c => {
         c.update();
         // Click gently pushes nearby clouds sideways
@@ -1335,10 +1344,7 @@ export function initCanvas(canvasEl, theme, options) {
     // Breeze wisps — horizontal wind, also scroll with atmosphere
     if (opts.wisps) {
       const wispYOffset = -(sp - WISP_Y_PIVOT) * canvas.height * WISP_Y_SCALE;
-      const wispFadeInRange = WISP_FADE_IN_END - WISP_FADE_IN_START;
-      const wispFadeOutRange = WISP_FADE_OUT_END - WISP_FADE_OUT_START;
-      const wispVis = sp < WISP_FADE_IN_START ? 0 : sp < WISP_FADE_IN_END ? (sp - WISP_FADE_IN_START) / wispFadeInRange
-        : sp < WISP_FADE_OUT_START ? 1.0 : sp < WISP_FADE_OUT_END ? 1.0 - (sp - WISP_FADE_OUT_START) / wispFadeOutRange : 0;
+      const wispVis = scrollFade(sp, WISP_FADE_IN_START, WISP_FADE_IN_END, WISP_FADE_OUT_START, WISP_FADE_OUT_END);
       wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
     }
 
@@ -1452,30 +1458,8 @@ export function initCanvas(canvasEl, theme, options) {
       }
       snowflakes.forEach(s => {
         s.update();
-        // Click repels nearby snowflakes
-        if (clickImpulse.strength > 0.05) {
-          const dx = s.x - clickImpulse.x;
-          const dy = s.y - clickImpulse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < SNOW_REPEL_RADIUS && dist > 1) {
-            const f = clickImpulse.strength * (1 - dist / SNOW_REPEL_RADIUS) * 0.8;
-            s.vx += (dx / dist) * f;
-            s.vy += (dy / dist) * f;
-          }
-        }
-        // Drag attracts nearby snowflakes with tangential orbit
-        if (isDragging) {
-          const dx = dragPos.x - s.x;
-          const dy = dragPos.y - s.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < SNOW_ATTRACT_RADIUS && dist > 5) {
-            const f = 0.1 * (1 - dist / SNOW_ATTRACT_RADIUS);
-            const nx = dx / dist;
-            const ny = dy / dist;
-            s.vx += nx * f + (-ny) * f * holdStrength * SNOW_ATTRACT_TANGENT;
-            s.vy += ny * f + nx * f * holdStrength * SNOW_ATTRACT_TANGENT;
-          }
-        }
+        applyRepulsion(s, SNOW_REPEL_RADIUS, SNOW_REPEL_DAMPEN);
+        applyAttraction(s, SNOW_ATTRACT_RADIUS, SNOW_ATTRACT_STRENGTH, SNOW_ATTRACT_TANGENT);
         // Scroll pushes snowflakes
         if (Math.abs(scrollVelocity) > SNOW_SCROLL_THRESHOLD) {
           s.vy -= scrollVelocity * SNOW_SCROLL_VY;
@@ -1498,30 +1482,8 @@ export function initCanvas(canvasEl, theme, options) {
       bubbles.forEach(b => {
         if (!b.active) return;
         b.update();
-        // Click repels
-        if (clickImpulse.strength > 0.05) {
-          const dx = b.x - clickImpulse.x;
-          const dy = b.y - clickImpulse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < BUBBLE_REPEL_RADIUS && dist > 1) {
-            const f = clickImpulse.strength * (1 - dist / BUBBLE_REPEL_RADIUS) * 0.8;
-            b.vx += (dx / dist) * f;
-            b.vy += (dy / dist) * f;
-          }
-        }
-        // Drag attracts with tangential orbit
-        if (isDragging) {
-          const dx = dragPos.x - b.x;
-          const dy = dragPos.y - b.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < BUBBLE_ATTRACT_RADIUS && dist > 5) {
-            const f = 0.1 * (1 - dist / BUBBLE_ATTRACT_RADIUS);
-            const nx = dx / dist;
-            const ny = dy / dist;
-            b.vx += nx * f + (-ny) * f * holdStrength * BUBBLE_ATTRACT_TANGENT;
-            b.vy += ny * f + nx * f * holdStrength * BUBBLE_ATTRACT_TANGENT;
-          }
-        }
+        applyRepulsion(b, BUBBLE_REPEL_RADIUS, BUBBLE_REPEL_DAMPEN);
+        applyAttraction(b, BUBBLE_ATTRACT_RADIUS, BUBBLE_ATTRACT_STRENGTH, BUBBLE_ATTRACT_TANGENT);
         // Scroll pushes laterally
         if (Math.abs(scrollVelocity) > BUBBLE_SCROLL_THRESHOLD) {
           b.vx += scrollVelocity * BUBBLE_SCROLL_VX;
@@ -1531,28 +1493,8 @@ export function initCanvas(canvasEl, theme, options) {
 
       jellyfish.forEach(j => {
         j.update();
-        // Click repels gently (high friction via dampen factor)
-        if (clickImpulse.strength > 0.05) {
-          const dx = j.x - clickImpulse.x;
-          const dy = j.y - clickImpulse.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < JELLY_REPEL_RADIUS && dist > 1) {
-            const f = clickImpulse.strength * (1 - dist / JELLY_REPEL_RADIUS) * JELLY_REPEL_DAMPEN;
-            j.vx += (dx / dist) * f;
-            j.vy += (dy / dist) * f;
-          }
-        }
-        // Drag attracts weakly — lazy drift toward cursor
-        if (isDragging) {
-          const dx = dragPos.x - j.x;
-          const dy = dragPos.y - j.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < JELLY_ATTRACT_RADIUS && dist > 5) {
-            const f = JELLY_ATTRACT_STRENGTH * (1 - dist / JELLY_ATTRACT_RADIUS);
-            j.vx += (dx / dist) * f;
-            j.vy += (dy / dist) * f;
-          }
-        }
+        applyRepulsion(j, JELLY_REPEL_RADIUS, JELLY_REPEL_DAMPEN);
+        applyAttraction(j, JELLY_ATTRACT_RADIUS, JELLY_ATTRACT_STRENGTH, 0);
         j.draw();
       });
     }
@@ -1669,6 +1611,35 @@ export function initCanvas(canvasEl, theme, options) {
   const orbitParticles = [];
   let holdStart = 0;
   let holdStrength = 0;
+
+  // Shared pointer-interaction helpers (snow, bubbles, jellyfish)
+  function applyRepulsion(p, radius, damping) {
+    if (clickImpulse.strength > 0.05) {
+      const dx = p.x - clickImpulse.x;
+      const dy = p.y - clickImpulse.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < radius && dist > 1) {
+        const f = clickImpulse.strength * (1 - dist / radius) * damping;
+        p.vx += (dx / dist) * f;
+        p.vy += (dy / dist) * f;
+      }
+    }
+  }
+
+  function applyAttraction(p, radius, force, tangentFactor) {
+    if (isDragging) {
+      const dx = dragPos.x - p.x;
+      const dy = dragPos.y - p.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < radius && dist > 5) {
+        const f = force * (1 - dist / radius);
+        const nx = dx / dist;
+        const ny = dy / dist;
+        p.vx += nx * f + (-ny) * f * holdStrength * tangentFactor;
+        p.vy += ny * f + nx * f * holdStrength * tangentFactor;
+      }
+    }
+  }
 
   // Click burst — scatter luminous motes from click point
   const clickParticles = [];
