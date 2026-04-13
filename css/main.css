@@ -1206,6 +1206,7 @@ body[data-active-theme="frozen"]::after { opacity: 0.04; }
   height: 60px;
   border-radius: 50%;
   border: 1.5px solid rgba(0,200,180,0.5);
+  transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 200;
 }
