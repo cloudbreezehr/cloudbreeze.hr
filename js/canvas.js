@@ -362,42 +362,6 @@ const SUBMODES = ['deep-sea', 'frozen', 'blocky', 'upside-down'];
 // ── Blocky Pixelation ──
 const PIXEL_SCALE = 6;
 
-// ── Terrain (Blocky mode) ──
-const TERRAIN_HEIGHT_RATIO = 0.25;       // front terrain occupies bottom 25% of canvas
-const TERRAIN_MID_HEIGHT_RATIO = 0.22;   // mid hills buffer height ratio
-const TERRAIN_BACK_HEIGHT_RATIO = 0.40;  // back mountains buffer height ratio (tallest — frames the scene)
-const TERRAIN_BLOCK_SIZE = 6;            // matches pixel scale for crisp alignment
-const TERRAIN_TREE_CHANCE = 0.06;        // chance per column to have a tree
-const TERRAIN_TREE_MIN_GAP = 10;         // minimum columns between trees
-const TERRAIN_ORE_CHANCE = 0.02;         // chance per stone block for ore pixel
-const TERRAIN_BACK_SPEED = 0.20;         // horizontal parallax speed for back mountains
-const TERRAIN_MID_SPEED = 0.50;          // horizontal parallax speed for mid hills
-const TERRAIN_FRONT_SPEED = 0.80;        // horizontal parallax speed for front terrain
-const TERRAIN_SCROLL_RANGE = 0.40;       // scroll-to-pixel multiplier (higher = more horizontal travel)
-const TERRAIN_POP_MAX = 10;              // max simultaneous popping blocks
-const TERRAIN_POP_DIST = 80;             // click radius for block pops
-const TERRAIN_POP_DURATION = 20;         // frames for a pop animation
-const TERRAIN_FADE_IN_START = 0.55;      // scroll position where terrain starts to appear
-const TERRAIN_FADE_IN_END = 0.70;        // scroll position where terrain is fully visible
-const TERRAIN_BEVEL_SIZE = 2;            // pixel width of highlight/shadow edges
-const TERRAIN_BEVEL_HIGHLIGHT = 40;      // RGB increase for top/left-edge highlight
-const TERRAIN_BEVEL_SHADOW = 40;         // RGB decrease for right/bottom-edge shadow
-const TERRAIN_POP_LIFT_BLOCKS = 3;      // pop lifts this many block-sizes above surface
-
-// Terrain colors (used directly by terrain renderer)
-const TERRAIN_GRASS     = [90, 140, 60];
-const TERRAIN_GRASS_ALT = [70, 115, 45];
-const TERRAIN_DIRT      = [140, 100, 55];
-const TERRAIN_DIRT_ALT  = [110, 80, 40];
-const TERRAIN_STONE     = [120, 120, 120];
-const TERRAIN_STONE_ALT = [90, 90, 90];
-const TERRAIN_DEEP      = [80, 80, 80];
-const TERRAIN_ORE       = [200, 160, 60];
-const TERRAIN_TRUNK     = [90, 60, 30];
-const TERRAIN_LEAVES    = [60, 130, 40];
-const TERRAIN_MOUNTAIN  = [50, 55, 80];
-const TERRAIN_HILLS     = [60, 90, 50];
-
 // ── Fireflies (Blocky mode) ──
 const FIREFLY_COUNT = 28;
 const FIREFLY_RADIUS = 2;               // drawn at pixel-scale after pixelation
@@ -1012,7 +976,7 @@ class Firefly {
     // Random walk
     this.vx += (Math.random() - 0.5) * FIREFLY_DRIFT;
     this.vy += (Math.random() - 0.5) * FIREFLY_DRIFT;
-    // Slight downward bias near terrain
+    // Slight upward bias near bottom of canvas
     if (this.y > (canvas ? canvas.height * 0.7 : 700)) {
       this.vy -= 0.02;
     }
@@ -1076,151 +1040,6 @@ class Firefly {
   }
 }
 
-// ── Terrain generation ──
-let terrainHeightMap = null;     // array of heights per column
-let terrainBuffer = null;        // offscreen canvas for front terrain
-let terrainMidBuffer = null;     // offscreen canvas for mid hills
-let terrainBackBuffer = null;    // offscreen canvas for back mountains
-let terrainTrees = [];           // [{col, height}] tree positions
-let terrainPops = [];            // [{col, frame}] active block pop animations
-let terrainNeedsRegen = true;
-
-// Renders a single terrain block with isometric bevel edges:
-// lighter top + left edges (lit faces) + darker right + bottom edges (shadow faces).
-function drawBeveledBlock(targetCtx, bx, by, size, color) {
-  targetCtx.fillStyle = `rgb(${color[0]},${color[1]},${color[2]})`;
-  targetCtx.fillRect(bx, by, size, size);
-  targetCtx.fillStyle = `rgb(${Math.min(255, color[0] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[1] + TERRAIN_BEVEL_HIGHLIGHT)},${Math.min(255, color[2] + TERRAIN_BEVEL_HIGHLIGHT)})`;
-  targetCtx.fillRect(bx, by, size, TERRAIN_BEVEL_SIZE);
-  targetCtx.fillRect(bx, by, TERRAIN_BEVEL_SIZE, size);
-  targetCtx.fillStyle = `rgb(${Math.max(0, color[0] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[1] - TERRAIN_BEVEL_SHADOW)},${Math.max(0, color[2] - TERRAIN_BEVEL_SHADOW)})`;
-  targetCtx.fillRect(bx + size - TERRAIN_BEVEL_SIZE, by, TERRAIN_BEVEL_SIZE, size);
-  targetCtx.fillRect(bx, by + size - TERRAIN_BEVEL_SIZE, size, TERRAIN_BEVEL_SIZE);
-}
-
-function generateTerrain(w, h) {
-  const bs = TERRAIN_BLOCK_SIZE;
-  // Extra columns to cover the maximum horizontal parallax shift so terrain fills edge-to-edge
-  const maxParallaxPx = Math.ceil(w * Math.max(TERRAIN_FRONT_SPEED, TERRAIN_MID_SPEED, TERRAIN_BACK_SPEED) * TERRAIN_SCROLL_RANGE);
-  const extraCols = Math.ceil(maxParallaxPx / bs);
-  const cols = Math.ceil(w / bs) + extraCols;
-  const maxH = Math.floor(h * TERRAIN_HEIGHT_RATIO / bs);
-
-  // Height map from layered sine waves
-  terrainHeightMap = new Array(cols);
-  for (let i = 0; i < cols; i++) {
-    const x = i / cols;
-    terrainHeightMap[i] = Math.floor(
-      maxH * 0.5
-      + Math.sin(x * Math.PI * 2.5) * maxH * 0.15
-      + Math.sin(x * Math.PI * 5.7 + 1.3) * maxH * 0.1
-      + Math.sin(x * Math.PI * 11.3 + 2.7) * maxH * 0.05
-    );
-    terrainHeightMap[i] = Math.max(3, Math.min(maxH, terrainHeightMap[i]));
-  }
-
-  // Place trees
-  terrainTrees = [];
-  let lastTree = -TERRAIN_TREE_MIN_GAP;
-  for (let i = 0; i < cols; i++) {
-    if (i - lastTree >= TERRAIN_TREE_MIN_GAP && Math.random() < TERRAIN_TREE_CHANCE) {
-      terrainTrees.push({ col: i, trunkH: 3 + Math.floor(Math.random() * 2) });
-      lastTree = i;
-    }
-  }
-
-  // Render front terrain to buffer
-  terrainBuffer = document.createElement('canvas');
-  terrainBuffer.width = cols * bs;
-  terrainBuffer.height = h * TERRAIN_HEIGHT_RATIO + bs * 10;
-  const tctx = terrainBuffer.getContext('2d');
-  const bufH = terrainBuffer.height;
-
-  for (let i = 0; i < cols; i++) {
-    const colH = terrainHeightMap[i];
-    for (let row = 0; row < colH; row++) {
-      const bx = i * bs;
-      const by = bufH - (row + 1) * bs;
-      let color;
-      if (row >= colH - 1) {
-        color = (i + row) % 3 === 0 ? TERRAIN_GRASS_ALT : TERRAIN_GRASS;
-      } else if (row >= colH - 4) {
-        color = (i + row) % 4 === 0 ? TERRAIN_DIRT_ALT : TERRAIN_DIRT;
-      } else if (row > 1) {
-        if (Math.random() < TERRAIN_ORE_CHANCE) {
-          color = TERRAIN_ORE;
-        } else {
-          color = (i + row) % 3 === 0 ? TERRAIN_STONE_ALT : TERRAIN_STONE;
-        }
-      } else {
-        color = TERRAIN_DEEP;
-      }
-      drawBeveledBlock(tctx, bx, by, bs, color);
-    }
-  }
-
-  // Render trees
-  terrainTrees.forEach(tree => {
-    const bx = tree.col * bs;
-    const groundY = bufH - terrainHeightMap[tree.col] * bs;
-    // Trunk
-    for (let r = 0; r < tree.trunkH; r++) {
-      drawBeveledBlock(tctx, bx, groundY - (r + 1) * bs, bs, TERRAIN_TRUNK);
-    }
-    // Canopy — 3-wide dome
-    const canopyY = groundY - (tree.trunkH + 1) * bs;
-    for (let dx = -1; dx <= 1; dx++) {
-      for (let dy = 0; dy <= 1; dy++) {
-        drawBeveledBlock(tctx, bx + dx * bs, canopyY - dy * bs, bs, TERRAIN_LEAVES);
-      }
-    }
-    // Top cap
-    drawBeveledBlock(tctx, bx, canopyY - 2 * bs, bs, TERRAIN_LEAVES);
-  });
-
-  // Render mid hills to buffer (individual blocks with bevels)
-  terrainMidBuffer = document.createElement('canvas');
-  terrainMidBuffer.width = cols * bs;
-  terrainMidBuffer.height = Math.floor(h * TERRAIN_MID_HEIGHT_RATIO);
-  const mctx = terrainMidBuffer.getContext('2d');
-  const mH = terrainMidBuffer.height;
-  const midCols = cols;
-  for (let i = 0; i < midCols; i++) {
-    const x = i / midCols;
-    const height = Math.floor(
-      mH * 0.4
-      + Math.sin(x * Math.PI * 3.1 + 0.8) * mH * 0.25
-      + Math.sin(x * Math.PI * 7.2 + 2.1) * mH * 0.1
-    );
-    const numRows = Math.ceil(height / bs);
-    for (let row = 0; row < numRows; row++) {
-      drawBeveledBlock(mctx, i * bs, mH - (row + 1) * bs, bs, TERRAIN_HILLS);
-    }
-  }
-
-  // Render back mountains to buffer (individual blocks with bevels)
-  terrainBackBuffer = document.createElement('canvas');
-  terrainBackBuffer.width = cols * bs;
-  terrainBackBuffer.height = Math.floor(h * TERRAIN_BACK_HEIGHT_RATIO);
-  const bctx = terrainBackBuffer.getContext('2d');
-  const bH = terrainBackBuffer.height;
-  const backCols = cols;
-  for (let i = 0; i < backCols; i++) {
-    const x = i / backCols;
-    const height = Math.floor(
-      bH * 0.35
-      + Math.sin(x * Math.PI * 2.3 + 0.5) * bH * 0.3
-      + Math.sin(x * Math.PI * 4.8 + 1.7) * bH * 0.15
-    );
-    const numRows = Math.ceil(height / bs);
-    for (let row = 0; row < numRows; row++) {
-      drawBeveledBlock(bctx, i * bs, bH - (row + 1) * bs, bs, TERRAIN_MOUNTAIN);
-    }
-  }
-
-  terrainNeedsRegen = false;
-}
-
 const defaults = {
   sky: true,       stars: true,     streaks: true,
   clouds: true,    wisps: true,     horizon: true,
@@ -1261,7 +1080,6 @@ export function initCanvas(canvasEl, theme, options) {
     canvas.width = window.innerWidth;
     canvas.height = stableHeight();
     resizePixelCanvas();
-    terrainNeedsRegen = true;
   }
 
   function updateScroll() {
@@ -1699,7 +1517,7 @@ export function initCanvas(canvasEl, theme, options) {
       wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
     }
 
-    // Horizon glow — shifts with descent (skipped in blocky mode, terrain replaces it)
+    // Horizon glow — shifts with descent (skipped in blocky mode)
     if (opts.horizon && !blocky) {
       const glowY = canvas.height * (HORIZON_Y_BASE - sp * HORIZON_Y_SHIFT);
       const glowIntensity = HORIZON_INTENSITY_BASE + sp * HORIZON_INTENSITY_SCROLL - Math.max(0, sp - HORIZON_Y_BASE) * HORIZON_INTENSITY_FALLOFF;
@@ -1990,11 +1808,8 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.restore();
     }
 
-    // ── Blocky mode: pixelation post-process + terrain + fireflies ──
+    // ── Blocky mode: pixelation post-process + fireflies ──
     if (blocky) {
-      // Regenerate terrain on first frame or resize
-      if (terrainNeedsRegen) generateTerrain(canvas.width, canvas.height);
-
       // Pixelation post-process: downsample then scale back up
       const pw = pixelCanvas.width;
       const ph = pixelCanvas.height;
@@ -2004,63 +1819,6 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.imageSmoothingEnabled = false;
       ctx.drawImage(pixelCanvas, 0, 0, canvas.width, canvas.height);
       ctx.imageSmoothingEnabled = true;
-
-      // Terrain — rendered crisp on top of pixelated sky
-      // When upside-down, the canvas is CSS-flipped so terrain (drawn at bottom)
-      // appears at the visual top. Invert scroll so it's visible near sp=0.
-      const terrainSp = upsd ? 1 - sp : sp;
-      const terrainVis = scrollFade(terrainSp, TERRAIN_FADE_IN_START, TERRAIN_FADE_IN_END, 2, 2);
-      if (terrainVis > 0 && terrainBackBuffer && terrainMidBuffer && terrainBuffer) {
-        ctx.save();
-        ctx.globalAlpha = terrainVis;
-
-        // Back mountains (slowest horizontal parallax)
-        const backShift = terrainSp * canvas.width * TERRAIN_BACK_SPEED * TERRAIN_SCROLL_RANGE;
-        ctx.drawImage(terrainBackBuffer, -backShift, canvas.height - terrainBackBuffer.height);
-
-        // Mid hills (moderate horizontal parallax)
-        const midShift = terrainSp * canvas.width * TERRAIN_MID_SPEED * TERRAIN_SCROLL_RANGE;
-        ctx.drawImage(terrainMidBuffer, -midShift, canvas.height - terrainMidBuffer.height);
-
-        // Front terrain (fastest horizontal parallax)
-        const frontShift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * TERRAIN_SCROLL_RANGE;
-        ctx.drawImage(terrainBuffer, -frontShift, canvas.height - terrainBuffer.height);
-
-        ctx.restore();
-
-        // Block pop animations
-        for (let i = terrainPops.length - 1; i >= 0; i--) {
-          const pop = terrainPops[i];
-          pop.frame++;
-          if (pop.frame > TERRAIN_POP_DURATION) {
-            terrainPops.splice(i, 1);
-            continue;
-          }
-          const t = pop.frame / TERRAIN_POP_DURATION;
-          const lift = Math.sin(t * Math.PI) * TERRAIN_POP_LIFT_BLOCKS * TERRAIN_BLOCK_SIZE;
-          ctx.globalAlpha = terrainVis * (1 - t * 0.5);
-          drawBeveledBlock(ctx, pop.x, pop.y - lift, TERRAIN_BLOCK_SIZE, pop.color);
-          ctx.globalAlpha = 1;
-        }
-      }
-
-      // Terrain collision for motes — push particles above terrain surface
-      if (terrainHeightMap && terrainVis > 0) {
-        const bs = TERRAIN_BLOCK_SIZE;
-        const bufH = terrainBuffer ? terrainBuffer.height : canvas.height * TERRAIN_HEIGHT_RATIO;
-        const terrainTop = canvas.height - bufH;
-        const shift = terrainSp * canvas.width * TERRAIN_FRONT_SPEED * TERRAIN_SCROLL_RANGE;
-        motes.forEach(m => {
-          const col = Math.floor((m.x + shift) / bs);
-          if (col >= 0 && col < terrainHeightMap.length) {
-            const surfaceY = canvas.height - terrainHeightMap[col] * bs;
-            if (m.y > surfaceY * terrainVis + terrainTop * (1 - terrainVis)) {
-              m.y = surfaceY;
-              m.vy = -Math.abs(m.vy) * 0.3;
-            }
-          }
-        });
-      }
 
       // Block fragments — update and draw
       for (let i = blockFragments.length - 1; i >= 0; i--) {
@@ -2262,11 +2020,7 @@ export function initCanvas(canvasEl, theme, options) {
     // Blocky click burst — block fragments instead of smooth particles
     if (document.body.classList.contains('blocky')) {
       const fragCount = BLOCK_FRAG_COUNT_MIN + Math.floor(Math.random() * BLOCK_FRAG_COUNT_RANGE);
-      // Pick colors based on click zone
-      const inTerrainZone = cy > canvas.height * 0.65;
       const skyColors = [[80, 120, 200], [100, 140, 220], [60, 100, 180]];
-      const groundColors = [TERRAIN_GRASS, TERRAIN_DIRT, TERRAIN_STONE];
-      const colorSet = inTerrainZone ? groundColors : skyColors;
       for (let i = 0; i < fragCount && blockFragments.length < BLOCK_FRAG_MAX; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = BLOCK_FRAG_SPEED_MIN + Math.random() * BLOCK_FRAG_SPEED_RANGE;
@@ -2274,29 +2028,9 @@ export function initCanvas(canvasEl, theme, options) {
           x: cx, y: cy,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed - 1.5,
-          color: colorSet[Math.floor(Math.random() * colorSet.length)],
+          color: skyColors[Math.floor(Math.random() * skyColors.length)],
           life: 0, rot: 0,
         });
-      }
-      // Also trigger terrain block pops if near terrain
-      if (inTerrainZone && terrainHeightMap) {
-        const bs = TERRAIN_BLOCK_SIZE;
-        const centerCol = Math.floor(cx / bs);
-        for (let dc = -2; dc <= 2; dc++) {
-          const col = centerCol + dc;
-          if (col >= 0 && col < terrainHeightMap.length && terrainPops.length < TERRAIN_POP_MAX) {
-            const dist = Math.abs(dc) * bs;
-            if (dist < TERRAIN_POP_DIST && Math.random() < 0.6) {
-              const surfaceRow = terrainHeightMap[col] - 1;
-              terrainPops.push({
-                x: col * bs,
-                y: canvas.height - (surfaceRow + 1) * bs,
-                color: TERRAIN_GRASS,
-                frame: 0,
-              });
-            }
-          }
-        }
       }
     }
 
