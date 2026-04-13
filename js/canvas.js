@@ -272,6 +272,28 @@ const IMPULSE_MOTE_OPACITY_GAIN = 0.1;
 const SCROLL_VEL_GAIN = 0.3;
 const SCROLL_VEL_DECAY = 0.92;
 
+// ── Snowflakes (Frozen mode) ──
+const SNOW_COUNT = 40;
+const SNOW_RADIUS_MIN = 1.5;
+const SNOW_RADIUS_RANGE = 3;
+const SNOW_FALL_MIN = 0.3;
+const SNOW_FALL_RANGE = 0.5;
+const SNOW_SWAY_SPEED_MIN = 0.008;
+const SNOW_SWAY_SPEED_RANGE = 0.012;
+const SNOW_SWAY_AMP_MIN = 0.3;
+const SNOW_SWAY_AMP_RANGE = 0.5;
+const SNOW_OPACITY_MIN = 0.2;
+const SNOW_OPACITY_RANGE = 0.5;
+const SNOW_GLOW_RADIUS = 3;
+const SNOW_GLOW_OPACITY = 0.25;
+const SNOW_FRICTION = 0.96;
+const SNOW_REPEL_RADIUS = 150;
+const SNOW_ATTRACT_RADIUS = 150;
+const SNOW_ATTRACT_TANGENT = 0.6;
+const SNOW_SCROLL_THRESHOLD = 0.5;
+const SNOW_SCROLL_VY = 0.03;
+const SNOW_SCROLL_VX = 0.02;
+
 let canvas, ctx;
 
 function getStreakParams(sp) {
@@ -437,6 +459,48 @@ class ScrollMote {
   }
 }
 
+class Snowflake {
+  constructor() { this.reset(true); }
+  reset(init) {
+    this.x = Math.random() * canvas.width;
+    this.y = init ? Math.random() * canvas.height : -10;
+    this.r = SNOW_RADIUS_MIN + Math.random() * SNOW_RADIUS_RANGE;
+    this.fallSpeed = SNOW_FALL_MIN + Math.random() * SNOW_FALL_RANGE;
+    this.vx = 0;
+    this.vy = 0;
+    this.sway = Math.random() * Math.PI * 2;
+    this.swaySpeed = SNOW_SWAY_SPEED_MIN + Math.random() * SNOW_SWAY_SPEED_RANGE;
+    this.swayAmp = SNOW_SWAY_AMP_MIN + Math.random() * SNOW_SWAY_AMP_RANGE;
+    this.opacity = SNOW_OPACITY_MIN + Math.random() * SNOW_OPACITY_RANGE;
+  }
+  update() {
+    this.sway += this.swaySpeed;
+    this.x += Math.sin(this.sway) * this.swayAmp + this.vx;
+    this.y += this.fallSpeed + this.vy;
+    this.vx *= SNOW_FRICTION;
+    this.vy *= SNOW_FRICTION;
+    if (this.y > canvas.height + 10) this.reset(false);
+    if (this.x < -20) this.x += canvas.width + 40;
+    if (this.x > canvas.width + 20) this.x -= canvas.width + 40;
+  }
+  draw() {
+    ctx.save();
+    ctx.globalAlpha = this.opacity;
+    ctx.fillStyle = 'rgba(220,240,255,1)';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fill();
+    const grad = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * SNOW_GLOW_RADIUS);
+    grad.addColorStop(0, `rgba(200,230,255,${SNOW_GLOW_OPACITY})`);
+    grad.addColorStop(1, 'transparent');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r * SNOW_GLOW_RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 const defaults = {
   sky: true,       stars: true,     streaks: true,
   clouds: true,    wisps: true,     horizon: true,
@@ -479,6 +543,7 @@ export function initCanvas(canvasEl, theme, options) {
   const streaks = opts.streaks ? Array.from({length: opts.streakCount}, () => new Streak()) : [];
   const wisps = opts.wisps ? Array.from({length: opts.wispCount}, () => new BreezeWisp()) : [];
   const motes = opts.motes ? Array.from({length: opts.moteCount}, () => new ScrollMote()) : [];
+  const snowflakes = Array.from({length: SNOW_COUNT}, () => new Snowflake());
 
   const gusts = opts.gusts ? Array.from({length: opts.gustCount}, () => ({
     active: false, x: 0, y: 0, len: 0, angle: 0,
@@ -871,6 +936,43 @@ export function initCanvas(canvasEl, theme, options) {
         m.draw(pal);
       });
     }
+    // Snowflakes — frozen mode ambient snow with pointer interaction
+    if (frozen) {
+      snowflakes.forEach(s => {
+        s.update();
+        // Click repels nearby snowflakes
+        if (clickImpulse.strength > 0.05) {
+          const dx = s.x - clickImpulse.x;
+          const dy = s.y - clickImpulse.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < SNOW_REPEL_RADIUS && dist > 1) {
+            const f = clickImpulse.strength * (1 - dist / SNOW_REPEL_RADIUS) * 0.8;
+            s.vx += (dx / dist) * f;
+            s.vy += (dy / dist) * f;
+          }
+        }
+        // Drag attracts nearby snowflakes with tangential orbit
+        if (isDragging) {
+          const dx = dragPos.x - s.x;
+          const dy = dragPos.y - s.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < SNOW_ATTRACT_RADIUS && dist > 5) {
+            const f = 0.1 * (1 - dist / SNOW_ATTRACT_RADIUS);
+            const nx = dx / dist;
+            const ny = dy / dist;
+            s.vx += nx * f + (-ny) * f * holdStrength * SNOW_ATTRACT_TANGENT;
+            s.vy += ny * f + nx * f * holdStrength * SNOW_ATTRACT_TANGENT;
+          }
+        }
+        // Scroll pushes snowflakes
+        if (Math.abs(scrollVelocity) > SNOW_SCROLL_THRESHOLD) {
+          s.vy -= scrollVelocity * SNOW_SCROLL_VY;
+          s.vx += (Math.random() - 0.5) * Math.abs(scrollVelocity) * SNOW_SCROLL_VX;
+        }
+        s.draw();
+      });
+    }
+
     clickImpulse.strength *= IMPULSE_DECAY;
 
     // Click burst particles
