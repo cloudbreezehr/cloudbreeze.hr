@@ -294,9 +294,17 @@ export function initDeepSea() {
   document.addEventListener('pointerdown', onPointerDown);
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp);
-  document.addEventListener('pointercancel', onPointerUp);
 
-  // Touch fallback for mobile
+  // Touch fallback — after the browser takes over a touch for scrolling it fires
+  // pointercancel and stops sending pointermove/pointerup.  Touch events still
+  // fire though, so we use touchmove to keep tracking the finger and touchend
+  // to release.  On desktop these never fire so there's no impact.
+  document.addEventListener('touchmove', e => {
+    if (!isHolding || !e.touches.length) return;
+    holdX = e.touches[0].clientX;
+    holdY = e.touches[0].clientY;
+  }, { passive: true });
+
   document.addEventListener('touchend', () => {
     if (isHolding) onPointerUp();
   });
