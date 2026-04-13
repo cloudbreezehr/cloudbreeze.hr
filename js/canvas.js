@@ -362,7 +362,9 @@ const SUBMODES = ['deep-sea', 'frozen', 'blocky', 'upside-down'];
 const PIXEL_SCALE = 6;
 
 // ── Terrain (Blocky mode) ──
-const TERRAIN_HEIGHT_RATIO = 0.35;       // terrain occupies bottom 35% of canvas
+const TERRAIN_HEIGHT_RATIO = 0.25;       // front terrain occupies bottom 25% of canvas
+const TERRAIN_MID_HEIGHT_RATIO = 0.22;   // mid hills buffer height ratio
+const TERRAIN_BACK_HEIGHT_RATIO = 0.40;  // back mountains buffer height ratio (tallest — frames the scene)
 const TERRAIN_BLOCK_SIZE = 6;            // matches pixel scale for crisp alignment
 const TERRAIN_TREE_CHANCE = 0.06;        // chance per column to have a tree
 const TERRAIN_TREE_MIN_GAP = 10;         // minimum columns between trees
@@ -379,8 +381,8 @@ const TERRAIN_BEVEL_SIZE = 2;            // pixel width of highlight/shadow edge
 const TERRAIN_BEVEL_HIGHLIGHT = 40;      // RGB increase for top/left-edge highlight
 const TERRAIN_BEVEL_SHADOW = 40;         // RGB decrease for right/bottom-edge shadow
 const TERRAIN_BACK_Y_PARALLAX = 0.03;   // vertical rise rate for back mountains
-const TERRAIN_MID_Y_PARALLAX = 0.15;    // vertical rise rate for mid hills
-const TERRAIN_FRONT_Y_PARALLAX = 0.35;  // vertical rise rate for front terrain
+const TERRAIN_MID_Y_PARALLAX = 0.08;    // vertical rise rate for mid hills
+const TERRAIN_FRONT_Y_PARALLAX = 0.12;  // vertical rise rate for front terrain
 const TERRAIN_FRONT_SCALE_BASE = 1.0;   // front layer scale at terrain fade-in start
 const TERRAIN_FRONT_SCALE_GROW = 0.08;  // additional scale at max parallax driver
 const TERRAIN_POP_LIFT_BLOCKS = 3;      // pop lifts this many block-sizes above surface
@@ -1183,7 +1185,7 @@ function generateTerrain(w, h) {
   // Render mid hills to buffer (individual blocks with bevels)
   terrainMidBuffer = document.createElement('canvas');
   terrainMidBuffer.width = cols * bs;
-  terrainMidBuffer.height = Math.floor(h * 0.12);
+  terrainMidBuffer.height = Math.floor(h * TERRAIN_MID_HEIGHT_RATIO);
   const mctx = terrainMidBuffer.getContext('2d');
   const mH = terrainMidBuffer.height;
   const midCols = cols;
@@ -1203,7 +1205,7 @@ function generateTerrain(w, h) {
   // Render back mountains to buffer (individual blocks with bevels)
   terrainBackBuffer = document.createElement('canvas');
   terrainBackBuffer.width = cols * bs;
-  terrainBackBuffer.height = Math.floor(h * 0.15);
+  terrainBackBuffer.height = Math.floor(h * TERRAIN_BACK_HEIGHT_RATIO);
   const bctx = terrainBackBuffer.getContext('2d');
   const bH = terrainBackBuffer.height;
   const backCols = cols;
