@@ -1246,8 +1246,12 @@ function setupDocking(panel) {
     const edgeDist = nearLeft ? leftDist : rightDist;
     let magnetNx = nx;
 
-    // After undocking, suppress magnet for the undocked edge only.
-    // Clears when the user releases the pointer (pointerup).
+    // After undocking, suppress magnet for the undocked edge until the panel
+    // has moved beyond the magnet zone from that edge.
+    if (magnetSuppressedSide) {
+      const suppressedDist = magnetSuppressedSide === "left" ? leftDist : rightDist;
+      if (suppressedDist >= DOCK_MAGNET_ZONE) magnetSuppressedSide = null;
+    }
     const nearSide = nearLeft ? "left" : "right";
     const magnetBlocked = magnetSuppressedSide === nearSide;
 
@@ -1272,6 +1276,7 @@ function setupDocking(panel) {
       if (edgeDist < DOCK_COMMIT_DISTANCE) {
         const panelR = panel.getBoundingClientRect();
         flashSnapEdge(side, panelR.top, panelR.height);
+        dragStartX = e.clientX;
         animateToState(nearLeft ? "docked-left" : "docked-right");
         return;
       }
