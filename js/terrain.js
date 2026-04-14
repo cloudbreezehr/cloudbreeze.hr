@@ -10,64 +10,64 @@
 // ══════════════════════════════════════════════════════════════════════════════
 
 // ── Terrain Geometry ──
-const HEIGHT_RATIO = 0.25;          // front terrain occupies bottom 25% of canvas
-const MID_HEIGHT_RATIO = 0.22;      // mid hills buffer height ratio
-const BACK_HEIGHT_RATIO = 0.40;     // back mountains buffer height ratio (tallest — frames the scene)
-const BLOCK_SIZE = 6;               // matches pixel scale for crisp alignment
-const TREE_CHANCE = 0.06;           // chance per column to have a tree
-const TREE_MIN_GAP = 10;            // minimum columns between trees
-const ORE_CHANCE = 0.02;            // chance per stone block for ore pixel
+const HEIGHT_RATIO = 0.25; // front terrain occupies bottom 25% of canvas
+const MID_HEIGHT_RATIO = 0.22; // mid hills buffer height ratio
+const BACK_HEIGHT_RATIO = 0.4; // back mountains buffer height ratio (tallest — frames the scene)
+const BLOCK_SIZE = 6; // matches pixel scale for crisp alignment
+const TREE_CHANCE = 0.06; // chance per column to have a tree
+const TREE_MIN_GAP = 10; // minimum columns between trees
+const ORE_CHANCE = 0.02; // chance per stone block for ore pixel
 
 // ── Terrain Parallax ──
-const BACK_SPEED = 0.20;            // horizontal parallax speed for back mountains
-const MID_SPEED = 0.50;             // horizontal parallax speed for mid hills
-const FRONT_SPEED = 0.80;           // horizontal parallax speed for front terrain
-const SCROLL_RANGE = 0.40;          // scroll-to-pixel multiplier (higher = more horizontal travel)
+const BACK_SPEED = 0.2; // horizontal parallax speed for back mountains
+const MID_SPEED = 0.5; // horizontal parallax speed for mid hills
+const FRONT_SPEED = 0.8; // horizontal parallax speed for front terrain
+const SCROLL_RANGE = 0.4; // scroll-to-pixel multiplier (higher = more horizontal travel)
 
 // ── Terrain Pop Animation ──
-const POP_MAX = 10;                 // max simultaneous popping blocks
-const POP_DIST = 80;                // click radius for block pops
-const POP_DURATION = 20;            // frames for a pop animation
-const POP_LIFT_BLOCKS = 3;          // pop lifts this many block-sizes above surface
-const POP_CLICK_CHANCE = 0.6;       // per-column chance of popping on click
-const POP_SCAN_RADIUS = 2;          // columns to scan on each side of click center
+const POP_MAX = 10; // max simultaneous popping blocks
+const POP_DIST = 80; // click radius for block pops
+const POP_DURATION = 20; // frames for a pop animation
+const POP_LIFT_BLOCKS = 3; // pop lifts this many block-sizes above surface
+const POP_CLICK_CHANCE = 0.6; // per-column chance of popping on click
+const POP_SCAN_RADIUS = 2; // columns to scan on each side of click center
 
 // ── Terrain Visibility ──
-const FADE_IN_START = 0.55;         // scroll position where terrain starts to appear
-const FADE_IN_END = 0.70;           // scroll position where terrain is fully visible
+const FADE_IN_START = 0.55; // scroll position where terrain starts to appear
+const FADE_IN_END = 0.7; // scroll position where terrain is fully visible
 
 // ── Terrain Bevel ──
-const BEVEL_SIZE = 2;               // pixel width of highlight/shadow edges
-const BEVEL_HIGHLIGHT = 40;         // RGB increase for top/left-edge highlight
-const BEVEL_SHADOW = 40;            // RGB decrease for right/bottom-edge shadow
+const BEVEL_SIZE = 2; // pixel width of highlight/shadow edges
+const BEVEL_HIGHLIGHT = 40; // RGB increase for top/left-edge highlight
+const BEVEL_SHADOW = 40; // RGB decrease for right/bottom-edge shadow
 
 // ── Terrain Colors ──
-const GRASS     = [90, 140, 60];
+const GRASS = [90, 140, 60];
 const GRASS_ALT = [70, 115, 45];
-const DIRT      = [140, 100, 55];
-const DIRT_ALT  = [110, 80, 40];
-const STONE     = [120, 120, 120];
+const DIRT = [140, 100, 55];
+const DIRT_ALT = [110, 80, 40];
+const STONE = [120, 120, 120];
 const STONE_ALT = [90, 90, 90];
-const DEEP      = [80, 80, 80];
-const ORE       = [200, 160, 60];
-const TRUNK     = [90, 60, 30];
-const LEAVES    = [60, 130, 40];
-const MOUNTAIN  = [50, 55, 80];
-const HILLS     = [60, 90, 50];
+const DEEP = [80, 80, 80];
+const ORE = [200, 160, 60];
+const TRUNK = [90, 60, 30];
+const LEAVES = [60, 130, 40];
+const MOUNTAIN = [50, 55, 80];
+const HILLS = [60, 90, 50];
 
 // ── Terrain Click Zone ──
 const TERRAIN_ZONE_THRESHOLD = 0.65; // fraction of canvas height — clicks below this are "ground"
 const GROUND_COLORS = [GRASS, DIRT, STONE];
 
 // ── Internal State ──
-let heightMap = null;                // array of heights per column
-let frontBuffer = null;              // offscreen canvas for front terrain
-let midBuffer = null;                // offscreen canvas for mid hills
-let backBuffer = null;               // offscreen canvas for back mountains
-let trees = [];                      // [{col, trunkH}] tree positions
-let pops = [];                       // [{x, y, color, frame}] active block pop animations
+let heightMap = null; // array of heights per column
+let frontBuffer = null; // offscreen canvas for front terrain
+let midBuffer = null; // offscreen canvas for mid hills
+let backBuffer = null; // offscreen canvas for back mountains
+let trees = []; // [{col, trunkH}] tree positions
+let pops = []; // [{x, y, color, frame}] active block pop animations
 let needsRegen = true;
-let canvasRef = null;                // reference to the main canvas element
+let canvasRef = null; // reference to the main canvas element
 
 // ── Utilities ──
 
@@ -75,7 +75,8 @@ let canvasRef = null;                // reference to the main canvas element
 // Returns 0 outside the fade range, ramps linearly in/out, 1 in the middle.
 function scrollFade(sp, inStart, inEnd, outStart, outEnd) {
   if (sp < inStart) return 0;
-  if (sp < inEnd) return (inEnd === inStart) ? 1 : (sp - inStart) / (inEnd - inStart);
+  if (sp < inEnd)
+    return inEnd === inStart ? 1 : (sp - inStart) / (inEnd - inStart);
   if (sp < outStart) return 1;
   if (sp < outEnd) return 1 - (sp - outStart) / (outEnd - outStart);
   return 0;
@@ -99,20 +100,22 @@ function drawBeveledBlock(targetCtx, bx, by, size, color) {
 function generate(w, h) {
   const bs = BLOCK_SIZE;
   // Extra columns to cover the maximum horizontal parallax shift so terrain fills edge-to-edge
-  const maxParallaxPx = Math.ceil(w * Math.max(FRONT_SPEED, MID_SPEED, BACK_SPEED) * SCROLL_RANGE);
+  const maxParallaxPx = Math.ceil(
+    w * Math.max(FRONT_SPEED, MID_SPEED, BACK_SPEED) * SCROLL_RANGE,
+  );
   const extraCols = Math.ceil(maxParallaxPx / bs);
   const cols = Math.ceil(w / bs) + extraCols;
-  const maxH = Math.floor(h * HEIGHT_RATIO / bs);
+  const maxH = Math.floor((h * HEIGHT_RATIO) / bs);
 
   // Height map from layered sine waves
   heightMap = new Array(cols);
   for (let i = 0; i < cols; i++) {
     const x = i / cols;
     heightMap[i] = Math.floor(
-      maxH * 0.5
-      + Math.sin(x * Math.PI * 2.5) * maxH * 0.15
-      + Math.sin(x * Math.PI * 5.7 + 1.3) * maxH * 0.1
-      + Math.sin(x * Math.PI * 11.3 + 2.7) * maxH * 0.05
+      maxH * 0.5 +
+        Math.sin(x * Math.PI * 2.5) * maxH * 0.15 +
+        Math.sin(x * Math.PI * 5.7 + 1.3) * maxH * 0.1 +
+        Math.sin(x * Math.PI * 11.3 + 2.7) * maxH * 0.05,
     );
     heightMap[i] = Math.max(3, Math.min(maxH, heightMap[i]));
   }
@@ -128,10 +131,10 @@ function generate(w, h) {
   }
 
   // Render front terrain to buffer
-  frontBuffer = document.createElement('canvas');
+  frontBuffer = document.createElement("canvas");
   frontBuffer.width = cols * bs;
   frontBuffer.height = h * HEIGHT_RATIO + bs * 10;
-  const tctx = frontBuffer.getContext('2d');
+  const tctx = frontBuffer.getContext("2d");
   const bufH = frontBuffer.height;
 
   for (let i = 0; i < cols; i++) {
@@ -158,7 +161,7 @@ function generate(w, h) {
   }
 
   // Render trees
-  trees.forEach(tree => {
+  trees.forEach((tree) => {
     const bx = tree.col * bs;
     const groundY = bufH - heightMap[tree.col] * bs;
     // Trunk
@@ -177,18 +180,18 @@ function generate(w, h) {
   });
 
   // Render mid hills to buffer (individual blocks with bevels)
-  midBuffer = document.createElement('canvas');
+  midBuffer = document.createElement("canvas");
   midBuffer.width = cols * bs;
   midBuffer.height = Math.floor(h * MID_HEIGHT_RATIO);
-  const mctx = midBuffer.getContext('2d');
+  const mctx = midBuffer.getContext("2d");
   const mH = midBuffer.height;
   const midCols = cols;
   for (let i = 0; i < midCols; i++) {
     const x = i / midCols;
     const height = Math.floor(
-      mH * 0.4
-      + Math.sin(x * Math.PI * 3.1 + 0.8) * mH * 0.25
-      + Math.sin(x * Math.PI * 7.2 + 2.1) * mH * 0.1
+      mH * 0.4 +
+        Math.sin(x * Math.PI * 3.1 + 0.8) * mH * 0.25 +
+        Math.sin(x * Math.PI * 7.2 + 2.1) * mH * 0.1,
     );
     const numRows = Math.ceil(height / bs);
     for (let row = 0; row < numRows; row++) {
@@ -197,18 +200,18 @@ function generate(w, h) {
   }
 
   // Render back mountains to buffer (individual blocks with bevels)
-  backBuffer = document.createElement('canvas');
+  backBuffer = document.createElement("canvas");
   backBuffer.width = cols * bs;
   backBuffer.height = Math.floor(h * BACK_HEIGHT_RATIO);
-  const bctx = backBuffer.getContext('2d');
+  const bctx = backBuffer.getContext("2d");
   const bH = backBuffer.height;
   const backCols = cols;
   for (let i = 0; i < backCols; i++) {
     const x = i / backCols;
     const height = Math.floor(
-      bH * 0.35
-      + Math.sin(x * Math.PI * 2.3 + 0.5) * bH * 0.3
-      + Math.sin(x * Math.PI * 4.8 + 1.7) * bH * 0.15
+      bH * 0.35 +
+        Math.sin(x * Math.PI * 2.3 + 0.5) * bH * 0.3 +
+        Math.sin(x * Math.PI * 4.8 + 1.7) * bH * 0.15,
     );
     const numRows = Math.ceil(height / bs);
     for (let row = 0; row < numRows; row++) {
@@ -302,7 +305,7 @@ export function collideMotes(motes, sp, upsd) {
   const bufH = frontBuffer ? frontBuffer.height : h * HEIGHT_RATIO;
   const terrainTop = h - bufH;
   const shift = terrainSp * canvasRef.width * FRONT_SPEED * SCROLL_RANGE;
-  motes.forEach(m => {
+  motes.forEach((m) => {
     const col = Math.floor((m.x + shift) / bs);
     if (col >= 0 && col < heightMap.length) {
       const surfaceY = h - heightMap[col] * bs;

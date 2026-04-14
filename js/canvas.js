@@ -1,12 +1,12 @@
-import { lerpColor, multiLerp, toRgba, resolvePalette } from './colors.js';
-import { bindPointer } from './pointer.js';
-import { createSky } from './sky.js';
-import { createFury } from './fury.js';
-import { createAtmosphere } from './atmosphere.js';
-import { createSnow } from './particles/frozen.js';
-import { createDeepSea } from './particles/deep-sea.js';
-import { createBlocky } from './particles/blocky.js';
-import { createInteractions, BLAST_BASE } from './interactions.js';
+import { lerpColor, multiLerp, toRgba, resolvePalette } from "./colors.js";
+import { bindPointer } from "./pointer.js";
+import { createSky } from "./sky.js";
+import { createFury } from "./fury.js";
+import { createAtmosphere } from "./atmosphere.js";
+import { createSnow } from "./particles/frozen.js";
+import { createDeepSea } from "./particles/deep-sea.js";
+import { createBlocky } from "./particles/blocky.js";
+import { createInteractions, BLAST_BASE } from "./interactions.js";
 
 // ── Scroll Velocity ──
 const SCROLL_VEL_GAIN = 0.3;
@@ -15,7 +15,7 @@ const SCROLL_VEL_DECAY = 0.92;
 // ── Sub-mode registry ──
 // Body class names for each easter-egg mode. Used for active mode detection
 // and palette resolution. Adding a new mode: push its body class here.
-const SUBMODES = ['deep-sea', 'frozen', 'blocky', 'upside-down'];
+const SUBMODES = ["deep-sea", "frozen", "blocky", "upside-down"];
 
 // ── Particle counts ──
 const SNOW_COUNT = 40;
@@ -24,23 +24,32 @@ const JELLY_COUNT = 8;
 const FIREFLY_COUNT = 28;
 
 // ── Snow Globe Shake ──
-const SHAKE_REVERSAL_WINDOW = 500;  // ms — direction changes within this window count
-const SHAKE_REVERSALS_NEEDED = 3;   // rapid reversals to trigger a shake
-const SHAKE_MIN_DELTA = 3;          // minimum scroll delta to count as directional
+const SHAKE_REVERSAL_WINDOW = 500; // ms — direction changes within this window count
+const SHAKE_REVERSALS_NEEDED = 3; // rapid reversals to trigger a shake
+const SHAKE_MIN_DELTA = 3; // minimum scroll delta to count as directional
 
 let canvas, ctx;
 
 const defaults = {
-  sky: true,       stars: true,     streaks: true,
-  clouds: true,    wisps: true,     horizon: true,
-  gusts: true,     motes: true,
-  starCount: 120,  streakCount: 35, cloudCount: 18,
-  wispCount: 12,   gustCount: 24,   moteCount: 35,
+  sky: true,
+  stars: true,
+  streaks: true,
+  clouds: true,
+  wisps: true,
+  horizon: true,
+  gusts: true,
+  motes: true,
+  starCount: 120,
+  streakCount: 35,
+  cloudCount: 18,
+  wispCount: 12,
+  gustCount: 24,
+  moteCount: 35,
 };
 
 export function initCanvas(canvasEl, theme, options) {
   canvas = canvasEl;
-  ctx = canvas.getContext('2d');
+  ctx = canvas.getContext("2d");
   const opts = Object.assign({}, defaults, options);
 
   let isDarkMode = theme.isDark();
@@ -49,22 +58,25 @@ export function initCanvas(canvasEl, theme, options) {
   let lastScrollTop = window.scrollY || 0;
 
   // Snow globe shake detection — track scroll direction reversals
-  let lastScrollDir = 0;       // -1 = up, 1 = down, 0 = idle
-  let reversalTimes = [];      // timestamps of recent direction changes
+  let lastScrollDir = 0; // -1 = up, 1 = down, 0 = idle
+  let reversalTimes = []; // timestamps of recent direction changes
   const snowTurbulence = { value: 0 }; // current turbulence intensity, decays per frame
 
   // Stable viewport height that ignores the mobile browser toolbar.
   // CSS `lvh` resolves to the large viewport (toolbar hidden).
   // Using it prevents particles from teleporting when the toolbar
   // collapses/expands on scroll.
-  const lvhProbe = document.createElement('div');
-  lvhProbe.style.cssText = 'position:fixed;height:100lvh;pointer-events:none;visibility:hidden';
+  const lvhProbe = document.createElement("div");
+  lvhProbe.style.cssText =
+    "position:fixed;height:100lvh;pointer-events:none;visibility:hidden";
   document.body.appendChild(lvhProbe);
   function stableHeight() {
     return lvhProbe.offsetHeight || window.innerHeight;
   }
 
-  theme.onChange(dark => { isDarkMode = dark; });
+  theme.onChange((dark) => {
+    isDarkMode = dark;
+  });
 
   function resize() {
     canvas.width = window.innerWidth;
@@ -74,7 +86,8 @@ export function initCanvas(canvasEl, theme, options) {
   function updateScroll() {
     const scrollTop = window.scrollY || document.documentElement.scrollTop;
     const docHeight = document.documentElement.scrollHeight - stableHeight();
-    scrollProgress = docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
+    scrollProgress =
+      docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
     const delta = scrollTop - lastScrollTop;
     scrollVelocity += delta * SCROLL_VEL_GAIN;
     lastScrollTop = scrollTop;
@@ -86,7 +99,9 @@ export function initCanvas(canvasEl, theme, options) {
         const now = performance.now();
         reversalTimes.push(now);
         // Prune old reversals outside the window
-        reversalTimes = reversalTimes.filter(t => now - t < SHAKE_REVERSAL_WINDOW);
+        reversalTimes = reversalTimes.filter(
+          (t) => now - t < SHAKE_REVERSAL_WINDOW,
+        );
         if (reversalTimes.length >= SHAKE_REVERSALS_NEEDED) {
           snowTurbulence.value = 1;
           reversalTimes.length = 0;
@@ -104,8 +119,11 @@ export function initCanvas(canvasEl, theme, options) {
   const deepSea = createDeepSea(canvas, ctx, BUBBLE_COUNT, JELLY_COUNT);
   const blocky = createBlocky(canvas, ctx, FIREFLY_COUNT);
 
-  window.addEventListener('resize', () => { resize(); blocky.resizePixelCanvas(); });
-  window.addEventListener('scroll', updateScroll, { passive: true });
+  window.addEventListener("resize", () => {
+    resize();
+    blocky.resizePixelCanvas();
+  });
+  window.addEventListener("scroll", updateScroll, { passive: true });
 
   // Interaction forces — click repels, drag attracts, hold charges
   const forces = {
@@ -119,11 +137,11 @@ export function initCanvas(canvasEl, theme, options) {
 
   const sky = opts.stars ? createSky(opts.starCount) : null;
   const fury = createFury();
-  let currentPal = resolvePalette(isDarkMode ? 'dark' : 'light', null);
+  let currentPal = resolvePalette(isDarkMode ? "dark" : "light", null);
 
   // In upside-down mode the page is flipped via scaleY(-1), so canvas Y must mirror
-  const isUpside = () => document.body.classList.contains('upside-down');
-  const canvasY = y => isUpside() ? canvas.height - y : y;
+  const isUpside = () => document.body.classList.contains("upside-down");
+  const canvasY = (y) => (isUpside() ? canvas.height - y : y);
 
   let lastFrameTime = performance.now();
   function render() {
@@ -131,20 +149,25 @@ export function initCanvas(canvasEl, theme, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const isFrozen = document.body.classList.contains('frozen');
-    const isDeepSea = document.body.classList.contains('deep-sea');
-    const isBlocky = document.body.classList.contains('blocky');
+    const isFrozen = document.body.classList.contains("frozen");
+    const isDeepSea = document.body.classList.contains("deep-sea");
+    const isBlocky = document.body.classList.contains("blocky");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
-    const activeModes = SUBMODES.filter(m => document.body.classList.contains(m));
+    const activeModes = SUBMODES.filter((m) =>
+      document.body.classList.contains(m),
+    );
     const lastSub = document.body.dataset.lastSubmode;
-    const submode = (lastSub && activeModes.includes(lastSub)) ? lastSub : (activeModes[0] || null);
+    const submode =
+      lastSub && activeModes.includes(lastSub)
+        ? lastSub
+        : activeModes[0] || null;
     // Sync active theme to body for CSS visual rules
     const prevTheme = document.body.dataset.activeTheme || null;
     if (submode !== prevTheme) {
       if (submode) document.body.dataset.activeTheme = submode;
       else delete document.body.dataset.activeTheme;
     }
-    const pal = resolvePalette(isDarkMode ? 'dark' : 'light', submode);
+    const pal = resolvePalette(isDarkMode ? "dark" : "light", submode);
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -191,7 +214,7 @@ export function initCanvas(canvasEl, theme, options) {
     requestAnimationFrame(render);
   }
 
-  document.addEventListener('click', e => {
+  document.addEventListener("click", (e) => {
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
     forces.clickImpulse.x = cx;
@@ -200,17 +223,17 @@ export function initCanvas(canvasEl, theme, options) {
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
-    if (document.body.classList.contains('deep-sea')) {
+    if (document.body.classList.contains("deep-sea")) {
       deepSea.clickBurst(cx, cy);
     }
 
     // Blocky click burst — block fragments instead of smooth particles
-    if (document.body.classList.contains('blocky')) {
+    if (document.body.classList.contains("blocky")) {
       blocky.clickBurst(cx, cy);
     }
 
     // Normal click burst particles (skipped in blocky — block fragments replace them)
-    if (!document.body.classList.contains('blocky')) {
+    if (!document.body.classList.contains("blocky")) {
       interactions.click(cx, cy, currentPal);
     }
   });
@@ -218,14 +241,16 @@ export function initCanvas(canvasEl, theme, options) {
   // Pointer events — drag/trail/release delegated to interactions module
   bindPointer(document, {
     onDown(x, y) {
-      const cx = x, cy = canvasY(y);
+      const cx = x,
+        cy = canvasY(y);
       interactions.startDrag(forces, cx, cy);
     },
     onMove(x, y) {
-      const cx = x, cy = canvasY(y);
+      const cx = x,
+        cy = canvasY(y);
       const trailAdded = interactions.addTrail(forces, cx, cy);
       // Drag spawns small bubbles in deep-sea mode
-      if (trailAdded && document.body.classList.contains('deep-sea')) {
+      if (trailAdded && document.body.classList.contains("deep-sea")) {
         deepSea.dragBubble(cx, cy);
       }
     },

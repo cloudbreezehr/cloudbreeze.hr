@@ -1,256 +1,489 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloudbreeze — Seamless Solutions Powered by the Cloud</title>
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/main.css">
-</head>
-<body>
-<script>!function(){var t=localStorage.getItem('theme'),l=t==='light'||(t==='auto'&&window.matchMedia('(prefers-color-scheme: light)').matches);if(l)document.body.classList.add('light-mode')}()</script>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cloudbreeze — Seamless Solutions Powered by the Cloud</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/main.css" />
+  </head>
+  <body>
+    <script>
+      !(function () {
+        var t = localStorage.getItem("theme"),
+          l =
+            t === "light" ||
+            (t === "auto" &&
+              window.matchMedia("(prefers-color-scheme: light)").matches);
+        if (l) document.body.classList.add("light-mode");
+      })();
+    </script>
 
-<div id="cursor"></div>
-<div id="cursor-ring"></div>
+    <div id="cursor"></div>
+    <div id="cursor-ring"></div>
 
-<canvas id="bg-canvas"></canvas>
+    <canvas id="bg-canvas"></canvas>
 
-<div class="page">
-  <nav>
-    <a href="#" class="nav-logo">
-      <!-- SVG Cloud Logo — drawn, not an image -->
-      <svg class="cloud-svg" viewBox="0 0 88 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="cg1" x1="0" y1="0" x2="88" y2="64" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#b5d9f7"/>
-            <stop offset="100%" stop-color="#378add"/>
-          </linearGradient>
-          <linearGradient id="cg2" x1="0" y1="0" x2="88" y2="64" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#daeeff" stop-opacity="0.6"/>
-            <stop offset="100%" stop-color="#7dbfe8" stop-opacity="0.3"/>
-          </linearGradient>
-          <filter id="glow">
-            <feGaussianBlur stdDeviation="2" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <!-- Main cloud body -->
-        <path d="M68 48H22C12.6 48 5 40.6 5 31.5C5 23.2 11.2 16.4 19.3 15.2C20.6 8.8 26.3 4 33 4C37.2 4 41 5.8 43.7 8.7C46 6.7 49 5.5 52.3 5.5C59.8 5.5 65.9 11.3 66.5 18.6C73.4 19.8 78.5 25.8 78.5 33C78.5 41.3 71.9 48 63.5 48" fill="url(#cg1)" filter="url(#glow)"/>
-        <!-- Wave lines suggesting breeze -->
-        <path d="M18 38 Q28 32 38 38 Q48 44 58 38 Q68 32 78 38" stroke="rgba(255,255,255,0.45)" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <path d="M14 46 Q26 40 38 46 Q50 52 62 46 Q70 42 76 46" stroke="rgba(255,255,255,0.2)" stroke-width="1" fill="none" stroke-linecap="round"/>
-        <!-- Highlight -->
-        <path d="M24 20C26 13 32 9 39 9" stroke="rgba(255,255,255,0.5)" stroke-width="2" fill="none" stroke-linecap="round"/>
-      </svg>
-      <span class="logo-text">Cloud<span>breeze</span></span>
-    </a>
+    <div class="page">
+      <nav>
+        <a href="#" class="nav-logo">
+          <!-- SVG Cloud Logo — drawn, not an image -->
+          <svg
+            class="cloud-svg"
+            viewBox="0 0 88 64"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <defs>
+              <linearGradient
+                id="cg1"
+                x1="0"
+                y1="0"
+                x2="88"
+                y2="64"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stop-color="#b5d9f7" />
+                <stop offset="100%" stop-color="#378add" />
+              </linearGradient>
+              <linearGradient
+                id="cg2"
+                x1="0"
+                y1="0"
+                x2="88"
+                y2="64"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop offset="0%" stop-color="#daeeff" stop-opacity="0.6" />
+                <stop offset="100%" stop-color="#7dbfe8" stop-opacity="0.3" />
+              </linearGradient>
+              <filter id="glow">
+                <feGaussianBlur stdDeviation="2" result="blur" />
+                <feMerge>
+                  <feMergeNode in="blur" />
+                  <feMergeNode in="SourceGraphic" />
+                </feMerge>
+              </filter>
+            </defs>
+            <!-- Main cloud body -->
+            <path
+              d="M68 48H22C12.6 48 5 40.6 5 31.5C5 23.2 11.2 16.4 19.3 15.2C20.6 8.8 26.3 4 33 4C37.2 4 41 5.8 43.7 8.7C46 6.7 49 5.5 52.3 5.5C59.8 5.5 65.9 11.3 66.5 18.6C73.4 19.8 78.5 25.8 78.5 33C78.5 41.3 71.9 48 63.5 48"
+              fill="url(#cg1)"
+              filter="url(#glow)"
+            />
+            <!-- Wave lines suggesting breeze -->
+            <path
+              d="M18 38 Q28 32 38 38 Q48 44 58 38 Q68 32 78 38"
+              stroke="rgba(255,255,255,0.45)"
+              stroke-width="1.5"
+              fill="none"
+              stroke-linecap="round"
+            />
+            <path
+              d="M14 46 Q26 40 38 46 Q50 52 62 46 Q70 42 76 46"
+              stroke="rgba(255,255,255,0.2)"
+              stroke-width="1"
+              fill="none"
+              stroke-linecap="round"
+            />
+            <!-- Highlight -->
+            <path
+              d="M24 20C26 13 32 9 39 9"
+              stroke="rgba(255,255,255,0.5)"
+              stroke-width="2"
+              fill="none"
+              stroke-linecap="round"
+            />
+          </svg>
+          <span class="logo-text">Cloud<span>breeze</span></span>
+        </a>
 
-    <div class="nav-actions">
-      <button class="theme-toggle" data-theme="dark" data-tooltip="Dark mode" aria-label="Toggle theme">
-        <svg class="icon-sun" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"><circle cx="8" cy="8" r="2.5"/><path d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"/></svg>
-        <svg class="icon-moon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"><path d="M13 9A5 5 0 117 3a4 4 0 006 6z"/></svg>
-        <svg class="icon-auto" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2.5" width="12" height="8.5" rx="1.5"/><path d="M6 14h4M8 11v3"/></svg>
-      </button>
-      <ul class="nav-links">
-        <li><a href="#services">Services</a></li>
-        <li><a href="#about">About</a></li>
-        <li><a href="#contact" class="nav-cta">Get in touch</a></li>
-      </ul>
-      <button class="nav-burger" aria-label="Menu">
-        <svg class="burger-open" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 5h14M3 10h14M3 15h14"/></svg>
-        <svg class="burger-close" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l12 12M4 16L16 4"/></svg>
-      </button>
-    </div>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <p class="hero-tag">Cloud Solutions</p>
-    <h1 class="hero-title">
-      <span class="line-1">Seamless</span>
-      <span class="line-2">Solutions</span>
-    </h1>
-    <p class="hero-sub">Powered by the cloud. Built with precision.<br>Delivered without friction.</p>
-    <div class="hero-actions">
-      <a href="#contact" class="btn-primary"><span>Start a project</span></a>
-      <a href="#services" class="btn-ghost">
-        Explore our services
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 7h10M8 3l4 4-4 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </a>
-    </div>
-
-    <div class="scroll-hint">
-      <div class="scroll-line"></div>
-      <span>Scroll</span>
-    </div>
-  </section>
-
-  <!-- SERVICES -->
-  <section id="services">
-    <div class="services">
-      <p class="section-label reveal">Services</p>
-      <div class="services-grid">
-
-        <div class="service-card reveal reveal-delay-1">
-          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><path d="M8 28C4.7 28 2 25.3 2 22s2.7-6 6-6c.3 0 .6 0 .9.1C10.1 12.6 13.8 10 18 10c5.5 0 10 4.5 10 10h1c2.8 0 5 2.2 5 5s-2.2 5-5 5H8z" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/><path d="M15 22l3 3 7-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <p class="service-num">01</p>
-          <h3 class="service-title">Cloud Architecture</h3>
-          <p class="service-desc">Scalable, resilient infrastructure designed for growth. AWS, GCP, or Azure — whichever fits your stack best.</p>
+        <div class="nav-actions">
+          <button
+            class="theme-toggle"
+            data-theme="dark"
+            data-tooltip="Dark mode"
+            aria-label="Toggle theme"
+          >
+            <svg
+              class="icon-sun"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+            >
+              <circle cx="8" cy="8" r="2.5" />
+              <path
+                d="M8 2.5v1M8 12.5v1M2.5 8h1M12.5 8h1M4.11 4.11l.7.7M11.19 11.19l.7.7M4.11 11.89l.7-.7M11.19 4.81l.7-.7"
+              />
+            </svg>
+            <svg
+              class="icon-moon"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linejoin="round"
+            >
+              <path d="M13 9A5 5 0 117 3a4 4 0 006 6z" />
+            </svg>
+            <svg
+              class="icon-auto"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="2" y="2.5" width="12" height="8.5" rx="1.5" />
+              <path d="M6 14h4M8 11v3" />
+            </svg>
+          </button>
+          <ul class="nav-links">
+            <li><a href="#services">Services</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact" class="nav-cta">Get in touch</a></li>
+          </ul>
+          <button class="nav-burger" aria-label="Menu">
+            <svg
+              class="burger-open"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            >
+              <path d="M3 5h14M3 10h14M3 15h14" />
+            </svg>
+            <svg
+              class="burger-close"
+              viewBox="0 0 20 20"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.5"
+              stroke-linecap="round"
+            >
+              <path d="M4 4l12 12M4 16L16 4" />
+            </svg>
+          </button>
         </div>
+      </nav>
 
-        <div class="service-card reveal reveal-delay-2">
-          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><rect x="4" y="8" width="32" height="24" rx="3" stroke="currentColor" stroke-width="1.5"/><path d="M12 20h16M12 15h8M12 25h12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
-          <p class="service-num">02</p>
-          <h3 class="service-title">Systems Integration</h3>
-          <p class="service-desc">APIs, pipelines and middleware that make your tools talk to each other — seamlessly and reliably.</p>
-        </div>
-
-        <div class="service-card reveal reveal-delay-3">
-          <svg class="service-icon" viewBox="0 0 40 40" fill="none"><path d="M20 4l14 8v16l-14 8L6 28V12l14-8z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M20 4v28M6 12l14 8 14-8" stroke="currentColor" stroke-width="1.5"/></svg>
-          <p class="service-num">03</p>
-          <h3 class="service-title">DevOps & Automation</h3>
-          <p class="service-desc">CI/CD pipelines, infrastructure as code and automated workflows that free your team to focus on what matters.</p>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ABOUT -->
-  <section id="about">
-    <div class="about-strip">
-      <div class="reveal">
-        <p class="section-label" style="margin-bottom:1.5rem;">About</p>
-        <h2 class="about-heading">Your trusted<br>partner.<br><em>Full-stack</em> expertise.</h2>
-        <div class="about-stats">
-          <div class="stat-item">
-            <p class="stat-num">Cloud</p>
-            <p class="stat-label">First</p>
-          </div>
-          <div class="stat-item">
-            <p class="stat-num">EU</p>
-            <p class="stat-label">Based</p>
-          </div>
-          <div class="stat-item">
-            <p class="stat-num">∞</p>
-            <p class="stat-label">Scalable</p>
-          </div>
-        </div>
-      </div>
-      <div class="reveal reveal-delay-2">
-        <p class="about-body">
-          Cloudbreeze is a backend development and cloud consultancy based in Croatia, EU. No layers of account managers, no unnecessary overhead — just direct, expert collaboration with specialists fully invested in solving your problem.<br><br>
-          Whether you need robust backend systems, a greenfield cloud architecture or want to untangle an existing setup, our approach is always the same: thoughtful, lean and built to last.
+      <!-- HERO -->
+      <section class="hero">
+        <p class="hero-tag">Cloud Solutions</p>
+        <h1 class="hero-title">
+          <span class="line-1">Seamless</span>
+          <span class="line-2">Solutions</span>
+        </h1>
+        <p class="hero-sub">
+          Powered by the cloud. Built with precision.<br />Delivered without
+          friction.
         </p>
-      </div>
-    </div>
-  </section>
-
-  <!-- CONTACT -->
-  <section id="contact">
-    <div class="contact-inner">
-      <div class="contact-card reveal">
-        <div>
-          <h2 class="contact-heading">Let's build<br>something.</h2>
-          <p class="contact-sub">Available for new projects · EU timezone</p>
-        </div>
-        <div class="contact-links">
-          <a href="mailto:hello@cloudbreeze.hr" class="contact-link">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4l6 5 6-5M2 4h12v9H2V4z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            hello@cloudbreeze.hr
-          </a>
-          <a href="https://www.linkedin.com/company/cloudbreeze" target="_blank" class="contact-link">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="14" height="14" rx="2" stroke="currentColor" stroke-width="1.2"/><path d="M5 7v5M5 5v.5M8 12V9c0-1.1.9-2 2-2s2 .9 2 2v3M8 7v5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
-            LinkedIn
+        <div class="hero-actions">
+          <a href="#contact" class="btn-primary"
+            ><span>Start a project</span></a
+          >
+          <a href="#services" class="btn-ghost">
+            Explore our services
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path
+                d="M2 7h10M8 3l4 4-4 4"
+                stroke="currentColor"
+                stroke-width="1.2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
           </a>
         </div>
+
+        <div class="scroll-hint">
+          <div class="scroll-line"></div>
+          <span>Scroll</span>
+        </div>
+      </section>
+
+      <!-- SERVICES -->
+      <section id="services">
+        <div class="services">
+          <p class="section-label reveal">Services</p>
+          <div class="services-grid">
+            <div class="service-card reveal reveal-delay-1">
+              <svg class="service-icon" viewBox="0 0 40 40" fill="none">
+                <path
+                  d="M8 28C4.7 28 2 25.3 2 22s2.7-6 6-6c.3 0 .6 0 .9.1C10.1 12.6 13.8 10 18 10c5.5 0 10 4.5 10 10h1c2.8 0 5 2.2 5 5s-2.2 5-5 5H8z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  fill="none"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M15 22l3 3 7-7"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
+              </svg>
+              <p class="service-num">01</p>
+              <h3 class="service-title">Cloud Architecture</h3>
+              <p class="service-desc">
+                Scalable, resilient infrastructure designed for growth. AWS,
+                GCP, or Azure — whichever fits your stack best.
+              </p>
+            </div>
+
+            <div class="service-card reveal reveal-delay-2">
+              <svg class="service-icon" viewBox="0 0 40 40" fill="none">
+                <rect
+                  x="4"
+                  y="8"
+                  width="32"
+                  height="24"
+                  rx="3"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+                <path
+                  d="M12 20h16M12 15h8M12 25h12"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <p class="service-num">02</p>
+              <h3 class="service-title">Systems Integration</h3>
+              <p class="service-desc">
+                APIs, pipelines and middleware that make your tools talk to each
+                other — seamlessly and reliably.
+              </p>
+            </div>
+
+            <div class="service-card reveal reveal-delay-3">
+              <svg class="service-icon" viewBox="0 0 40 40" fill="none">
+                <path
+                  d="M20 4l14 8v16l-14 8L6 28V12l14-8z"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M20 4v28M6 12l14 8 14-8"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                />
+              </svg>
+              <p class="service-num">03</p>
+              <h3 class="service-title">DevOps & Automation</h3>
+              <p class="service-desc">
+                CI/CD pipelines, infrastructure as code and automated workflows
+                that free your team to focus on what matters.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ABOUT -->
+      <section id="about">
+        <div class="about-strip">
+          <div class="reveal">
+            <p class="section-label" style="margin-bottom: 1.5rem">About</p>
+            <h2 class="about-heading">
+              Your trusted<br />partner.<br /><em>Full-stack</em> expertise.
+            </h2>
+            <div class="about-stats">
+              <div class="stat-item">
+                <p class="stat-num">Cloud</p>
+                <p class="stat-label">First</p>
+              </div>
+              <div class="stat-item">
+                <p class="stat-num">EU</p>
+                <p class="stat-label">Based</p>
+              </div>
+              <div class="stat-item">
+                <p class="stat-num">∞</p>
+                <p class="stat-label">Scalable</p>
+              </div>
+            </div>
+          </div>
+          <div class="reveal reveal-delay-2">
+            <p class="about-body">
+              Cloudbreeze is a backend development and cloud consultancy based
+              in Croatia, EU. No layers of account managers, no unnecessary
+              overhead — just direct, expert collaboration with specialists
+              fully invested in solving your problem.<br /><br />
+              Whether you need robust backend systems, a greenfield cloud
+              architecture or want to untangle an existing setup, our approach
+              is always the same: thoughtful, lean and built to last.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- CONTACT -->
+      <section id="contact">
+        <div class="contact-inner">
+          <div class="contact-card reveal">
+            <div>
+              <h2 class="contact-heading">Let's build<br />something.</h2>
+              <p class="contact-sub">
+                Available for new projects · EU timezone
+              </p>
+            </div>
+            <div class="contact-links">
+              <a href="mailto:hello@cloudbreeze.hr" class="contact-link">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <path
+                    d="M2 4l6 5 6-5M2 4h12v9H2V4z"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
+                </svg>
+                hello@cloudbreeze.hr
+              </a>
+              <a
+                href="https://www.linkedin.com/company/cloudbreeze"
+                target="_blank"
+                class="contact-link"
+              >
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                  <rect
+                    x="1"
+                    y="1"
+                    width="14"
+                    height="14"
+                    rx="2"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                  />
+                  <path
+                    d="M5 7v5M5 5v.5M8 12V9c0-1.1.9-2 2-2s2 .9 2 2v3M8 7v5"
+                    stroke="currentColor"
+                    stroke-width="1.2"
+                    stroke-linecap="round"
+                  />
+                </svg>
+                LinkedIn
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer-info">
+        <div class="footer-info-inner">
+          <div class="footer-col">
+            <p class="footer-brand">Cloudbreeze</p>
+            <p class="footer-text">
+              Your trusted partner specializing in backend development, cloud
+              architecture and DevOps automation. Building scalable and reliable
+              systems that power modern businesses.
+            </p>
+          </div>
+          <div class="footer-col">
+            <p class="footer-col-title">Company</p>
+            <p class="footer-text">Cloudbreeze d.o.o.</p>
+            <p class="footer-text">MBS: 1310162276</p>
+            <p class="footer-text">OIB: 25938444696</p>
+            <p class="footer-text">Pula, Croatia</p>
+          </div>
+          <div class="footer-col">
+            <p class="footer-col-title">Contact</p>
+            <a href="mailto:hello@cloudbreeze.hr" class="footer-link"
+              >hello@cloudbreeze.hr</a
+            >
+            <a
+              href="https://www.linkedin.com/company/cloudbreeze"
+              target="_blank"
+              class="footer-link"
+              >LinkedIn</a
+            >
+          </div>
+        </div>
       </div>
+
+      <footer>
+        <p class="footer-copy">© 2026 Cloudbreeze d.o.o.</p>
+        <p class="footer-badge">Systems online</p>
+      </footer>
     </div>
-  </section>
 
-  <div class="footer-info">
-    <div class="footer-info-inner">
-      <div class="footer-col">
-        <p class="footer-brand">Cloudbreeze</p>
-        <p class="footer-text">Your trusted partner specializing in backend development, cloud architecture and DevOps automation. Building scalable and reliable systems that power modern businesses.</p>
-      </div>
-      <div class="footer-col">
-        <p class="footer-col-title">Company</p>
-        <p class="footer-text">Cloudbreeze d.o.o.</p>
-        <p class="footer-text">MBS: 1310162276</p>
-        <p class="footer-text">OIB: 25938444696</p>
-        <p class="footer-text">Pula, Croatia</p>
-      </div>
-      <div class="footer-col">
-        <p class="footer-col-title">Contact</p>
-        <a href="mailto:hello@cloudbreeze.hr" class="footer-link">hello@cloudbreeze.hr</a>
-        <a href="https://www.linkedin.com/company/cloudbreeze" target="_blank" class="footer-link">LinkedIn</a>
-      </div>
-    </div>
-  </div>
+    <script type="module">
+      import { initTheme } from "./js/theme.js";
+      import { initNav } from "./js/nav.js";
+      import { initCanvas } from "./js/canvas.js";
+      import { initCursor } from "./js/cursor.js";
+      import { initReveal } from "./js/reveal.js";
+      import { initTilt } from "./js/tilt.js";
+      import { initUpsideDown } from "./js/upside-down.js";
+      import { initFrozen } from "./js/frozen.js";
+      import { initDeepSea } from "./js/deep-sea.js";
+      import { initBlocky } from "./js/blocky.js";
 
-  <footer>
-    <p class="footer-copy">© 2026 Cloudbreeze d.o.o.</p>
-    <p class="footer-badge">Systems online</p>
-  </footer>
-</div>
+      const theme = initTheme(document.querySelector(".theme-toggle"));
+      initNav(document.querySelector("nav"), theme);
+      initCanvas(document.getElementById("bg-canvas"), theme);
+      initCursor(
+        document.getElementById("cursor"),
+        document.getElementById("cursor-ring"),
+      );
+      initReveal();
+      initTilt();
+      initUpsideDown();
+      initFrozen();
+      initDeepSea();
+      initBlocky(document.querySelector(".theme-toggle"));
 
-<script type="module">
-  import { initTheme }      from './js/theme.js';
-  import { initNav }        from './js/nav.js';
-  import { initCanvas }     from './js/canvas.js';
-  import { initCursor }     from './js/cursor.js';
-  import { initReveal }     from './js/reveal.js';
-  import { initTilt }       from './js/tilt.js';
-  import { initUpsideDown } from './js/upside-down.js';
-  import { initFrozen }     from './js/frozen.js';
-  import { initDeepSea }    from './js/deep-sea.js';
-  import { initBlocky }     from './js/blocky.js';
+      // Subtle parallax on hero elements — each layer drifts at a different rate.
+      // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.
+      const parallaxEls = [
+        { el: document.querySelector(".hero-tag"), rate: 0.12 },
+        { el: document.querySelector(".hero-title .line-1"), rate: 0.06 },
+        { el: document.querySelector(".hero-title .line-2"), rate: 0.1 },
+        { el: document.querySelector(".hero-sub"), rate: 0.14 },
+        { el: document.querySelector(".hero-actions"), rate: 0.18 },
+      ];
+      window.addEventListener(
+        "scroll",
+        () => {
+          const y = window.scrollY;
+          if (y > window.innerHeight) return;
+          for (const p of parallaxEls) {
+            if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
+          }
+        },
+        { passive: true },
+      );
 
-  const theme = initTheme(document.querySelector('.theme-toggle'));
-  initNav(document.querySelector('nav'), theme);
-  initCanvas(document.getElementById('bg-canvas'), theme);
-  initCursor(document.getElementById('cursor'), document.getElementById('cursor-ring'));
-  initReveal();
-  initTilt();
-  initUpsideDown();
-  initFrozen();
-  initDeepSea();
-  initBlocky(document.querySelector('.theme-toggle'));
-
-  // Subtle parallax on hero elements — each layer drifts at a different rate.
-  // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.
-  const parallaxEls = [
-    { el: document.querySelector('.hero-tag'),           rate: 0.12 },
-    { el: document.querySelector('.hero-title .line-1'), rate: 0.06 },
-    { el: document.querySelector('.hero-title .line-2'), rate: 0.10 },
-    { el: document.querySelector('.hero-sub'),           rate: 0.14 },
-    { el: document.querySelector('.hero-actions'),       rate: 0.18 },
-  ];
-  window.addEventListener('scroll', () => {
-    const y = window.scrollY;
-    if (y > window.innerHeight) return;
-    for (const p of parallaxEls) {
-      if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
-    }
-  }, { passive: true });
-
-  // Fade out scroll hint once the user starts scrolling
-  const scrollHint = document.querySelector('.scroll-hint');
-  if (scrollHint) {
-    window.addEventListener('scroll', function hide() {
-      if (window.scrollY > 60) {
-        scrollHint.style.animation = 'none';
-        scrollHint.style.opacity = '1';
-        void scrollHint.offsetHeight;
-        scrollHint.style.transition = 'opacity 0.6s';
-        scrollHint.style.opacity = '0';
-        window.removeEventListener('scroll', hide);
+      // Fade out scroll hint once the user starts scrolling
+      const scrollHint = document.querySelector(".scroll-hint");
+      if (scrollHint) {
+        window.addEventListener(
+          "scroll",
+          function hide() {
+            if (window.scrollY > 60) {
+              scrollHint.style.animation = "none";
+              scrollHint.style.opacity = "1";
+              void scrollHint.offsetHeight;
+              scrollHint.style.transition = "opacity 0.6s";
+              scrollHint.style.opacity = "0";
+              window.removeEventListener("scroll", hide);
+            }
+          },
+          { passive: true },
+        );
       }
-    }, { passive: true });
-  }
-</script>
-</body>
+    </script>
+  </body>
 </html>

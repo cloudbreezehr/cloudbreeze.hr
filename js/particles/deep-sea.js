@@ -1,4 +1,8 @@
-import { applyRepulsion, applyAttraction, applyWellForce } from '../interactions.js';
+import {
+  applyRepulsion,
+  applyAttraction,
+  applyWellForce,
+} from "../interactions.js";
 
 // ── Bubbles ──
 const BUBBLE_RADIUS_MIN = 2;
@@ -55,29 +59,36 @@ const JELLY_TENTACLE_SEG_LEN_RATIO = 0.8;
 const JELLY_TENTACLE_WAVE_AMP = 0.3;
 const JELLY_TENTACLE_WAVE_SPEED = 0.03;
 const JELLY_COLORS = [
-  [0, 255, 180],   // teal
-  [0, 200, 255],   // cyan
+  [0, 255, 180], // teal
+  [0, 200, 255], // cyan
   [100, 255, 200], // green
   [180, 150, 255], // soft purple
-  [0, 230, 200],   // cyan-green
+  [0, 230, 200], // cyan-green
 ];
 
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
 
 class Bubble {
-  constructor() { this.reset(true); }
+  constructor() {
+    this.reset(true);
+  }
   reset(init) {
     this.x = Math.random() * _canvas.width;
     this.y = init ? Math.random() * _canvas.height : _canvas.height + 10;
     this.baseR = BUBBLE_RADIUS_MIN + Math.random() * BUBBLE_RADIUS_RANGE;
     this.r = this.baseR;
-    this.riseSpeed = BUBBLE_RISE_MIN + (this.baseR / (BUBBLE_RADIUS_MIN + BUBBLE_RADIUS_RANGE)) * BUBBLE_RISE_RANGE;
+    this.riseSpeed =
+      BUBBLE_RISE_MIN +
+      (this.baseR / (BUBBLE_RADIUS_MIN + BUBBLE_RADIUS_RANGE)) *
+        BUBBLE_RISE_RANGE;
     this.vx = 0;
     this.vy = 0;
     this.wobble = Math.random() * Math.PI * 2;
-    this.wobbleSpeed = BUBBLE_WOBBLE_SPEED_MIN + Math.random() * BUBBLE_WOBBLE_SPEED_RANGE;
-    this.wobbleAmp = BUBBLE_WOBBLE_AMP_MIN + Math.random() * BUBBLE_WOBBLE_AMP_RANGE;
+    this.wobbleSpeed =
+      BUBBLE_WOBBLE_SPEED_MIN + Math.random() * BUBBLE_WOBBLE_SPEED_RANGE;
+    this.wobbleAmp =
+      BUBBLE_WOBBLE_AMP_MIN + Math.random() * BUBBLE_WOBBLE_AMP_RANGE;
     this.opacity = BUBBLE_OPACITY_MIN + Math.random() * BUBBLE_OPACITY_RANGE;
     this.popping = false;
     this.popFrame = 0;
@@ -86,9 +97,15 @@ class Bubble {
   update() {
     if (this.popping) {
       this.popFrame++;
-      if (this.popFrame > BUBBLE_POP_FRAMES) { this.reset(false); this.active = false; return; }
-      this.r = this.baseR * (1 + this.popFrame / BUBBLE_POP_FRAMES * 0.5);
-      this.opacity = (BUBBLE_OPACITY_MIN + BUBBLE_OPACITY_RANGE) * (1 - this.popFrame / BUBBLE_POP_FRAMES);
+      if (this.popFrame > BUBBLE_POP_FRAMES) {
+        this.reset(false);
+        this.active = false;
+        return;
+      }
+      this.r = this.baseR * (1 + (this.popFrame / BUBBLE_POP_FRAMES) * 0.5);
+      this.opacity =
+        (BUBBLE_OPACITY_MIN + BUBBLE_OPACITY_RANGE) *
+        (1 - this.popFrame / BUBBLE_POP_FRAMES);
       return;
     }
     this.wobble += this.wobbleSpeed;
@@ -114,39 +131,55 @@ class Bubble {
     _ctx.globalAlpha = this.opacity;
 
     // Thin ring outline
-    _ctx.strokeStyle = 'rgba(180,255,230,0.5)';
+    _ctx.strokeStyle = "rgba(180,255,230,0.5)";
     _ctx.lineWidth = 0.6;
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     _ctx.stroke();
 
     // Very faint fill
-    _ctx.fillStyle = 'rgba(0,255,200,0.04)';
+    _ctx.fillStyle = "rgba(0,255,200,0.04)";
     _ctx.fill();
 
     // Specular highlight — small arc near top-left
     if (this.r >= BUBBLE_SPECULAR_THRESHOLD) {
-      _ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+      _ctx.strokeStyle = "rgba(255,255,255,0.6)";
       _ctx.lineWidth = 0.8;
       _ctx.beginPath();
-      _ctx.arc(this.x - this.r * 0.25, this.y - this.r * 0.25,
-              this.r * 0.6, -Math.PI * 0.7, -Math.PI * 0.3);
+      _ctx.arc(
+        this.x - this.r * 0.25,
+        this.y - this.r * 0.25,
+        this.r * 0.6,
+        -Math.PI * 0.7,
+        -Math.PI * 0.3,
+      );
       _ctx.stroke();
     } else {
       // Small bubbles — just a dot highlight
-      _ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      _ctx.fillStyle = "rgba(255,255,255,0.5)";
       _ctx.beginPath();
-      _ctx.arc(this.x - this.r * 0.3, this.y - this.r * 0.3, this.r * 0.2, 0, Math.PI * 2);
+      _ctx.arc(
+        this.x - this.r * 0.3,
+        this.y - this.r * 0.3,
+        this.r * 0.2,
+        0,
+        Math.PI * 2,
+      );
       _ctx.fill();
     }
 
     // Large bubbles get a secondary smaller highlight
     if (this.r >= BUBBLE_LARGE_THRESHOLD) {
-      _ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+      _ctx.strokeStyle = "rgba(255,255,255,0.3)";
       _ctx.lineWidth = 0.5;
       _ctx.beginPath();
-      _ctx.arc(this.x + this.r * 0.15, this.y + this.r * 0.2,
-              this.r * 0.25, Math.PI * 0.2, Math.PI * 0.6);
+      _ctx.arc(
+        this.x + this.r * 0.15,
+        this.y + this.r * 0.2,
+        this.r * 0.25,
+        Math.PI * 0.2,
+        Math.PI * 0.6,
+      );
       _ctx.stroke();
     }
 
@@ -155,15 +188,20 @@ class Bubble {
 }
 
 class Jellyfish {
-  constructor() { this.reset(true); }
+  constructor() {
+    this.reset(true);
+  }
   reset(init) {
     this.bellR = JELLY_BELL_MIN + Math.random() * JELLY_BELL_RANGE;
     this.x = Math.random() * _canvas.width;
-    this.y = init ? Math.random() * _canvas.height : _canvas.height + this.bellR * 2;
+    this.y = init
+      ? Math.random() * _canvas.height
+      : _canvas.height + this.bellR * 2;
     this.vx = (Math.random() - 0.5) * JELLY_DRIFT_VX;
     this.vy = 0;
     this.pulse = Math.random() * Math.PI * 2;
-    this.pulseSpeed = JELLY_PULSE_SPEED_MIN + Math.random() * JELLY_PULSE_SPEED_RANGE;
+    this.pulseSpeed =
+      JELLY_PULSE_SPEED_MIN + Math.random() * JELLY_PULSE_SPEED_RANGE;
     this.glowPhase = Math.random() * Math.PI * 2;
     this.color = JELLY_COLORS[Math.floor(Math.random() * JELLY_COLORS.length)];
     // Tentacle count based on size
@@ -174,7 +212,10 @@ class Jellyfish {
     } else {
       this.tentacles = JELLY_TENTACLE_SMALL;
     }
-    this.tentaclePhases = Array.from({length: this.tentacles}, () => Math.random() * Math.PI * 2);
+    this.tentaclePhases = Array.from(
+      { length: this.tentacles },
+      () => Math.random() * Math.PI * 2,
+    );
   }
   update() {
     this.pulse += this.pulseSpeed;
@@ -201,7 +242,8 @@ class Jellyfish {
     if (this.y < -this.bellR * 3) this.y = _canvas.height + this.bellR * 2;
     if (this.y > _canvas.height + this.bellR * 3) this.y = -this.bellR * 2;
     if (this.x < -this.bellR * 3) this.x += _canvas.width + this.bellR * 6;
-    if (this.x > _canvas.width + this.bellR * 3) this.x -= _canvas.width + this.bellR * 6;
+    if (this.x > _canvas.width + this.bellR * 3)
+      this.x -= _canvas.width + this.bellR * 6;
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
@@ -210,14 +252,24 @@ class Jellyfish {
   }
   draw() {
     const c = this.color;
-    const glowAlpha = JELLY_GLOW_ALPHA_MIN + Math.sin(this.glowPhase) * 0.5 * JELLY_GLOW_ALPHA_RANGE + JELLY_GLOW_ALPHA_RANGE * 0.5;
+    const glowAlpha =
+      JELLY_GLOW_ALPHA_MIN +
+      Math.sin(this.glowPhase) * 0.5 * JELLY_GLOW_ALPHA_RANGE +
+      JELLY_GLOW_ALPHA_RANGE * 0.5;
 
     _ctx.save();
 
     // Bioluminescent glow — radial gradient around the bell
-    const grad = _ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.bellR * 2.5);
+    const grad = _ctx.createRadialGradient(
+      this.x,
+      this.y,
+      0,
+      this.x,
+      this.y,
+      this.bellR * 2.5,
+    );
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha})`);
-    grad.addColorStop(1, 'transparent');
+    grad.addColorStop(1, "transparent");
     _ctx.fillStyle = grad;
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.bellR * 2.5, 0, Math.PI * 2);
@@ -227,14 +279,34 @@ class Jellyfish {
     const bellW = this.bellR;
     const bellH = this.bellR * 0.8;
     // Faint fill
-    const bellGrad = _ctx.createRadialGradient(this.x, this.y - bellH * 0.3, 0, this.x, this.y, this.bellR);
-    bellGrad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha * 1.5})`);
-    bellGrad.addColorStop(1, 'transparent');
+    const bellGrad = _ctx.createRadialGradient(
+      this.x,
+      this.y - bellH * 0.3,
+      0,
+      this.x,
+      this.y,
+      this.bellR,
+    );
+    bellGrad.addColorStop(
+      0,
+      `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha * 1.5})`,
+    );
+    bellGrad.addColorStop(1, "transparent");
     _ctx.fillStyle = bellGrad;
     _ctx.beginPath();
     _ctx.moveTo(this.x - bellW, this.y);
-    _ctx.quadraticCurveTo(this.x - bellW, this.y - bellH * 2, this.x, this.y - bellH * 1.5);
-    _ctx.quadraticCurveTo(this.x + bellW, this.y - bellH * 2, this.x + bellW, this.y);
+    _ctx.quadraticCurveTo(
+      this.x - bellW,
+      this.y - bellH * 2,
+      this.x,
+      this.y - bellH * 1.5,
+    );
+    _ctx.quadraticCurveTo(
+      this.x + bellW,
+      this.y - bellH * 2,
+      this.x + bellW,
+      this.y,
+    );
     _ctx.closePath();
     _ctx.fill();
 
@@ -243,8 +315,18 @@ class Jellyfish {
     _ctx.lineWidth = 0.8;
     _ctx.beginPath();
     _ctx.moveTo(this.x - bellW, this.y);
-    _ctx.quadraticCurveTo(this.x - bellW, this.y - bellH * 2, this.x, this.y - bellH * 1.5);
-    _ctx.quadraticCurveTo(this.x + bellW, this.y - bellH * 2, this.x + bellW, this.y);
+    _ctx.quadraticCurveTo(
+      this.x - bellW,
+      this.y - bellH * 2,
+      this.x,
+      this.y - bellH * 1.5,
+    );
+    _ctx.quadraticCurveTo(
+      this.x + bellW,
+      this.y - bellH * 2,
+      this.x + bellW,
+      this.y,
+    );
     _ctx.stroke();
 
     // Tentacles — wavy lines from bottom of bell
@@ -264,11 +346,22 @@ class Jellyfish {
       let ty = this.y;
       for (let s = 1; s <= JELLY_TENTACLE_SEGMENTS; s++) {
         const t = s / JELLY_TENTACLE_SEGMENTS;
-        const wave = Math.sin(this.tentaclePhases[i] + s * 1.2) * JELLY_TENTACLE_WAVE_AMP * this.bellR;
+        const wave =
+          Math.sin(this.tentaclePhases[i] + s * 1.2) *
+          JELLY_TENTACLE_WAVE_AMP *
+          this.bellR;
         tx = baseX + wave + trailX * t;
         ty = this.y + tentLen * t + trailY * t;
-        const cpx = baseX + Math.sin(this.tentaclePhases[i] + (s - 0.5) * 1.2) * JELLY_TENTACLE_WAVE_AMP * this.bellR + trailX * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
-        const cpy = this.y + tentLen * (t - 0.5 / JELLY_TENTACLE_SEGMENTS) + trailY * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
+        const cpx =
+          baseX +
+          Math.sin(this.tentaclePhases[i] + (s - 0.5) * 1.2) *
+            JELLY_TENTACLE_WAVE_AMP *
+            this.bellR +
+          trailX * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
+        const cpy =
+          this.y +
+          tentLen * (t - 0.5 / JELLY_TENTACLE_SEGMENTS) +
+          trailY * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
         _ctx.quadraticCurveTo(cpx, cpy, tx, ty);
       }
       _ctx.stroke();
@@ -284,8 +377,8 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
   _canvas = canvasEl;
   _ctx = ctxEl;
 
-  const bubbles = Array.from({length: bubbleCount}, () => new Bubble());
-  const jellyfish = Array.from({length: jellyCount}, () => new Jellyfish());
+  const bubbles = Array.from({ length: bubbleCount }, () => new Bubble());
+  const jellyfish = Array.from({ length: jellyCount }, () => new Jellyfish());
   let bubbleSpawnAccum = 0;
 
   return {
@@ -294,15 +387,24 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       bubbleSpawnAccum += BUBBLE_AMBIENT_RATE * dt;
       while (bubbleSpawnAccum >= 1) {
         bubbleSpawnAccum--;
-        const b = bubbles.find(b => !b.active);
-        if (b) { b.reset(false); b.active = true; }
+        const b = bubbles.find((b) => !b.active);
+        if (b) {
+          b.reset(false);
+          b.active = true;
+        }
       }
 
-      bubbles.forEach(b => {
+      bubbles.forEach((b) => {
         if (!b.active) return;
         b.update();
         applyRepulsion(forces, b, BUBBLE_REPEL_RADIUS, BUBBLE_REPEL_DAMPEN);
-        applyAttraction(forces, b, BUBBLE_ATTRACT_RADIUS, BUBBLE_ATTRACT_STRENGTH, BUBBLE_ATTRACT_TANGENT);
+        applyAttraction(
+          forces,
+          b,
+          BUBBLE_ATTRACT_RADIUS,
+          BUBBLE_ATTRACT_STRENGTH,
+          BUBBLE_ATTRACT_TANGENT,
+        );
         applyWellForce(forces, b);
         // Scroll pushes laterally
         if (Math.abs(scrollVelocity) > BUBBLE_SCROLL_THRESHOLD) {
@@ -311,19 +413,27 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
         b.draw();
       });
 
-      jellyfish.forEach(j => {
+      jellyfish.forEach((j) => {
         j.update();
         applyRepulsion(forces, j, JELLY_REPEL_RADIUS, JELLY_REPEL_DAMPEN);
-        applyAttraction(forces, j, JELLY_ATTRACT_RADIUS, JELLY_ATTRACT_STRENGTH, 0);
+        applyAttraction(
+          forces,
+          j,
+          JELLY_ATTRACT_RADIUS,
+          JELLY_ATTRACT_STRENGTH,
+          0,
+        );
         applyWellForce(forces, j);
         j.draw();
       });
     },
 
     clickBurst(cx, cy) {
-      const burstCount = BUBBLE_CLICK_BURST_MIN + Math.floor(Math.random() * BUBBLE_CLICK_BURST_RANGE);
+      const burstCount =
+        BUBBLE_CLICK_BURST_MIN +
+        Math.floor(Math.random() * BUBBLE_CLICK_BURST_RANGE);
       for (let i = 0; i < burstCount; i++) {
-        const b = bubbles.find(b => !b.active);
+        const b = bubbles.find((b) => !b.active);
         if (!b) break;
         b.reset(false);
         b.x = cx;
@@ -339,7 +449,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
 
     dragBubble(x, y) {
       if (Math.random() >= BUBBLE_DRAG_RATE) return;
-      const b = bubbles.find(b => !b.active);
+      const b = bubbles.find((b) => !b.active);
       if (b) {
         b.reset(false);
         b.x = x + (Math.random() - 0.5) * 10;

@@ -3,32 +3,32 @@ export function initBlocky(toggleEl) {
   const PRESSES_TO_ACTIVATE = 20;
   const PRESSES_TO_DEACTIVATE = 10;
   const DECAY_TIMEOUT_MS = 2000;
-  const DECAY_RATE = 2;               // presses/sec after timeout
+  const DECAY_RATE = 2; // presses/sec after timeout
 
   // ── Indicator thresholds (fraction of 1.0) ──
-  const ICON_PIXEL_AT = 0.20;
+  const ICON_PIXEL_AT = 0.2;
   const SCANLINE_AT = 0.35;
-  const QUANTIZE_AT = 0.50;
-  const JITTER_AT = 0.70;
-  const HEAVY_PIXEL_AT = 0.90;
+  const QUANTIZE_AT = 0.5;
+  const JITTER_AT = 0.7;
+  const HEAVY_PIXEL_AT = 0.9;
 
   // ── Icon pixelation ──
-  const ICON_SHRINK_FACTOR = 0.4;        // scale reduction at full progress (1 → 0.6)
-  const ICON_CONTRAST_THRESHOLD = 0.3;   // t above which contrast boost kicks in
-  const ICON_CONTRAST_STRENGTH = 0.3;    // max contrast increase
+  const ICON_SHRINK_FACTOR = 0.4; // scale reduction at full progress (1 → 0.6)
+  const ICON_CONTRAST_THRESHOLD = 0.3; // t above which contrast boost kicks in
+  const ICON_CONTRAST_STRENGTH = 0.3; // max contrast increase
 
   // ── Scanline / static tuning ──
-  const SCANLINE_BASE_OPACITY = 0.15;    // scanline opacity at threshold
-  const SCANLINE_HEAVY_BOOST = 0.35;     // extra opacity past HEAVY_PIXEL_AT
-  const GRID_MAX_OPACITY = 0.08;         // quantize grid overlay opacity
-  const QUANTIZE_CONTRAST = 0.15;        // page contrast boost at full quantize
+  const SCANLINE_BASE_OPACITY = 0.15; // scanline opacity at threshold
+  const SCANLINE_HEAVY_BOOST = 0.35; // extra opacity past HEAVY_PIXEL_AT
+  const GRID_MAX_OPACITY = 0.08; // quantize grid overlay opacity
+  const QUANTIZE_CONTRAST = 0.15; // page contrast boost at full quantize
 
   // ── Jitter / static flash ──
-  const JITTER_AMPLITUDE = 3;            // max pixel displacement
-  const STATIC_FLASH_CHANCE = 0.06;      // probability per frame per unit t
-  const STATIC_FLASH_BASE = 0.15;        // minimum flash opacity
-  const STATIC_FLASH_RANGE = 0.1;        // random addition to flash opacity
-  const STATIC_FLASH_DURATION_MS = 50;   // flash visible duration
+  const JITTER_AMPLITUDE = 3; // max pixel displacement
+  const STATIC_FLASH_CHANCE = 0.06; // probability per frame per unit t
+  const STATIC_FLASH_BASE = 0.15; // minimum flash opacity
+  const STATIC_FLASH_RANGE = 0.1; // random addition to flash opacity
+  const STATIC_FLASH_DURATION_MS = 50; // flash visible duration
 
   // ── Transition timing ──
   const CASCADE_COLLAPSE_MS = 500;
@@ -41,60 +41,66 @@ export function initBlocky(toggleEl) {
   let lastPressTime = 0;
   let jitterRaf = null;
 
-  const canvasEl = document.getElementById('bg-canvas');
+  const canvasEl = document.getElementById("bg-canvas");
 
   // ── Scanline overlay ──
-  const scanlineOverlay = document.createElement('div');
-  scanlineOverlay.className = 'blocky-scanlines';
+  const scanlineOverlay = document.createElement("div");
+  scanlineOverlay.className = "blocky-scanlines";
   document.body.appendChild(scanlineOverlay);
 
   // ── Grid overlay ──
-  const gridOverlay = document.createElement('div');
-  gridOverlay.className = 'blocky-grid';
+  const gridOverlay = document.createElement("div");
+  gridOverlay.className = "blocky-grid";
   document.body.appendChild(gridOverlay);
 
   // ── Static flash overlay ──
-  const staticOverlay = document.createElement('div');
-  staticOverlay.className = 'blocky-static';
+  const staticOverlay = document.createElement("div");
+  staticOverlay.className = "blocky-static";
   document.body.appendChild(staticOverlay);
 
   // ── 1. Toggle icon pixelation ──
   function updateIconPixel(progress) {
     if (progress < ICON_PIXEL_AT) {
-      toggleEl.style.imageRendering = '';
-      toggleEl.style.transform = '';
+      toggleEl.style.imageRendering = "";
+      toggleEl.style.transform = "";
       return;
     }
     const t = Math.min(1, (progress - ICON_PIXEL_AT) / (1 - ICON_PIXEL_AT));
     // Shrink SVG to half size then scale back up — forces pixelation
     const shrink = 1 - t * ICON_SHRINK_FACTOR;
-    toggleEl.style.imageRendering = 'pixelated';
+    toggleEl.style.imageRendering = "pixelated";
     toggleEl.style.transform = `scale(${shrink.toFixed(3)})`;
-    toggleEl.style.filter = t > ICON_CONTRAST_THRESHOLD ? `contrast(${(1 + t * ICON_CONTRAST_STRENGTH).toFixed(2)})` : '';
+    toggleEl.style.filter =
+      t > ICON_CONTRAST_THRESHOLD
+        ? `contrast(${(1 + t * ICON_CONTRAST_STRENGTH).toFixed(2)})`
+        : "";
   }
 
   // ── 2. Scanlines ──
   function updateScanlines(progress) {
     if (progress < SCANLINE_AT) {
-      scanlineOverlay.style.opacity = '0';
+      scanlineOverlay.style.opacity = "0";
       return;
     }
     const t = Math.min(1, (progress - SCANLINE_AT) / (1 - SCANLINE_AT));
-    scanlineOverlay.style.opacity = String(t * SCANLINE_BASE_OPACITY + (progress >= HEAVY_PIXEL_AT ? t * SCANLINE_HEAVY_BOOST : 0));
+    scanlineOverlay.style.opacity = String(
+      t * SCANLINE_BASE_OPACITY +
+        (progress >= HEAVY_PIXEL_AT ? t * SCANLINE_HEAVY_BOOST : 0),
+    );
   }
 
   // ── 3. Color quantization + grid ──
   function updateQuantize(progress) {
     if (progress < QUANTIZE_AT) {
-      gridOverlay.style.opacity = '0';
-      const page = document.querySelector('.page');
-      if (page) page.style.filter = '';
+      gridOverlay.style.opacity = "0";
+      const page = document.querySelector(".page");
+      if (page) page.style.filter = "";
       return;
     }
     const t = Math.min(1, (progress - QUANTIZE_AT) / (1 - QUANTIZE_AT));
     gridOverlay.style.opacity = String(t * GRID_MAX_OPACITY);
     // Posterize page content — subtle color stepping
-    const page = document.querySelector('.page');
+    const page = document.querySelector(".page");
     if (page) {
       const contrast = 1 + t * QUANTIZE_CONTRAST;
       page.style.filter = `contrast(${contrast.toFixed(2)})`;
@@ -114,11 +120,11 @@ export function initBlocky(toggleEl) {
   function startJitter() {
     if (jitterRunning) return;
     jitterRunning = true;
-    const page = document.querySelector('.page');
+    const page = document.querySelector(".page");
     function jitterLoop() {
       if (!jitterRunning || force < JITTER_AT) {
-        if (page) page.style.translate = '';
-        staticOverlay.style.opacity = '0';
+        if (page) page.style.translate = "";
+        staticOverlay.style.opacity = "0";
         jitterRunning = false;
         return;
       }
@@ -130,8 +136,12 @@ export function initBlocky(toggleEl) {
 
       // Random static flash at edges
       if (Math.random() < STATIC_FLASH_CHANCE * t) {
-        staticOverlay.style.opacity = String(STATIC_FLASH_BASE + Math.random() * STATIC_FLASH_RANGE);
-        setTimeout(() => { staticOverlay.style.opacity = '0'; }, STATIC_FLASH_DURATION_MS);
+        staticOverlay.style.opacity = String(
+          STATIC_FLASH_BASE + Math.random() * STATIC_FLASH_RANGE,
+        );
+        setTimeout(() => {
+          staticOverlay.style.opacity = "0";
+        }, STATIC_FLASH_DURATION_MS);
       }
 
       jitterRaf = requestAnimationFrame(jitterLoop);
@@ -141,18 +151,18 @@ export function initBlocky(toggleEl) {
 
   function stopJitter() {
     jitterRunning = false;
-    const page = document.querySelector('.page');
-    if (page) page.style.translate = '';
-    staticOverlay.style.opacity = '0';
+    const page = document.querySelector(".page");
+    if (page) page.style.translate = "";
+    staticOverlay.style.opacity = "0";
   }
 
   // ── 5. Heavy pixelation ──
   function updateHeavyPixel(progress) {
     if (progress < HEAVY_PIXEL_AT) {
-      canvasEl.style.imageRendering = '';
+      canvasEl.style.imageRendering = "";
       return;
     }
-    canvasEl.style.imageRendering = 'pixelated';
+    canvasEl.style.imageRendering = "pixelated";
   }
 
   // ── Update all visual indicators ──
@@ -167,28 +177,28 @@ export function initBlocky(toggleEl) {
   // ── Clear all indicators ──
   function clearIndicators() {
     force = 0;
-    toggleEl.style.imageRendering = '';
-    toggleEl.style.transform = '';
-    toggleEl.style.filter = '';
-    scanlineOverlay.style.opacity = '0';
-    gridOverlay.style.opacity = '0';
-    staticOverlay.style.opacity = '0';
-    canvasEl.style.imageRendering = '';
+    toggleEl.style.imageRendering = "";
+    toggleEl.style.transform = "";
+    toggleEl.style.filter = "";
+    scanlineOverlay.style.opacity = "0";
+    gridOverlay.style.opacity = "0";
+    staticOverlay.style.opacity = "0";
+    canvasEl.style.imageRendering = "";
     stopJitter();
-    const page = document.querySelector('.page');
-    if (page) page.style.filter = '';
+    const page = document.querySelector(".page");
+    if (page) page.style.filter = "";
   }
 
   // ── Card pixel interactions ──
   function enableCardPixel() {
-    document.querySelectorAll('.service-card').forEach(card => {
-      card.classList.add('pixel-card');
+    document.querySelectorAll(".service-card").forEach((card) => {
+      card.classList.add("pixel-card");
     });
   }
 
   function disableCardPixel() {
-    document.querySelectorAll('.service-card').forEach(card => {
-      card.classList.remove('pixel-card');
+    document.querySelectorAll(".service-card").forEach((card) => {
+      card.classList.remove("pixel-card");
     });
   }
 
@@ -197,25 +207,25 @@ export function initBlocky(toggleEl) {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement('div');
-    wipe.className = 'blocky-wipe';
+    const wipe = document.createElement("div");
+    wipe.className = "blocky-wipe";
     document.body.appendChild(wipe);
     void wipe.offsetHeight;
 
     // Phase 1: Collapse — pixelation grows to massive blocks
-    wipe.style.opacity = '1';
+    wipe.style.opacity = "1";
 
     setTimeout(() => {
       // Phase 2: Swap state while covered
       isBlocky = true;
-      document.body.classList.add('blocky');
-      document.body.dataset.lastSubmode = 'blocky';
+      document.body.classList.add("blocky");
+      document.body.dataset.lastSubmode = "blocky";
       clearIndicators();
       enableCardPixel();
 
       // Phase 3: Refine — reveal blocky world
       requestAnimationFrame(() => {
-        wipe.style.opacity = '0';
+        wipe.style.opacity = "0";
         setTimeout(() => {
           wipe.remove();
           isTransitioning = false;
@@ -229,21 +239,21 @@ export function initBlocky(toggleEl) {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement('div');
-    wipe.className = 'blocky-wipe unblocky';
+    const wipe = document.createElement("div");
+    wipe.className = "blocky-wipe unblocky";
     document.body.appendChild(wipe);
     void wipe.offsetHeight;
 
-    wipe.style.opacity = '1';
+    wipe.style.opacity = "1";
 
     setTimeout(() => {
       isBlocky = false;
-      document.body.classList.remove('blocky');
+      document.body.classList.remove("blocky");
       clearIndicators();
       disableCardPixel();
 
       requestAnimationFrame(() => {
-        wipe.style.opacity = '0';
+        wipe.style.opacity = "0";
         setTimeout(() => {
           wipe.remove();
           isTransitioning = false;
@@ -255,7 +265,7 @@ export function initBlocky(toggleEl) {
   // ── Toggle press handler ──
   // We listen on the toggle directly with capture to count presses
   // before the theme handler runs. The theme still flips normally.
-  toggleEl.addEventListener('click', () => {
+  toggleEl.addEventListener("click", () => {
     if (isTransitioning) return;
 
     const now = Date.now();

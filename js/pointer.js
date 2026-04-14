@@ -22,12 +22,12 @@
 export function bindPointer(target, { onDown, onMove, onUp }) {
   let active = false;
 
-  target.addEventListener('pointerdown', e => {
+  target.addEventListener("pointerdown", (e) => {
     if (onDown(e.clientX, e.clientY, e) === false) return;
     active = true;
   });
 
-  target.addEventListener('pointermove', e => {
+  target.addEventListener("pointermove", (e) => {
     if (!active) return;
     onMove(e.clientX, e.clientY);
   });
@@ -38,15 +38,19 @@ export function bindPointer(target, { onDown, onMove, onUp }) {
     onUp();
   }
 
-  target.addEventListener('pointerup', release);
+  target.addEventListener("pointerup", release);
 
   // No pointercancel handler — touch events take over instead.
   // After the browser captures the pointer for scrolling, pointer events stop
   // but touch events keep firing.
-  target.addEventListener('touchmove', e => {
-    if (!active || !e.touches.length) return;
-    onMove(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
+  target.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!active || !e.touches.length) return;
+      onMove(e.touches[0].clientX, e.touches[0].clientY);
+    },
+    { passive: true },
+  );
 
-  target.addEventListener('touchend', release);
+  target.addEventListener("touchend", release);
 }

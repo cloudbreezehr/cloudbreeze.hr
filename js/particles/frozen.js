@@ -1,4 +1,8 @@
-import { applyRepulsion, applyAttraction, applyWellForce } from '../interactions.js';
+import {
+  applyRepulsion,
+  applyAttraction,
+  applyWellForce,
+} from "../interactions.js";
 
 // ── Snowflakes ──
 const SNOW_RADIUS_MIN = 1.5;
@@ -35,7 +39,9 @@ const SHAKE_OPACITY_BOOST = 0.15;
 let _canvas, _ctx;
 
 class Snowflake {
-  constructor() { this.reset(true); }
+  constructor() {
+    this.reset(true);
+  }
   reset(init) {
     this.x = Math.random() * _canvas.width;
     this.y = init ? Math.random() * _canvas.height : -10;
@@ -44,7 +50,8 @@ class Snowflake {
     this.vx = 0;
     this.vy = 0;
     this.sway = Math.random() * Math.PI * 2;
-    this.swaySpeed = SNOW_SWAY_SPEED_MIN + Math.random() * SNOW_SWAY_SPEED_RANGE;
+    this.swaySpeed =
+      SNOW_SWAY_SPEED_MIN + Math.random() * SNOW_SWAY_SPEED_RANGE;
     this.swayAmp = SNOW_SWAY_AMP_MIN + Math.random() * SNOW_SWAY_AMP_RANGE;
     this.opacity = SNOW_OPACITY_MIN + Math.random() * SNOW_OPACITY_RANGE;
     this.rotation = Math.random() * Math.PI * 2;
@@ -68,9 +75,9 @@ class Snowflake {
       // Crystalline snowflake — 6 arms with branches, slow rotation
       _ctx.translate(this.x, this.y);
       _ctx.rotate(this.rotation);
-      _ctx.strokeStyle = 'rgba(220,240,255,1)';
+      _ctx.strokeStyle = "rgba(220,240,255,1)";
       _ctx.lineWidth = 0.6;
-      _ctx.lineCap = 'round';
+      _ctx.lineCap = "round";
       _ctx.beginPath();
       const arm = this.r;
       const branch = arm * SNOW_BRANCH_RATIO;
@@ -84,22 +91,35 @@ class Snowflake {
         const mx = Math.cos(a) * arm * 0.6;
         const my = Math.sin(a) * arm * 0.6;
         _ctx.moveTo(mx, my);
-        _ctx.lineTo(mx + Math.cos(a + SNOW_BRANCH_ANGLE) * branch, my + Math.sin(a + SNOW_BRANCH_ANGLE) * branch);
+        _ctx.lineTo(
+          mx + Math.cos(a + SNOW_BRANCH_ANGLE) * branch,
+          my + Math.sin(a + SNOW_BRANCH_ANGLE) * branch,
+        );
         _ctx.moveTo(mx, my);
-        _ctx.lineTo(mx + Math.cos(a - SNOW_BRANCH_ANGLE) * branch, my + Math.sin(a - SNOW_BRANCH_ANGLE) * branch);
+        _ctx.lineTo(
+          mx + Math.cos(a - SNOW_BRANCH_ANGLE) * branch,
+          my + Math.sin(a - SNOW_BRANCH_ANGLE) * branch,
+        );
       }
       _ctx.stroke();
       // Subtle glow for larger crystalline flakes
-      const grad = _ctx.createRadialGradient(0, 0, 0, 0, 0, this.r * SNOW_GLOW_RADIUS);
+      const grad = _ctx.createRadialGradient(
+        0,
+        0,
+        0,
+        0,
+        0,
+        this.r * SNOW_GLOW_RADIUS,
+      );
       grad.addColorStop(0, `rgba(200,230,255,${SNOW_GLOW_OPACITY})`);
-      grad.addColorStop(1, 'transparent');
+      grad.addColorStop(1, "transparent");
       _ctx.fillStyle = grad;
       _ctx.beginPath();
       _ctx.arc(0, 0, this.r * SNOW_GLOW_RADIUS, 0, Math.PI * 2);
       _ctx.fill();
     } else {
       // Small flakes — simple glowing dots
-      _ctx.fillStyle = 'rgba(220,240,255,1)';
+      _ctx.fillStyle = "rgba(220,240,255,1)";
       _ctx.beginPath();
       _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
       _ctx.fill();
@@ -114,28 +134,40 @@ export function createSnow(canvasEl, ctxEl, count) {
   _canvas = canvasEl;
   _ctx = ctxEl;
 
-  const snowflakes = Array.from({length: count}, () => new Snowflake());
+  const snowflakes = Array.from({ length: count }, () => new Snowflake());
 
   return {
     draw(forces, scrollVelocity, snowTurbulence) {
       // Snow globe turbulence — burst then decay
       if (snowTurbulence.value > 0.01) {
-        snowflakes.forEach(s => {
-          s.vx += (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence.value;
-          s.vy += (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence.value;
-          s.opacity = Math.min(1, s.opacity + SHAKE_OPACITY_BOOST * snowTurbulence.value);
+        snowflakes.forEach((s) => {
+          s.vx +=
+            (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence.value;
+          s.vy +=
+            (Math.random() - 0.5) * SHAKE_TURBULENCE * snowTurbulence.value;
+          s.opacity = Math.min(
+            1,
+            s.opacity + SHAKE_OPACITY_BOOST * snowTurbulence.value,
+          );
         });
         snowTurbulence.value *= SHAKE_DECAY;
       }
-      snowflakes.forEach(s => {
+      snowflakes.forEach((s) => {
         s.update();
         applyRepulsion(forces, s, SNOW_REPEL_RADIUS, SNOW_REPEL_DAMPEN);
-        applyAttraction(forces, s, SNOW_ATTRACT_RADIUS, SNOW_ATTRACT_STRENGTH, SNOW_ATTRACT_TANGENT);
+        applyAttraction(
+          forces,
+          s,
+          SNOW_ATTRACT_RADIUS,
+          SNOW_ATTRACT_STRENGTH,
+          SNOW_ATTRACT_TANGENT,
+        );
         applyWellForce(forces, s);
         // Scroll pushes snowflakes
         if (Math.abs(scrollVelocity) > SNOW_SCROLL_THRESHOLD) {
           s.vy -= scrollVelocity * SNOW_SCROLL_VY;
-          s.vx += (Math.random() - 0.5) * Math.abs(scrollVelocity) * SNOW_SCROLL_VX;
+          s.vx +=
+            (Math.random() - 0.5) * Math.abs(scrollVelocity) * SNOW_SCROLL_VX;
         }
         s.draw();
       });

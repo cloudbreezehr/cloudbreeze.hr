@@ -1,5 +1,12 @@
-import { scrollFade } from './canvas-utils.js';
-import { applyWellForce, ATTRACT_RADIUS_BASE, ATTRACT_RADIUS_HOLD, ATTRACT_FORCE_BASE, ATTRACT_FORCE_HOLD, ATTRACT_TANGENT_FACTOR } from './interactions.js';
+import { scrollFade } from "./canvas-utils.js";
+import {
+  applyWellForce,
+  ATTRACT_RADIUS_BASE,
+  ATTRACT_RADIUS_HOLD,
+  ATTRACT_FORCE_BASE,
+  ATTRACT_FORCE_HOLD,
+  ATTRACT_TANGENT_FACTOR,
+} from "./interactions.js";
 
 // ── Streaks ──
 const STREAK_LEN_MIN = 40;
@@ -64,7 +71,7 @@ const WISP_Y_PIVOT = 0.45;
 const WISP_Y_SCALE = 2.5;
 const WISP_FADE_IN_START = 0.15;
 const WISP_FADE_IN_END = 0.25;
-const WISP_FADE_OUT_START = 0.70;
+const WISP_FADE_OUT_START = 0.7;
 const WISP_FADE_OUT_END = 0.85;
 
 // ── Scroll Motes ──
@@ -88,7 +95,7 @@ const MOTE_GRAD_MID_OPACITY = 0.4;
 const HORIZON_Y_BASE = 0.75;
 const HORIZON_Y_SHIFT = 0.25;
 const HORIZON_INTENSITY_BASE = 0.12;
-const HORIZON_INTENSITY_SCROLL = 0.10;
+const HORIZON_INTENSITY_SCROLL = 0.1;
 const HORIZON_INTENSITY_FALLOFF = 0.15;
 const HORIZON_RADIUS_BASE = 0.7;
 const HORIZON_RADIUS_SCROLL = 0.2;
@@ -126,17 +133,29 @@ function getStreakParams(sp) {
 
 class Cloud {
   constructor(i, total) {
-    this.x = Math.random() * _canvas.width * CLOUD_X_SPREAD - _canvas.width * CLOUD_X_OFFSET;
-    this.baseY = (i / total) * _canvas.height * CLOUD_Y_DEPTH - _canvas.height * CLOUD_Y_OFFSET;
+    this.x =
+      Math.random() * _canvas.width * CLOUD_X_SPREAD -
+      _canvas.width * CLOUD_X_OFFSET;
+    this.baseY =
+      (i / total) * _canvas.height * CLOUD_Y_DEPTH -
+      _canvas.height * CLOUD_Y_OFFSET;
     this.speedX = (Math.random() - 0.5) * CLOUD_DRIFT_MAX;
     this.scale = CLOUD_SCALE_MIN + Math.random() * CLOUD_SCALE_RANGE;
-    const count = CLOUD_BLOB_COUNT_MIN + Math.floor(Math.random() * CLOUD_BLOB_COUNT_RANGE);
+    const count =
+      CLOUD_BLOB_COUNT_MIN + Math.floor(Math.random() * CLOUD_BLOB_COUNT_RANGE);
     this.blobs = [];
     for (let j = 0; j < count; j++) {
       this.blobs.push({
-        ox: (j - count / 2) * CLOUD_BLOB_SPACING * this.scale + (Math.random() - 0.5) * CLOUD_BLOB_JITTER_X * this.scale,
-        oy: (Math.random() - CLOUD_BLOB_Y_BIAS) * CLOUD_BLOB_JITTER_Y * this.scale,
-        r: (CLOUD_BLOB_RADIUS_MIN + Math.random() * CLOUD_BLOB_RADIUS_RANGE) * this.scale,
+        ox:
+          (j - count / 2) * CLOUD_BLOB_SPACING * this.scale +
+          (Math.random() - 0.5) * CLOUD_BLOB_JITTER_X * this.scale,
+        oy:
+          (Math.random() - CLOUD_BLOB_Y_BIAS) *
+          CLOUD_BLOB_JITTER_Y *
+          this.scale,
+        r:
+          (CLOUD_BLOB_RADIUS_MIN + Math.random() * CLOUD_BLOB_RADIUS_RANGE) *
+          this.scale,
       });
     }
   }
@@ -149,17 +168,28 @@ class Cloud {
   draw(yOffset, vis, pal) {
     if (vis <= 0) return;
     const y = this.baseY + yOffset;
-    if (y < -CLOUD_CULL_MARGIN || y > _canvas.height + CLOUD_CULL_MARGIN) return;
+    if (y < -CLOUD_CULL_MARGIN || y > _canvas.height + CLOUD_CULL_MARGIN)
+      return;
     const cw = pal.cloudWhite;
     const cm = pal.cloudMid;
-    this.blobs.forEach(b => {
+    this.blobs.forEach((b) => {
       const bx = this.x + b.ox;
       const by = y + b.oy;
       const op = (CLOUD_OPACITY_BASE + CLOUD_OPACITY_DEPTH * this.scale) * vis;
-      const grad = _ctx.createRadialGradient(bx, by, b.r * CLOUD_GRAD_INNER, bx, by, b.r);
+      const grad = _ctx.createRadialGradient(
+        bx,
+        by,
+        b.r * CLOUD_GRAD_INNER,
+        bx,
+        by,
+        b.r,
+      );
       grad.addColorStop(0, `rgba(${cw[0]},${cw[1]},${cw[2]},${op})`);
-      grad.addColorStop(CLOUD_GRAD_MID, `rgba(${cm[0]},${cm[1]},${cm[2]},${op * CLOUD_GRAD_MID_OPACITY})`);
-      grad.addColorStop(1, 'transparent');
+      grad.addColorStop(
+        CLOUD_GRAD_MID,
+        `rgba(${cm[0]},${cm[1]},${cm[2]},${op * CLOUD_GRAD_MID_OPACITY})`,
+      );
+      grad.addColorStop(1, "transparent");
       _ctx.fillStyle = grad;
       _ctx.beginPath();
       _ctx.arc(bx, by, b.r, 0, Math.PI * 2);
@@ -169,7 +199,9 @@ class Cloud {
 }
 
 class Streak {
-  constructor() { this.reset(true); }
+  constructor() {
+    this.reset(true);
+  }
   reset(init) {
     this.x = Math.random() * _canvas.width;
     this.y = init ? Math.random() * _canvas.height : -10;
@@ -198,7 +230,9 @@ class Streak {
 }
 
 class BreezeWisp {
-  constructor() { this.reset(true); }
+  constructor() {
+    this.reset(true);
+  }
   reset(init) {
     this.x = init ? Math.random() * _canvas.width : -300;
     this.y = Math.random() * _canvas.height;
@@ -249,7 +283,10 @@ class ScrollMote {
     if (absSv > MOTE_SCROLL_THRESHOLD) {
       this.vy -= sv * MOTE_VY_FACTOR;
       this.vx += (Math.random() - 0.5) * absSv * MOTE_VX_FACTOR;
-      this.opacity = Math.min(MOTE_OPACITY_MAX, this.opacity + absSv * MOTE_OPACITY_GAIN);
+      this.opacity = Math.min(
+        MOTE_OPACITY_MAX,
+        this.opacity + absSv * MOTE_OPACITY_GAIN,
+      );
     }
     this.vy += MOTE_GRAVITY;
     this.vx *= MOTE_FRICTION;
@@ -257,8 +294,12 @@ class ScrollMote {
     this.x += this.vx;
     this.y += this.vy;
     this.opacity *= MOTE_OPACITY_DECAY;
-    if (this.y < -MOTE_BOUNDS || this.y > _canvas.height + MOTE_BOUNDS ||
-        this.x < -MOTE_BOUNDS || this.x > _canvas.width + MOTE_BOUNDS) {
+    if (
+      this.y < -MOTE_BOUNDS ||
+      this.y > _canvas.height + MOTE_BOUNDS ||
+      this.x < -MOTE_BOUNDS ||
+      this.x > _canvas.width + MOTE_BOUNDS
+    ) {
       this.x = Math.random() * _canvas.width;
       this.y = Math.random() * _canvas.height;
       this.vx = 0;
@@ -269,10 +310,20 @@ class ScrollMote {
     if (this.opacity < MOTE_DRAW_THRESHOLD) return;
     const c = pal.moteColor;
     const g = pal.moteGlow;
-    const grad = _ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.r * MOTE_GLOW_RADIUS);
+    const grad = _ctx.createRadialGradient(
+      this.x,
+      this.y,
+      0,
+      this.x,
+      this.y,
+      this.r * MOTE_GLOW_RADIUS,
+    );
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${this.opacity})`);
-    grad.addColorStop(MOTE_GRAD_MID, `rgba(${g[0]},${g[1]},${g[2]},${this.opacity * MOTE_GRAD_MID_OPACITY})`);
-    grad.addColorStop(1, 'transparent');
+    grad.addColorStop(
+      MOTE_GRAD_MID,
+      `rgba(${g[0]},${g[1]},${g[2]},${this.opacity * MOTE_GRAD_MID_OPACITY})`,
+    );
+    grad.addColorStop(1, "transparent");
     _ctx.fillStyle = grad;
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.r * MOTE_GLOW_RADIUS, 0, Math.PI * 2);
@@ -286,28 +337,58 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
   _canvas = canvasEl;
   _ctx = ctxEl;
 
-  const clouds = opts.clouds ? Array.from({length: opts.cloudCount}, (_, i) => new Cloud(i, opts.cloudCount)) : [];
-  const streaks = opts.streaks ? Array.from({length: opts.streakCount}, () => new Streak()) : [];
-  const wisps = opts.wisps ? Array.from({length: opts.wispCount}, () => new BreezeWisp()) : [];
-  const motes = opts.motes ? Array.from({length: opts.moteCount}, () => new ScrollMote()) : [];
-  const gusts = opts.gusts ? Array.from({length: opts.gustCount}, () => ({
-    active: false, x: 0, y: 0, len: 0, angle: 0,
-    opacity: 0, life: 0, maxLife: 0, width: 0,
-  })) : [];
+  const clouds = opts.clouds
+    ? Array.from(
+        { length: opts.cloudCount },
+        (_, i) => new Cloud(i, opts.cloudCount),
+      )
+    : [];
+  const streaks = opts.streaks
+    ? Array.from({ length: opts.streakCount }, () => new Streak())
+    : [];
+  const wisps = opts.wisps
+    ? Array.from({ length: opts.wispCount }, () => new BreezeWisp())
+    : [];
+  const motes = opts.motes
+    ? Array.from({ length: opts.moteCount }, () => new ScrollMote())
+    : [];
+  const gusts = opts.gusts
+    ? Array.from({ length: opts.gustCount }, () => ({
+        active: false,
+        x: 0,
+        y: 0,
+        len: 0,
+        angle: 0,
+        opacity: 0,
+        life: 0,
+        maxLife: 0,
+        width: 0,
+      }))
+    : [];
 
   return {
     draw(sp, scrollVelocity, pal, forces, blocky) {
       // Streaks — evolve with scroll
       if (opts.streaks) {
         const streakP = getStreakParams(sp);
-        streaks.forEach(s => { s.update(streakP); s.draw(streakP, pal); });
+        streaks.forEach((s) => {
+          s.update(streakP);
+          s.draw(streakP, pal);
+        });
       }
 
       // Cloud layer — clouds live at a fixed altitude, viewport scrolls past them
       if (opts.clouds) {
-        const cloudYOffset = -(sp - CLOUD_Y_PIVOT) * _canvas.height * CLOUD_Y_SCALE;
-        const cloudVis = scrollFade(sp, CLOUD_FADE_IN_START, CLOUD_FADE_IN_END, CLOUD_FADE_OUT_START, CLOUD_FADE_OUT_END);
-        clouds.forEach(c => {
+        const cloudYOffset =
+          -(sp - CLOUD_Y_PIVOT) * _canvas.height * CLOUD_Y_SCALE;
+        const cloudVis = scrollFade(
+          sp,
+          CLOUD_FADE_IN_START,
+          CLOUD_FADE_IN_END,
+          CLOUD_FADE_OUT_START,
+          CLOUD_FADE_OUT_END,
+        );
+        clouds.forEach((c) => {
           c.update();
           // Click gently pushes nearby clouds sideways
           if (forces.clickImpulse.strength > 0.1) {
@@ -316,7 +397,8 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             const dy = cy - forces.clickImpulse.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < CLOUD_PUSH_RADIUS && dist > 1) {
-              c.x += (dx / dist) * forces.clickImpulse.strength * CLOUD_PUSH_FORCE;
+              c.x +=
+                (dx / dist) * forces.clickImpulse.strength * CLOUD_PUSH_FORCE;
             }
           }
           // Drag gently pulls nearby clouds
@@ -335,19 +417,42 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
 
       // Breeze wisps — horizontal wind, also scroll with atmosphere
       if (opts.wisps) {
-        const wispYOffset = -(sp - WISP_Y_PIVOT) * _canvas.height * WISP_Y_SCALE;
-        const wispVis = scrollFade(sp, WISP_FADE_IN_START, WISP_FADE_IN_END, WISP_FADE_OUT_START, WISP_FADE_OUT_END);
-        wisps.forEach(w => { w.update(); w.draw(wispVis, pal, wispYOffset); });
+        const wispYOffset =
+          -(sp - WISP_Y_PIVOT) * _canvas.height * WISP_Y_SCALE;
+        const wispVis = scrollFade(
+          sp,
+          WISP_FADE_IN_START,
+          WISP_FADE_IN_END,
+          WISP_FADE_OUT_START,
+          WISP_FADE_OUT_END,
+        );
+        wisps.forEach((w) => {
+          w.update();
+          w.draw(wispVis, pal, wispYOffset);
+        });
       }
 
       // Horizon glow — shifts with descent (skipped in blocky mode)
       if (opts.horizon && !blocky) {
         const glowY = _canvas.height * (HORIZON_Y_BASE - sp * HORIZON_Y_SHIFT);
-        const glowIntensity = HORIZON_INTENSITY_BASE + sp * HORIZON_INTENSITY_SCROLL - Math.max(0, sp - HORIZON_Y_BASE) * HORIZON_INTENSITY_FALLOFF;
+        const glowIntensity =
+          HORIZON_INTENSITY_BASE +
+          sp * HORIZON_INTENSITY_SCROLL -
+          Math.max(0, sp - HORIZON_Y_BASE) * HORIZON_INTENSITY_FALLOFF;
         const hc = pal.horizonColor;
-        const hg = _ctx.createRadialGradient(_canvas.width / 2, glowY, 0, _canvas.width / 2, glowY, _canvas.width * (HORIZON_RADIUS_BASE + sp * HORIZON_RADIUS_SCROLL));
-        hg.addColorStop(0, `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity.toFixed(3)})`);
-        hg.addColorStop(1, 'transparent');
+        const hg = _ctx.createRadialGradient(
+          _canvas.width / 2,
+          glowY,
+          0,
+          _canvas.width / 2,
+          glowY,
+          _canvas.width * (HORIZON_RADIUS_BASE + sp * HORIZON_RADIUS_SCROLL),
+        );
+        hg.addColorStop(
+          0,
+          `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity.toFixed(3)})`,
+        );
+        hg.addColorStop(1, "transparent");
         _ctx.fillStyle = hg;
         _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
       }
@@ -356,15 +461,27 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
       if (opts.gusts) {
         const absSv = Math.abs(scrollVelocity);
         if (absSv > GUST_SCROLL_THRESHOLD) {
-          const spawnCount = Math.min(GUST_SPAWN_MAX, Math.floor(absSv / GUST_SPAWN_DIVISOR));
+          const spawnCount = Math.min(
+            GUST_SPAWN_MAX,
+            Math.floor(absSv / GUST_SPAWN_DIVISOR),
+          );
           for (let i = 0; i < spawnCount; i++) {
-            const g = gusts.find(g => !g.active);
+            const g = gusts.find((g) => !g.active);
             if (!g) break;
             const side = Math.random();
-            if (side < 0.35) { g.x = Math.random() * 50; g.y = Math.random() * _canvas.height; }
-            else if (side < 0.7) { g.x = _canvas.width - Math.random() * 50; g.y = Math.random() * _canvas.height; }
-            else if (side < 0.85) { g.x = Math.random() * _canvas.width; g.y = Math.random() * 30; }
-            else { g.x = Math.random() * _canvas.width; g.y = _canvas.height - Math.random() * 30; }
+            if (side < 0.35) {
+              g.x = Math.random() * 50;
+              g.y = Math.random() * _canvas.height;
+            } else if (side < 0.7) {
+              g.x = _canvas.width - Math.random() * 50;
+              g.y = Math.random() * _canvas.height;
+            } else if (side < 0.85) {
+              g.x = Math.random() * _canvas.width;
+              g.y = Math.random() * 30;
+            } else {
+              g.x = Math.random() * _canvas.width;
+              g.y = _canvas.height - Math.random() * 30;
+            }
             const dir = scrollVelocity > 0 ? -Math.PI / 2 : Math.PI / 2;
             g.angle = dir + (Math.random() - 0.5) * 0.7;
             g.len = GUST_LEN_MIN + Math.random() * GUST_LEN_RANGE;
@@ -376,10 +493,13 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           }
         }
         const gc = pal.gustColor;
-        gusts.forEach(g => {
+        gusts.forEach((g) => {
           if (!g.active) return;
           g.life++;
-          if (g.life > g.maxLife) { g.active = false; return; }
+          if (g.life > g.maxLife) {
+            g.active = false;
+            return;
+          }
           const p = g.life / g.maxLife;
           const op = g.opacity * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8);
           const progress = 0.4 + p * 0.6;
@@ -389,8 +509,10 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           _ctx.lineWidth = g.width;
           _ctx.beginPath();
           _ctx.moveTo(g.x, g.y);
-          _ctx.lineTo(g.x + Math.cos(g.angle) * g.len * progress,
-                     g.y + Math.sin(g.angle) * g.len * progress);
+          _ctx.lineTo(
+            g.x + Math.cos(g.angle) * g.len * progress,
+            g.y + Math.sin(g.angle) * g.len * progress,
+          );
           _ctx.stroke();
           _ctx.restore();
         });
@@ -398,20 +520,27 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
 
       // Scroll-reactive particles — blown by scroll, settle with gravity
       if (opts.motes) {
-        const attractRadius = ATTRACT_RADIUS_BASE + forces.holdStrength * ATTRACT_RADIUS_HOLD;
-        const attractForce = ATTRACT_FORCE_BASE + forces.holdStrength * ATTRACT_FORCE_HOLD;
-        motes.forEach(m => {
+        const attractRadius =
+          ATTRACT_RADIUS_BASE + forces.holdStrength * ATTRACT_RADIUS_HOLD;
+        const attractForce =
+          ATTRACT_FORCE_BASE + forces.holdStrength * ATTRACT_FORCE_HOLD;
+        motes.forEach((m) => {
           m.update(scrollVelocity);
           if (forces.clickImpulse.strength > 0.05) {
             const dx = m.x - forces.clickImpulse.x;
             const dy = m.y - forces.clickImpulse.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const repelR = IMPULSE_REPEL_RADIUS + forces.clickImpulse.strength * IMPULSE_REPEL_SCALE;
+            const repelR =
+              IMPULSE_REPEL_RADIUS +
+              forces.clickImpulse.strength * IMPULSE_REPEL_SCALE;
             if (dist < repelR && dist > 1) {
               const f = forces.clickImpulse.strength * (1 - dist / repelR);
               m.vx += (dx / dist) * f;
               m.vy += (dy / dist) * f;
-              m.opacity = Math.min(0.5, m.opacity + f * IMPULSE_MOTE_OPACITY_GAIN);
+              m.opacity = Math.min(
+                0.5,
+                m.opacity + f * IMPULSE_MOTE_OPACITY_GAIN,
+              );
             }
           }
           if (forces.isDragging) {
@@ -422,9 +551,14 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
               const f = attractForce * (1 - dist / attractRadius);
               const nx = dx / dist;
               const ny = dy / dist;
-              m.vx += nx * f + (-ny) * f * forces.holdStrength * ATTRACT_TANGENT_FACTOR;
-              m.vy += ny * f + nx * f * forces.holdStrength * ATTRACT_TANGENT_FACTOR;
-              m.opacity = Math.min(0.5, m.opacity + 0.005 + forces.holdStrength * 0.01);
+              m.vx +=
+                nx * f + -ny * f * forces.holdStrength * ATTRACT_TANGENT_FACTOR;
+              m.vy +=
+                ny * f + nx * f * forces.holdStrength * ATTRACT_TANGENT_FACTOR;
+              m.opacity = Math.min(
+                0.5,
+                m.opacity + 0.005 + forces.holdStrength * 0.01,
+              );
             }
           }
           applyWellForce(forces, m);

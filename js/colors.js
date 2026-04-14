@@ -1,11 +1,16 @@
 export function lerpColor(a, b, t) {
-  return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t, a[3]+(b[3]-a[3])*t];
+  return [
+    a[0] + (b[0] - a[0]) * t,
+    a[1] + (b[1] - a[1]) * t,
+    a[2] + (b[2] - a[2]) * t,
+    a[3] + (b[3] - a[3]) * t,
+  ];
 }
 
 export function multiLerp(stops, p) {
   const n = stops.length - 1;
   const i = Math.min(Math.floor(p * n), n - 1);
-  return lerpColor(stops[i], stops[i + 1], (p * n) - i);
+  return lerpColor(stops[i], stops[i + 1], p * n - i);
 }
 
 export function toRgba(c) {
@@ -15,17 +20,33 @@ export function toRgba(c) {
 export const palettes = {
   dark: {
     // Sky
-    skyTop: [[8,16,36,1], [10,22,48,1], [14,36,72,1], [18,50,90,1], [12,30,60,1]],
-    skyBot: [[6,14,30,1], [10,25,50,1], [20,50,100,1], [16,40,80,1], [10,22,40,1]],
+    skyTop: [
+      [8, 16, 36, 1],
+      [10, 22, 48, 1],
+      [14, 36, 72, 1],
+      [18, 50, 90, 1],
+      [12, 30, 60, 1],
+    ],
+    skyBot: [
+      [6, 14, 30, 1],
+      [10, 25, 50, 1],
+      [20, 50, 100, 1],
+      [16, 40, 80, 1],
+      [10, 22, 40, 1],
+    ],
     // Atmosphere
-    cloudWhite: [220,235,255],
-    cloudMid: [180,210,245],
-    wispColor: [180,215,245],
-    horizonColor: [20,60,120],
+    cloudWhite: [220, 235, 255],
+    cloudMid: [180, 210, 245],
+    wispColor: [180, 215, 245],
+    horizonColor: [20, 60, 120],
     // Effects
     starColor: [180, 210, 255],
     streakColor: [120, 190, 240],
-    shootingColors: [[180, 210, 255], [200, 225, 255], [230, 240, 255]],
+    shootingColors: [
+      [180, 210, 255],
+      [200, 225, 255],
+      [230, 240, 255],
+    ],
     gustColor: [180, 220, 255],
     moteColor: [200, 230, 255],
     moteGlow: [130, 195, 255],
@@ -38,21 +59,41 @@ export const palettes = {
     lightningFlash: [200, 220, 255],
     auroraHueBase: 120,
     auroraHueRange: 80,
-    meteorColors: [[180, 210, 255], [200, 225, 255], [230, 240, 255]],
+    meteorColors: [
+      [180, 210, 255],
+      [200, 225, 255],
+      [230, 240, 255],
+    ],
   },
   light: {
     // Sky
-    skyTop: [[8,16,36,1], [30,60,110,1], [90,160,220,1], [135,195,240,1], [160,210,245,1]],
-    skyBot: [[6,14,30,1], [50,90,150,1], [120,190,235,1], [170,215,245,1], [200,225,248,1]],
+    skyTop: [
+      [8, 16, 36, 1],
+      [30, 60, 110, 1],
+      [90, 160, 220, 1],
+      [135, 195, 240, 1],
+      [160, 210, 245, 1],
+    ],
+    skyBot: [
+      [6, 14, 30, 1],
+      [50, 90, 150, 1],
+      [120, 190, 235, 1],
+      [170, 215, 245, 1],
+      [200, 225, 248, 1],
+    ],
     // Atmosphere
-    cloudWhite: [255,255,255],
-    cloudMid: [230,240,255],
-    wispColor: [220,235,250],
-    horizonColor: [80,150,210],
+    cloudWhite: [255, 255, 255],
+    cloudMid: [230, 240, 255],
+    wispColor: [220, 235, 250],
+    horizonColor: [80, 150, 210],
     // Effects
     starColor: [180, 210, 255],
     streakColor: [120, 190, 240],
-    shootingColors: [[180, 210, 255], [200, 225, 255], [230, 240, 255]],
+    shootingColors: [
+      [180, 210, 255],
+      [200, 225, 255],
+      [230, 240, 255],
+    ],
     gustColor: [80, 150, 220],
     moteColor: [80, 150, 220],
     moteGlow: [55, 120, 200],
@@ -65,15 +106,19 @@ export const palettes = {
     lightningFlash: [200, 220, 255],
     auroraHueBase: 120,
     auroraHueRange: 80,
-    meteorColors: [[180, 210, 255], [200, 225, 255], [230, 240, 255]],
-  }
+    meteorColors: [
+      [180, 210, 255],
+      [200, 225, 255],
+      [230, 240, 255],
+    ],
+  },
 };
 
 // Sub-mode overrides — only specify colors that differ from the base palette.
 // The CSS filter on #bg-canvas handles the global tone shift; these overrides
 // are for effects that need precise color control despite the filter.
 const overrides = {
-  'upside-down': {
+  "upside-down": {
     dark: {
       clickColor: [255, 130, 130],
       orbitColor: [255, 150, 150],
@@ -82,7 +127,11 @@ const overrides = {
       lightningFlash: [255, 100, 50],
       auroraHueBase: 0,
       auroraHueRange: 30,
-      meteorColors: [[255, 150, 100], [255, 180, 130], [255, 200, 160]],
+      meteorColors: [
+        [255, 150, 100],
+        [255, 180, 130],
+        [255, 200, 160],
+      ],
     },
     light: {
       clickColor: [200, 60, 60],
@@ -92,10 +141,14 @@ const overrides = {
       lightningFlash: [255, 100, 50],
       auroraHueBase: 0,
       auroraHueRange: 30,
-      meteorColors: [[255, 150, 100], [255, 180, 130], [255, 200, 160]],
+      meteorColors: [
+        [255, 150, 100],
+        [255, 180, 130],
+        [255, 200, 160],
+      ],
     },
   },
-  'frozen': {
+  frozen: {
     dark: {
       clickColor: [0, 220, 255],
       orbitColor: [50, 230, 255],
@@ -105,7 +158,11 @@ const overrides = {
       lightningFlash: [200, 245, 255],
       auroraHueBase: 180,
       auroraHueRange: 40,
-      meteorColors: [[180, 230, 255], [210, 240, 255], [240, 250, 255]],
+      meteorColors: [
+        [180, 230, 255],
+        [210, 240, 255],
+        [240, 250, 255],
+      ],
     },
     light: {
       clickColor: [0, 160, 220],
@@ -116,10 +173,14 @@ const overrides = {
       lightningFlash: [200, 245, 255],
       auroraHueBase: 180,
       auroraHueRange: 40,
-      meteorColors: [[180, 230, 255], [210, 240, 255], [240, 250, 255]],
+      meteorColors: [
+        [180, 230, 255],
+        [210, 240, 255],
+        [240, 250, 255],
+      ],
     },
   },
-  'deep-sea': {
+  "deep-sea": {
     dark: {
       clickColor: [0, 255, 180],
       orbitColor: [0, 230, 200],
@@ -129,7 +190,11 @@ const overrides = {
       lightningFlash: [80, 180, 255],
       auroraHueBase: 160,
       auroraHueRange: 60,
-      meteorColors: [[100, 200, 220], [150, 220, 230], [200, 240, 245]],
+      meteorColors: [
+        [100, 200, 220],
+        [150, 220, 230],
+        [200, 240, 245],
+      ],
       streakColor: [0, 180, 200],
       moteColor: [0, 255, 180],
       moteGlow: [0, 200, 150],
@@ -143,13 +208,17 @@ const overrides = {
       lightningFlash: [80, 180, 255],
       auroraHueBase: 160,
       auroraHueRange: 60,
-      meteorColors: [[100, 200, 220], [150, 220, 230], [200, 240, 245]],
+      meteorColors: [
+        [100, 200, 220],
+        [150, 220, 230],
+        [200, 240, 245],
+      ],
       streakColor: [0, 180, 200],
       moteColor: [0, 200, 150],
       moteGlow: [0, 170, 130],
     },
   },
-  'blocky': {
+  blocky: {
     dark: {
       clickColor: [100, 255, 100],
       orbitColor: [150, 255, 150],
@@ -159,8 +228,16 @@ const overrides = {
       lightningFlash: [255, 255, 150],
       auroraHueBase: 90,
       auroraHueRange: 60,
-      meteorColors: [[255, 220, 100], [255, 235, 150], [255, 245, 200]],
-      shootingColors: [[255, 220, 100], [255, 235, 150], [255, 245, 200]],
+      meteorColors: [
+        [255, 220, 100],
+        [255, 235, 150],
+        [255, 245, 200],
+      ],
+      shootingColors: [
+        [255, 220, 100],
+        [255, 235, 150],
+        [255, 245, 200],
+      ],
       streakColor: [40, 60, 140],
       moteColor: [220, 255, 100],
       moteGlow: [180, 220, 80],
@@ -177,8 +254,16 @@ const overrides = {
       lightningFlash: [255, 255, 150],
       auroraHueBase: 90,
       auroraHueRange: 60,
-      meteorColors: [[255, 200, 60], [255, 220, 100], [255, 235, 150]],
-      shootingColors: [[255, 200, 60], [255, 220, 100], [255, 235, 150]],
+      meteorColors: [
+        [255, 200, 60],
+        [255, 220, 100],
+        [255, 235, 150],
+      ],
+      shootingColors: [
+        [255, 200, 60],
+        [255, 220, 100],
+        [255, 235, 150],
+      ],
       streakColor: [80, 120, 220],
       moteColor: [160, 220, 60],
       moteGlow: [120, 180, 40],
