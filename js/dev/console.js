@@ -1255,7 +1255,8 @@ function setupDocking(panel) {
     // After undocking, suppress magnet for the undocked edge until the panel
     // has moved beyond the magnet zone from that edge.
     if (magnetSuppressedSide) {
-      const suppressedDist = magnetSuppressedSide === "left" ? leftDist : rightDist;
+      const suppressedDist =
+        magnetSuppressedSide === "left" ? leftDist : rightDist;
       if (suppressedDist >= DOCK_MAGNET_ZONE) magnetSuppressedSide = null;
     }
     const nearSide = nearLeft ? "left" : "right";
