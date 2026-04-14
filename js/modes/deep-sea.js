@@ -1,4 +1,4 @@
-import { bindPointer } from "./pointer.js";
+import { bindPointer } from "../pointer.js";
 
 export function initDeepSea() {
   // ── Trigger tuning ──
