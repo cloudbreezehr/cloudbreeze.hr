@@ -66,8 +66,6 @@ const GROUP_ORDER = [
   { label: "Atmosphere", prefix: "atmosphere." },
   { label: "Fury", prefix: "fury." },
   { label: "Interactions", prefix: "interactions." },
-  { label: "Particles", prefix: "particles." },
-  { label: "Modes", prefix: "modes." },
 ];
 
 // ── Mode metadata ──
@@ -640,12 +638,14 @@ function buildPanel() {
   // Build grouped structure
   const rowMap = new Map(); // category.key -> { slider, input, label, entry }
 
+  // Prefix-based groups — skip mode-tagged sections (they go in the Modes group)
   for (const group of GROUP_ORDER) {
     const matchingSections = [];
     for (const [category] of registry) {
-      if (category.startsWith(group.prefix)) {
-        matchingSections.push(category);
-      }
+      if (!category.startsWith(group.prefix)) continue;
+      const meta = getSectionMeta(category);
+      if (meta && meta.mode) continue;
+      matchingSections.push(category);
     }
     if (matchingSections.length === 0) continue;
 
@@ -661,23 +661,36 @@ function buildPanel() {
 
     const groupBody = document.createElement("div");
     groupBody.className = "dc-group-body";
-
-    // Separate sections by mode tag
-    const noMode = [];
-    const byMode = new Map();
     for (const cat of matchingSections) {
-      const meta = getSectionMeta(cat);
-      if (meta && meta.mode) {
-        if (!byMode.has(meta.mode)) byMode.set(meta.mode, []);
-        byMode.get(meta.mode).push(cat);
-      } else {
-        noMode.push(cat);
-      }
-    }
-
-    for (const cat of noMode) {
       groupBody.appendChild(buildSectionEl(cat, registry, rowMap));
     }
+
+    groupEl.appendChild(groupBody);
+    body.appendChild(groupEl);
+  }
+
+  // Modes group — all mode-tagged sections, organized by mode sub-headers
+  const byMode = new Map();
+  for (const [category] of registry) {
+    const meta = getSectionMeta(category);
+    if (!meta || !meta.mode) continue;
+    if (!byMode.has(meta.mode)) byMode.set(meta.mode, []);
+    byMode.get(meta.mode).push(category);
+  }
+
+  if (byMode.size > 0) {
+    const modesGroupEl = document.createElement("div");
+    modesGroupEl.className = "dc-group";
+    const modesGroupHeader = document.createElement("div");
+    modesGroupHeader.className = "dc-group-header";
+    modesGroupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>Modes`;
+    modesGroupHeader.addEventListener("click", () => {
+      modesGroupEl.classList.toggle("collapsed");
+    });
+    modesGroupEl.appendChild(modesGroupHeader);
+
+    const modesGroupBody = document.createElement("div");
+    modesGroupBody.className = "dc-group-body";
 
     for (const mode of MODE_ORDER) {
       if (!byMode.has(mode)) continue;
@@ -686,14 +699,14 @@ function buildPanel() {
       subHeader.dataset.mode = mode;
       subHeader.style.setProperty("--mode-color", MODE_COLORS[mode]);
       subHeader.textContent = MODE_LABELS[mode];
-      groupBody.appendChild(subHeader);
+      modesGroupBody.appendChild(subHeader);
       for (const cat of byMode.get(mode)) {
-        groupBody.appendChild(buildSectionEl(cat, registry, rowMap));
+        modesGroupBody.appendChild(buildSectionEl(cat, registry, rowMap));
       }
     }
 
-    groupEl.appendChild(groupBody);
-    body.appendChild(groupEl);
+    modesGroupEl.appendChild(modesGroupBody);
+    body.appendChild(modesGroupEl);
   }
 
   panel.appendChild(body);
