@@ -17,7 +17,17 @@ import {
 const PANEL_WIDTH = 340;
 const PANEL_MIN_HEIGHT = 200;
 const COLLAPSED_SIZE = 36;
-const DOCK_SNAP_THRESHOLD = 40;
+// ── Dock Magnet ──
+const DOCK_MAGNET_ZONE = 120;
+const DOCK_MAGNET_POWER = 2;
+const DOCK_COMMIT_DISTANCE = 20;
+const DOCK_UNDOCK_DRAG = 40;
+const DOCK_ANIM_MS = 260;
+const DOCK_ANIM_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
+const DOCK_GLOW_COLOR = "100, 180, 255";
+const DOCK_GLOW_OPACITY = 0.6;
+const DOCK_GLOW_SPREAD = 12;
+const DOCK_GLOW_WIDTH = 3;
 const SECTION_LABEL_MAP = {
   "sky.stars": "Stars",
   "sky.shooting": "Shooting Stars",
@@ -104,14 +114,18 @@ const STYLES = /* css */ `
   cursor: auto;
 }
 .dev-console.docked-right {
-  top: 0; right: 0; bottom: 0;
+  right: 0;
   width: ${PANEL_WIDTH}px;
+  max-height: 80vh;
+  overflow: hidden;
   border-radius: 0;
   border-right: none;
 }
 .dev-console.docked-left {
-  top: 0; left: 0; bottom: 0;
+  left: 0;
   width: ${PANEL_WIDTH}px;
+  max-height: 80vh;
+  overflow: hidden;
   border-radius: 0;
   border-left: none;
 }
@@ -123,6 +137,43 @@ const STYLES = /* css */ `
   overflow: hidden;
   min-width: 280px;
   min-height: ${PANEL_MIN_HEIGHT}px;
+}
+.dev-console.floating[data-dock-target]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: ${DOCK_GLOW_WIDTH}px;
+  pointer-events: none;
+  z-index: 1;
+  background: rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY});
+  box-shadow: 0 0 ${DOCK_GLOW_SPREAD}px ${Math.round(DOCK_GLOW_SPREAD / 3)}px rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY * 0.5});
+  opacity: var(--dock-pull, 0);
+  transition: opacity 0.05s;
+}
+.dev-console.floating[data-dock-target="left"]::before {
+  left: 0; right: auto;
+}
+.dev-console.floating[data-dock-target="right"]::before {
+  right: 0; left: auto;
+}
+.dc-wall-glow {
+  position: fixed;
+  width: ${PANEL_WIDTH}px;
+  z-index: 9999;
+  pointer-events: none;
+  border: 1px solid rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY});
+  background: rgba(${DOCK_GLOW_COLOR}, 0.06);
+  box-shadow: inset 0 0 ${DOCK_GLOW_SPREAD}px rgba(${DOCK_GLOW_COLOR}, 0.1),
+              0 0 ${DOCK_GLOW_SPREAD}px rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY * 0.3});
+  opacity: 0;
+  transition: opacity 0.08s;
+}
+.dc-wall-glow[data-side="left"] {
+  left: 0; border-left: none;
+}
+.dc-wall-glow[data-side="right"] {
+  right: 0; border-right: none;
 }
 .dev-console.collapsed {
   overflow: hidden;
@@ -932,7 +983,9 @@ function setupDocking(panel) {
   let dragOffY = 0;
   let dockState = "docked-right"; // docked-right | docked-left | floating
   let floatX = 100;
-  let floatY = 100;
+  let floatY = 0;
+  let dockAnimating = false;
+  let dragStartX = 0;
 
   const header = panel.querySelector(".dc-header");
   const btnDock = panel.querySelector(".dc-btn-dock");
@@ -947,23 +1000,95 @@ function setupDocking(panel) {
       panel.style.right = "";
       panel.style.bottom = "";
     } else {
+      panel.style.top = `${floatY}px`;
       panel.style.left = "";
-      panel.style.top = "";
       panel.style.right = "";
       panel.style.bottom = "";
     }
   }
 
+  // Wall glow: fixed bar on the target viewport edge
+  const wallGlow = document.createElement("div");
+  wallGlow.className = "dc-wall-glow";
+  document.body.appendChild(wallGlow);
+
+  function clearMagnet() {
+    panel.style.setProperty("--dock-pull", 0);
+    delete panel.dataset.dockTarget;
+    wallGlow.style.opacity = "0";
+    wallGlow.dataset.side = "";
+  }
+
+  function updateWallGlow(side, progress, top, height) {
+    wallGlow.dataset.side = side;
+    wallGlow.style.opacity = String(progress);
+    wallGlow.style.top = `${top}px`;
+    wallGlow.style.height = `${height}px`;
+  }
+
+  function animateToState(newState, opts = {}) {
+    const fromRect = panel.getBoundingClientRect();
+    const wasFloating = dockState === "floating";
+
+    dockState = newState;
+    if (newState === "floating") {
+      floatX = opts.floatX ?? floatX;
+      floatY = opts.floatY ?? floatY;
+    } else {
+      floatY = fromRect.top;
+    }
+    applyDock();
+    clearMagnet();
+
+    if (opts.skipAnimation) return;
+
+    const toRect = panel.getBoundingClientRect();
+    const dx = fromRect.left - toRect.left;
+    const dy = fromRect.top - toRect.top;
+    const sx = fromRect.width / toRect.width;
+    const sy = fromRect.height / toRect.height;
+
+    const noMovement =
+      Math.abs(dx) < 1 &&
+      Math.abs(dy) < 1 &&
+      Math.abs(sx - 1) < 0.01 &&
+      Math.abs(sy - 1) < 0.01;
+    if (noMovement) return;
+
+    const fromRadius = wasFloating ? "8px" : "0px";
+    const toRadius = newState === "floating" ? "8px" : "0px";
+
+    dockAnimating = true;
+    panel.style.transformOrigin = "top left";
+    const anim = panel.animate(
+      [
+        {
+          transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`,
+          borderRadius: fromRadius,
+        },
+        {
+          transform: "none",
+          borderRadius: toRadius,
+        },
+      ],
+      { duration: DOCK_ANIM_MS, easing: DOCK_ANIM_EASING },
+    );
+    const cleanup = () => {
+      panel.style.transformOrigin = "";
+      dockAnimating = false;
+    };
+    anim.onfinish = cleanup;
+    anim.oncancel = cleanup;
+  }
+
   // Cycle dock: right -> left -> float -> right
   btnDock.addEventListener("click", (e) => {
     e.stopPropagation();
-    if (dockState === "docked-right") dockState = "docked-left";
-    else if (dockState === "docked-left") {
-      dockState = "floating";
-      floatX = 60;
-      floatY = 60;
-    } else dockState = "docked-right";
-    applyDock();
+    if (dockAnimating) return;
+    if (dockState === "docked-right") animateToState("docked-left");
+    else if (dockState === "docked-left")
+      animateToState("floating", { floatX: 60, floatY: 60 });
+    else animateToState("docked-right");
   });
 
   btnCollapse.addEventListener("click", (e) => {
@@ -985,63 +1110,92 @@ function setupDocking(panel) {
     }
   });
 
-  // Drag to float
+  // Drag to reposition / dock / undock
   header.addEventListener("pointerdown", (e) => {
-    if (e.target.closest("button")) return;
+    if (e.target.closest("button") || dockAnimating) return;
     isDragging = true;
     const rect = panel.getBoundingClientRect();
     dragOffX = e.clientX - rect.left;
     dragOffY = e.clientY - rect.top;
+    dragStartX = e.clientX;
     header.setPointerCapture(e.pointerId);
     e.preventDefault();
   });
+
   header.addEventListener("pointermove", (e) => {
-    if (!isDragging) return;
+    if (!isDragging || dockAnimating) return;
     const nx = e.clientX - dragOffX;
     const ny = e.clientY - dragOffY;
 
-    // Snap check
-    if (nx < DOCK_SNAP_THRESHOLD && dockState !== "docked-left") {
-      dockState = "docked-left";
-      applyDock();
-      return;
-    }
-    if (
-      nx + panel.offsetWidth > window.innerWidth - DOCK_SNAP_THRESHOLD &&
-      dockState !== "docked-right"
-    ) {
-      dockState = "docked-right";
-      applyDock();
-      return;
-    }
-
-    // Stay docked until cursor moves clearly past the panel edge
+    // ── Undock: relative drag distance from grab point ──
     if (
       dockState === "docked-left" &&
-      e.clientX < PANEL_WIDTH + DOCK_SNAP_THRESHOLD
-    )
+      e.clientX - dragStartX > DOCK_UNDOCK_DRAG
+    ) {
+      animateToState("floating", {
+        floatX: Math.max(0, nx),
+        floatY: Math.max(0, ny),
+        skipAnimation: true,
+      });
       return;
+    }
     if (
       dockState === "docked-right" &&
-      e.clientX > window.innerWidth - PANEL_WIDTH - DOCK_SNAP_THRESHOLD
-    )
+      dragStartX - e.clientX > DOCK_UNDOCK_DRAG
+    ) {
+      animateToState("floating", {
+        floatX: Math.max(0, nx),
+        floatY: Math.max(0, ny),
+        skipAnimation: true,
+      });
       return;
-
-    // Float mode
-    if (dockState !== "floating") {
-      dockState = "floating";
-      panel.classList.remove("docked-right", "docked-left");
-      panel.classList.add("floating");
     }
-    floatX = Math.max(0, Math.min(nx, window.innerWidth - 100));
+    if (dockState !== "floating") return;
+
+    // ── Magnet zone: pull + glow as panel approaches an edge ──
+    const leftDist = nx;
+    const rightDist = window.innerWidth - (nx + panel.offsetWidth);
+    const nearLeft = leftDist < rightDist;
+    const edgeDist = nearLeft ? leftDist : rightDist;
+    let magnetNx = nx;
+
+    if (edgeDist < DOCK_MAGNET_ZONE && edgeDist >= 0) {
+      const progress = Math.pow(
+        1 - edgeDist / DOCK_MAGNET_ZONE,
+        DOCK_MAGNET_POWER,
+      );
+
+      // Visual feedback: edge glow on panel and ghost preview on wall
+      const side = nearLeft ? "left" : "right";
+      panel.style.setProperty("--dock-pull", progress);
+      panel.dataset.dockTarget = side;
+      const panelRect = panel.getBoundingClientRect();
+      updateWallGlow(side, progress, panelRect.top, panelRect.height);
+
+      // Position bias: accelerate toward the edge
+      const bias = progress * edgeDist;
+      magnetNx = nearLeft ? nx - bias : nx + bias;
+
+      // Commit to dock when close enough
+      if (edgeDist < DOCK_COMMIT_DISTANCE) {
+        animateToState(nearLeft ? "docked-left" : "docked-right");
+        return;
+      }
+    } else {
+      clearMagnet();
+    }
+
+    floatX = Math.max(0, Math.min(magnetNx, window.innerWidth - 100));
     floatY = Math.max(0, Math.min(ny, window.innerHeight - 50));
     panel.style.left = `${floatX}px`;
     panel.style.top = `${floatY}px`;
     panel.style.right = "";
     panel.style.bottom = "";
   });
+
   header.addEventListener("pointerup", () => {
     isDragging = false;
+    clearMagnet();
   });
 
   applyDock();
