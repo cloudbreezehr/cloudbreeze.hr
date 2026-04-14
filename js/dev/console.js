@@ -30,6 +30,12 @@ const DOCK_GLOW_COLOR = "100, 180, 255";
 const DOCK_GLOW_OPACITY = 0.6;
 const DOCK_GLOW_SPREAD = 12;
 const DOCK_GLOW_WIDTH = 3;
+const WALL_GLOW_THICKNESS = 4;
+const WALL_GLOW_SPREAD = 18;
+// ── Dock Snap Effect ──
+const SNAP_FLASH_DURATION_MS = 350;
+const SNAP_FLASH_SPREAD = 24;
+const SNAP_FLASH_OPACITY = 0.9;
 const SECTION_LABEL_MAP = {
   "sky.stars": "Stars",
   "sky.shooting": "Shooting Stars",
@@ -161,21 +167,19 @@ const STYLES = /* css */ `
 }
 .dc-wall-glow {
   position: fixed;
-  width: ${PANEL_WIDTH}px;
+  width: ${WALL_GLOW_THICKNESS}px;
   z-index: 9999;
   pointer-events: none;
-  border: 1px solid rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY});
-  background: rgba(${DOCK_GLOW_COLOR}, 0.06);
-  box-shadow: inset 0 0 ${DOCK_GLOW_SPREAD}px rgba(${DOCK_GLOW_COLOR}, 0.1),
-              0 0 ${DOCK_GLOW_SPREAD}px rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY * 0.3});
+  background: rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY});
+  box-shadow: 0 0 ${WALL_GLOW_SPREAD}px ${Math.round(WALL_GLOW_SPREAD / 2)}px rgba(${DOCK_GLOW_COLOR}, 0.35);
   opacity: 0;
   transition: opacity 0.08s;
 }
 .dc-wall-glow[data-side="left"] {
-  left: 0; border-left: none;
+  left: 0;
 }
 .dc-wall-glow[data-side="right"] {
-  right: 0; border-right: none;
+  right: 0;
 }
 .dev-console.collapsed {
   overflow: hidden;
@@ -1028,6 +1032,22 @@ function setupDocking(panel) {
     wallGlow.style.height = `${height}px`;
   }
 
+  function flashSnapEdge(side, top, height) {
+    const flash = document.createElement("div");
+    flash.style.cssText =
+      `position:fixed;top:${top}px;height:${height}px;` +
+      `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
+      `${side}:0;` +
+      `background:rgba(${DOCK_GLOW_COLOR},${SNAP_FLASH_OPACITY});` +
+      `box-shadow:0 0 ${SNAP_FLASH_SPREAD}px ${SNAP_FLASH_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.5);`;
+    document.body.appendChild(flash);
+    const anim = flash.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: SNAP_FLASH_DURATION_MS,
+      easing: "ease-out",
+    });
+    anim.onfinish = () => flash.remove();
+  }
+
   function animateToState(newState, opts = {}) {
     const fromRect = panel.getBoundingClientRect();
     const wasFloating = dockState === "floating";
@@ -1186,6 +1206,8 @@ function setupDocking(panel) {
 
       // Commit to dock when close enough
       if (edgeDist < DOCK_COMMIT_DISTANCE) {
+        const panelR = panel.getBoundingClientRect();
+        flashSnapEdge(side, panelR.top, panelR.height);
         animateToState(nearLeft ? "docked-left" : "docked-right");
         return;
       }
