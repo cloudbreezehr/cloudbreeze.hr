@@ -294,6 +294,7 @@ function renderSections(container) {
     const section = document.createElement("div");
     section.className = "achievement-set";
 
+    if (set.color) section.style.setProperty("--set-color", set.color);
     const isDimmed = isModeSet(set.id) && currentMode !== set.id;
     if (isDimmed) section.classList.add("dimmed");
 

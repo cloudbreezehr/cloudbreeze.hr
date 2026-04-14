@@ -2671,6 +2671,7 @@ nav.nav-light .achievement-btn::after {
   padding: 0.5rem;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.02);
+  position: relative;
   transition:
     opacity 0.3s,
     background 0.3s;
@@ -2683,6 +2684,69 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
   background: rgba(255, 255, 255, 0.04);
 }
+.achievement-card.unlocked:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+/* Glow pseudo-element — opacity animation is GPU-composited */
+.achievement-card.unlocked::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 0 20px -2px var(--set-color, #7dbfe8),
+    0 0 4px 0 var(--set-color, #7dbfe8);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  will-change: opacity;
+}
+.achievement-card.unlocked:hover::before {
+  animation: card-glow 2s ease-in-out infinite;
+}
+@keyframes card-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Shimmer sweep on hover */
+.achievement-card.unlocked::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 400% 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.achievement-card.unlocked:hover::after {
+  opacity: 1;
+  animation: card-shimmer 6s linear infinite;
+}
+@keyframes card-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
 .achievement-card.shine {
   animation: achievement-shine 0.8s ease-out;
 }
@@ -2954,6 +3018,20 @@ body.light-mode .achievement-card {
 }
 body.light-mode .achievement-card.unlocked {
   background: rgba(0, 0, 0, 0.04);
+}
+body.light-mode .achievement-card.unlocked:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+body.light-mode .achievement-card.unlocked::after {
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(0, 0, 0, 0.03) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 400% 100%;
 }
 body.light-mode .achievement-card-title {
   color: var(--ink);
