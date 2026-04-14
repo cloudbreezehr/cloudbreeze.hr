@@ -503,6 +503,143 @@ const TRAIL = defineConstants("interactions.trail", {
   },
 });
 
+// ── Edge Burst (dock snap / undock release) ──
+const EDGE = defineConstants("interactions.edge", {
+  SNAP_COUNT: {
+    value: 30,
+    min: 5,
+    max: 60,
+    step: 1,
+    description: "Particles per dock snap burst",
+  },
+  SNAP_SPEED_MIN: {
+    value: 3,
+    min: 0.5,
+    max: 12,
+    step: 0.5,
+    description: "Minimum snap particle speed",
+  },
+  SNAP_SPEED_RANGE: {
+    value: 5,
+    min: 0,
+    max: 12,
+    step: 0.5,
+    description: "Snap speed variation",
+  },
+  SNAP_CONE: {
+    value: 0.8,
+    min: 0.2,
+    max: 1.5,
+    step: 0.05,
+    description: "Snap cone half-angle (radians)",
+  },
+  SNAP_LIFE_MIN: {
+    value: 35,
+    min: 10,
+    max: 100,
+    step: 1,
+    description: "Minimum snap particle lifetime (frames)",
+  },
+  SNAP_LIFE_RANGE: {
+    value: 30,
+    min: 0,
+    max: 80,
+    step: 1,
+    description: "Snap lifetime variation",
+  },
+  SNAP_RADIUS_MIN: {
+    value: 1.5,
+    min: 0.5,
+    max: 5,
+    step: 0.1,
+    description: "Minimum snap particle radius",
+  },
+  SNAP_RADIUS_RANGE: {
+    value: 2.5,
+    min: 0,
+    max: 5,
+    step: 0.1,
+    description: "Snap radius variation",
+  },
+  RELEASE_COUNT: {
+    value: 18,
+    min: 3,
+    max: 40,
+    step: 1,
+    description: "Particles per undock release burst",
+  },
+  RELEASE_SPEED_MIN: {
+    value: 1.5,
+    min: 0.5,
+    max: 8,
+    step: 0.5,
+    description: "Minimum release particle speed",
+  },
+  RELEASE_SPEED_RANGE: {
+    value: 3,
+    min: 0,
+    max: 8,
+    step: 0.5,
+    description: "Release speed variation",
+  },
+  RELEASE_CONE: {
+    value: 1.2,
+    min: 0.3,
+    max: 2,
+    step: 0.05,
+    description: "Release cone half-angle (radians)",
+  },
+  RELEASE_LIFE_MIN: {
+    value: 45,
+    min: 10,
+    max: 120,
+    step: 1,
+    description: "Minimum release particle lifetime (frames)",
+  },
+  RELEASE_LIFE_RANGE: {
+    value: 40,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Release lifetime variation",
+  },
+  IMPULSE_SNAP: {
+    value: 10,
+    min: 2,
+    max: 25,
+    step: 0.5,
+    description: "Click impulse strength for dock snap",
+  },
+  IMPULSE_RELEASE: {
+    value: 6,
+    min: 1,
+    max: 20,
+    step: 0.5,
+    description: "Click impulse strength for undock release",
+  },
+  IMPULSE_RADIUS: {
+    value: 300,
+    min: 50,
+    max: 600,
+    step: 10,
+    description: "Radius of dock impulse effect on existing particles",
+  },
+  STAGGER_POINTS: {
+    value: 5,
+    min: 1,
+    max: 10,
+    step: 1,
+    description: "Number of impulse points along edge",
+  },
+  STAGGER_DELAY_MS: {
+    value: 30,
+    min: 5,
+    max: 100,
+    step: 5,
+    description: "Delay between staggered impulse points (ms)",
+  },
+});
+
 // ── Impulse ──
 const IMPULSE = defineConstants("interactions.impulse", {
   DECAY: {
@@ -770,6 +907,59 @@ export function createInteractions() {
           phase: Math.random() * Math.PI * 2,
           color: pal.clickColor,
         });
+      }
+    },
+
+    // Spawn directional burst particles along a vertical edge (dock snap / undock release).
+    // `centerAngle` points inward from the edge; particles scatter within a cone.
+    edgeBurst(edgeX, top, height, type, pal) {
+      const isSnap = type === "snap";
+      const count = isSnap ? EDGE.SNAP_COUNT : EDGE.RELEASE_COUNT;
+      const speedMin = isSnap ? EDGE.SNAP_SPEED_MIN : EDGE.RELEASE_SPEED_MIN;
+      const speedRange = isSnap
+        ? EDGE.SNAP_SPEED_RANGE
+        : EDGE.RELEASE_SPEED_RANGE;
+      const cone = isSnap ? EDGE.SNAP_CONE : EDGE.RELEASE_CONE;
+      const lifeMin = isSnap ? EDGE.SNAP_LIFE_MIN : EDGE.RELEASE_LIFE_MIN;
+      const lifeRange = isSnap ? EDGE.SNAP_LIFE_RANGE : EDGE.RELEASE_LIFE_RANGE;
+      const rMin = isSnap ? EDGE.SNAP_RADIUS_MIN : CLICK.RADIUS_MIN;
+      const rRange = isSnap ? EDGE.SNAP_RADIUS_RANGE : CLICK.RADIUS_RANGE;
+      // Inward direction: left edge → right (0), right edge → left (π)
+      const inwardAngle = edgeX < window.innerWidth / 2 ? 0 : Math.PI;
+
+      for (let i = 0; i < count; i++) {
+        const t = Math.random();
+        const y = top + t * height;
+        const angle = inwardAngle + (Math.random() - 0.5) * cone * 2;
+        const speed = speedMin + Math.random() * speedRange;
+        clickParticles.push({
+          x: edgeX,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: rMin + Math.random() * rRange,
+          opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
+          life: 0,
+          maxLife: lifeMin + Math.random() * lifeRange,
+          phase: Math.random() * Math.PI * 2,
+          color: pal.clickColor,
+        });
+      }
+    },
+
+    // Fire staggered impulses along an edge to push existing particles away.
+    edgeImpulse(forces, edgeX, top, height, type) {
+      const strength =
+        type === "snap" ? EDGE.IMPULSE_SNAP : EDGE.IMPULSE_RELEASE;
+      const points = EDGE.STAGGER_POINTS;
+      for (let i = 0; i < points; i++) {
+        const y = top + ((i + 0.5) / points) * height;
+        const delay = i * EDGE.STAGGER_DELAY_MS;
+        setTimeout(() => {
+          forces.clickImpulse.x = edgeX;
+          forces.clickImpulse.y = y;
+          forces.clickImpulse.strength = strength;
+        }, delay);
       }
     },
 

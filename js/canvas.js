@@ -391,5 +391,19 @@ export function initCanvas(canvasEl, theme, options) {
     },
   });
 
+  // Dock snap / undock release — dev console notifies via custom events
+  function handleDockEvent(e, type) {
+    const { side, top, height } = e.detail;
+    const edgeX = side === "left" ? 0 : canvas.width;
+    const y1 = canvasY(top);
+    const y2 = canvasY(top + height);
+    const burstTop = Math.min(y1, y2);
+    const burstHeight = Math.abs(y2 - y1);
+    interactions.edgeBurst(edgeX, burstTop, burstHeight, type, currentPal);
+    interactions.edgeImpulse(forces, edgeX, burstTop, burstHeight, type);
+  }
+  window.addEventListener("dock-snap", (e) => handleDockEvent(e, "snap"));
+  window.addEventListener("dock-release", (e) => handleDockEvent(e, "release"));
+
   render();
 }

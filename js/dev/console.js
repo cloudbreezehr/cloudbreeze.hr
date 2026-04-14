@@ -1052,6 +1052,9 @@ function setupDocking(panel) {
       easing: "ease-out",
     });
     anim.onfinish = () => flash.remove();
+    window.dispatchEvent(
+      new CustomEvent("dock-snap", { detail: { side, top, height } }),
+    );
   }
 
   function flashReleaseEdge(side, top, height) {
@@ -1082,6 +1085,9 @@ function setupDocking(panel) {
       },
     );
     anim.onfinish = () => flash.remove();
+    window.dispatchEvent(
+      new CustomEvent("dock-release", { detail: { side, top, height } }),
+    );
   }
 
   function animateToState(newState, opts = {}) {
