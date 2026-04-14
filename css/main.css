@@ -91,16 +91,23 @@ body {
   box-shadow: 0 0 calc(4px + 12px * var(--well-strength, 0))
     rgba(var(--cursor-glow), 0.6);
 }
-#cursor-ring.gravity-well {
+#cursor-ring.gravity-well::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 12px rgba(var(--cursor-glow), 0.5);
+  pointer-events: none;
+  will-change: opacity;
   animation: well-breathe 2s ease-in-out infinite;
 }
 @keyframes well-breathe {
   0%,
   100% {
-    box-shadow: 0 0 4px rgba(var(--cursor-glow), 0.15);
+    opacity: 0.3;
   }
   50% {
-    box-shadow: 0 0 12px rgba(var(--cursor-glow), 0.5);
+    opacity: 1;
   }
 }
 @keyframes cursor-spin {
@@ -2987,24 +2994,23 @@ body.light-mode .achievement-tooltip {
 
 .achievement-pulse-ring {
   position: fixed;
-  width: 0;
-  height: 0;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   border: 2px solid var(--sky-3, #7dbfe8);
   pointer-events: none;
   z-index: 10001;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0);
+  will-change: transform, opacity;
   animation: achievement-pulse-expand 0.8s ease-out forwards;
 }
 @keyframes achievement-pulse-expand {
   0% {
-    width: 0;
-    height: 0;
+    transform: translate(-50%, -50%) scale(0);
     opacity: 0.8;
   }
   100% {
-    width: 120px;
-    height: 120px;
+    transform: translate(-50%, -50%) scale(1);
     opacity: 0;
   }
 }
