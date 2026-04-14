@@ -50,6 +50,11 @@ const SECTION_LABEL_MAP = {
   "particles.fireflies": "Fireflies",
   "particles.butterflies": "Butterflies",
   "particles.blockFragments": "Block Fragments",
+  "particles.rain": "Raindrops",
+  "particles.rainWind": "Wind System",
+  "particles.rainSplash": "Splashes",
+  "particles.rainGlass": "Glass Drops",
+  "particles.rainThunder": "Thunder",
 };
 
 // ── Group categories into top-level sections ──
@@ -67,13 +72,15 @@ const MODE_COLORS = {
   frozen: "#88d4f7",
   "deep-sea": "#00ffc8",
   blocky: "#ffa040",
+  rainy: "#6a9fc0",
 };
 const MODE_LABELS = {
   frozen: "Frozen Mode",
   "deep-sea": "Deep Sea Mode",
   blocky: "Blocky Mode",
+  rainy: "Rainy Mode",
 };
-const MODE_ORDER = ["frozen", "deep-sea", "blocky"];
+const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy"];
 
 // ── CSS (injected at runtime) ──
 const STYLES = /* css */ `

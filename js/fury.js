@@ -529,6 +529,109 @@ const METEOR = defineConstants("fury.meteors", {
   },
 });
 
+// ── Shared bolt helpers (used by fury + ambient lightning in rain) ──
+
+export function spawnBolt(targetArray, x1, y1, x2, y2, depth) {
+  const isBranch = depth > 0;
+  const stepsMin = isBranch ? LN.BRANCH_STEPS_MIN : LN.STEPS_MIN;
+  const stepsRange = isBranch ? LN.BRANCH_STEPS_RANGE : LN.STEPS_RANGE;
+  const jitterX = isBranch ? LN.BRANCH_JITTER_X : LN.JITTER_X;
+  const jitterY = isBranch ? LN.BRANCH_JITTER_Y : LN.JITTER_Y;
+  const steps = stepsMin + Math.floor(Math.random() * stepsRange);
+  const points = [{ x: x1, y: y1 }];
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const envelope = Math.sin(t * Math.PI);
+    const nx = x1 + (x2 - x1) * t + (Math.random() - 0.5) * jitterX * envelope;
+    const ny = y1 + (y2 - y1) * t + (Math.random() - 0.5) * jitterY * envelope;
+    points.push({ x: nx, y: ny });
+    if (depth < 2 && Math.random() < LN.BRANCH_CHANCE) {
+      const bAngle =
+        Math.atan2(
+          ny - points[points.length - 2].y,
+          nx - points[points.length - 2].x,
+        ) +
+        (Math.random() - 0.5) * LN.BRANCH_ANGLE;
+      const bLen = LN.BRANCH_LEN_MIN + Math.random() * LN.BRANCH_LEN_RANGE;
+      spawnBolt(
+        targetArray,
+        nx,
+        ny,
+        nx + Math.cos(bAngle) * bLen,
+        ny + Math.sin(bAngle) * bLen,
+        depth + 1,
+      );
+    }
+  }
+  const maxLife = LN.LIFE_MIN + Math.random() * LN.LIFE_RANGE;
+  const flickerCount =
+    LN.FLICKER_COUNT_MIN + Math.floor(Math.random() * LN.FLICKER_COUNT_RANGE);
+  const flickerFrames = [];
+  for (let f = 0; f < flickerCount; f++) {
+    flickerFrames.push(2 + Math.floor(Math.random() * (maxLife * 0.6)));
+  }
+  targetArray.push({ points, depth, life: 0, maxLife, flickerFrames });
+}
+
+export function renderBolt(ctx, bolt, pal) {
+  const t = bolt.life / bolt.maxLife;
+  let fade = Math.pow(1 - t, 2.5);
+  const isFlicker = bolt.flickerFrames.indexOf(bolt.life) !== -1;
+  if (isFlicker) fade = Math.max(fade, LN.FLICKER_ALPHA);
+
+  const col = pal.lightningColor;
+  const sc = pal.lightningShadow;
+  const branchScale = bolt.depth === 0 ? 1 : 0.45;
+  const jitterSeed = bolt.life * 7.13;
+
+  const tracePath = (jitter) => {
+    const pts = bolt.points;
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let p = 1; p < pts.length; p++) {
+      const jx = jitter ? Math.sin(jitterSeed + p * 3.7) * LN.MICRO_JITTER : 0;
+      const jy = jitter ? Math.cos(jitterSeed + p * 2.3) * LN.MICRO_JITTER : 0;
+      if (p < pts.length - 1) {
+        const mx = (pts[p].x + jx + pts[p + 1].x) * 0.5;
+        const my = (pts[p].y + jy + pts[p + 1].y) * 0.5;
+        ctx.quadraticCurveTo(pts[p].x + jx, pts[p].y + jy, mx, my);
+      } else {
+        ctx.lineTo(pts[p].x + jx, pts[p].y + jy);
+      }
+    }
+  };
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.globalCompositeOperation = "lighter";
+
+  ctx.globalAlpha = fade * LN.BLOOM_ALPHA * branchScale * LN.OPACITY;
+  ctx.strokeStyle = `rgb(${sc[0]},${sc[1]},${sc[2]})`;
+  ctx.lineWidth = LN.BLOOM_WIDTH * branchScale;
+  tracePath(false);
+  ctx.stroke();
+
+  ctx.globalAlpha = fade * LN.OUTER_ALPHA * branchScale * LN.OPACITY;
+  ctx.lineWidth = LN.OUTER_WIDTH * branchScale;
+  tracePath(false);
+  ctx.stroke();
+
+  ctx.globalAlpha = fade * LN.MID_ALPHA * branchScale * LN.OPACITY;
+  ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
+  ctx.lineWidth = LN.MID_WIDTH * branchScale;
+  tracePath(true);
+  ctx.stroke();
+
+  ctx.globalAlpha = fade * LN.CORE_ALPHA * LN.OPACITY;
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = LN.CORE_WIDTH * branchScale;
+  tracePath(true);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 // ── Factory ──
 
 export function createFury() {
@@ -548,49 +651,6 @@ export function createFury() {
     maxLife: 0,
     opacity: 0,
   }));
-
-  function spawnLightning(x1, y1, x2, y2, depth) {
-    const isBranch = depth > 0;
-    const stepsMin = isBranch ? LN.BRANCH_STEPS_MIN : LN.STEPS_MIN;
-    const stepsRange = isBranch ? LN.BRANCH_STEPS_RANGE : LN.STEPS_RANGE;
-    const jitterX = isBranch ? LN.BRANCH_JITTER_X : LN.JITTER_X;
-    const jitterY = isBranch ? LN.BRANCH_JITTER_Y : LN.JITTER_Y;
-    const steps = stepsMin + Math.floor(Math.random() * stepsRange);
-    const points = [{ x: x1, y: y1 }];
-    for (let i = 1; i <= steps; i++) {
-      const t = i / steps;
-      const envelope = Math.sin(t * Math.PI);
-      const nx =
-        x1 + (x2 - x1) * t + (Math.random() - 0.5) * jitterX * envelope;
-      const ny =
-        y1 + (y2 - y1) * t + (Math.random() - 0.5) * jitterY * envelope;
-      points.push({ x: nx, y: ny });
-      if (depth < 2 && Math.random() < LN.BRANCH_CHANCE) {
-        const bAngle =
-          Math.atan2(
-            ny - points[points.length - 2].y,
-            nx - points[points.length - 2].x,
-          ) +
-          (Math.random() - 0.5) * LN.BRANCH_ANGLE;
-        const bLen = LN.BRANCH_LEN_MIN + Math.random() * LN.BRANCH_LEN_RANGE;
-        spawnLightning(
-          nx,
-          ny,
-          nx + Math.cos(bAngle) * bLen,
-          ny + Math.sin(bAngle) * bLen,
-          depth + 1,
-        );
-      }
-    }
-    const maxLife = LN.LIFE_MIN + Math.random() * LN.LIFE_RANGE;
-    const flickerCount =
-      LN.FLICKER_COUNT_MIN + Math.floor(Math.random() * LN.FLICKER_COUNT_RANGE);
-    const flickerFrames = [];
-    for (let f = 0; f < flickerCount; f++) {
-      flickerFrames.push(2 + Math.floor(Math.random() * (maxLife * 0.6)));
-    }
-    lightningBolts.push({ points, depth, life: 0, maxLife, flickerFrames });
-  }
 
   return {
     // Draw fury effects: decay, lightning, aurora, meteors.
@@ -613,67 +673,7 @@ export function createFury() {
           continue;
         }
         if (bolt.life === 1) flashThisFrame = true;
-
-        const t = bolt.life / bolt.maxLife;
-        let fade = Math.pow(1 - t, 2.5);
-        const isFlicker = bolt.flickerFrames.indexOf(bolt.life) !== -1;
-        if (isFlicker) fade = Math.max(fade, LN.FLICKER_ALPHA);
-
-        const col = pal.lightningColor;
-        const sc = pal.lightningShadow;
-        const branchScale = bolt.depth === 0 ? 1 : 0.45;
-        const jitterSeed = bolt.life * 7.13;
-
-        const tracePath = (jitter) => {
-          const pts = bolt.points;
-          ctx.beginPath();
-          ctx.moveTo(pts[0].x, pts[0].y);
-          for (let p = 1; p < pts.length; p++) {
-            const jx = jitter
-              ? Math.sin(jitterSeed + p * 3.7) * LN.MICRO_JITTER
-              : 0;
-            const jy = jitter
-              ? Math.cos(jitterSeed + p * 2.3) * LN.MICRO_JITTER
-              : 0;
-            if (p < pts.length - 1) {
-              const mx = (pts[p].x + jx + pts[p + 1].x) * 0.5;
-              const my = (pts[p].y + jy + pts[p + 1].y) * 0.5;
-              ctx.quadraticCurveTo(pts[p].x + jx, pts[p].y + jy, mx, my);
-            } else {
-              ctx.lineTo(pts[p].x + jx, pts[p].y + jy);
-            }
-          }
-        };
-
-        ctx.save();
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
-        ctx.globalCompositeOperation = "lighter";
-
-        ctx.globalAlpha = fade * LN.BLOOM_ALPHA * branchScale * LN.OPACITY;
-        ctx.strokeStyle = `rgb(${sc[0]},${sc[1]},${sc[2]})`;
-        ctx.lineWidth = LN.BLOOM_WIDTH * branchScale;
-        tracePath(false);
-        ctx.stroke();
-
-        ctx.globalAlpha = fade * LN.OUTER_ALPHA * branchScale * LN.OPACITY;
-        ctx.lineWidth = LN.OUTER_WIDTH * branchScale;
-        tracePath(false);
-        ctx.stroke();
-
-        ctx.globalAlpha = fade * LN.MID_ALPHA * branchScale * LN.OPACITY;
-        ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-        ctx.lineWidth = LN.MID_WIDTH * branchScale;
-        tracePath(true);
-        ctx.stroke();
-
-        ctx.globalAlpha = fade * LN.CORE_ALPHA * LN.OPACITY;
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = LN.CORE_WIDTH * branchScale;
-        tracePath(true);
-        ctx.stroke();
-
-        ctx.restore();
+        renderBolt(ctx, bolt, pal);
       }
       if (flashThisFrame) {
         const fc = pal.lightningFlash;
@@ -814,7 +814,7 @@ export function createFury() {
       if (clickFury >= LN.TIER && lightningBolts.length < LN.MAX_BOLTS) {
         const startX = cx + (Math.random() - 0.5) * LN.START_SPREAD;
         const startY = Math.random() * canvas.height * LN.START_Y;
-        spawnLightning(startX, startY, cx, cy, 0);
+        spawnBolt(lightningBolts, startX, startY, cx, cy, 0);
       }
 
       // Tier 3: Meteor shower burst

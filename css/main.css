@@ -2098,3 +2098,219 @@ body.light-mode[data-active-theme="blocky"] #cursor {
 body.light-mode[data-active-theme="blocky"] #cursor-ring {
   border-color: rgba(60, 200, 60, 0.4);
 }
+
+/* ── Rainy — storm overlay & wipe transitions ── */
+
+.storm-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(30, 40, 55, 0.6) 100%
+  );
+}
+
+.storm-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: linear-gradient(180deg, #1a2030 0%, #2a3545 50%, #1a2530 100%);
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  pointer-events: none;
+}
+.storm-wipe.clearing {
+  background: linear-gradient(0deg, #3a4a5a 0%, #5a6a7a 50%, #7a8a9a 100%);
+}
+
+/* ── Rainy — visual theme (only when active theme) ── */
+
+body[data-active-theme="rainy"] {
+  --sky-3: #5a6a80;
+  background: #101820;
+}
+body[data-active-theme="rainy"] #bg-canvas {
+  filter: saturate(0.6) brightness(0.7) hue-rotate(10deg);
+}
+
+body.rainy .cloud-svg {
+  filter: saturate(0.3) brightness(0.8);
+}
+
+body[data-active-theme="rainy"] .hero-tag {
+  color: rgba(180, 200, 220, 0.9);
+}
+body[data-active-theme="rainy"] .hero-title {
+  background: linear-gradient(135deg, #8a9bb5, #5a6a80);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+body[data-active-theme="rainy"] .hero-sub {
+  color: rgba(160, 180, 200, 0.85);
+}
+
+body[data-active-theme="rainy"] .btn-primary {
+  background: linear-gradient(135deg, #5a7a9a, #3a5a7a);
+  box-shadow: 0 0 20px rgba(90, 122, 154, 0.3);
+}
+body[data-active-theme="rainy"] .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(90, 122, 154, 0.5);
+}
+body[data-active-theme="rainy"] .btn-outline {
+  border-color: rgba(140, 170, 200, 0.35);
+  color: rgba(160, 185, 210, 0.9);
+}
+
+body[data-active-theme="rainy"] .service-card {
+  background: rgba(20, 30, 45, 0.7);
+  border-color: rgba(100, 130, 170, 0.12);
+}
+body[data-active-theme="rainy"] .service-card:hover {
+  border-color: rgba(120, 150, 190, 0.25);
+  box-shadow: 0 8px 32px rgba(60, 90, 130, 0.15);
+}
+body[data-active-theme="rainy"] .service-num {
+  color: rgba(120, 150, 190, 0.5);
+}
+body[data-active-theme="rainy"] .service-title {
+  color: rgba(190, 210, 230, 0.95);
+}
+body[data-active-theme="rainy"] .service-desc {
+  color: rgba(150, 175, 200, 0.75);
+}
+
+/* Rain card interactions */
+body.rainy .rain-card {
+  position: relative;
+  overflow: hidden;
+}
+body.rainy .rain-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(180, 200, 220, 0.04) 100%
+  );
+  pointer-events: none;
+  opacity: 0.6;
+}
+body.rainy .rain-card::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(160, 185, 210, 0.12) 0%,
+    transparent 70%
+  );
+  left: var(--rain-x, -100%);
+  top: var(--rain-y, -100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+  transition: opacity 0.3s;
+}
+
+.rain-ripple {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid rgba(160, 185, 210, 0.3);
+  pointer-events: none;
+  z-index: 2;
+}
+
+body[data-active-theme="rainy"] .nav-cta {
+  background: linear-gradient(135deg, #5a7a9a, #4a6a8a);
+  box-shadow: 0 0 15px rgba(90, 122, 154, 0.2);
+}
+
+body[data-active-theme="rainy"] #contact {
+  border-color: rgba(90, 122, 154, 0.2);
+}
+body[data-active-theme="rainy"] .contact-heading {
+  color: rgba(190, 210, 230, 0.95);
+}
+body[data-active-theme="rainy"] .contact-sub {
+  color: rgba(150, 175, 200, 0.75);
+}
+body[data-active-theme="rainy"] .contact-link {
+  background: rgba(20, 30, 45, 0.6);
+  border-color: rgba(100, 130, 170, 0.15);
+  color: rgba(170, 195, 220, 0.9);
+}
+
+body[data-active-theme="rainy"] footer {
+  border-top-color: rgba(90, 122, 154, 0.1);
+}
+body[data-active-theme="rainy"] .footer-info {
+  border-top-color: rgba(90, 122, 154, 0.08);
+}
+body[data-active-theme="rainy"] .footer-badge::before {
+  background: rgb(120, 150, 190);
+}
+
+body[data-active-theme="rainy"]::after {
+  opacity: 0.03;
+}
+
+body[data-active-theme="rainy"] #cursor {
+  background: rgb(160, 185, 210);
+}
+body[data-active-theme="rainy"] #cursor-ring {
+  border-color: rgba(160, 185, 210, 0.4);
+}
+
+/* Splash particles (progressive indicator clicks) */
+.rain-splash {
+  position: fixed;
+  border-radius: 50%;
+  background: rgba(160, 185, 210, 0.7);
+  pointer-events: none;
+  z-index: 10;
+}
+.rain-splash.clearing {
+  background: rgba(200, 180, 140, 0.7);
+}
+
+/* Hero-tag sway animation */
+@keyframes rain-sway {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(var(--sway-deg, 1deg));
+  }
+  75% {
+    transform: rotate(calc(-1 * var(--sway-deg, 1deg)));
+  }
+}
+
+/* ── Light mode overrides for rainy ── */
+body.light-mode[data-active-theme="rainy"] {
+  background: #d0d8e4;
+}
+body.light-mode[data-active-theme="rainy"] #bg-canvas {
+  filter: saturate(0.55) brightness(0.85) hue-rotate(5deg);
+}
+body.light-mode[data-active-theme="rainy"] .service-card {
+  background: rgba(200, 215, 230, 0.6);
+  border-color: rgba(100, 130, 170, 0.15);
+}
+body.light-mode[data-active-theme="rainy"] #cursor {
+  background: rgb(100, 130, 170);
+}
+body.light-mode[data-active-theme="rainy"] #cursor-ring {
+  border-color: rgba(100, 130, 170, 0.4);
+}

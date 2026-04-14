@@ -6,6 +6,7 @@ import { createAtmosphere } from "./atmosphere.js";
 import { createSnow } from "./particles/frozen.js";
 import { createDeepSea } from "./particles/deep-sea.js";
 import { createBlocky } from "./particles/blocky.js";
+import { createRain } from "./particles/rain.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 
@@ -30,7 +31,7 @@ const SCROLL = defineConstants("canvas.scroll", {
 // ── Sub-mode registry ──
 // Body class names for each easter-egg mode. Used for active mode detection
 // and palette resolution. Adding a new mode: push its body class here.
-const SUBMODES = ["deep-sea", "frozen", "blocky", "upside-down"];
+const SUBMODES = ["deep-sea", "frozen", "blocky", "rainy", "upside-down"];
 
 // ── Particle counts ──
 const COUNTS = defineConstants("canvas.particles", {
@@ -225,6 +226,7 @@ export function initCanvas(canvasEl, theme, options) {
   const snow = createSnow(canvas, ctx, COUNTS.SNOW);
   const deepSea = createDeepSea(canvas, ctx, COUNTS.BUBBLE, COUNTS.JELLY);
   const blocky = createBlocky(canvas, ctx, COUNTS.FIREFLY);
+  const rain = createRain(canvas, ctx);
 
   window.addEventListener("resize", () => {
     resize();
@@ -251,6 +253,7 @@ export function initCanvas(canvasEl, theme, options) {
   const canvasY = (y) => (isUpside() ? canvas.height - y : y);
 
   let lastFrameTime = performance.now();
+  let wasRainy = false;
   function render() {
     const now = performance.now();
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
@@ -259,6 +262,7 @@ export function initCanvas(canvasEl, theme, options) {
     const isFrozen = document.body.classList.contains("frozen");
     const isDeepSea = document.body.classList.contains("deep-sea");
     const isBlocky = document.body.classList.contains("blocky");
+    const isRainy = document.body.classList.contains("rainy");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeModes = SUBMODES.filter((m) =>
       document.body.classList.contains(m),
@@ -310,6 +314,13 @@ export function initCanvas(canvasEl, theme, options) {
       deepSea.draw(forces, scrollVelocity, dt);
     }
 
+    // Rain + thunder + glass drops — rainy mode
+    if (isRainy) {
+      rain.draw(forces, scrollVelocity, dt, pal);
+    }
+    if (wasRainy && !isRainy) rain.cleanup();
+    wasRainy = isRainy;
+
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
 
@@ -339,6 +350,11 @@ export function initCanvas(canvasEl, theme, options) {
       blocky.clickBurst(cx, cy);
     }
 
+    // Rainy click burst — splash droplets radiate from click
+    if (document.body.classList.contains("rainy")) {
+      rain.clickBurst(cx, cy);
+    }
+
     // Normal click burst particles (skipped in blocky — block fragments replace them)
     if (!document.body.classList.contains("blocky")) {
       interactions.click(cx, cy, currentPal);
@@ -362,6 +378,13 @@ export function initCanvas(canvasEl, theme, options) {
       }
     },
     onUp() {
+      // Rainy well burst — massive splash on gravity well release
+      if (
+        forces.wellStrength > 0 &&
+        document.body.classList.contains("rainy")
+      ) {
+        rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
+      }
       interactions.releaseDrag(forces, currentPal);
     },
   });
