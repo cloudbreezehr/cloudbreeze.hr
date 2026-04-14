@@ -380,6 +380,12 @@ const STYLES = /* css */ `
   padding: 2px 4px;
   text-align: right;
   outline: none;
+  -moz-appearance: textfield;
+}
+.dc-row-value::-webkit-inner-spin-button,
+.dc-row-value::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 .dc-row-value:focus { border-color: #7dbfe8; }
 .dc-row-reset {
