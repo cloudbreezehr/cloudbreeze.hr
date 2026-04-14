@@ -1040,9 +1040,11 @@ function setupDocking(panel) {
       floatY = fromRect.top;
     }
     applyDock();
-    clearMagnet();
 
-    if (opts.skipAnimation) return;
+    if (opts.skipAnimation) {
+      clearMagnet();
+      return;
+    }
 
     const toRect = panel.getBoundingClientRect();
     const dx = fromRect.left - toRect.left;
@@ -1055,7 +1057,10 @@ function setupDocking(panel) {
       Math.abs(dy) < 1 &&
       Math.abs(sx - 1) < 0.01 &&
       Math.abs(sy - 1) < 0.01;
-    if (noMovement) return;
+    if (noMovement) {
+      clearMagnet();
+      return;
+    }
 
     const fromRadius = wasFloating ? "8px" : "0px";
     const toRadius = newState === "floating" ? "8px" : "0px";
@@ -1078,6 +1083,7 @@ function setupDocking(panel) {
     const cleanup = () => {
       panel.style.transformOrigin = "";
       dockAnimating = false;
+      clearMagnet();
     };
     anim.onfinish = cleanup;
     anim.oncancel = cleanup;
