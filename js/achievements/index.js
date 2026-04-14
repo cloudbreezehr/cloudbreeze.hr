@@ -94,6 +94,22 @@ export function initAchievements() {
     startTracking();
   }
 
+  // Contact link click events — dispatch achievement events for page-level links
+  document.querySelectorAll('a[href^="mailto:"]').forEach((el) => {
+    el.addEventListener("click", () => {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "contact-click" } }),
+      );
+    });
+  });
+  document.querySelectorAll('a[href*="linkedin"]').forEach((el) => {
+    el.addEventListener("click", () => {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "linkedin-click" } }),
+      );
+    });
+  });
+
   // Triple-click detection
   let clickTimes = [];
   document.addEventListener("click", (e) => {

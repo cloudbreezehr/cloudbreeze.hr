@@ -332,6 +332,13 @@ const HOLD = defineConstants("interactions.hold", {
     step: 5,
     description: "Extra burst lifetime variation",
   },
+  ORBIT_THRESHOLD: {
+    value: 0.5,
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    description: "Hold strength at which orbit is considered locked",
+  },
 });
 
 // ── Gravity Well (long-press phase 2) ──
@@ -974,6 +981,14 @@ export function createInteractions() {
           new CustomEvent("achievement", {
             detail: { type: "hold", duration: heldMs },
           }),
+        );
+      }
+      if (
+        forces.holdStrength >= HOLD.ORBIT_THRESHOLD &&
+        prevHold < HOLD.ORBIT_THRESHOLD
+      ) {
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "orbit" } }),
         );
       }
       if (forces.holdStrength >= 1 && prevHold < 1) {

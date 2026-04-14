@@ -198,7 +198,11 @@ export function initCanvas(canvasEl, theme, options) {
       docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
     window.dispatchEvent(
       new CustomEvent("achievement", {
-        detail: { type: "scroll", progress: scrollProgress },
+        detail: {
+          type: "scroll",
+          progress: scrollProgress,
+          velocity: scrollVelocity,
+        },
       }),
     );
     const delta = scrollTop - lastScrollTop;
@@ -392,7 +396,9 @@ export function initCanvas(canvasEl, theme, options) {
       const trailAdded = interactions.addTrail(forces, cx, cy);
       if (trailAdded)
         window.dispatchEvent(
-          new CustomEvent("achievement", { detail: { type: "drag" } }),
+          new CustomEvent("achievement", {
+            detail: { type: "drag", x: cx, y: cy },
+          }),
         );
       // Drag spawns small bubbles in deep-sea mode
       if (trailAdded && document.body.classList.contains("deep-sea")) {

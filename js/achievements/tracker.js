@@ -21,13 +21,24 @@ const SCROLL_STARGAZER = 0.25;
 const SCROLL_BOTTOM = 0.95;
 const SCROLL_TOP = 0.05;
 const THEME_TOGGLE_THRESHOLD = 3;
+const SCROLL_SURGE_VELOCITY = 50;
+const LONG_DRAG_SCREEN_FRACTION = 0.4;
+const PIXEL_PERFECT_RADIUS = 30;
+const AFTERSHOCK_WINDOW_MS = 2000;
+const CHAIN_LIGHTNING_COUNT = 5;
+const VOID_CALLER_COUNT = 3;
+const MOONLIT_START_HOUR = 0;
+const MOONLIT_END_HOUR = 5;
 
 // ── Meta thresholds ──
 const META_CURIOUS_COUNT = 5;
 const META_DEDICATED_COUNT = 15;
 const META_HUNDRED_POINTS = 100;
 const META_FIVEHUNDRED_POINTS = 500;
+const META_THOUSAND_POINTS = 1000;
 const MODE_HOPPER_COUNT = 3;
+const ELEMENTAL_MODE_COUNT = 5;
+const TENACIOUS_DAYS = 7;
 
 export function createTracker(onUnlock) {
   // ── Session State ──
@@ -53,6 +64,11 @@ export function createTracker(onUnlock) {
     startTime: Date.now(),
     visibleMs: 0,
     lastVisibleTime: document.hidden ? 0 : Date.now(),
+    lightningCount: 0,
+    wellCount: 0,
+    dragStartX: null,
+    dragStartY: null,
+    lastFuryTime: 0,
   };
 
   // ── Helpers ──
@@ -89,13 +105,22 @@ export function createTracker(onUnlock) {
     if (count >= META_DEDICATED_COUNT) tryUnlock("dedicated");
     if (pts >= META_HUNDRED_POINTS) tryUnlock("hundred-club");
     if (pts >= META_FIVEHUNDRED_POINTS) tryUnlock("five-hundred");
+    if (pts >= META_THOUSAND_POINTS) tryUnlock("thousand-club");
 
     if (session.modesActivated.size >= MODE_HOPPER_COUNT) {
       tryUnlock("mode-hopper");
     }
 
-    // Completionist: all non-meta achievements
+    // Halfway there — 50% of non-meta achievements
     const allNonMeta = getAllNonMeta();
+    const nonMetaUnlocked = allNonMeta.filter((id) =>
+      storage.isUnlocked(id),
+    ).length;
+    if (nonMetaUnlocked >= Math.ceil(allNonMeta.length / 2)) {
+      tryUnlock("halfway-there");
+    }
+
+    // Completionist: all non-meta achievements
     if (allNonMeta.every((id) => storage.isUnlocked(id))) {
       tryUnlock("completionist");
     }
@@ -125,6 +150,7 @@ export function createTracker(onUnlock) {
       }
       if (session.clickTimestamps.length >= RAPID_FIRE_CLICKS) {
         tryUnlock("rapid-fire");
+        if (activeMode() === "upside-down") tryUnlock("vertigo");
       }
 
       // Quadrant tracking for cartographer
@@ -137,7 +163,26 @@ export function createTracker(onUnlock) {
         if (session.quadrants.size >= 4) {
           tryUnlock("cartographer");
         }
+
+        // Pixel perfect — click near viewport center
+        const dx = data.x - midX;
+        const dy = data.y - midY;
+        if (Math.sqrt(dx * dx + dy * dy) <= PIXEL_PERFECT_RADIUS) {
+          tryUnlock("pixel-perfect");
+        }
       }
+
+      // Aftershock — click shortly after fury-lightning
+      if (
+        session.lastFuryTime > 0 &&
+        now - session.lastFuryTime <= AFTERSHOCK_WINDOW_MS
+      ) {
+        tryUnlock("aftershock");
+      }
+
+      // Reset drag tracking on click
+      session.dragStartX = null;
+      session.dragStartY = null;
 
       // Mode-specific click achievements
       const mode = activeMode();
@@ -172,6 +217,15 @@ export function createTracker(onUnlock) {
           tryUnlock("disoriented");
         }
       }
+
+      // Scroll surge — high scroll velocity
+      if (
+        data &&
+        data.velocity != null &&
+        Math.abs(data.velocity) >= SCROLL_SURGE_VELOCITY
+      ) {
+        tryUnlock("scroll-surge");
+      }
     },
 
     "theme-change"(data) {
@@ -199,10 +253,28 @@ export function createTracker(onUnlock) {
       }
     },
 
-    drag() {
+    drag(data) {
       if (!session.hasDragged) {
         session.hasDragged = true;
         tryUnlock("trail-blazer");
+      }
+
+      // Track drag distance for the-long-drag
+      if (data && data.x != null && data.y != null) {
+        if (session.dragStartX === null) {
+          session.dragStartX = data.x;
+          session.dragStartY = data.y;
+        } else {
+          const dx = data.x - session.dragStartX;
+          const dy = data.y - session.dragStartY;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const threshold =
+            LONG_DRAG_SCREEN_FRACTION *
+            Math.max(window.innerWidth, window.innerHeight);
+          if (dist >= threshold) {
+            tryUnlock("the-long-drag");
+          }
+        }
       }
 
       // Frozen drag
@@ -219,11 +291,22 @@ export function createTracker(onUnlock) {
 
     "well-activate"() {
       session.wellActivated = true;
+      session.wellCount++;
       tryUnlock("event-horizon");
 
-      if (activeMode() === "deep-sea") {
+      // Void caller — multiple well activations
+      if (session.wellCount >= VOID_CALLER_COUNT) {
+        tryUnlock("void-caller");
+      }
+
+      const mode = activeMode();
+      if (mode === "deep-sea") {
         tryUnlock("pressure-drop");
         checkSetMastery("deep-sea");
+      }
+      if (mode === "rainy") {
+        tryUnlock("monsoon");
+        checkSetMastery("rainy");
       }
     },
 
@@ -234,15 +317,32 @@ export function createTracker(onUnlock) {
 
     "fury-lightning"() {
       session.lightningTriggered = true;
+      session.lastFuryTime = Date.now();
+      session.lightningCount++;
       tryUnlock("fury-unleashed");
 
-      if (activeMode() === "blocky") {
+      // Chain lightning — multiple fury triggers in one session
+      if (session.lightningCount >= CHAIN_LIGHTNING_COUNT) {
+        tryUnlock("chain-lightning");
+      }
+
+      const mode = activeMode();
+      if (mode === "blocky") {
         tryUnlock("8-bit-storm");
         checkSetMastery("blocky");
       }
-      if (activeMode() === "rainy") {
+      if (mode === "rainy") {
         tryUnlock("thunder-roll");
         checkSetMastery("rainy");
+      }
+      if (mode === "deep-sea") {
+        tryUnlock("storm-surge");
+      }
+      if (mode === "frozen") {
+        tryUnlock("frozen-lightning");
+      }
+      if (mode === "upside-down") {
+        tryUnlock("glitch");
       }
     },
 
@@ -258,6 +358,9 @@ export function createTracker(onUnlock) {
       if (activeMode() === "frozen") {
         tryUnlock("blizzard");
         checkSetMastery("frozen");
+      }
+      if (activeMode() === "deep-sea") {
+        tryUnlock("permafrost");
       }
     },
 
@@ -278,6 +381,11 @@ export function createTracker(onUnlock) {
       // Mode hopper
       if (session.modesActivated.size >= MODE_HOPPER_COUNT) {
         tryUnlock("mode-hopper");
+      }
+
+      // Elemental — all 5 modes in one session
+      if (session.modesActivated.size >= ELEMENTAL_MODE_COUNT) {
+        tryUnlock("elemental");
       }
     },
 
@@ -319,6 +427,26 @@ export function createTracker(onUnlock) {
         session.panelOpened = true;
         tryUnlock("cloud-reader");
       }
+    },
+
+    "contact-click"() {
+      tryUnlock("landfall");
+    },
+
+    "linkedin-click"() {
+      tryUnlock("connected");
+    },
+
+    orbit() {
+      tryUnlock("orbit-lock");
+      if (activeMode() === "deep-sea") {
+        tryUnlock("deep-orbit");
+        checkSetMastery("deep-sea");
+      }
+    },
+
+    "dev-console-open"() {
+      tryUnlock("reverse-engineer");
     },
 
     "cloudlog-activate"() {
@@ -364,6 +492,9 @@ export function createTracker(onUnlock) {
     if (days.length >= PERSISTENT_DAYS) {
       tryUnlock("persistent-explorer");
     }
+    if (days.length >= TENACIOUS_DAYS) {
+      tryUnlock("tenacious");
+    }
   }
 
   // ── Wire up ──
@@ -383,6 +514,12 @@ export function createTracker(onUnlock) {
     setInterval(checkNightOwl, NIGHT_OWL_CHECK_INTERVAL);
 
     trackSession();
+
+    // Moonlit — visiting between midnight and 5am
+    const hour = new Date().getHours();
+    if (hour >= MOONLIT_START_HOUR && hour <= MOONLIT_END_HOUR) {
+      tryUnlock("moonlit");
+    }
   }
 
   function stop() {
@@ -405,6 +542,9 @@ export function createTracker(onUnlock) {
     if (session.snowGlobeTriggered) tryUnlock("snow-globe");
     if (session.wellActivated) tryUnlock("event-horizon");
     if (session.wellFull) tryUnlock("singularity");
+    if (session.lightningCount >= CHAIN_LIGHTNING_COUNT)
+      tryUnlock("chain-lightning");
+    if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
     checkMeta();
   }
 

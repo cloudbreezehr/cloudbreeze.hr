@@ -1467,6 +1467,9 @@ function setupSectionActivateListener(panel) {
 let panelInstance = null;
 
 export function openDevConsole() {
+  window.dispatchEvent(
+    new CustomEvent("achievement", { detail: { type: "dev-console-open" } }),
+  );
   if (panelInstance) {
     panelInstance.panel.style.display = "";
     panelInstance.panel.classList.remove("collapsed");
