@@ -430,6 +430,7 @@
       import { initFrozen } from "./js/frozen.js";
       import { initDeepSea } from "./js/deep-sea.js";
       import { initBlocky } from "./js/blocky.js";
+      import { toggleDevConsole, openDevConsole } from "./js/dev/console.js";
 
       const theme = initTheme(document.querySelector(".theme-toggle"));
       initNav(document.querySelector("nav"), theme);
@@ -484,6 +485,18 @@
           { passive: true },
         );
       }
+
+      // Dev console — triggered via URL hash #dev or Ctrl+Shift+.
+      if (window.location.hash === "#dev") openDevConsole();
+      window.addEventListener("hashchange", () => {
+        if (window.location.hash === "#dev") openDevConsole();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.shiftKey && e.key === ".") {
+          e.preventDefault();
+          toggleDevConsole();
+        }
+      });
     </script>
   </body>
 </html>

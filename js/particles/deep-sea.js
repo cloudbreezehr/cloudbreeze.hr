@@ -3,61 +3,381 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
+import { defineConstants } from "../dev/registry.js";
 
 // ── Bubbles ──
-const BUBBLE_RADIUS_MIN = 2;
-const BUBBLE_RADIUS_RANGE = 12;
-const BUBBLE_RISE_MIN = 0.4;
-const BUBBLE_RISE_RANGE = 0.8;
-const BUBBLE_WOBBLE_SPEED_MIN = 0.015;
-const BUBBLE_WOBBLE_SPEED_RANGE = 0.02;
-const BUBBLE_WOBBLE_AMP_MIN = 0.4;
-const BUBBLE_WOBBLE_AMP_RANGE = 0.8;
-const BUBBLE_OPACITY_MIN = 0.3;
-const BUBBLE_OPACITY_RANGE = 0.4;
-const BUBBLE_GROWTH_RATE = 0.001;
-const BUBBLE_FRICTION = 0.96;
-const BUBBLE_REPEL_RADIUS = 150;
-const BUBBLE_REPEL_DAMPEN = 0.8;
-const BUBBLE_ATTRACT_RADIUS = 150;
-const BUBBLE_ATTRACT_STRENGTH = 0.1;
-const BUBBLE_ATTRACT_TANGENT = 0.6;
-const BUBBLE_SCROLL_THRESHOLD = 0.5;
-const BUBBLE_SCROLL_VX = 0.03;
-const BUBBLE_AMBIENT_RATE = 2.5;
-const BUBBLE_CLICK_BURST_MIN = 8;
-const BUBBLE_CLICK_BURST_RANGE = 8;
-const BUBBLE_DRAG_RATE = 0.3;
-const BUBBLE_SPECULAR_THRESHOLD = 5;
-const BUBBLE_LARGE_THRESHOLD = 9;
-const BUBBLE_POP_FRAMES = 8;
+const BUB = defineConstants(
+  "particles.bubbles",
+  {
+    RADIUS_MIN: {
+      value: 2,
+      min: 0.5,
+      max: 10,
+      step: 0.5,
+      description: "Minimum bubble radius",
+    },
+    RADIUS_RANGE: {
+      value: 12,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: "Radius variation",
+    },
+    RISE_MIN: {
+      value: 0.4,
+      min: 0,
+      max: 3,
+      step: 0.05,
+      description: "Minimum rise speed",
+    },
+    RISE_RANGE: {
+      value: 0.8,
+      min: 0,
+      max: 3,
+      step: 0.05,
+      description: "Rise speed variation (scales with size)",
+    },
+    WOBBLE_SPEED_MIN: {
+      value: 0.015,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Minimum wobble speed",
+    },
+    WOBBLE_SPEED_RANGE: {
+      value: 0.02,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Wobble speed variation",
+    },
+    WOBBLE_AMP_MIN: {
+      value: 0.4,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Minimum wobble amplitude",
+    },
+    WOBBLE_AMP_RANGE: {
+      value: 0.8,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Wobble amplitude variation",
+    },
+    OPACITY_MIN: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Minimum bubble opacity",
+    },
+    OPACITY_RANGE: {
+      value: 0.4,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Opacity variation",
+    },
+    GROWTH_RATE: {
+      value: 0.001,
+      min: 0,
+      max: 0.01,
+      step: 0.001,
+      description: "Radius growth per frame as bubble rises",
+    },
+    FRICTION: {
+      value: 0.96,
+      min: 0.8,
+      max: 1,
+      step: 0.005,
+      description: "Velocity damping per frame",
+    },
+    REPEL_RADIUS: {
+      value: 150,
+      min: 30,
+      max: 400,
+      step: 10,
+      description: "Click repulsion radius",
+    },
+    REPEL_DAMPEN: {
+      value: 0.8,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Click repulsion strength",
+    },
+    ATTRACT_RADIUS: {
+      value: 150,
+      min: 30,
+      max: 400,
+      step: 10,
+      description: "Drag attraction radius",
+    },
+    ATTRACT_STRENGTH: {
+      value: 0.1,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Drag attraction force",
+    },
+    ATTRACT_TANGENT: {
+      value: 0.6,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "Tangential orbit during attraction",
+    },
+    SCROLL_THRESHOLD: {
+      value: 0.5,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Scroll velocity for lateral push",
+    },
+    SCROLL_VX: {
+      value: 0.03,
+      min: 0,
+      max: 0.2,
+      step: 0.005,
+      description: "Lateral push per scroll unit",
+    },
+    AMBIENT_RATE: {
+      value: 2.5,
+      min: 0,
+      max: 10,
+      step: 0.5,
+      description: "Bubbles spawned per second",
+    },
+    CLICK_BURST_MIN: {
+      value: 8,
+      min: 1,
+      max: 30,
+      step: 1,
+      description: "Minimum click burst bubbles",
+    },
+    CLICK_BURST_RANGE: {
+      value: 8,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: "Burst count variation",
+    },
+    DRAG_RATE: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Chance per trail segment to spawn bubble",
+    },
+    SPECULAR_THRESHOLD: {
+      value: 5,
+      min: 1,
+      max: 20,
+      step: 1,
+      description: "Radius for specular highlight",
+    },
+    LARGE_THRESHOLD: {
+      value: 9,
+      min: 1,
+      max: 25,
+      step: 1,
+      description: "Radius for secondary highlight",
+    },
+    POP_FRAMES: {
+      value: 8,
+      min: 2,
+      max: 20,
+      step: 1,
+      description: "Animation frames for pop effect",
+    },
+  },
+  { mode: "deep-sea" },
+);
 
 // ── Jellyfish ──
-const JELLY_BELL_MIN = 8;
-const JELLY_BELL_RANGE = 27;
-const JELLY_TENTACLE_SMALL = 3;
-const JELLY_TENTACLE_MED = 4;
-const JELLY_TENTACLE_LARGE = 5;
-const JELLY_TENTACLE_MED_THRESHOLD = 15;
-const JELLY_TENTACLE_LARGE_THRESHOLD = 25;
-const JELLY_PULSE_SPEED_MIN = 0.008;
-const JELLY_PULSE_SPEED_RANGE = 0.008;
-const JELLY_PULSE_STRENGTH = 0.6;
-const JELLY_DRIFT_VX = 0.15;
-const JELLY_DRIFT_VY = 0.05;
-const JELLY_DIRECTION_CHANGE = 0.002;
-const JELLY_GLOW_PULSE_SPEED = 0.02;
-const JELLY_GLOW_ALPHA_MIN = 0.06;
-const JELLY_GLOW_ALPHA_RANGE = 0.08;
-const JELLY_FRICTION = 0.985;
-const JELLY_REPEL_RADIUS = 180;
-const JELLY_REPEL_DAMPEN = 0.3;
-const JELLY_ATTRACT_RADIUS = 200;
-const JELLY_ATTRACT_STRENGTH = 0.04;
-const JELLY_TENTACLE_SEGMENTS = 4;
-const JELLY_TENTACLE_SEG_LEN_RATIO = 0.8;
-const JELLY_TENTACLE_WAVE_AMP = 0.3;
-const JELLY_TENTACLE_WAVE_SPEED = 0.03;
+const JELLY = defineConstants(
+  "particles.jellyfish",
+  {
+    BELL_MIN: {
+      value: 8,
+      min: 3,
+      max: 30,
+      step: 1,
+      description: "Minimum bell radius",
+    },
+    BELL_RANGE: {
+      value: 27,
+      min: 0,
+      max: 40,
+      step: 1,
+      description: "Bell radius variation",
+    },
+    TENTACLE_SMALL: {
+      value: 3,
+      min: 1,
+      max: 8,
+      step: 1,
+      description: "Tentacle count for small jelly",
+    },
+    TENTACLE_MED: {
+      value: 4,
+      min: 1,
+      max: 8,
+      step: 1,
+      description: "Tentacle count for medium jelly",
+    },
+    TENTACLE_LARGE: {
+      value: 5,
+      min: 1,
+      max: 10,
+      step: 1,
+      description: "Tentacle count for large jelly",
+    },
+    TENTACLE_MED_THRESHOLD: {
+      value: 15,
+      min: 5,
+      max: 30,
+      step: 1,
+      description: "Bell radius for medium tentacle count",
+    },
+    TENTACLE_LARGE_THRESHOLD: {
+      value: 25,
+      min: 10,
+      max: 40,
+      step: 1,
+      description: "Bell radius for large tentacle count",
+    },
+    PULSE_SPEED_MIN: {
+      value: 0.008,
+      min: 0,
+      max: 0.05,
+      step: 0.001,
+      description: "Minimum pulse speed",
+    },
+    PULSE_SPEED_RANGE: {
+      value: 0.008,
+      min: 0,
+      max: 0.05,
+      step: 0.001,
+      description: "Pulse speed variation",
+    },
+    PULSE_STRENGTH: {
+      value: 0.6,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Upward kick force on pulse peak",
+    },
+    DRIFT_VX: {
+      value: 0.15,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Max horizontal drift speed",
+    },
+    DRIFT_VY: {
+      value: 0.05,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Gentle downward drift",
+    },
+    DIRECTION_CHANGE: {
+      value: 0.002,
+      min: 0,
+      max: 0.02,
+      step: 0.001,
+      description: "Per-frame chance to change direction",
+    },
+    GLOW_PULSE_SPEED: {
+      value: 0.02,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Bioluminescent pulse speed",
+    },
+    GLOW_ALPHA_MIN: {
+      value: 0.06,
+      min: 0,
+      max: 0.3,
+      step: 0.01,
+      description: "Minimum glow alpha",
+    },
+    GLOW_ALPHA_RANGE: {
+      value: 0.08,
+      min: 0,
+      max: 0.3,
+      step: 0.01,
+      description: "Glow alpha variation",
+    },
+    FRICTION: {
+      value: 0.985,
+      min: 0.9,
+      max: 1,
+      step: 0.005,
+      description: "Velocity damping per frame",
+    },
+    REPEL_RADIUS: {
+      value: 180,
+      min: 30,
+      max: 500,
+      step: 10,
+      description: "Click repulsion radius",
+    },
+    REPEL_DAMPEN: {
+      value: 0.3,
+      min: 0,
+      max: 2,
+      step: 0.1,
+      description: "Click repulsion strength",
+    },
+    ATTRACT_RADIUS: {
+      value: 200,
+      min: 30,
+      max: 500,
+      step: 10,
+      description: "Drag attraction radius",
+    },
+    ATTRACT_STRENGTH: {
+      value: 0.04,
+      min: 0,
+      max: 0.3,
+      step: 0.01,
+      description: "Drag attraction force",
+    },
+    TENTACLE_SEGMENTS: {
+      value: 4,
+      min: 1,
+      max: 10,
+      step: 1,
+      description: "Segments per tentacle",
+    },
+    TENTACLE_SEG_LEN_RATIO: {
+      value: 0.8,
+      min: 0.2,
+      max: 2,
+      step: 0.1,
+      description: "Tentacle length as ratio of bell",
+    },
+    TENTACLE_WAVE_AMP: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Tentacle wave amplitude",
+    },
+    TENTACLE_WAVE_SPEED: {
+      value: 0.03,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Tentacle wave animation speed",
+    },
+  },
+  { mode: "deep-sea" },
+);
+
 const JELLY_COLORS = [
   [0, 255, 180], // teal
   [0, 200, 255], // cyan
@@ -76,20 +396,18 @@ class Bubble {
   reset(init) {
     this.x = Math.random() * _canvas.width;
     this.y = init ? Math.random() * _canvas.height : _canvas.height + 10;
-    this.baseR = BUBBLE_RADIUS_MIN + Math.random() * BUBBLE_RADIUS_RANGE;
+    this.baseR = BUB.RADIUS_MIN + Math.random() * BUB.RADIUS_RANGE;
     this.r = this.baseR;
     this.riseSpeed =
-      BUBBLE_RISE_MIN +
-      (this.baseR / (BUBBLE_RADIUS_MIN + BUBBLE_RADIUS_RANGE)) *
-        BUBBLE_RISE_RANGE;
+      BUB.RISE_MIN +
+      (this.baseR / (BUB.RADIUS_MIN + BUB.RADIUS_RANGE)) * BUB.RISE_RANGE;
     this.vx = 0;
     this.vy = 0;
     this.wobble = Math.random() * Math.PI * 2;
     this.wobbleSpeed =
-      BUBBLE_WOBBLE_SPEED_MIN + Math.random() * BUBBLE_WOBBLE_SPEED_RANGE;
-    this.wobbleAmp =
-      BUBBLE_WOBBLE_AMP_MIN + Math.random() * BUBBLE_WOBBLE_AMP_RANGE;
-    this.opacity = BUBBLE_OPACITY_MIN + Math.random() * BUBBLE_OPACITY_RANGE;
+      BUB.WOBBLE_SPEED_MIN + Math.random() * BUB.WOBBLE_SPEED_RANGE;
+    this.wobbleAmp = BUB.WOBBLE_AMP_MIN + Math.random() * BUB.WOBBLE_AMP_RANGE;
+    this.opacity = BUB.OPACITY_MIN + Math.random() * BUB.OPACITY_RANGE;
     this.popping = false;
     this.popFrame = 0;
     this.active = init;
@@ -97,23 +415,23 @@ class Bubble {
   update() {
     if (this.popping) {
       this.popFrame++;
-      if (this.popFrame > BUBBLE_POP_FRAMES) {
+      if (this.popFrame > BUB.POP_FRAMES) {
         this.reset(false);
         this.active = false;
         return;
       }
-      this.r = this.baseR * (1 + (this.popFrame / BUBBLE_POP_FRAMES) * 0.5);
+      this.r = this.baseR * (1 + (this.popFrame / BUB.POP_FRAMES) * 0.5);
       this.opacity =
-        (BUBBLE_OPACITY_MIN + BUBBLE_OPACITY_RANGE) *
-        (1 - this.popFrame / BUBBLE_POP_FRAMES);
+        (BUB.OPACITY_MIN + BUB.OPACITY_RANGE) *
+        (1 - this.popFrame / BUB.POP_FRAMES);
       return;
     }
     this.wobble += this.wobbleSpeed;
-    this.r += BUBBLE_GROWTH_RATE;
+    this.r += BUB.GROWTH_RATE;
     this.x += Math.sin(this.wobble) * this.wobbleAmp + this.vx;
     this.y += -this.riseSpeed + this.vy;
-    this.vx *= BUBBLE_FRICTION;
-    this.vy *= BUBBLE_FRICTION;
+    this.vx *= BUB.FRICTION;
+    this.vy *= BUB.FRICTION;
     // Pop at top
     if (this.y < -this.r) {
       this.popping = true;
@@ -142,7 +460,7 @@ class Bubble {
     _ctx.fill();
 
     // Specular highlight — small arc near top-left
-    if (this.r >= BUBBLE_SPECULAR_THRESHOLD) {
+    if (this.r >= BUB.SPECULAR_THRESHOLD) {
       _ctx.strokeStyle = "rgba(255,255,255,0.6)";
       _ctx.lineWidth = 0.8;
       _ctx.beginPath();
@@ -169,7 +487,7 @@ class Bubble {
     }
 
     // Large bubbles get a secondary smaller highlight
-    if (this.r >= BUBBLE_LARGE_THRESHOLD) {
+    if (this.r >= BUB.LARGE_THRESHOLD) {
       _ctx.strokeStyle = "rgba(255,255,255,0.3)";
       _ctx.lineWidth = 0.5;
       _ctx.beginPath();
@@ -192,25 +510,25 @@ class Jellyfish {
     this.reset(true);
   }
   reset(init) {
-    this.bellR = JELLY_BELL_MIN + Math.random() * JELLY_BELL_RANGE;
+    this.bellR = JELLY.BELL_MIN + Math.random() * JELLY.BELL_RANGE;
     this.x = Math.random() * _canvas.width;
     this.y = init
       ? Math.random() * _canvas.height
       : _canvas.height + this.bellR * 2;
-    this.vx = (Math.random() - 0.5) * JELLY_DRIFT_VX;
+    this.vx = (Math.random() - 0.5) * JELLY.DRIFT_VX;
     this.vy = 0;
     this.pulse = Math.random() * Math.PI * 2;
     this.pulseSpeed =
-      JELLY_PULSE_SPEED_MIN + Math.random() * JELLY_PULSE_SPEED_RANGE;
+      JELLY.PULSE_SPEED_MIN + Math.random() * JELLY.PULSE_SPEED_RANGE;
     this.glowPhase = Math.random() * Math.PI * 2;
     this.color = JELLY_COLORS[Math.floor(Math.random() * JELLY_COLORS.length)];
     // Tentacle count based on size
-    if (this.bellR >= JELLY_TENTACLE_LARGE_THRESHOLD) {
-      this.tentacles = JELLY_TENTACLE_LARGE;
-    } else if (this.bellR >= JELLY_TENTACLE_MED_THRESHOLD) {
-      this.tentacles = JELLY_TENTACLE_MED;
+    if (this.bellR >= JELLY.TENTACLE_LARGE_THRESHOLD) {
+      this.tentacles = JELLY.TENTACLE_LARGE;
+    } else if (this.bellR >= JELLY.TENTACLE_MED_THRESHOLD) {
+      this.tentacles = JELLY.TENTACLE_MED;
     } else {
-      this.tentacles = JELLY_TENTACLE_SMALL;
+      this.tentacles = JELLY.TENTACLE_SMALL;
     }
     this.tentaclePhases = Array.from(
       { length: this.tentacles },
@@ -219,22 +537,22 @@ class Jellyfish {
   }
   update() {
     this.pulse += this.pulseSpeed;
-    this.glowPhase += JELLY_GLOW_PULSE_SPEED;
+    this.glowPhase += JELLY.GLOW_PULSE_SPEED;
 
     // Pulsing swim — sharp upward kick on pulse peak, slow drift down otherwise
     const pulseVal = Math.sin(this.pulse);
     if (pulseVal > 0.95) {
-      this.vy -= JELLY_PULSE_STRENGTH;
+      this.vy -= JELLY.PULSE_STRENGTH;
     }
-    this.vy += JELLY_DRIFT_VY; // gentle downward drift
+    this.vy += JELLY.DRIFT_VY; // gentle downward drift
 
     // Occasional direction change
-    if (Math.random() < JELLY_DIRECTION_CHANGE) {
-      this.vx = (Math.random() - 0.5) * JELLY_DRIFT_VX * 2;
+    if (Math.random() < JELLY.DIRECTION_CHANGE) {
+      this.vx = (Math.random() - 0.5) * JELLY.DRIFT_VX * 2;
     }
 
-    this.vx *= JELLY_FRICTION;
-    this.vy *= JELLY_FRICTION;
+    this.vx *= JELLY.FRICTION;
+    this.vy *= JELLY.FRICTION;
     this.x += this.vx;
     this.y += this.vy;
 
@@ -247,15 +565,15 @@ class Jellyfish {
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
-      this.tentaclePhases[i] += JELLY_TENTACLE_WAVE_SPEED + i * 0.005;
+      this.tentaclePhases[i] += JELLY.TENTACLE_WAVE_SPEED + i * 0.005;
     }
   }
   draw() {
     const c = this.color;
     const glowAlpha =
-      JELLY_GLOW_ALPHA_MIN +
-      Math.sin(this.glowPhase) * 0.5 * JELLY_GLOW_ALPHA_RANGE +
-      JELLY_GLOW_ALPHA_RANGE * 0.5;
+      JELLY.GLOW_ALPHA_MIN +
+      Math.sin(this.glowPhase) * 0.5 * JELLY.GLOW_ALPHA_RANGE +
+      JELLY.GLOW_ALPHA_RANGE * 0.5;
 
     _ctx.save();
 
@@ -330,7 +648,7 @@ class Jellyfish {
     _ctx.stroke();
 
     // Tentacles — wavy lines from bottom of bell
-    const tentLen = this.bellR * JELLY_TENTACLE_SEG_LEN_RATIO;
+    const tentLen = this.bellR * JELLY.TENTACLE_SEG_LEN_RATIO;
     const spacing = (bellW * 2) / (this.tentacles + 1);
     // Velocity-based trailing — offset tentacle anchors by opposite of velocity
     const trailX = -this.vx * 8;
@@ -344,24 +662,24 @@ class Jellyfish {
       _ctx.moveTo(baseX, this.y);
       let tx = baseX + trailX * 0.5;
       let ty = this.y;
-      for (let s = 1; s <= JELLY_TENTACLE_SEGMENTS; s++) {
-        const t = s / JELLY_TENTACLE_SEGMENTS;
+      for (let s = 1; s <= JELLY.TENTACLE_SEGMENTS; s++) {
+        const t = s / JELLY.TENTACLE_SEGMENTS;
         const wave =
           Math.sin(this.tentaclePhases[i] + s * 1.2) *
-          JELLY_TENTACLE_WAVE_AMP *
+          JELLY.TENTACLE_WAVE_AMP *
           this.bellR;
         tx = baseX + wave + trailX * t;
         ty = this.y + tentLen * t + trailY * t;
         const cpx =
           baseX +
           Math.sin(this.tentaclePhases[i] + (s - 0.5) * 1.2) *
-            JELLY_TENTACLE_WAVE_AMP *
+            JELLY.TENTACLE_WAVE_AMP *
             this.bellR +
-          trailX * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
+          trailX * (t - 0.5 / JELLY.TENTACLE_SEGMENTS);
         const cpy =
           this.y +
-          tentLen * (t - 0.5 / JELLY_TENTACLE_SEGMENTS) +
-          trailY * (t - 0.5 / JELLY_TENTACLE_SEGMENTS);
+          tentLen * (t - 0.5 / JELLY.TENTACLE_SEGMENTS) +
+          trailY * (t - 0.5 / JELLY.TENTACLE_SEGMENTS);
         _ctx.quadraticCurveTo(cpx, cpy, tx, ty);
       }
       _ctx.stroke();
@@ -384,7 +702,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
   return {
     draw(forces, scrollVelocity, dt) {
       // Ambient bubble spawning
-      bubbleSpawnAccum += BUBBLE_AMBIENT_RATE * dt;
+      bubbleSpawnAccum += BUB.AMBIENT_RATE * dt;
       while (bubbleSpawnAccum >= 1) {
         bubbleSpawnAccum--;
         const b = bubbles.find((b) => !b.active);
@@ -397,30 +715,30 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       bubbles.forEach((b) => {
         if (!b.active) return;
         b.update();
-        applyRepulsion(forces, b, BUBBLE_REPEL_RADIUS, BUBBLE_REPEL_DAMPEN);
+        applyRepulsion(forces, b, BUB.REPEL_RADIUS, BUB.REPEL_DAMPEN);
         applyAttraction(
           forces,
           b,
-          BUBBLE_ATTRACT_RADIUS,
-          BUBBLE_ATTRACT_STRENGTH,
-          BUBBLE_ATTRACT_TANGENT,
+          BUB.ATTRACT_RADIUS,
+          BUB.ATTRACT_STRENGTH,
+          BUB.ATTRACT_TANGENT,
         );
         applyWellForce(forces, b);
         // Scroll pushes laterally
-        if (Math.abs(scrollVelocity) > BUBBLE_SCROLL_THRESHOLD) {
-          b.vx += scrollVelocity * BUBBLE_SCROLL_VX;
+        if (Math.abs(scrollVelocity) > BUB.SCROLL_THRESHOLD) {
+          b.vx += scrollVelocity * BUB.SCROLL_VX;
         }
         b.draw();
       });
 
       jellyfish.forEach((j) => {
         j.update();
-        applyRepulsion(forces, j, JELLY_REPEL_RADIUS, JELLY_REPEL_DAMPEN);
+        applyRepulsion(forces, j, JELLY.REPEL_RADIUS, JELLY.REPEL_DAMPEN);
         applyAttraction(
           forces,
           j,
-          JELLY_ATTRACT_RADIUS,
-          JELLY_ATTRACT_STRENGTH,
+          JELLY.ATTRACT_RADIUS,
+          JELLY.ATTRACT_STRENGTH,
           0,
         );
         applyWellForce(forces, j);
@@ -430,8 +748,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
 
     clickBurst(cx, cy) {
       const burstCount =
-        BUBBLE_CLICK_BURST_MIN +
-        Math.floor(Math.random() * BUBBLE_CLICK_BURST_RANGE);
+        BUB.CLICK_BURST_MIN + Math.floor(Math.random() * BUB.CLICK_BURST_RANGE);
       for (let i = 0; i < burstCount; i++) {
         const b = bubbles.find((b) => !b.active);
         if (!b) break;
@@ -448,13 +765,13 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
     },
 
     dragBubble(x, y) {
-      if (Math.random() >= BUBBLE_DRAG_RATE) return;
+      if (Math.random() >= BUB.DRAG_RATE) return;
       const b = bubbles.find((b) => !b.active);
       if (b) {
         b.reset(false);
         b.x = x + (Math.random() - 0.5) * 10;
         b.y = y + (Math.random() - 0.5) * 10;
-        b.baseR = BUBBLE_RADIUS_MIN + Math.random() * 4;
+        b.baseR = BUB.RADIUS_MIN + Math.random() * 4;
         b.r = b.baseR;
         b.active = true;
       }

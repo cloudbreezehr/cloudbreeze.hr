@@ -1,91 +1,533 @@
 import { drawTrail } from "./canvas-utils.js";
-import {
-  STAR_FADE_END,
-  SHOOTING_X_SPREAD,
-  SHOOTING_X_OFFSET,
-  SHOOTING_ANGLE_MIN,
-} from "./sky.js";
+import { SKY_SHARED } from "./sky.js";
+import { defineConstants } from "./dev/registry.js";
 
 // ── Click Fury ──
-const FURY_MAX = 60;
-const FURY_PER_CLICK = 1;
-const FURY_IDLE_GRACE = 0.4;
-const FURY_DECAY_BASE = 4;
-const FURY_DECAY_ACCEL = 32;
+const FURY = defineConstants("fury.click", {
+  MAX: {
+    value: 60,
+    min: 10,
+    max: 200,
+    step: 1,
+    description: "Maximum fury accumulation",
+  },
+  PER_CLICK: {
+    value: 1,
+    min: 0.1,
+    max: 10,
+    step: 0.1,
+    description: "Fury added per click",
+  },
+  IDLE_GRACE: {
+    value: 0.4,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Seconds before fury begins decaying",
+  },
+  DECAY_BASE: {
+    value: 4,
+    min: 0,
+    max: 20,
+    step: 0.5,
+    description: "Base decay rate per second",
+  },
+  DECAY_ACCEL: {
+    value: 32,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Decay acceleration after grace period",
+  },
+});
 
 // ── Lightning (Tier 1) ──
-const FURY_TIER1 = 25;
-const LIGHTNING_MAX_BOLTS = 6;
-const LIGHTNING_STEPS_MIN = 14;
-const LIGHTNING_STEPS_RANGE = 8;
-const LIGHTNING_JITTER_X = 90;
-const LIGHTNING_JITTER_Y = 30;
-const LIGHTNING_BRANCH_CHANCE = 0.35;
-const LIGHTNING_BRANCH_ANGLE = 0.9;
-const LIGHTNING_BRANCH_LEN_MIN = 40;
-const LIGHTNING_BRANCH_LEN_RANGE = 80;
-const LIGHTNING_BRANCH_STEPS_MIN = 5;
-const LIGHTNING_BRANCH_STEPS_RANGE = 4;
-const LIGHTNING_BRANCH_JITTER_X = 40;
-const LIGHTNING_BRANCH_JITTER_Y = 20;
-const LIGHTNING_LIFE_MIN = 14;
-const LIGHTNING_LIFE_RANGE = 10;
-const LIGHTNING_FLASH_ALPHA = 0.08;
-const LIGHTNING_START_SPREAD = 200;
-const LIGHTNING_START_Y = 0.2;
-const LIGHTNING_OPACITY = 0.95;
-const LIGHTNING_BLOOM_WIDTH = 28;
-const LIGHTNING_BLOOM_ALPHA = 0.07;
-const LIGHTNING_OUTER_WIDTH = 12;
-const LIGHTNING_OUTER_ALPHA = 0.15;
-const LIGHTNING_MID_WIDTH = 5;
-const LIGHTNING_MID_ALPHA = 0.5;
-const LIGHTNING_CORE_WIDTH = 1.5;
-const LIGHTNING_CORE_ALPHA = 1.0;
-const LIGHTNING_FLICKER_COUNT_MIN = 1;
-const LIGHTNING_FLICKER_COUNT_RANGE = 2;
-const LIGHTNING_FLICKER_ALPHA = 0.6;
-const LIGHTNING_MICRO_JITTER = 1.5;
+const LN = defineConstants("fury.lightning", {
+  TIER: {
+    value: 25,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Fury threshold to activate lightning",
+  },
+  MAX_BOLTS: {
+    value: 6,
+    min: 1,
+    max: 20,
+    step: 1,
+    description: "Maximum simultaneous bolts",
+  },
+  STEPS_MIN: {
+    value: 14,
+    min: 3,
+    max: 50,
+    step: 1,
+    description: "Minimum segments per bolt",
+  },
+  STEPS_RANGE: {
+    value: 8,
+    min: 0,
+    max: 30,
+    step: 1,
+    description: "Segment count variation",
+  },
+  JITTER_X: {
+    value: 90,
+    min: 0,
+    max: 300,
+    step: 5,
+    description: "Horizontal jitter in pixels",
+  },
+  JITTER_Y: {
+    value: 30,
+    min: 0,
+    max: 200,
+    step: 5,
+    description: "Vertical jitter in pixels",
+  },
+  BRANCH_CHANCE: {
+    value: 0.35,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Chance of branching at each segment",
+  },
+  BRANCH_ANGLE: {
+    value: 0.9,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Branch angle deviation in radians",
+  },
+  BRANCH_LEN_MIN: {
+    value: 40,
+    min: 5,
+    max: 200,
+    step: 5,
+    description: "Minimum branch length",
+  },
+  BRANCH_LEN_RANGE: {
+    value: 80,
+    min: 0,
+    max: 300,
+    step: 5,
+    description: "Branch length variation",
+  },
+  BRANCH_STEPS_MIN: {
+    value: 5,
+    min: 1,
+    max: 20,
+    step: 1,
+    description: "Minimum segments per branch",
+  },
+  BRANCH_STEPS_RANGE: {
+    value: 4,
+    min: 0,
+    max: 15,
+    step: 1,
+    description: "Branch segment variation",
+  },
+  BRANCH_JITTER_X: {
+    value: 40,
+    min: 0,
+    max: 150,
+    step: 5,
+    description: "Branch horizontal jitter",
+  },
+  BRANCH_JITTER_Y: {
+    value: 20,
+    min: 0,
+    max: 100,
+    step: 5,
+    description: "Branch vertical jitter",
+  },
+  LIFE_MIN: {
+    value: 14,
+    min: 3,
+    max: 60,
+    step: 1,
+    description: "Minimum bolt lifetime in frames",
+  },
+  LIFE_RANGE: {
+    value: 10,
+    min: 0,
+    max: 40,
+    step: 1,
+    description: "Lifetime variation",
+  },
+  FLASH_ALPHA: {
+    value: 0.08,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Full-screen flash overlay opacity",
+  },
+  START_SPREAD: {
+    value: 200,
+    min: 10,
+    max: 600,
+    step: 10,
+    description: "Bolt origin horizontal spread",
+  },
+  START_Y: {
+    value: 0.2,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Max start Y as fraction of canvas height",
+  },
+  OPACITY: {
+    value: 0.95,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Overall bolt opacity multiplier",
+  },
+  BLOOM_WIDTH: {
+    value: 28,
+    min: 1,
+    max: 60,
+    step: 1,
+    description: "Outermost bloom layer width",
+  },
+  BLOOM_ALPHA: {
+    value: 0.07,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Bloom layer opacity",
+  },
+  OUTER_WIDTH: {
+    value: 12,
+    min: 1,
+    max: 40,
+    step: 1,
+    description: "Outer glow layer width",
+  },
+  OUTER_ALPHA: {
+    value: 0.15,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Outer glow opacity",
+  },
+  MID_WIDTH: {
+    value: 5,
+    min: 0.5,
+    max: 20,
+    step: 0.5,
+    description: "Mid layer width",
+  },
+  MID_ALPHA: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Mid layer opacity",
+  },
+  CORE_WIDTH: {
+    value: 1.5,
+    min: 0.2,
+    max: 10,
+    step: 0.1,
+    description: "Core white line width",
+  },
+  CORE_ALPHA: {
+    value: 1.0,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Core line opacity",
+  },
+  FLICKER_COUNT_MIN: {
+    value: 1,
+    min: 0,
+    max: 5,
+    step: 1,
+    description: "Minimum flicker re-brightens",
+  },
+  FLICKER_COUNT_RANGE: {
+    value: 2,
+    min: 0,
+    max: 5,
+    step: 1,
+    description: "Flicker count variation",
+  },
+  FLICKER_ALPHA: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Flicker brightness floor",
+  },
+  MICRO_JITTER: {
+    value: 1.5,
+    min: 0,
+    max: 10,
+    step: 0.1,
+    description: "Frame-to-frame position jitter",
+  },
+});
 
 // ── Aurora (Tier 2) ──
-const FURY_TIER2 = 40;
-const AURORA_RAMP = 10;
-const AURORA_EASE = 0.02;
-const AURORA_ALPHA = 0.15;
-const AURORA_WAVE_COUNT = 4;
-const AURORA_Y_MIN = 0.05;
-const AURORA_Y_RANGE = 0.2;
-const AURORA_SPEED_MIN = 0.005;
-const AURORA_SPEED_RANGE = 0.008;
-const AURORA_AMP_MIN = 15;
-const AURORA_AMP_RANGE = 25;
-const AURORA_WIDTH_MIN = 40;
-const AURORA_WIDTH_RANGE = 60;
-const AURORA_STEP = 24;
-const AURORA_WAVE_FREQ = 6;
-const AURORA_HARMONIC_PHASE = 1.3;
-const AURORA_HARMONIC_FREQ = 3;
-const AURORA_HARMONIC_AMP = 0.5;
-const AURORA_BAND_MAIN_RATIO = 0.6;
-const AURORA_BAND_HARMONIC_RATIO = 0.3;
-const AURORA_BAND_OFFSET = 0.4;
-const AURORA_HUE_SHIFT_MID = 20;
-const AURORA_HUE_SHIFT_EDGE = 40;
+const AURORA = defineConstants("fury.aurora", {
+  TIER: {
+    value: 40,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Fury threshold to activate aurora",
+  },
+  RAMP: {
+    value: 10,
+    min: 1,
+    max: 50,
+    step: 1,
+    description: "Fury range over which aurora ramps to full intensity",
+  },
+  EASE: {
+    value: 0.02,
+    min: 0.001,
+    max: 0.2,
+    step: 0.001,
+    description: "Intensity easing speed per frame",
+  },
+  ALPHA: {
+    value: 0.15,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Peak aurora opacity",
+  },
+  WAVE_COUNT: {
+    value: 4,
+    min: 1,
+    max: 10,
+    step: 1,
+    description: "Number of aurora wave bands",
+  },
+  Y_MIN: {
+    value: 0.05,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Minimum Y position as fraction of canvas",
+  },
+  Y_RANGE: {
+    value: 0.2,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Y position variation",
+  },
+  SPEED_MIN: {
+    value: 0.005,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Minimum wave phase speed",
+  },
+  SPEED_RANGE: {
+    value: 0.008,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Phase speed variation",
+  },
+  AMP_MIN: {
+    value: 15,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Minimum wave amplitude in pixels",
+  },
+  AMP_RANGE: {
+    value: 25,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Amplitude variation",
+  },
+  WIDTH_MIN: {
+    value: 40,
+    min: 5,
+    max: 200,
+    step: 5,
+    description: "Minimum band width in pixels",
+  },
+  WIDTH_RANGE: {
+    value: 60,
+    min: 0,
+    max: 200,
+    step: 5,
+    description: "Band width variation",
+  },
+  STEP: {
+    value: 24,
+    min: 4,
+    max: 80,
+    step: 2,
+    description: "Horizontal pixel step for wave rendering",
+  },
+  WAVE_FREQ: {
+    value: 6,
+    min: 1,
+    max: 20,
+    step: 0.5,
+    description: "Primary wave frequency",
+  },
+  HARMONIC_PHASE: {
+    value: 1.3,
+    min: 0,
+    max: 5,
+    step: 0.1,
+    description: "Harmonic phase offset",
+  },
+  HARMONIC_FREQ: {
+    value: 3,
+    min: 0.5,
+    max: 10,
+    step: 0.5,
+    description: "Harmonic frequency multiplier",
+  },
+  HARMONIC_AMP: {
+    value: 0.5,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    description: "Harmonic amplitude scale",
+  },
+  BAND_MAIN_RATIO: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Bottom edge main wave ratio",
+  },
+  BAND_HARMONIC_RATIO: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Bottom edge harmonic ratio",
+  },
+  BAND_OFFSET: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Bottom edge Y offset as fraction of band width",
+  },
+  HUE_SHIFT_MID: {
+    value: 20,
+    min: 0,
+    max: 180,
+    step: 1,
+    description: "Gradient midpoint hue shift",
+  },
+  HUE_SHIFT_EDGE: {
+    value: 40,
+    min: 0,
+    max: 180,
+    step: 1,
+    description: "Gradient edge hue shift",
+  },
+});
 
 // ── Meteors (Tier 3) ──
-const FURY_TIER3 = 55;
-const METEOR_POOL_SIZE = 20;
-const METEOR_SPEED_MIN = 8;
-const METEOR_SPEED_RANGE = 12;
-const METEOR_LEN_MIN = 50;
-const METEOR_LEN_RANGE = 80;
-const METEOR_OPACITY_MIN = 0.4;
-const METEOR_OPACITY_RANGE = 0.4;
-const METEOR_LIFE_MIN = 18;
-const METEOR_LIFE_RANGE = 18;
-const METEOR_BURST_MIN = 2;
-const METEOR_BURST_RANGE = 3;
-const METEOR_LINE_WIDTH = 1.8;
+const METEOR = defineConstants("fury.meteors", {
+  TIER: {
+    value: 55,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Fury threshold to activate meteor shower",
+  },
+  POOL_SIZE: {
+    value: 20,
+    min: 5,
+    max: 60,
+    step: 1,
+    description: "Maximum simultaneous meteors",
+  },
+  SPEED_MIN: {
+    value: 8,
+    min: 1,
+    max: 40,
+    step: 0.5,
+    description: "Minimum travel speed in px/frame",
+  },
+  SPEED_RANGE: {
+    value: 12,
+    min: 0,
+    max: 40,
+    step: 0.5,
+    description: "Speed variation",
+  },
+  LEN_MIN: {
+    value: 50,
+    min: 5,
+    max: 250,
+    step: 5,
+    description: "Minimum tail length in pixels",
+  },
+  LEN_RANGE: {
+    value: 80,
+    min: 0,
+    max: 250,
+    step: 5,
+    description: "Tail length variation",
+  },
+  OPACITY_MIN: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum opacity",
+  },
+  OPACITY_RANGE: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Opacity variation",
+  },
+  LIFE_MIN: {
+    value: 18,
+    min: 5,
+    max: 100,
+    step: 1,
+    description: "Minimum lifetime in frames",
+  },
+  LIFE_RANGE: {
+    value: 18,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Lifetime variation",
+  },
+  BURST_MIN: {
+    value: 2,
+    min: 1,
+    max: 10,
+    step: 1,
+    description: "Minimum meteors per click burst",
+  },
+  BURST_RANGE: {
+    value: 3,
+    min: 0,
+    max: 10,
+    step: 1,
+    description: "Burst count variation",
+  },
+  LINE_WIDTH: {
+    value: 1.8,
+    min: 0.2,
+    max: 5,
+    step: 0.1,
+    description: "Trail stroke width in pixels",
+  },
+});
 
 // ── Factory ──
 
@@ -95,7 +537,7 @@ export function createFury() {
   const lightningBolts = [];
   const auroraWaves = [];
   let auroraIntensity = 0;
-  const meteorPool = Array.from({ length: METEOR_POOL_SIZE }, () => ({
+  const meteorPool = Array.from({ length: METEOR.POOL_SIZE }, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -109,14 +551,10 @@ export function createFury() {
 
   function spawnLightning(x1, y1, x2, y2, depth) {
     const isBranch = depth > 0;
-    const stepsMin = isBranch
-      ? LIGHTNING_BRANCH_STEPS_MIN
-      : LIGHTNING_STEPS_MIN;
-    const stepsRange = isBranch
-      ? LIGHTNING_BRANCH_STEPS_RANGE
-      : LIGHTNING_STEPS_RANGE;
-    const jitterX = isBranch ? LIGHTNING_BRANCH_JITTER_X : LIGHTNING_JITTER_X;
-    const jitterY = isBranch ? LIGHTNING_BRANCH_JITTER_Y : LIGHTNING_JITTER_Y;
+    const stepsMin = isBranch ? LN.BRANCH_STEPS_MIN : LN.STEPS_MIN;
+    const stepsRange = isBranch ? LN.BRANCH_STEPS_RANGE : LN.STEPS_RANGE;
+    const jitterX = isBranch ? LN.BRANCH_JITTER_X : LN.JITTER_X;
+    const jitterY = isBranch ? LN.BRANCH_JITTER_Y : LN.JITTER_Y;
     const steps = stepsMin + Math.floor(Math.random() * stepsRange);
     const points = [{ x: x1, y: y1 }];
     for (let i = 1; i <= steps; i++) {
@@ -127,15 +565,14 @@ export function createFury() {
       const ny =
         y1 + (y2 - y1) * t + (Math.random() - 0.5) * jitterY * envelope;
       points.push({ x: nx, y: ny });
-      if (depth < 2 && Math.random() < LIGHTNING_BRANCH_CHANCE) {
+      if (depth < 2 && Math.random() < LN.BRANCH_CHANCE) {
         const bAngle =
           Math.atan2(
             ny - points[points.length - 2].y,
             nx - points[points.length - 2].x,
           ) +
-          (Math.random() - 0.5) * LIGHTNING_BRANCH_ANGLE;
-        const bLen =
-          LIGHTNING_BRANCH_LEN_MIN + Math.random() * LIGHTNING_BRANCH_LEN_RANGE;
+          (Math.random() - 0.5) * LN.BRANCH_ANGLE;
+        const bLen = LN.BRANCH_LEN_MIN + Math.random() * LN.BRANCH_LEN_RANGE;
         spawnLightning(
           nx,
           ny,
@@ -145,10 +582,9 @@ export function createFury() {
         );
       }
     }
-    const maxLife = LIGHTNING_LIFE_MIN + Math.random() * LIGHTNING_LIFE_RANGE;
+    const maxLife = LN.LIFE_MIN + Math.random() * LN.LIFE_RANGE;
     const flickerCount =
-      LIGHTNING_FLICKER_COUNT_MIN +
-      Math.floor(Math.random() * LIGHTNING_FLICKER_COUNT_RANGE);
+      LN.FLICKER_COUNT_MIN + Math.floor(Math.random() * LN.FLICKER_COUNT_RANGE);
     const flickerFrames = [];
     for (let f = 0; f < flickerCount; f++) {
       flickerFrames.push(2 + Math.floor(Math.random() * (maxLife * 0.6)));
@@ -161,9 +597,9 @@ export function createFury() {
     draw(ctx, canvas, pal, sp, dt, now) {
       // Fury decay — no decay while actively clicking, then ramps up fast
       const idleSec = (now - lastClickTime) / 1000;
-      if (idleSec >= FURY_IDLE_GRACE) {
+      if (idleSec >= FURY.IDLE_GRACE) {
         const decayRate =
-          FURY_DECAY_BASE + (idleSec - FURY_IDLE_GRACE) * FURY_DECAY_ACCEL;
+          FURY.DECAY_BASE + (idleSec - FURY.IDLE_GRACE) * FURY.DECAY_ACCEL;
         clickFury = Math.max(0, clickFury - dt * decayRate);
       }
 
@@ -181,7 +617,7 @@ export function createFury() {
         const t = bolt.life / bolt.maxLife;
         let fade = Math.pow(1 - t, 2.5);
         const isFlicker = bolt.flickerFrames.indexOf(bolt.life) !== -1;
-        if (isFlicker) fade = Math.max(fade, LIGHTNING_FLICKER_ALPHA);
+        if (isFlicker) fade = Math.max(fade, LN.FLICKER_ALPHA);
 
         const col = pal.lightningColor;
         const sc = pal.lightningShadow;
@@ -194,10 +630,10 @@ export function createFury() {
           ctx.moveTo(pts[0].x, pts[0].y);
           for (let p = 1; p < pts.length; p++) {
             const jx = jitter
-              ? Math.sin(jitterSeed + p * 3.7) * LIGHTNING_MICRO_JITTER
+              ? Math.sin(jitterSeed + p * 3.7) * LN.MICRO_JITTER
               : 0;
             const jy = jitter
-              ? Math.cos(jitterSeed + p * 2.3) * LIGHTNING_MICRO_JITTER
+              ? Math.cos(jitterSeed + p * 2.3) * LN.MICRO_JITTER
               : 0;
             if (p < pts.length - 1) {
               const mx = (pts[p].x + jx + pts[p + 1].x) * 0.5;
@@ -214,29 +650,26 @@ export function createFury() {
         ctx.lineJoin = "round";
         ctx.globalCompositeOperation = "lighter";
 
-        ctx.globalAlpha =
-          fade * LIGHTNING_BLOOM_ALPHA * branchScale * LIGHTNING_OPACITY;
+        ctx.globalAlpha = fade * LN.BLOOM_ALPHA * branchScale * LN.OPACITY;
         ctx.strokeStyle = `rgb(${sc[0]},${sc[1]},${sc[2]})`;
-        ctx.lineWidth = LIGHTNING_BLOOM_WIDTH * branchScale;
+        ctx.lineWidth = LN.BLOOM_WIDTH * branchScale;
         tracePath(false);
         ctx.stroke();
 
-        ctx.globalAlpha =
-          fade * LIGHTNING_OUTER_ALPHA * branchScale * LIGHTNING_OPACITY;
-        ctx.lineWidth = LIGHTNING_OUTER_WIDTH * branchScale;
+        ctx.globalAlpha = fade * LN.OUTER_ALPHA * branchScale * LN.OPACITY;
+        ctx.lineWidth = LN.OUTER_WIDTH * branchScale;
         tracePath(false);
         ctx.stroke();
 
-        ctx.globalAlpha =
-          fade * LIGHTNING_MID_ALPHA * branchScale * LIGHTNING_OPACITY;
+        ctx.globalAlpha = fade * LN.MID_ALPHA * branchScale * LN.OPACITY;
         ctx.strokeStyle = `rgb(${col[0]},${col[1]},${col[2]})`;
-        ctx.lineWidth = LIGHTNING_MID_WIDTH * branchScale;
+        ctx.lineWidth = LN.MID_WIDTH * branchScale;
         tracePath(true);
         ctx.stroke();
 
-        ctx.globalAlpha = fade * LIGHTNING_CORE_ALPHA * LIGHTNING_OPACITY;
+        ctx.globalAlpha = fade * LN.CORE_ALPHA * LN.OPACITY;
         ctx.strokeStyle = "#fff";
-        ctx.lineWidth = LIGHTNING_CORE_WIDTH * branchScale;
+        ctx.lineWidth = LN.CORE_WIDTH * branchScale;
         tracePath(true);
         ctx.stroke();
 
@@ -245,7 +678,7 @@ export function createFury() {
       if (flashThisFrame) {
         const fc = pal.lightningFlash;
         ctx.save();
-        ctx.globalAlpha = LIGHTNING_FLASH_ALPHA;
+        ctx.globalAlpha = LN.FLASH_ALPHA;
         ctx.fillStyle = `rgba(${fc[0]},${fc[1]},${fc[2]},1)`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.restore();
@@ -253,39 +686,39 @@ export function createFury() {
 
       // Tier 2: Aurora borealis
       const auroraTarget =
-        clickFury >= FURY_TIER2
-          ? Math.min((clickFury - FURY_TIER2) / AURORA_RAMP, 1)
+        clickFury >= AURORA.TIER
+          ? Math.min((clickFury - AURORA.TIER) / AURORA.RAMP, 1)
           : 0;
-      auroraIntensity += (auroraTarget - auroraIntensity) * AURORA_EASE;
+      auroraIntensity += (auroraTarget - auroraIntensity) * AURORA.EASE;
       if (auroraIntensity > 0.01) {
-        while (auroraWaves.length < AURORA_WAVE_COUNT) {
+        while (auroraWaves.length < AURORA.WAVE_COUNT) {
           auroraWaves.push({
-            y: canvas.height * (AURORA_Y_MIN + Math.random() * AURORA_Y_RANGE),
+            y: canvas.height * (AURORA.Y_MIN + Math.random() * AURORA.Y_RANGE),
             phase: Math.random() * Math.PI * 2,
-            speed: AURORA_SPEED_MIN + Math.random() * AURORA_SPEED_RANGE,
-            amp: AURORA_AMP_MIN + Math.random() * AURORA_AMP_RANGE,
-            width: AURORA_WIDTH_MIN + Math.random() * AURORA_WIDTH_RANGE,
+            speed: AURORA.SPEED_MIN + Math.random() * AURORA.SPEED_RANGE,
+            amp: AURORA.AMP_MIN + Math.random() * AURORA.AMP_RANGE,
+            width: AURORA.WIDTH_MIN + Math.random() * AURORA.WIDTH_RANGE,
             hue: pal.auroraHueBase + Math.random() * pal.auroraHueRange,
           });
         }
         const waveY = (w, t, mainScale, harmonicScale) =>
-          Math.sin(w.phase + t * AURORA_WAVE_FREQ) * w.amp * mainScale +
-          Math.sin(w.phase * AURORA_HARMONIC_PHASE + t * AURORA_HARMONIC_FREQ) *
+          Math.sin(w.phase + t * AURORA.WAVE_FREQ) * w.amp * mainScale +
+          Math.sin(w.phase * AURORA.HARMONIC_PHASE + t * AURORA.HARMONIC_FREQ) *
             w.amp *
             harmonicScale;
 
         const traceEdge = (w, mainScale, harmonicScale, yBase, reverse) => {
-          const steps = Math.ceil(canvas.width / AURORA_STEP);
+          const steps = Math.ceil(canvas.width / AURORA.STEP);
           for (let i = 1; i <= steps; i++) {
             const x = reverse
-              ? Math.max(canvas.width - i * AURORA_STEP, 0)
-              : Math.min(i * AURORA_STEP, canvas.width);
+              ? Math.max(canvas.width - i * AURORA.STEP, 0)
+              : Math.min(i * AURORA.STEP, canvas.width);
             const y =
               yBase + waveY(w, x / canvas.width, mainScale, harmonicScale);
             if (i < steps) {
               const nx = reverse
-                ? Math.max(canvas.width - (i + 1) * AURORA_STEP, 0)
-                : Math.min((i + 1) * AURORA_STEP, canvas.width);
+                ? Math.max(canvas.width - (i + 1) * AURORA.STEP, 0)
+                : Math.min((i + 1) * AURORA.STEP, canvas.width);
               const ny =
                 yBase + waveY(w, nx / canvas.width, mainScale, harmonicScale);
               ctx.quadraticCurveTo(x, y, (x + nx) * 0.5, (y + ny) * 0.5);
@@ -303,7 +736,7 @@ export function createFury() {
             w.hue = pal.auroraHueBase + Math.random() * pal.auroraHueRange;
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = auroraIntensity * AURORA_ALPHA;
+          ctx.globalAlpha = auroraIntensity * AURORA.ALPHA;
           const grad = ctx.createLinearGradient(
             0,
             w.y - w.width,
@@ -314,27 +747,27 @@ export function createFury() {
           grad.addColorStop(0.3, `hsla(${w.hue}, 80%, 60%, 0.6)`);
           grad.addColorStop(
             0.5,
-            `hsla(${w.hue + AURORA_HUE_SHIFT_MID}, 70%, 50%, 0.8)`,
+            `hsla(${w.hue + AURORA.HUE_SHIFT_MID}, 70%, 50%, 0.8)`,
           );
           grad.addColorStop(
             0.7,
-            `hsla(${w.hue + AURORA_HUE_SHIFT_EDGE}, 80%, 60%, 0.6)`,
+            `hsla(${w.hue + AURORA.HUE_SHIFT_EDGE}, 80%, 60%, 0.6)`,
           );
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
-          const botBase = w.y + w.width * AURORA_BAND_OFFSET;
+          const botBase = w.y + w.width * AURORA.BAND_OFFSET;
           ctx.beginPath();
-          ctx.moveTo(0, w.y + waveY(w, 0, 1, AURORA_HARMONIC_AMP));
-          traceEdge(w, 1, AURORA_HARMONIC_AMP, w.y, false);
+          ctx.moveTo(0, w.y + waveY(w, 0, 1, AURORA.HARMONIC_AMP));
+          traceEdge(w, 1, AURORA.HARMONIC_AMP, w.y, false);
           ctx.lineTo(
             canvas.width,
             botBase +
-              waveY(w, 1, AURORA_BAND_MAIN_RATIO, AURORA_BAND_HARMONIC_RATIO),
+              waveY(w, 1, AURORA.BAND_MAIN_RATIO, AURORA.BAND_HARMONIC_RATIO),
           );
           traceEdge(
             w,
-            AURORA_BAND_MAIN_RATIO,
-            AURORA_BAND_HARMONIC_RATIO,
+            AURORA.BAND_MAIN_RATIO,
+            AURORA.BAND_HARMONIC_RATIO,
             botBase,
             true,
           );
@@ -367,44 +800,41 @@ export function createFury() {
           tailY,
           pal.meteorColors,
           op,
-          METEOR_LINE_WIDTH,
+          METEOR.LINE_WIDTH,
         );
       });
     },
 
     // Handle a click: bump fury, spawn lightning/meteors based on tier.
     click(cx, cy, canvas, sp) {
-      clickFury = Math.min(clickFury + FURY_PER_CLICK, FURY_MAX);
+      clickFury = Math.min(clickFury + FURY.PER_CLICK, FURY.MAX);
       lastClickTime = performance.now();
 
       // Tier 1: Lightning
-      if (
-        clickFury >= FURY_TIER1 &&
-        lightningBolts.length < LIGHTNING_MAX_BOLTS
-      ) {
-        const startX = cx + (Math.random() - 0.5) * LIGHTNING_START_SPREAD;
-        const startY = Math.random() * canvas.height * LIGHTNING_START_Y;
+      if (clickFury >= LN.TIER && lightningBolts.length < LN.MAX_BOLTS) {
+        const startX = cx + (Math.random() - 0.5) * LN.START_SPREAD;
+        const startY = Math.random() * canvas.height * LN.START_Y;
         spawnLightning(startX, startY, cx, cy, 0);
       }
 
       // Tier 3: Meteor shower burst
-      if (clickFury >= FURY_TIER3 && sp < STAR_FADE_END) {
+      if (clickFury >= METEOR.TIER && sp < SKY_SHARED.FADE_END) {
         const count =
-          METEOR_BURST_MIN + Math.floor(Math.random() * METEOR_BURST_RANGE);
+          METEOR.BURST_MIN + Math.floor(Math.random() * METEOR.BURST_RANGE);
         for (let i = 0; i < count; i++) {
           const m = meteorPool.find((m) => !m.active);
           if (!m) break;
           m.x =
-            Math.random() * canvas.width * SHOOTING_X_SPREAD +
-            canvas.width * SHOOTING_X_OFFSET;
+            Math.random() * canvas.width * SKY_SHARED.X_SPREAD +
+            canvas.width * SKY_SHARED.X_OFFSET;
           m.y = Math.random() * canvas.height * 0.3;
           m.angle =
-            Math.PI * SHOOTING_ANGLE_MIN + Math.random() * Math.PI * 0.25;
-          m.speed = METEOR_SPEED_MIN + Math.random() * METEOR_SPEED_RANGE;
-          m.len = METEOR_LEN_MIN + Math.random() * METEOR_LEN_RANGE;
-          m.opacity = METEOR_OPACITY_MIN + Math.random() * METEOR_OPACITY_RANGE;
+            Math.PI * SKY_SHARED.ANGLE_MIN + Math.random() * Math.PI * 0.25;
+          m.speed = METEOR.SPEED_MIN + Math.random() * METEOR.SPEED_RANGE;
+          m.len = METEOR.LEN_MIN + Math.random() * METEOR.LEN_RANGE;
+          m.opacity = METEOR.OPACITY_MIN + Math.random() * METEOR.OPACITY_RANGE;
           m.life = 0;
-          m.maxLife = METEOR_LIFE_MIN + Math.random() * METEOR_LIFE_RANGE;
+          m.maxLife = METEOR.LIFE_MIN + Math.random() * METEOR.LIFE_RANGE;
           m.active = true;
         }
       }

@@ -1,75 +1,346 @@
 import { scrollFade, drawTrail } from "./canvas-utils.js";
+import { defineConstants } from "./dev/registry.js";
 
 // ── Stars ──
-const STAR_RADIUS_MIN = 0.3;
-const STAR_RADIUS_RANGE = 1;
-const STAR_OPACITY_MIN = 0.1;
-const STAR_OPACITY_RANGE = 0.4;
-const STAR_TWINKLE_SPEED_MIN = 0.008;
-const STAR_TWINKLE_SPEED_RANGE = 0.03;
-const STAR_DEPTH_MIN = 0.1;
-const STAR_DEPTH_RANGE = 0.9;
-const STAR_FLASH_CHANCE = 0.0003;
-const STAR_FLASH_MIN = 0.6;
-const STAR_FLASH_RANGE = 0.4;
-const STAR_FLASH_DECAY = 0.92;
-const STAR_FLASH_THRESHOLD = 0.01;
-const STAR_TWINKLE_BASE = 0.7;
-const STAR_TWINKLE_RANGE = 0.3;
-const STAR_PARALLAX_SCALE = 0.4;
-const STAR_FADE_START = 0.2;
-const STAR_TIME_STEP = 0.008;
-const STAR_GLOW_THRESHOLD = 0.8;
-const STAR_GLOW_RADIUS = 2.5;
-const STAR_GLOW_MID = 0.35;
-const STAR_GLOW_MID_ALPHA = 0.4;
-const STAR_GLARE_THRESHOLD = 1.0;
-const STAR_GLARE_CHANCE = 0.15;
-const STAR_GLARE_SPIKE_LENGTH = 14;
-const STAR_GLARE_WIDTH = 0.6;
-const STAR_GLARE_ROTATION_SPEED = 0.15;
+const STARS = defineConstants("sky.stars", {
+  RADIUS_MIN: {
+    value: 0.3,
+    min: 0,
+    max: 5,
+    step: 0.1,
+    description: "Minimum star radius in pixels",
+  },
+  RADIUS_RANGE: {
+    value: 1,
+    min: 0,
+    max: 5,
+    step: 0.1,
+    description: "Random radius variation added to minimum",
+  },
+  OPACITY_MIN: {
+    value: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum base opacity",
+  },
+  OPACITY_RANGE: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Random opacity variation",
+  },
+  TWINKLE_SPEED_MIN: {
+    value: 0.008,
+    min: 0,
+    max: 0.1,
+    step: 0.001,
+    description: "Minimum twinkle animation speed",
+  },
+  TWINKLE_SPEED_RANGE: {
+    value: 0.03,
+    min: 0,
+    max: 0.1,
+    step: 0.001,
+    description: "Twinkle speed variation",
+  },
+  DEPTH_MIN: {
+    value: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum parallax depth",
+  },
+  DEPTH_RANGE: {
+    value: 0.9,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Parallax depth variation",
+  },
+  FLASH_CHANCE: {
+    value: 0.0003,
+    min: 0,
+    max: 0.01,
+    step: 0.0001,
+    description: "Per-frame chance of a bright flash",
+  },
+  FLASH_MIN: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum flash brightness",
+  },
+  FLASH_RANGE: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Flash brightness variation",
+  },
+  FLASH_DECAY: {
+    value: 0.92,
+    min: 0.5,
+    max: 1,
+    step: 0.01,
+    description: "Flash brightness decay rate per frame",
+  },
+  FLASH_THRESHOLD: {
+    value: 0.01,
+    min: 0,
+    max: 0.1,
+    step: 0.001,
+    description: "Flash cutoff — below this, flash is zeroed",
+  },
+  TWINKLE_BASE: {
+    value: 0.7,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Base brightness before twinkle sine wave",
+  },
+  TWINKLE_RANGE: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Twinkle sine wave amplitude",
+  },
+  PARALLAX_SCALE: {
+    value: 0.4,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    description: "Scroll parallax displacement multiplier",
+  },
+  FADE_START: {
+    value: 0.2,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll position where stars begin fading out",
+  },
+  TIME_STEP: {
+    value: 0.008,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Per-frame time increment for glare rotation",
+  },
+  GLOW_THRESHOLD: {
+    value: 0.8,
+    min: 0,
+    max: 2,
+    step: 0.1,
+    description: "Minimum radius for radial glow halo",
+  },
+  GLOW_RADIUS: {
+    value: 2.5,
+    min: 1,
+    max: 10,
+    step: 0.1,
+    description: "Glow halo radius multiplier",
+  },
+  GLOW_MID: {
+    value: 0.35,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Gradient midpoint stop position",
+  },
+  GLOW_MID_ALPHA: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Gradient midpoint opacity multiplier",
+  },
+  GLARE_THRESHOLD: {
+    value: 1.0,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Minimum radius for cross-flare glare",
+  },
+  GLARE_CHANCE: {
+    value: 0.15,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Chance a flashing star gets glare spikes",
+  },
+  GLARE_SPIKE_LENGTH: {
+    value: 14,
+    min: 1,
+    max: 50,
+    step: 1,
+    description: "Glare spike length multiplier",
+  },
+  GLARE_WIDTH: {
+    value: 0.6,
+    min: 0.1,
+    max: 5,
+    step: 0.1,
+    description: "Glare line width in pixels",
+  },
+  GLARE_ROTATION_SPEED: {
+    value: 0.15,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Glare spike rotation speed",
+  },
+});
 
 // ── Shooting Stars ──
-const SHOOTING_POOL_SIZE = 3;
-const SHOOTING_SPAWN_CHANCE = 0.003;
-const SHOOTING_Y_MAX = 0.4;
-const SHOOTING_ANGLE_RANGE = 0.2;
-const SHOOTING_SPEED_MIN = 6;
-const SHOOTING_SPEED_RANGE = 8;
-const SHOOTING_LEN_MIN = 40;
-const SHOOTING_LEN_RANGE = 60;
-const SHOOTING_OPACITY_MIN = 0.3;
-const SHOOTING_OPACITY_RANGE = 0.4;
-const SHOOTING_LIFE_MIN = 20;
-const SHOOTING_LIFE_RANGE = 20;
-const SHOOTING_LINE_WIDTH = 1.2;
+const SHOOTING = defineConstants("sky.shooting", {
+  POOL_SIZE: {
+    value: 3,
+    min: 1,
+    max: 20,
+    step: 1,
+    description: "Max simultaneous shooting stars",
+  },
+  SPAWN_CHANCE: {
+    value: 0.003,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Per-frame spawn probability",
+  },
+  Y_MAX: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Max spawn Y as fraction of canvas height",
+  },
+  ANGLE_RANGE: {
+    value: 0.2,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Arc angle variation in radians/pi",
+  },
+  SPEED_MIN: {
+    value: 6,
+    min: 1,
+    max: 30,
+    step: 0.5,
+    description: "Minimum travel speed in px/frame",
+  },
+  SPEED_RANGE: {
+    value: 8,
+    min: 0,
+    max: 30,
+    step: 0.5,
+    description: "Speed variation",
+  },
+  LEN_MIN: {
+    value: 40,
+    min: 5,
+    max: 200,
+    step: 1,
+    description: "Minimum tail length in pixels",
+  },
+  LEN_RANGE: {
+    value: 60,
+    min: 0,
+    max: 200,
+    step: 1,
+    description: "Tail length variation",
+  },
+  OPACITY_MIN: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum opacity",
+  },
+  OPACITY_RANGE: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Opacity variation",
+  },
+  LIFE_MIN: {
+    value: 20,
+    min: 5,
+    max: 100,
+    step: 1,
+    description: "Minimum lifetime in frames",
+  },
+  LIFE_RANGE: {
+    value: 20,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Lifetime variation",
+  },
+  LINE_WIDTH: {
+    value: 1.2,
+    min: 0.2,
+    max: 5,
+    step: 0.1,
+    description: "Trail stroke width in pixels",
+  },
+});
 
-// Exported for fury meteor spawner
-export const STAR_FADE_END = 0.5;
-export const SHOOTING_X_SPREAD = 0.8;
-export const SHOOTING_X_OFFSET = 0.1;
-export const SHOOTING_ANGLE_MIN = 0.15;
+// Shared with fury.js for meteor spawning
+export const SKY_SHARED = defineConstants("sky.shared", {
+  FADE_END: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll position where stars fully disappear",
+  },
+  X_SPREAD: {
+    value: 0.8,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Horizontal spawn spread as fraction of canvas",
+  },
+  X_OFFSET: {
+    value: 0.1,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Horizontal spawn offset from left edge",
+  },
+  ANGLE_MIN: {
+    value: 0.15,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum shooting angle in radians/pi",
+  },
+});
 
 // ── Factory ──
 
 export function createSky(starCount) {
   const stars = Array.from({ length: starCount }, () => {
-    const r = STAR_RADIUS_MIN + Math.random() * STAR_RADIUS_RANGE;
+    const r = STARS.RADIUS_MIN + Math.random() * STARS.RADIUS_RANGE;
     return {
       x: Math.random() * 1920,
       y: Math.random() * 1080,
       r,
-      opacity: STAR_OPACITY_MIN + Math.random() * STAR_OPACITY_RANGE,
+      opacity: STARS.OPACITY_MIN + Math.random() * STARS.OPACITY_RANGE,
       twinkle: Math.random() * Math.PI * 2,
       twinkleSpeed:
-        STAR_TWINKLE_SPEED_MIN + Math.random() * STAR_TWINKLE_SPEED_RANGE,
+        STARS.TWINKLE_SPEED_MIN + Math.random() * STARS.TWINKLE_SPEED_RANGE,
       flash: 0,
-      depth: STAR_DEPTH_MIN + Math.random() * STAR_DEPTH_RANGE,
+      depth: STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE,
       glarePhase: Math.random() * Math.PI,
     };
   });
 
-  const shootingStars = Array.from({ length: SHOOTING_POOL_SIZE }, () => ({
+  const shootingStars = Array.from({ length: SHOOTING.POOL_SIZE }, () => ({
     active: false,
     x: 0,
     y: 0,
@@ -85,39 +356,45 @@ export function createSky(starCount) {
 
   return {
     draw(ctx, canvas, sp, pal) {
-      const starVis = scrollFade(sp, 0, 0, STAR_FADE_START, STAR_FADE_END);
+      const starVis = scrollFade(
+        sp,
+        0,
+        0,
+        STARS.FADE_START,
+        SKY_SHARED.FADE_END,
+      );
       if (starVis <= 0) return;
 
-      t += STAR_TIME_STEP;
+      t += STARS.TIME_STEP;
       stars.forEach((s) => {
         s.twinkle += s.twinkleSpeed;
         // Random bright flash — rare, brief spike
         if (s.flash > 0) {
-          s.flash *= STAR_FLASH_DECAY;
-          if (s.flash < STAR_FLASH_THRESHOLD) s.flash = 0;
-        } else if (Math.random() < STAR_FLASH_CHANCE) {
-          s.flash = STAR_FLASH_MIN + Math.random() * STAR_FLASH_RANGE;
+          s.flash *= STARS.FLASH_DECAY;
+          if (s.flash < STARS.FLASH_THRESHOLD) s.flash = 0;
+        } else if (Math.random() < STARS.FLASH_CHANCE) {
+          s.flash = STARS.FLASH_MIN + Math.random() * STARS.FLASH_RANGE;
           s.glare =
-            s.r >= STAR_GLARE_THRESHOLD && Math.random() < STAR_GLARE_CHANCE;
+            s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
         }
         const base =
           s.opacity *
-          (STAR_TWINKLE_BASE + STAR_TWINKLE_RANGE * Math.sin(s.twinkle));
+          (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
         const op = Math.min(1, base + s.flash) * starVis;
         // Parallax — closer stars (higher depth) shift more on scroll
-        const shift = s.depth * sp * canvas.height * STAR_PARALLAX_SCALE;
+        const shift = s.depth * sp * canvas.height * STARS.PARALLAX_SCALE;
         const py =
           (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
         const sx = s.x % canvas.width;
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
-        if (s.r >= STAR_GLOW_THRESHOLD) {
-          const gr = s.r * STAR_GLOW_RADIUS;
+        if (s.r >= STARS.GLOW_THRESHOLD) {
+          const gr = s.r * STARS.GLOW_RADIUS;
           const grad = ctx.createRadialGradient(sx, py, 0, sx, py, gr);
           grad.addColorStop(0, `rgba(${sc},${op})`);
           grad.addColorStop(
-            STAR_GLOW_MID,
-            `rgba(${sc},${op * STAR_GLOW_MID_ALPHA})`,
+            STARS.GLOW_MID,
+            `rgba(${sc},${op * STARS.GLOW_MID_ALPHA})`,
           );
           grad.addColorStop(1, `rgba(${sc},0)`);
           ctx.fillStyle = grad;
@@ -131,13 +408,13 @@ export function createSky(starCount) {
           ctx.fill();
         }
         // Cross-flare glare on rare bright flashing stars
-        if (s.glare && s.flash > STAR_FLASH_THRESHOLD) {
-          const glareLen = s.r * STAR_GLARE_SPIKE_LENGTH * s.flash;
-          const angle = t * STAR_GLARE_ROTATION_SPEED + s.glarePhase;
+        if (s.glare && s.flash > STARS.FLASH_THRESHOLD) {
+          const glareLen = s.r * STARS.GLARE_SPIKE_LENGTH * s.flash;
+          const angle = t * STARS.GLARE_ROTATION_SPEED + s.glarePhase;
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
           ctx.globalAlpha = s.flash * starVis;
-          ctx.lineWidth = STAR_GLARE_WIDTH;
+          ctx.lineWidth = STARS.GLARE_WIDTH;
           ctx.lineCap = "round";
           for (let i = 0; i < 2; i++) {
             const a = angle + i * Math.PI * 0.5;
@@ -163,22 +440,22 @@ export function createSky(starCount) {
       });
 
       // Shooting stars — rare fast arcs across the sky
-      if (Math.random() < SHOOTING_SPAWN_CHANCE) {
+      if (Math.random() < SHOOTING.SPAWN_CHANCE) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =
-            Math.random() * canvas.width * SHOOTING_X_SPREAD +
-            canvas.width * SHOOTING_X_OFFSET;
-          ss.y = Math.random() * canvas.height * SHOOTING_Y_MAX;
+            Math.random() * canvas.width * SKY_SHARED.X_SPREAD +
+            canvas.width * SKY_SHARED.X_OFFSET;
+          ss.y = Math.random() * canvas.height * SHOOTING.Y_MAX;
           ss.angle =
-            Math.PI * SHOOTING_ANGLE_MIN +
-            Math.random() * Math.PI * SHOOTING_ANGLE_RANGE;
-          ss.speed = SHOOTING_SPEED_MIN + Math.random() * SHOOTING_SPEED_RANGE;
-          ss.len = SHOOTING_LEN_MIN + Math.random() * SHOOTING_LEN_RANGE;
+            Math.PI * SKY_SHARED.ANGLE_MIN +
+            Math.random() * Math.PI * SHOOTING.ANGLE_RANGE;
+          ss.speed = SHOOTING.SPEED_MIN + Math.random() * SHOOTING.SPEED_RANGE;
+          ss.len = SHOOTING.LEN_MIN + Math.random() * SHOOTING.LEN_RANGE;
           ss.opacity =
-            SHOOTING_OPACITY_MIN + Math.random() * SHOOTING_OPACITY_RANGE;
+            SHOOTING.OPACITY_MIN + Math.random() * SHOOTING.OPACITY_RANGE;
           ss.life = 0;
-          ss.maxLife = SHOOTING_LIFE_MIN + Math.random() * SHOOTING_LIFE_RANGE;
+          ss.maxLife = SHOOTING.LIFE_MIN + Math.random() * SHOOTING.LIFE_RANGE;
           ss.active = true;
         }
       }
@@ -205,7 +482,7 @@ export function createSky(starCount) {
           tailY,
           pal.shootingColors,
           op,
-          SHOOTING_LINE_WIDTH,
+          SHOOTING.LINE_WIDTH,
         );
       });
     },

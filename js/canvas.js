@@ -6,11 +6,26 @@ import { createAtmosphere } from "./atmosphere.js";
 import { createSnow } from "./particles/frozen.js";
 import { createDeepSea } from "./particles/deep-sea.js";
 import { createBlocky } from "./particles/blocky.js";
-import { createInteractions, BLAST_BASE } from "./interactions.js";
+import { createInteractions, HOLD } from "./interactions.js";
+import { defineConstants } from "./dev/registry.js";
 
 // ── Scroll Velocity ──
-const SCROLL_VEL_GAIN = 0.3;
-const SCROLL_VEL_DECAY = 0.92;
+const SCROLL = defineConstants("canvas.scroll", {
+  VEL_GAIN: {
+    value: 0.3,
+    min: 0,
+    max: 2,
+    step: 0.01,
+    description: "Scroll velocity gain per pixel",
+  },
+  VEL_DECAY: {
+    value: 0.92,
+    min: 0.5,
+    max: 1,
+    step: 0.01,
+    description: "Scroll velocity decay per frame",
+  },
+});
 
 // ── Sub-mode registry ──
 // Body class names for each easter-egg mode. Used for active mode detection
@@ -18,15 +33,107 @@ const SCROLL_VEL_DECAY = 0.92;
 const SUBMODES = ["deep-sea", "frozen", "blocky", "upside-down"];
 
 // ── Particle counts ──
-const SNOW_COUNT = 40;
-const BUBBLE_COUNT = 30;
-const JELLY_COUNT = 8;
-const FIREFLY_COUNT = 28;
+const COUNTS = defineConstants("canvas.particles", {
+  SNOW: {
+    value: 40,
+    min: 0,
+    max: 200,
+    step: 1,
+    description: "Snowflake count (frozen mode)",
+  },
+  BUBBLE: {
+    value: 30,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Bubble pool size (deep-sea mode)",
+  },
+  JELLY: {
+    value: 8,
+    min: 0,
+    max: 30,
+    step: 1,
+    description: "Jellyfish count (deep-sea mode)",
+  },
+  FIREFLY: {
+    value: 28,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Firefly count (blocky mode)",
+  },
+});
 
 // ── Snow Globe Shake ──
-const SHAKE_REVERSAL_WINDOW = 500; // ms — direction changes within this window count
-const SHAKE_REVERSALS_NEEDED = 3; // rapid reversals to trigger a shake
-const SHAKE_MIN_DELTA = 3; // minimum scroll delta to count as directional
+const SHAKE = defineConstants("canvas.shake", {
+  REVERSAL_WINDOW: {
+    value: 500,
+    min: 100,
+    max: 2000,
+    step: 50,
+    description: "ms window for counting scroll reversals",
+  },
+  REVERSALS_NEEDED: {
+    value: 3,
+    min: 2,
+    max: 10,
+    step: 1,
+    description: "Rapid reversals needed to trigger shake",
+  },
+  MIN_DELTA: {
+    value: 3,
+    min: 1,
+    max: 20,
+    step: 1,
+    description: "Minimum scroll delta to count as directional",
+  },
+});
+
+// ── Render Options ──
+const RENDER = defineConstants("canvas.render", {
+  STAR_COUNT: {
+    value: 120,
+    min: 0,
+    max: 500,
+    step: 1,
+    description: "Number of stars",
+  },
+  STREAK_COUNT: {
+    value: 35,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Number of rain streaks",
+  },
+  CLOUD_COUNT: {
+    value: 18,
+    min: 0,
+    max: 60,
+    step: 1,
+    description: "Number of clouds",
+  },
+  WISP_COUNT: {
+    value: 12,
+    min: 0,
+    max: 40,
+    step: 1,
+    description: "Number of breeze wisps",
+  },
+  GUST_COUNT: {
+    value: 24,
+    min: 0,
+    max: 80,
+    step: 1,
+    description: "Number of gust lines (pool size)",
+  },
+  MOTE_COUNT: {
+    value: 35,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Number of scroll motes",
+  },
+});
 
 let canvas, ctx;
 
@@ -39,12 +146,12 @@ const defaults = {
   horizon: true,
   gusts: true,
   motes: true,
-  starCount: 120,
-  streakCount: 35,
-  cloudCount: 18,
-  wispCount: 12,
-  gustCount: 24,
-  moteCount: 35,
+  starCount: RENDER.STAR_COUNT,
+  streakCount: RENDER.STREAK_COUNT,
+  cloudCount: RENDER.CLOUD_COUNT,
+  wispCount: RENDER.WISP_COUNT,
+  gustCount: RENDER.GUST_COUNT,
+  moteCount: RENDER.MOTE_COUNT,
 };
 
 export function initCanvas(canvasEl, theme, options) {
@@ -89,20 +196,20 @@ export function initCanvas(canvasEl, theme, options) {
     scrollProgress =
       docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
     const delta = scrollTop - lastScrollTop;
-    scrollVelocity += delta * SCROLL_VEL_GAIN;
+    scrollVelocity += delta * SCROLL.VEL_GAIN;
     lastScrollTop = scrollTop;
 
     // Detect direction reversals for snow globe shake
-    if (Math.abs(delta) >= SHAKE_MIN_DELTA) {
+    if (Math.abs(delta) >= SHAKE.MIN_DELTA) {
       const dir = delta > 0 ? 1 : -1;
       if (lastScrollDir !== 0 && dir !== lastScrollDir) {
         const now = performance.now();
         reversalTimes.push(now);
         // Prune old reversals outside the window
         reversalTimes = reversalTimes.filter(
-          (t) => now - t < SHAKE_REVERSAL_WINDOW,
+          (t) => now - t < SHAKE.REVERSAL_WINDOW,
         );
-        if (reversalTimes.length >= SHAKE_REVERSALS_NEEDED) {
+        if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
           snowTurbulence.value = 1;
           reversalTimes.length = 0;
         }
@@ -115,9 +222,9 @@ export function initCanvas(canvasEl, theme, options) {
   updateScroll();
 
   const atmosphere = createAtmosphere(canvas, ctx, opts);
-  const snow = createSnow(canvas, ctx, SNOW_COUNT);
-  const deepSea = createDeepSea(canvas, ctx, BUBBLE_COUNT, JELLY_COUNT);
-  const blocky = createBlocky(canvas, ctx, FIREFLY_COUNT);
+  const snow = createSnow(canvas, ctx, COUNTS.SNOW);
+  const deepSea = createDeepSea(canvas, ctx, COUNTS.BUBBLE, COUNTS.JELLY);
+  const blocky = createBlocky(canvas, ctx, COUNTS.FIREFLY);
 
   window.addEventListener("resize", () => {
     resize();
@@ -190,7 +297,7 @@ export function initCanvas(canvasEl, theme, options) {
     fury.draw(ctx, canvas, pal, sp, dt, now);
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes
-    scrollVelocity *= SCROLL_VEL_DECAY;
+    scrollVelocity *= SCROLL.VEL_DECAY;
     interactions.updateHold(forces, performance.now());
     atmosphere.draw(sp, scrollVelocity, pal, forces, isBlocky);
     // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe
@@ -219,7 +326,7 @@ export function initCanvas(canvasEl, theme, options) {
     const cy = canvasY(e.clientY);
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
-    forces.clickImpulse.strength = BLAST_BASE;
+    forces.clickImpulse.strength = HOLD.BLAST_BASE;
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone

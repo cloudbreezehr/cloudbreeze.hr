@@ -3,28 +3,199 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
+import { defineConstants } from "../dev/registry.js";
 
 // ── Blocky Pixelation ──
-const PIXEL_SCALE = 6;
+const PIXEL = defineConstants(
+  "particles.blocky",
+  {
+    SCALE: {
+      value: 6,
+      min: 2,
+      max: 20,
+      step: 1,
+      description: "Pixel block size for pixelation effect",
+    },
+  },
+  { mode: "blocky" },
+);
 
 // ── Fireflies (Blocky mode) ──
-const FIREFLY_RADIUS = 2; // drawn at pixel-scale after pixelation
-const FIREFLY_PULSE_MIN = 0.3;
-const FIREFLY_PULSE_SPEED_MIN = 0.01;
-const FIREFLY_PULSE_SPEED_RANGE = 0.02;
-const FIREFLY_DRIFT = 0.3; // random walk velocity per frame
-const FIREFLY_FRICTION = 0.96;
-const FIREFLY_OPACITY_MIN = 0.4;
-const FIREFLY_OPACITY_RANGE = 0.4;
-const FIREFLY_REPEL_RADIUS = 120;
-const FIREFLY_REPEL_DAMPEN = 1.2;
-const FIREFLY_ATTRACT_RADIUS = 180;
-const FIREFLY_ATTRACT_STRENGTH = 0.15;
-const FIREFLY_SCROLL_VX = 0.02;
-const FIREFLY_SCROLL_THRESHOLD = 0.5;
-const FIREFLY_COLOR = [255, 240, 100];
-const FIREFLY_TRAIL_ALPHA = 0.3;
-const FIREFLY_ATTRACT_TANGENT = 0.3;
+const FLY = defineConstants(
+  "particles.fireflies",
+  {
+    RADIUS: {
+      value: 2,
+      min: 1,
+      max: 8,
+      step: 1,
+      description: "Firefly core pixel size",
+    },
+    PULSE_MIN: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Minimum pulse brightness",
+    },
+    PULSE_SPEED_MIN: {
+      value: 0.01,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Minimum pulse animation speed",
+    },
+    PULSE_SPEED_RANGE: {
+      value: 0.02,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Pulse speed variation",
+    },
+    DRIFT: {
+      value: 0.3,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "Random walk velocity per frame",
+    },
+    FRICTION: {
+      value: 0.96,
+      min: 0.8,
+      max: 1,
+      step: 0.005,
+      description: "Velocity damping per frame",
+    },
+    OPACITY_MIN: {
+      value: 0.4,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Minimum opacity",
+    },
+    OPACITY_RANGE: {
+      value: 0.4,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Opacity variation",
+    },
+    REPEL_RADIUS: {
+      value: 120,
+      min: 30,
+      max: 400,
+      step: 10,
+      description: "Click repulsion radius",
+    },
+    REPEL_DAMPEN: {
+      value: 1.2,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Click repulsion strength",
+    },
+    ATTRACT_RADIUS: {
+      value: 180,
+      min: 30,
+      max: 500,
+      step: 10,
+      description: "Drag attraction radius",
+    },
+    ATTRACT_STRENGTH: {
+      value: 0.15,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Drag attraction force",
+    },
+    SCROLL_VX: {
+      value: 0.02,
+      min: 0,
+      max: 0.2,
+      step: 0.005,
+      description: "Horizontal push from scroll",
+    },
+    SCROLL_THRESHOLD: {
+      value: 0.5,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Scroll velocity to push fireflies",
+    },
+    COLOR: [255, 240, 100],
+    TRAIL_ALPHA: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Trail pixel opacity multiplier",
+    },
+    ATTRACT_TANGENT: {
+      value: 0.3,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "Tangential orbit factor",
+    },
+    BIAS_THRESHOLD: {
+      value: 0.7,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Canvas fraction triggering upward bias",
+    },
+    BIAS_STRENGTH: {
+      value: 0.02,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Upward bias force near bottom",
+    },
+    WRAP_MARGIN: {
+      value: 20,
+      min: 5,
+      max: 60,
+      step: 5,
+      description: "Offscreen wrap margin",
+    },
+    CEIL_FRACTION: {
+      value: 0.3,
+      min: 0,
+      max: 0.8,
+      step: 0.05,
+      description: "Upper boundary as fraction of canvas",
+    },
+    CEIL_OFFSET: {
+      value: 10,
+      min: 0,
+      max: 50,
+      step: 5,
+      description: "Pixels below ceiling boundary",
+    },
+    FLOOR_OFFSET: {
+      value: 10,
+      min: 0,
+      max: 50,
+      step: 5,
+      description: "Pixels below floor to trigger respawn",
+    },
+    WING_PIXEL: {
+      value: 2,
+      min: 1,
+      max: 6,
+      step: 1,
+      description: "Butterfly wing pixel size",
+    },
+    WING_SPREAD_THRESHOLD: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Flap threshold for spread wings",
+    },
+  },
+  { mode: "blocky" },
+);
 
 // ── Butterflies (Blocky light mode) ──
 const BUTTERFLY_COLORS = [
@@ -33,35 +204,111 @@ const BUTTERFLY_COLORS = [
   [255, 220, 60], // yellow
   [180, 80, 255], // purple
 ];
-const BUTTERFLY_FLAP_SPEED = 0.08;
-const BUTTERFLY_OPACITY = 0.8;
+
+const BFLY = defineConstants(
+  "particles.butterflies",
+  {
+    FLAP_SPEED: {
+      value: 0.08,
+      min: 0.01,
+      max: 0.3,
+      step: 0.01,
+      description: "Wing flap animation speed",
+    },
+    OPACITY: {
+      value: 0.8,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description: "Butterfly opacity",
+    },
+  },
+  { mode: "blocky" },
+);
 
 // ── Block Fragments (Blocky click effect) ──
-const BLOCK_FRAG_COUNT_MIN = 8;
-const BLOCK_FRAG_COUNT_RANGE = 5;
-const BLOCK_FRAG_SIZE = 3; // pixel block size at display scale
-const BLOCK_FRAG_SPEED_MIN = 2;
-const BLOCK_FRAG_SPEED_RANGE = 4;
-const BLOCK_FRAG_GRAVITY = 0.12;
-const BLOCK_FRAG_LIFE = 48; // ~800ms at 60fps
-const BLOCK_FRAG_TUMBLE_INTERVAL = 9; // frames between 90° rotations
-const BLOCK_FRAG_MAX = 80; // pool cap for block fragments
-const BLOCK_FRAG_VY_OFFSET = -1.5;
+const FRAG = defineConstants(
+  "particles.blockFragments",
+  {
+    COUNT_MIN: {
+      value: 8,
+      min: 1,
+      max: 30,
+      step: 1,
+      description: "Minimum fragments per click",
+    },
+    COUNT_RANGE: {
+      value: 5,
+      min: 0,
+      max: 20,
+      step: 1,
+      description: "Fragment count variation",
+    },
+    SIZE: {
+      value: 3,
+      min: 1,
+      max: 10,
+      step: 1,
+      description: "Fragment block size at display scale",
+    },
+    SPEED_MIN: {
+      value: 2,
+      min: 0.5,
+      max: 15,
+      step: 0.5,
+      description: "Minimum burst speed",
+    },
+    SPEED_RANGE: {
+      value: 4,
+      min: 0,
+      max: 15,
+      step: 0.5,
+      description: "Speed variation",
+    },
+    GRAVITY: {
+      value: 0.12,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Downward acceleration",
+    },
+    LIFE: {
+      value: 48,
+      min: 10,
+      max: 120,
+      step: 1,
+      description: "Fragment lifetime in frames",
+    },
+    TUMBLE_INTERVAL: {
+      value: 9,
+      min: 2,
+      max: 30,
+      step: 1,
+      description: "Frames between 90-degree rotations",
+    },
+    MAX: {
+      value: 80,
+      min: 10,
+      max: 200,
+      step: 5,
+      description: "Maximum fragments in pool",
+    },
+    VY_OFFSET: {
+      value: -1.5,
+      min: -5,
+      max: 0,
+      step: 0.1,
+      description: "Initial upward velocity offset",
+    },
+  },
+  { mode: "blocky" },
+);
+
 const BLOCK_FRAG_COLORS = [
   [80, 120, 200],
   [100, 140, 220],
   [60, 100, 180],
 ];
-
-// ── Firefly upward bias ──
-const FIREFLY_BIAS_THRESHOLD = 0.7; // fraction of canvas height triggering upward bias
-const FIREFLY_BIAS_STRENGTH = 0.02;
-const FIREFLY_WRAP_MARGIN = 20;
-const FIREFLY_CEIL_FRACTION = 0.3;
-const FIREFLY_CEIL_OFFSET = 10;
-const FIREFLY_FLOOR_OFFSET = 10;
-const FIREFLY_WING_PIXEL = 2;
-const FIREFLY_WING_SPREAD_THRESHOLD = 0.3;
 
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
@@ -79,8 +326,8 @@ class Firefly {
     this.vy = 0;
     this.phase = Math.random() * Math.PI * 2;
     this.pulseSpeed =
-      FIREFLY_PULSE_SPEED_MIN + Math.random() * FIREFLY_PULSE_SPEED_RANGE;
-    this.opacity = FIREFLY_OPACITY_MIN + Math.random() * FIREFLY_OPACITY_RANGE;
+      FLY.PULSE_SPEED_MIN + Math.random() * FLY.PULSE_SPEED_RANGE;
+    this.opacity = FLY.OPACITY_MIN + Math.random() * FLY.OPACITY_RANGE;
     this.colorVariant = Math.random(); // 0-1: determines rare color variants
     this.prevX = this.x;
     this.prevY = this.y;
@@ -93,34 +340,33 @@ class Firefly {
     this.prevX = this.x;
     this.prevY = this.y;
     this.phase += this.pulseSpeed;
-    this.flapPhase += BUTTERFLY_FLAP_SPEED;
+    this.flapPhase += BFLY.FLAP_SPEED;
     // Random walk
-    this.vx += (Math.random() - 0.5) * FIREFLY_DRIFT;
-    this.vy += (Math.random() - 0.5) * FIREFLY_DRIFT;
+    this.vx += (Math.random() - 0.5) * FLY.DRIFT;
+    this.vy += (Math.random() - 0.5) * FLY.DRIFT;
     // Slight upward bias near bottom of canvas
-    if (this.y > _canvas.height * FIREFLY_BIAS_THRESHOLD) {
-      this.vy -= FIREFLY_BIAS_STRENGTH;
+    if (this.y > _canvas.height * FLY.BIAS_THRESHOLD) {
+      this.vy -= FLY.BIAS_STRENGTH;
     }
-    this.vx *= FIREFLY_FRICTION;
-    this.vy *= FIREFLY_FRICTION;
+    this.vx *= FLY.FRICTION;
+    this.vy *= FLY.FRICTION;
     this.x += this.vx;
     this.y += this.vy;
     // Wrap
-    if (this.x < -FIREFLY_WRAP_MARGIN)
-      this.x += _canvas.width + FIREFLY_WRAP_MARGIN * 2;
-    if (this.x > _canvas.width + FIREFLY_WRAP_MARGIN)
-      this.x -= _canvas.width + FIREFLY_WRAP_MARGIN * 2;
-    if (this.y < _canvas.height * FIREFLY_CEIL_FRACTION)
-      this.y = _canvas.height * FIREFLY_CEIL_FRACTION + FIREFLY_CEIL_OFFSET;
-    if (this.y > _canvas.height + FIREFLY_FLOOR_OFFSET) this.reset(false);
+    if (this.x < -FLY.WRAP_MARGIN)
+      this.x += _canvas.width + FLY.WRAP_MARGIN * 2;
+    if (this.x > _canvas.width + FLY.WRAP_MARGIN)
+      this.x -= _canvas.width + FLY.WRAP_MARGIN * 2;
+    if (this.y < _canvas.height * FLY.CEIL_FRACTION)
+      this.y = _canvas.height * FLY.CEIL_FRACTION + FLY.CEIL_OFFSET;
+    if (this.y > _canvas.height + FLY.FLOOR_OFFSET) this.reset(false);
   }
   drawFirefly(targetCtx) {
     const pulse =
-      FIREFLY_PULSE_MIN +
-      (1 - FIREFLY_PULSE_MIN) * (0.5 + 0.5 * Math.sin(this.phase));
+      FLY.PULSE_MIN + (1 - FLY.PULSE_MIN) * (0.5 + 0.5 * Math.sin(this.phase));
     const op = this.opacity * pulse;
     // Pick color: mostly warm yellow, rare green or orange
-    let c = FIREFLY_COLOR;
+    let c = FLY.COLOR;
     if (this.colorVariant > 0.92)
       c = [100, 255, 80]; // green
     else if (this.colorVariant > 0.85) c = [255, 180, 50]; // orange
@@ -130,36 +376,36 @@ class Firefly {
     targetCtx.fillRect(
       Math.round(this.x) - 1,
       Math.round(this.y) - 1,
-      FIREFLY_RADIUS,
-      FIREFLY_RADIUS,
+      FLY.RADIUS,
+      FLY.RADIUS,
     );
 
     // Trail — dim pixel at previous position
-    const trailOp = op * FIREFLY_TRAIL_ALPHA;
+    const trailOp = op * FLY.TRAIL_ALPHA;
     if (trailOp > 0.02) {
       targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${trailOp.toFixed(3)})`;
       targetCtx.fillRect(
         Math.round(this.prevX) - 1,
         Math.round(this.prevY) - 1,
-        FIREFLY_RADIUS,
-        FIREFLY_RADIUS,
+        FLY.RADIUS,
+        FLY.RADIUS,
       );
     }
   }
   drawButterfly(targetCtx) {
     const c = this.butterflyColor;
-    const op = this.opacity * BUTTERFLY_OPACITY;
+    const op = this.opacity * BFLY.OPACITY;
     const flap = Math.sin(this.flapPhase);
     const px = Math.round(this.x);
     const py = Math.round(this.y);
-    const s = FIREFLY_WING_PIXEL;
+    const s = FLY.WING_PIXEL;
 
     targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op.toFixed(3)})`;
     // Body
     targetCtx.fillRect(px, py, s, s);
     // Wings — spread depends on flap phase
     const wingSpread = Math.abs(flap);
-    if (wingSpread > FIREFLY_WING_SPREAD_THRESHOLD) {
+    if (wingSpread > FLY.WING_SPREAD_THRESHOLD) {
       targetCtx.fillRect(px - s * 2, py - s, s * 2, s * 2); // left wing
       targetCtx.fillRect(px + s, py - s, s * 2, s * 2); // right wing
     } else {
@@ -183,8 +429,8 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
   let pixelCtx = pixelCanvas.getContext("2d");
 
   function resizePixelCanvas() {
-    pixelCanvas.width = Math.ceil(_canvas.width / PIXEL_SCALE);
-    pixelCanvas.height = Math.ceil(_canvas.height / PIXEL_SCALE);
+    pixelCanvas.width = Math.ceil(_canvas.width / PIXEL.SCALE);
+    pixelCanvas.height = Math.ceil(_canvas.height / PIXEL.SCALE);
   }
   resizePixelCanvas();
 
@@ -204,43 +450,38 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
       for (let i = blockFragments.length - 1; i >= 0; i--) {
         const f = blockFragments[i];
         f.life++;
-        if (f.life > BLOCK_FRAG_LIFE) {
+        if (f.life > FRAG.LIFE) {
           blockFragments.splice(i, 1);
           continue;
         }
         f.x += f.vx;
         f.y += f.vy;
-        f.vy += BLOCK_FRAG_GRAVITY;
+        f.vy += FRAG.GRAVITY;
         // Hard 90° tumble
-        if (f.life % BLOCK_FRAG_TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
+        if (f.life % FRAG.TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
         const c = f.color;
         _ctx.save();
         _ctx.translate(f.x, f.y);
         _ctx.rotate((f.rot * Math.PI) / 2);
         _ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
-        _ctx.fillRect(
-          -BLOCK_FRAG_SIZE / 2,
-          -BLOCK_FRAG_SIZE / 2,
-          BLOCK_FRAG_SIZE,
-          BLOCK_FRAG_SIZE,
-        );
+        _ctx.fillRect(-FRAG.SIZE / 2, -FRAG.SIZE / 2, FRAG.SIZE, FRAG.SIZE);
         _ctx.restore();
       }
 
       // Fireflies / Butterflies — rendered crisp post-pixelation
       fireflies.forEach((f) => {
         f.update();
-        applyRepulsion(forces, f, FIREFLY_REPEL_RADIUS, FIREFLY_REPEL_DAMPEN);
+        applyRepulsion(forces, f, FLY.REPEL_RADIUS, FLY.REPEL_DAMPEN);
         applyAttraction(
           forces,
           f,
-          FIREFLY_ATTRACT_RADIUS,
-          FIREFLY_ATTRACT_STRENGTH,
-          FIREFLY_ATTRACT_TANGENT,
+          FLY.ATTRACT_RADIUS,
+          FLY.ATTRACT_STRENGTH,
+          FLY.ATTRACT_TANGENT,
         );
         applyWellForce(forces, f);
-        if (Math.abs(scrollVelocity) > FIREFLY_SCROLL_THRESHOLD) {
-          f.vx += scrollVelocity * FIREFLY_SCROLL_VX;
+        if (Math.abs(scrollVelocity) > FLY.SCROLL_THRESHOLD) {
+          f.vx += scrollVelocity * FLY.SCROLL_VX;
         }
         if (isDarkMode) {
           f.drawFirefly(_ctx);
@@ -252,21 +493,15 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
 
     clickBurst(cx, cy) {
       const fragCount =
-        BLOCK_FRAG_COUNT_MIN +
-        Math.floor(Math.random() * BLOCK_FRAG_COUNT_RANGE);
-      for (
-        let i = 0;
-        i < fragCount && blockFragments.length < BLOCK_FRAG_MAX;
-        i++
-      ) {
+        FRAG.COUNT_MIN + Math.floor(Math.random() * FRAG.COUNT_RANGE);
+      for (let i = 0; i < fragCount && blockFragments.length < FRAG.MAX; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed =
-          BLOCK_FRAG_SPEED_MIN + Math.random() * BLOCK_FRAG_SPEED_RANGE;
+        const speed = FRAG.SPEED_MIN + Math.random() * FRAG.SPEED_RANGE;
         blockFragments.push({
           x: cx,
           y: cy,
           vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed + BLOCK_FRAG_VY_OFFSET,
+          vy: Math.sin(angle) * speed + FRAG.VY_OFFSET,
           color:
             BLOCK_FRAG_COLORS[
               Math.floor(Math.random() * BLOCK_FRAG_COLORS.length)
