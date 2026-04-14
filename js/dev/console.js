@@ -55,6 +55,8 @@ const SECTION_LABEL_MAP = {
   "particles.rainSplash": "Splashes",
   "particles.rainGlass": "Glass Drops",
   "particles.rainThunder": "Thunder",
+  "modes.upsideForce": "Force & Drain",
+  "modes.upsideVisuals": "Visual Effects",
 };
 
 // ── Group categories into top-level sections ──
@@ -65,6 +67,7 @@ const GROUP_ORDER = [
   { label: "Fury", prefix: "fury." },
   { label: "Interactions", prefix: "interactions." },
   { label: "Particles", prefix: "particles." },
+  { label: "Modes", prefix: "modes." },
 ];
 
 // ── Mode metadata ──
@@ -73,14 +76,16 @@ const MODE_COLORS = {
   "deep-sea": "#00ffc8",
   blocky: "#ffa040",
   rainy: "#6a9fc0",
+  "upside-down": "#e04050",
 };
 const MODE_LABELS = {
   frozen: "Frozen Mode",
   "deep-sea": "Deep Sea Mode",
   blocky: "Blocky Mode",
   rainy: "Rainy Mode",
+  "upside-down": "Upside Down Mode",
 };
-const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy"];
+const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy", "upside-down"];
 
 // ── CSS (injected at runtime) ──
 const STYLES = /* css */ `
