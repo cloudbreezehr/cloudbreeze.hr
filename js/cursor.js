@@ -17,7 +17,7 @@ export function initCursor(dotEl, ringEl) {
     ry = 0;
 
   function setPos(el, x, y) {
-    el.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%)`;
+    el.style.translate = `calc(${x}px - 50%) calc(${y}px - 50%)`;
   }
 
   document.addEventListener("mousemove", (e) => {

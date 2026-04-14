@@ -43,10 +43,11 @@ body {
   width: 12px;
   height: 12px;
   background: var(--sky-3);
-  border-radius: 50%;
+  border-radius: var(--cursor-dot-radius, 50%);
+  clip-path: var(--cursor-dot-clip, none);
   pointer-events: none;
   z-index: 9999;
-  will-change: transform;
+  will-change: translate;
   transition:
     width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
     height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -66,15 +67,18 @@ body {
   top: 0;
   width: 36px;
   height: 36px;
-  border: 1px solid rgba(55, 138, 221, 0.5);
-  border-radius: 50%;
+  border-width: var(--cursor-ring-width, 1px);
+  border-style: var(--cursor-ring-style, solid);
+  border-color: rgba(55, 138, 221, 0.5);
+  border-radius: var(--cursor-ring-radius, 50%);
   pointer-events: none;
   z-index: 9998;
-  will-change: transform;
+  will-change: translate;
   transition:
     width 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
     height 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
     opacity 0.3s;
+  animation: var(--cursor-ring-animation, none);
   opacity: 0;
 }
 #cursor-ring.pressing {
@@ -97,6 +101,32 @@ body {
   }
   50% {
     box-shadow: 0 0 12px rgba(var(--cursor-glow), 0.5);
+  }
+}
+@keyframes cursor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes cursor-wobble {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  33% {
+    transform: scale(1.06, 0.95);
+  }
+  66% {
+    transform: scale(0.95, 1.06);
+  }
+}
+@keyframes cursor-ripple {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
   }
 }
 #cursor.visible,
@@ -154,7 +184,7 @@ nav {
   background: rgba(10, 22, 40, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  will-change: transform;
+  will-change: translate;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -1369,6 +1399,9 @@ body[data-active-theme="upside-down"] {
   --sky-5: #a81a1a;
   --sky-6: #720c0c;
   --cursor-glow: 232, 125, 125;
+  --cursor-ring-style: dashed;
+  --cursor-ring-width: 1.5px;
+  --cursor-ring-animation: cursor-spin 6s linear infinite;
   background: #280a0a;
 }
 
@@ -1378,6 +1411,9 @@ body[data-active-theme="upside-down"] #bg-canvas {
 
 body[data-active-theme="upside-down"] #cursor {
   background: var(--sky-3);
+  box-shadow:
+    2px -1px 0 rgba(255, 50, 50, 0.5),
+    -2px 1px 0 rgba(80, 120, 255, 0.4);
 }
 body[data-active-theme="upside-down"] #cursor-ring {
   border-color: rgba(221, 55, 55, 0.5);
@@ -1563,12 +1599,15 @@ body[data-active-theme="frozen"] .cloud-svg {
 
 body[data-active-theme="frozen"] {
   --cursor-glow: 0, 200, 240;
+  --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  --cursor-ring-width: 1.5px;
 }
 body[data-active-theme="frozen"] #cursor {
   background: rgb(0, 200, 240);
 }
 body[data-active-theme="frozen"] #cursor-ring {
   border-color: rgba(0, 220, 255, 0.5);
+  box-shadow: 0 0 8px rgba(0, 220, 255, 0.25);
 }
 
 body[data-active-theme="frozen"] .hero-title .line-2 {
@@ -1788,9 +1827,13 @@ body[data-active-theme="deep-sea"] .cloud-svg {
 
 body[data-active-theme="deep-sea"] {
   --cursor-glow: 0, 200, 160;
+  --cursor-ring-animation: cursor-wobble 3s ease-in-out infinite;
 }
 body[data-active-theme="deep-sea"] #cursor {
   background: rgb(0, 200, 160);
+  box-shadow:
+    -3px -3px 4px rgba(180, 255, 230, 0.35) inset,
+    1px 1px 2px rgba(0, 60, 50, 0.25) inset;
 }
 body[data-active-theme="deep-sea"] #cursor-ring {
   border-color: rgba(0, 255, 180, 0.4);
@@ -1978,14 +2021,14 @@ body[data-active-theme="blocky"] .cloud-svg {
 
 body[data-active-theme="blocky"] {
   --cursor-glow: 100, 255, 100;
+  --cursor-dot-radius: 0;
+  --cursor-ring-radius: 0;
 }
 body[data-active-theme="blocky"] #cursor {
   background: rgb(100, 255, 100);
-  border-radius: 0;
 }
 body[data-active-theme="blocky"] #cursor-ring {
   border-color: rgba(100, 255, 100, 0.4);
-  border-radius: 0;
 }
 
 body[data-active-theme="blocky"] .hero-title .line-2 {
@@ -2132,6 +2175,9 @@ body.light-mode[data-active-theme="blocky"] #cursor-ring {
 
 body[data-active-theme="rainy"] {
   --sky-3: #5a6a80;
+  --cursor-glow: 160, 185, 210;
+  --cursor-dot-radius: 0 50% 50% 50%;
+  --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
   background: #101820;
 }
 body[data-active-theme="rainy"] #bg-canvas {
@@ -2266,6 +2312,7 @@ body[data-active-theme="rainy"]::after {
 
 body[data-active-theme="rainy"] #cursor {
   background: rgb(160, 185, 210);
+  transform: rotate(45deg);
 }
 body[data-active-theme="rainy"] #cursor-ring {
   border-color: rgba(160, 185, 210, 0.4);
