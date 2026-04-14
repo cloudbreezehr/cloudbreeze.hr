@@ -1043,6 +1043,8 @@ function setsEqual(a, b) {
   return true;
 }
 
+const SCROLL_INTO_VIEW_DELAY_MS = 80;
+
 function updateModeStates(panel) {
   const activeModes = new Set();
   for (const mode of MODE_ORDER) {
@@ -1051,6 +1053,14 @@ function updateModeStates(panel) {
 
   const isFirstCall = _prevActiveModes === null;
   const modeChanged = isFirstCall || !setsEqual(activeModes, _prevActiveModes);
+
+  // Detect newly activated modes (skip first call — that's initial state, not a user action)
+  const newlyActivated = new Set();
+  if (!isFirstCall && modeChanged) {
+    for (const mode of activeModes) {
+      if (!_prevActiveModes.has(mode)) newlyActivated.add(mode);
+    }
+  }
 
   const modeEls = panel.querySelectorAll("[data-mode]");
   modeEls.forEach((el) => {
@@ -1069,6 +1079,37 @@ function updateModeStates(panel) {
       }
     }
   });
+
+  // Auto-scroll to newly activated mode's sub-header
+  if (newlyActivated.size > 0) {
+    // Pick the last one in MODE_ORDER if multiple activated simultaneously
+    let scrollTarget = null;
+    for (const mode of MODE_ORDER) {
+      if (!newlyActivated.has(mode)) continue;
+      const subHeader = panel.querySelector(
+        `.dc-mode-subheader[data-mode="${mode}"]`,
+      );
+      if (subHeader) scrollTarget = subHeader;
+    }
+
+    if (scrollTarget) {
+      // Expand parent group if collapsed
+      const parentGroup = scrollTarget.closest(".dc-group");
+      if (parentGroup && parentGroup.classList.contains("collapsed")) {
+        parentGroup.classList.remove("collapsed");
+      }
+
+      // Delay scroll so DOM expansion settles before measuring positions
+      setTimeout(() => {
+        const body = panel.querySelector(".dc-body");
+        if (!body) return;
+        const bodyRect = body.getBoundingClientRect();
+        const targetRect = scrollTarget.getBoundingClientRect();
+        const offset = targetRect.top - bodyRect.top + body.scrollTop;
+        body.scrollTo({ top: offset, behavior: "smooth" });
+      }, SCROLL_INTO_VIEW_DELAY_MS);
+    }
+  }
 
   _prevActiveModes = activeModes;
 }
