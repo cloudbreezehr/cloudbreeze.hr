@@ -17,6 +17,8 @@ import {
 const PANEL_WIDTH = 340;
 const PANEL_MIN_HEIGHT = 200;
 const COLLAPSED_SIZE = 36;
+// ── Auto-scroll suppression ──
+const INTERACTION_QUIET_MS = 400;
 // ── Dock Magnet ──
 const DOCK_MAGNET_ZONE = 120;
 const DOCK_MAGNET_POWER = 2;
@@ -1260,7 +1262,7 @@ function updateModeStates(panel) {
       if (subHeader) scrollTarget = subHeader;
     }
 
-    if (scrollTarget) {
+    if (scrollTarget && !isAutoScrollSuppressed()) {
       // Expand parent group if collapsed
       const parentGroup = scrollTarget.closest(".dc-group");
       if (parentGroup && parentGroup.classList.contains("collapsed")) {
@@ -1269,6 +1271,7 @@ function updateModeStates(panel) {
 
       // Delay scroll so DOM expansion settles before measuring positions
       setTimeout(() => {
+        if (isAutoScrollSuppressed()) return;
         const body = panel.querySelector(".dc-body");
         if (!body) return;
         const bodyRect = body.getBoundingClientRect();
@@ -1299,6 +1302,21 @@ function setupModeObserver(panel) {
   });
 }
 
+// ── Auto-scroll suppression while the user interacts with the panel ──
+// Pointer activity inside the dev console sets a debounce timer.  While
+// active, both mode-change and section-activation auto-scrolls are skipped
+// so slider adjustments and drags don't yank the scroll position away.
+
+let _scrollSuppressedUntil = 0;
+
+function suppressAutoScroll() {
+  _scrollSuppressedUntil = performance.now() + INTERACTION_QUIET_MS;
+}
+
+function isAutoScrollSuppressed() {
+  return performance.now() < _scrollSuppressedUntil;
+}
+
 // ── Section activation auto-scroll ──
 // When an interactive feature activates (e.g. lightning tier reached),
 // scroll to its config section once per session so the user can tweak it.
@@ -1309,6 +1327,7 @@ function setupSectionActivateListener(panel) {
   onSectionActivate((category) => {
     if (_seenActiveSections.has(category)) return;
     if (panel.style.display === "none") return;
+    if (isAutoScrollSuppressed()) return;
     _seenActiveSections.add(category);
 
     const sectionEl = panel.querySelector(
@@ -1352,6 +1371,11 @@ export function openDevConsole() {
   setupModeObserver(panel);
   setupSectionActivateListener(panel);
   panelInstance = { panel, searchInput };
+
+  // Suppress auto-scroll while the user interacts with the panel
+  panel.addEventListener("pointerdown", suppressAutoScroll);
+  panel.addEventListener("pointermove", suppressAutoScroll);
+  panel.addEventListener("input", suppressAutoScroll);
 
   // Close button
   panel.querySelector(".dc-btn-close").addEventListener("click", () => {
