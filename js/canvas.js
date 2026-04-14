@@ -101,10 +101,10 @@ export function initCanvas(canvasEl, theme, options) {
 
   const atmosphere = createAtmosphere(canvas, ctx, opts);
   const snow = createSnow(canvas, ctx, SNOW_COUNT);
-  const deepSeaMod = createDeepSea(canvas, ctx, BUBBLE_COUNT, JELLY_COUNT);
-  const blockyMod = createBlocky(canvas, ctx, FIREFLY_COUNT);
+  const deepSea = createDeepSea(canvas, ctx, BUBBLE_COUNT, JELLY_COUNT);
+  const blocky = createBlocky(canvas, ctx, FIREFLY_COUNT);
 
-  window.addEventListener('resize', () => { resize(); blockyMod.resizePixelCanvas(); });
+  window.addEventListener('resize', () => { resize(); blocky.resizePixelCanvas(); });
   window.addEventListener('scroll', updateScroll, { passive: true });
 
   // Interaction forces — click repels, drag attracts, hold charges
@@ -131,9 +131,9 @@ export function initCanvas(canvasEl, theme, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const frozen = document.body.classList.contains('frozen');
-    const deepSea = document.body.classList.contains('deep-sea');
-    const blocky = document.body.classList.contains('blocky');
+    const isFrozen = document.body.classList.contains('frozen');
+    const isDeepSea = document.body.classList.contains('deep-sea');
+    const isBlocky = document.body.classList.contains('blocky');
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeModes = SUBMODES.filter(m => document.body.classList.contains(m));
     const lastSub = document.body.dataset.lastSubmode;
@@ -169,23 +169,23 @@ export function initCanvas(canvasEl, theme, options) {
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes
     scrollVelocity *= SCROLL_VEL_DECAY;
     interactions.updateHold(forces, performance.now());
-    atmosphere.draw(sp, scrollVelocity, pal, forces, blocky);
+    atmosphere.draw(sp, scrollVelocity, pal, forces, isBlocky);
     // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe
-    if (frozen) {
+    if (isFrozen) {
       snow.draw(forces, scrollVelocity, snowTurbulence);
     }
 
     // Bubbles + Jellyfish — deep-sea mode
-    if (deepSea) {
-      deepSeaMod.draw(forces, scrollVelocity, dt);
+    if (isDeepSea) {
+      deepSea.draw(forces, scrollVelocity, dt);
     }
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
 
     // ── Blocky mode: pixelation post-process + fireflies ──
-    if (blocky) {
-      blockyMod.draw(forces, scrollVelocity, isDarkMode);
+    if (isBlocky) {
+      blocky.draw(forces, scrollVelocity, isDarkMode);
     }
 
     requestAnimationFrame(render);
@@ -201,12 +201,12 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
     if (document.body.classList.contains('deep-sea')) {
-      deepSeaMod.clickBurst(cx, cy);
+      deepSea.clickBurst(cx, cy);
     }
 
     // Blocky click burst — block fragments instead of smooth particles
     if (document.body.classList.contains('blocky')) {
-      blockyMod.clickBurst(cx, cy);
+      blocky.clickBurst(cx, cy);
     }
 
     // Normal click burst particles (skipped in blocky — block fragments replace them)
@@ -223,10 +223,10 @@ export function initCanvas(canvasEl, theme, options) {
     },
     onMove(x, y) {
       const cx = x, cy = canvasY(y);
-      const added = interactions.addTrail(forces, cx, cy);
+      const trailAdded = interactions.addTrail(forces, cx, cy);
       // Drag spawns small bubbles in deep-sea mode
-      if (added && document.body.classList.contains('deep-sea')) {
-        deepSeaMod.dragBubble(cx, cy);
+      if (trailAdded && document.body.classList.contains('deep-sea')) {
+        deepSea.dragBubble(cx, cy);
       }
     },
     onUp() {

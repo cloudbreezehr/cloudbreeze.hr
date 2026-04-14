@@ -78,7 +78,7 @@ const TRAIL_LIFE_RANGE = 15;
 const TRAIL_CURVE_JITTER = 6;
 
 // ── Impulse ──
-export const IMPULSE_DECAY = 0.88;
+const IMPULSE_DECAY = 0.88;
 
 // ── Force Helpers ──
 
