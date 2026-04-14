@@ -27,6 +27,9 @@ const PANEL_SLIDE_MS = 300;
 // ── Badge animation ──
 const BADGE_PULSE_MS = 600;
 
+// ── Tooltip Constants ──
+const TOOLTIP_OFFSET_Y = 6;
+
 // ── State ──
 let navBtn = null;
 let badgeEl = null;
@@ -39,6 +42,7 @@ let isDevMode = false;
 let devRevealHints = false;
 let _escHandler = null;
 let _outsideHandler = null;
+let tooltipEl = null;
 
 // ── Cloud-check SVG icon ──
 const CLOUD_CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
@@ -71,6 +75,42 @@ function setCountForSet(setId) {
 
 function hasAnyInSet(setId) {
   return ACHIEVEMENTS.some((a) => a.set === setId && storage.isUnlocked(a.id));
+}
+
+// ── Tooltip ──
+
+function ensureTooltip() {
+  if (tooltipEl) return;
+  tooltipEl = document.createElement("div");
+  tooltipEl.className = "achievement-tooltip";
+  document.body.appendChild(tooltipEl);
+}
+
+function showHintTooltip(card, hint) {
+  ensureTooltip();
+  tooltipEl.textContent = hint;
+  tooltipEl.classList.add("visible");
+  positionTooltip(card);
+}
+
+function hideHintTooltip() {
+  if (tooltipEl) tooltipEl.classList.remove("visible");
+}
+
+function positionTooltip(card) {
+  if (!tooltipEl) return;
+  const rect = card.getBoundingClientRect();
+  tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
+  // Try below first; flip above if it would overflow the viewport
+  const belowY = rect.bottom + TOOLTIP_OFFSET_Y;
+  tooltipEl.style.top = `${belowY}px`;
+  tooltipEl.style.transform = "translateX(-50%) translateY(0)";
+  // Measure and flip if needed
+  const tipRect = tooltipEl.getBoundingClientRect();
+  if (tipRect.bottom > window.innerHeight) {
+    tooltipEl.style.top = `${rect.top - TOOLTIP_OFFSET_Y}px`;
+    tooltipEl.style.transform = "translateX(-50%) translateY(-100%)";
+  }
 }
 
 // ── Nav Button ──
@@ -183,6 +223,7 @@ export function closePanel() {
   panelOpen = false;
   if (navBtn) navBtn.classList.remove("active");
   panelEl.classList.remove("open");
+  hideHintTooltip();
 
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
@@ -251,6 +292,9 @@ function buildPanel(onHide) {
   body.className = "achievement-body";
 
   renderSections(body);
+
+  // Dismiss tooltip when scrolling the panel
+  body.addEventListener("scroll", hideHintTooltip, { passive: true });
 
   panel.appendChild(body);
 
@@ -396,6 +440,16 @@ function renderSections(container) {
       card.appendChild(icon);
       card.appendChild(text);
       card.appendChild(cardPts);
+
+      // Hint tooltip on hover (skip for hidden-locked — would spoil the secret)
+      const showHint = ach.hint && (isUnlocked || !ach.hidden || isDevMode);
+      if (showHint) {
+        card.addEventListener("mouseenter", () =>
+          showHintTooltip(card, ach.hint),
+        );
+        card.addEventListener("mouseleave", hideHintTooltip);
+      }
+
       section.appendChild(card);
     }
 
@@ -568,8 +622,10 @@ export function destroy() {
   if (navBtn && navBtn.parentNode) navBtn.remove();
   if (panelEl && panelEl.parentNode) panelEl.remove();
   if (toastContainer && toastContainer.parentNode) toastContainer.remove();
+  if (tooltipEl && tooltipEl.parentNode) tooltipEl.remove();
   navBtn = null;
   panelEl = null;
   toastContainer = null;
+  tooltipEl = null;
   panelOpen = false;
 }

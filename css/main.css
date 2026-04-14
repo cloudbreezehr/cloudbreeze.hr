@@ -2817,6 +2817,41 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
 }
 
+/* ── Achievement Tooltip ── */
+
+.achievement-tooltip {
+  position: fixed;
+  z-index: 10002;
+  max-width: 320px;
+  padding: 0.4rem 0.65rem;
+  background: rgba(10, 22, 40, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  white-space: nowrap;
+}
+.achievement-tooltip.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+body.light-mode .achievement-tooltip {
+  background: rgba(240, 247, 255, 0.96);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(10, 22, 40, 0.65);
+}
+
 /* ── Toast Notifications ── */
 
 .achievement-toast-container {
