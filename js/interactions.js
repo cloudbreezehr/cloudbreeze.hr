@@ -969,8 +969,18 @@ export function createInteractions() {
       const heldMs = now - holdStart;
       const prevHold = forces.holdStrength;
       forces.holdStrength = Math.min(heldMs / HOLD.RAMP_MS, 1);
+      if (forces.holdStrength > 0.1 && prevHold <= 0.1) {
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "hold", duration: heldMs },
+          }),
+        );
+      }
       if (forces.holdStrength >= 1 && prevHold < 1) {
         notifySectionActivate("interactions.hold");
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "hold-full" } }),
+        );
       }
       const prevWell = forces.wellStrength;
       forces.wellStrength =
@@ -979,8 +989,16 @@ export function createInteractions() {
           : 0;
       if (forces.wellStrength > 0 && prevWell === 0) {
         notifySectionActivate("interactions.well");
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "well-activate" } }),
+        );
         cursorDot?.classList.add("gravity-well");
         cursorRing?.classList.add("gravity-well");
+      }
+      if (forces.wellStrength >= 1 && prevWell < 1) {
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "well-full" } }),
+        );
       }
       if (forces.wellStrength > 0) {
         cursorDot?.style.setProperty(

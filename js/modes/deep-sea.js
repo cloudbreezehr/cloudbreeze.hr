@@ -208,6 +208,11 @@ export function initDeepSea() {
       isSubmerged = true;
       document.body.classList.add("deep-sea");
       document.body.dataset.lastSubmode = "deep-sea";
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-activate", mode: "deep-sea" },
+        }),
+      );
       clearIndicators();
       enableCardCaustics();
 
@@ -236,6 +241,11 @@ export function initDeepSea() {
     setTimeout(() => {
       isSubmerged = false;
       document.body.classList.remove("deep-sea");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-deactivate", mode: "deep-sea" },
+        }),
+      );
       clearIndicators();
       disableCardCaustics();
 

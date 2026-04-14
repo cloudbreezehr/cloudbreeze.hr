@@ -432,6 +432,7 @@
       import { initBlocky } from "./js/modes/blocky.js";
       import { initRainy } from "./js/modes/rainy.js";
       import { toggleDevConsole, openDevConsole } from "./js/dev/console.js";
+      import { initAchievements } from "./js/achievements/index.js";
 
       const theme = initTheme(document.querySelector(".theme-toggle"));
       initNav(document.querySelector("nav"), theme);
@@ -447,6 +448,7 @@
       initDeepSea();
       initBlocky(document.querySelector(".theme-toggle"));
       initRainy();
+      initAchievements();
 
       // Subtle parallax on hero elements — each layer drifts at a different rate.
       // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.

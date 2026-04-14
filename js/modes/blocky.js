@@ -220,6 +220,11 @@ export function initBlocky(toggleEl) {
       isBlocky = true;
       document.body.classList.add("blocky");
       document.body.dataset.lastSubmode = "blocky";
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-activate", mode: "blocky" },
+        }),
+      );
       clearIndicators();
       enableCardPixel();
 
@@ -249,6 +254,11 @@ export function initBlocky(toggleEl) {
     setTimeout(() => {
       isBlocky = false;
       document.body.classList.remove("blocky");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-deactivate", mode: "blocky" },
+        }),
+      );
       clearIndicators();
       disableCardPixel();
 

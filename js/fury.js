@@ -662,10 +662,18 @@ export function createFury() {
       if (clickFury >= LN.TIER && !lightningActive) {
         lightningActive = true;
         notifySectionActivate("fury.lightning");
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "fury-lightning" },
+          }),
+        );
       }
       if (clickFury >= AURORA.TIER && !auroraActive) {
         auroraActive = true;
         notifySectionActivate("fury.aurora");
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "fury-aurora" } }),
+        );
       }
       if (clickFury >= METEOR.TIER && !meteorsActive) {
         meteorsActive = true;

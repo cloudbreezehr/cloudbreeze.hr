@@ -314,6 +314,11 @@ export function initRainy() {
       isRainy = true;
       document.body.classList.add("rainy");
       document.body.dataset.lastSubmode = "rainy";
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-activate", mode: "rainy" },
+        }),
+      );
       clearIndicators();
       enableCardRain();
       heroTagEl.textContent = activeTagText;
@@ -343,6 +348,11 @@ export function initRainy() {
     setTimeout(() => {
       isRainy = false;
       document.body.classList.remove("rainy");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-deactivate", mode: "rainy" },
+        }),
+      );
       clearIndicators();
       disableCardRain();
       heroTagEl.textContent = originalTagText;

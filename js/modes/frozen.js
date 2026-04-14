@@ -216,6 +216,11 @@ export function initFrozen() {
       isFrozen = true;
       document.body.classList.add("frozen");
       document.body.dataset.lastSubmode = "frozen";
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-activate", mode: "frozen" },
+        }),
+      );
       clearIndicators();
       enableCardFrost();
 
@@ -245,6 +250,11 @@ export function initFrozen() {
     setTimeout(() => {
       isFrozen = false;
       document.body.classList.remove("frozen");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "mode-deactivate", mode: "frozen" },
+        }),
+      );
       clearIndicators();
       disableCardFrost();
 
@@ -275,6 +285,10 @@ export function initFrozen() {
 
     // Always spawn breath
     spawnBreath(warm);
+    if (isFrozen)
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "frost-breath" } }),
+      );
 
     updateVisuals(warm);
 

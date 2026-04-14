@@ -543,6 +543,16 @@ class Jellyfish {
     const pulseVal = Math.sin(this.pulse);
     if (pulseVal > 0.95) {
       this.vy -= JELLY.PULSE_STRENGTH;
+      if (!this._pulsedThisCycle) {
+        this._pulsedThisCycle = true;
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "jellyfish-pulse" },
+          }),
+        );
+      }
+    } else {
+      this._pulsedThisCycle = false;
     }
     this.vy += JELLY.DRIFT_VY; // gentle downward drift
 

@@ -27,6 +27,11 @@ export function initTheme(toggleEl) {
       themeOrder[(themeOrder.indexOf(current) + 1) % themeOrder.length];
     localStorage.setItem("theme", next);
     applyTheme(next);
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "theme-change", theme: next },
+      }),
+    );
   });
 
   window

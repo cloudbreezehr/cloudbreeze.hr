@@ -180,6 +180,11 @@ export function initUpsideDown() {
   function showWarning() {
     if (warningVisible) return;
     warningVisible = true;
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "upside-down-warning" },
+      }),
+    );
     const el = document.createElement("div");
     el.className = "ud-warning";
     el.id = "ud-warning";
@@ -239,6 +244,14 @@ export function initUpsideDown() {
       isFlipped = !isFlipped;
       document.body.classList.toggle("upside-down", isFlipped);
       if (isFlipped) document.body.dataset.lastSubmode = "upside-down";
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: {
+            type: isFlipped ? "mode-activate" : "mode-deactivate",
+            mode: "upside-down",
+          },
+        }),
+      );
       pageEl.style.transform = isFlipped ? "scaleY(-1)" : "";
       overlay.style.background = "none";
 

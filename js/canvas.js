@@ -196,6 +196,11 @@ export function initCanvas(canvasEl, theme, options) {
     const docHeight = document.documentElement.scrollHeight - stableHeight();
     scrollProgress =
       docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "scroll", progress: scrollProgress },
+      }),
+    );
     const delta = scrollTop - lastScrollTop;
     scrollVelocity += delta * SCROLL.VEL_GAIN;
     lastScrollTop = scrollTop;
@@ -213,6 +218,9 @@ export function initCanvas(canvasEl, theme, options) {
         if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
           snowTurbulence.value = 1;
           reversalTimes.length = 0;
+          window.dispatchEvent(
+            new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
+          );
         }
       }
       lastScrollDir = dir;
@@ -339,6 +347,11 @@ export function initCanvas(canvasEl, theme, options) {
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "click", x: e.clientX, y: e.clientY },
+      }),
+    );
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
@@ -360,6 +373,9 @@ export function initCanvas(canvasEl, theme, options) {
     if (!document.body.classList.contains("blocky")) {
       interactions.click(cx, cy, currentPal);
     }
+    window.dispatchEvent(
+      new CustomEvent("achievement", { detail: { type: "click-burst" } }),
+    );
   });
 
   // Pointer events — drag/trail/release delegated to interactions module
@@ -374,6 +390,10 @@ export function initCanvas(canvasEl, theme, options) {
       const cx = x,
         cy = canvasY(y);
       const trailAdded = interactions.addTrail(forces, cx, cy);
+      if (trailAdded)
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "drag" } }),
+        );
       // Drag spawns small bubbles in deep-sea mode
       if (trailAdded && document.body.classList.contains("deep-sea")) {
         deepSea.dragBubble(cx, cy);
