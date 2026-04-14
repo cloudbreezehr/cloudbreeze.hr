@@ -23,7 +23,8 @@ const INTERACTION_QUIET_MS = 400;
 const DOCK_MAGNET_ZONE = 120;
 const DOCK_MAGNET_POWER = 2;
 const DOCK_COMMIT_DISTANCE = 20;
-const DOCK_UNDOCK_DRAG = 40;
+const DOCK_UNDOCK_DRAG = 28;
+const DOCK_UNDOCK_PULL_PX = 6;
 const DOCK_ANIM_MS = 260;
 const DOCK_ANIM_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const DOCK_GLOW_COLOR = "100, 180, 255";
@@ -182,10 +183,10 @@ const STYLES = /* css */ `
   transition: opacity 0.08s;
 }
 .dc-wall-glow[data-side="left"] {
-  left: 0;
+  left: 0; right: auto;
 }
 .dc-wall-glow[data-side="right"] {
-  right: 0;
+  right: 0; left: auto;
 }
 .dev-console.collapsed {
   overflow: hidden;
@@ -998,6 +999,7 @@ function setupDocking(panel) {
   let floatY = 0;
   let dockAnimating = false;
   let dragStartX = 0;
+  let magnetSuppressedSide = null;
 
   const header = panel.querySelector(".dc-header");
   const btnDock = panel.querySelector(".dc-btn-dock");
@@ -1033,9 +1035,15 @@ function setupDocking(panel) {
 
   function updateWallGlow(side, progress, top, height) {
     wallGlow.dataset.side = side;
+    wallGlow.style.left = side === "left" ? "0" : "auto";
+    wallGlow.style.right = side === "right" ? "0" : "auto";
     wallGlow.style.opacity = String(progress);
     wallGlow.style.top = `${top}px`;
     wallGlow.style.height = `${height}px`;
+  }
+
+  function edgePos(side) {
+    return side === "left" ? "left:0;right:auto;" : "right:0;left:auto;";
   }
 
   function flashSnapEdge(side, top, height) {
@@ -1043,7 +1051,7 @@ function setupDocking(panel) {
     flash.style.cssText =
       `position:fixed;top:${top}px;height:${height}px;` +
       `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
-      `${side}:0;` +
+      edgePos(side) +
       `background:rgba(${DOCK_GLOW_COLOR},${SNAP_FLASH_OPACITY});` +
       `box-shadow:0 0 ${SNAP_FLASH_SPREAD}px ${SNAP_FLASH_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.5);`;
     document.body.appendChild(flash);
@@ -1062,7 +1070,7 @@ function setupDocking(panel) {
     flash.style.cssText =
       `position:fixed;top:${top}px;height:${height}px;` +
       `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
-      `${side}:0;` +
+      edgePos(side) +
       `background:rgba(${DOCK_GLOW_COLOR},${RELEASE_FLASH_OPACITY});` +
       `box-shadow:0 0 ${RELEASE_FLASH_START_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.4);`;
     document.body.appendChild(flash);
@@ -1101,6 +1109,7 @@ function setupDocking(panel) {
     } else {
       floatY = fromRect.top;
     }
+    panel.style.transform = "";
     applyDock();
 
     if (opts.skipAnimation) {
@@ -1197,34 +1206,38 @@ function setupDocking(panel) {
     const nx = e.clientX - dragOffX;
     const ny = e.clientY - dragOffY;
 
-    // ── Undock: relative drag distance from grab point ──
-    if (
-      dockState === "docked-left" &&
-      e.clientX - dragStartX > DOCK_UNDOCK_DRAG
-    ) {
-      const r = panel.getBoundingClientRect();
-      flashReleaseEdge("left", r.top, r.height);
-      animateToState("floating", {
-        floatX: Math.max(0, nx),
-        floatY: Math.max(0, ny),
-        skipAnimation: true,
-      });
+    // ── Undock: drag away from the docked edge ──
+    const isDocked =
+      dockState === "docked-left" || dockState === "docked-right";
+    const dockedLeft = dockState === "docked-left";
+    const dragDelta = isDocked
+      ? (e.clientX - dragStartX) * (dockedLeft ? 1 : -1)
+      : -1;
+
+    if (isDocked && dragDelta > 0) {
+      if (dragDelta > DOCK_UNDOCK_DRAG) {
+        const r = panel.getBoundingClientRect();
+        const side = dockedLeft ? "left" : "right";
+        flashReleaseEdge(side, r.top, r.height);
+        dragOffX = e.clientX - r.left;
+        dragOffY = e.clientY - r.top;
+        magnetSuppressedSide = side;
+        animateToState("floating", {
+          floatX: Math.max(0, r.left),
+          floatY: Math.max(0, r.top),
+          skipAnimation: true,
+        });
+      } else {
+        // Elastic pull hint: nudge panel in drag direction before committing
+        const pull = (dragDelta / DOCK_UNDOCK_DRAG) * DOCK_UNDOCK_PULL_PX;
+        panel.style.transform = `translateX(${(dockedLeft ? 1 : -1) * pull}px)`;
+      }
       return;
     }
-    if (
-      dockState === "docked-right" &&
-      dragStartX - e.clientX > DOCK_UNDOCK_DRAG
-    ) {
-      const r = panel.getBoundingClientRect();
-      flashReleaseEdge("right", r.top, r.height);
-      animateToState("floating", {
-        floatX: Math.max(0, nx),
-        floatY: Math.max(0, ny),
-        skipAnimation: true,
-      });
+    if (dockState !== "floating") {
+      panel.style.transform = "";
       return;
     }
-    if (dockState !== "floating") return;
 
     // ── Magnet zone: pull + glow as panel approaches an edge ──
     const leftDist = nx;
@@ -1233,7 +1246,12 @@ function setupDocking(panel) {
     const edgeDist = nearLeft ? leftDist : rightDist;
     let magnetNx = nx;
 
-    if (edgeDist < DOCK_MAGNET_ZONE && edgeDist >= 0) {
+    // After undocking, suppress magnet for the undocked edge only.
+    // Clears when the user releases the pointer (pointerup).
+    const nearSide = nearLeft ? "left" : "right";
+    const magnetBlocked = magnetSuppressedSide === nearSide;
+
+    if (!magnetBlocked && edgeDist < DOCK_MAGNET_ZONE && edgeDist >= 0) {
       const progress = Math.pow(
         1 - edgeDist / DOCK_MAGNET_ZONE,
         DOCK_MAGNET_POWER,
@@ -1261,8 +1279,11 @@ function setupDocking(panel) {
       clearMagnet();
     }
 
-    floatX = Math.max(0, Math.min(magnetNx, window.innerWidth - 100));
-    floatY = Math.max(0, Math.min(ny, window.innerHeight - 50));
+    floatX = Math.max(
+      0,
+      Math.min(magnetNx, window.innerWidth - panel.offsetWidth),
+    );
+    floatY = Math.max(0, Math.min(ny, window.innerHeight - COLLAPSED_SIZE));
     panel.style.left = `${floatX}px`;
     panel.style.top = `${floatY}px`;
     panel.style.right = "";
@@ -1271,6 +1292,8 @@ function setupDocking(panel) {
 
   header.addEventListener("pointerup", () => {
     isDragging = false;
+    magnetSuppressedSide = null;
+    panel.style.transform = "";
     clearMagnet();
   });
 
