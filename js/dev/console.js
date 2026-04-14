@@ -10,6 +10,7 @@ import {
   resetAll,
   exportConfig,
   importConfig,
+  onSectionActivate,
 } from "./registry.js";
 
 // ── Layout Constants ──
@@ -1144,6 +1145,41 @@ function setupModeObserver(panel) {
   });
 }
 
+// ── Section activation auto-scroll ──
+// When an interactive feature activates (e.g. lightning tier reached),
+// scroll to its config section once per session so the user can tweak it.
+
+const _seenActiveSections = new Set();
+
+function setupSectionActivateListener(panel) {
+  onSectionActivate((category) => {
+    if (_seenActiveSections.has(category)) return;
+    if (panel.style.display === "none") return;
+    _seenActiveSections.add(category);
+
+    const sectionEl = panel.querySelector(
+      `.dc-section[data-category="${category}"]`,
+    );
+    if (!sectionEl) return;
+
+    sectionEl.classList.remove("collapsed");
+
+    const parentGroup = sectionEl.closest(".dc-group");
+    if (parentGroup && parentGroup.classList.contains("collapsed")) {
+      parentGroup.classList.remove("collapsed");
+    }
+
+    setTimeout(() => {
+      const body = panel.querySelector(".dc-body");
+      if (!body) return;
+      const bodyRect = body.getBoundingClientRect();
+      const targetRect = sectionEl.getBoundingClientRect();
+      const offset = targetRect.top - bodyRect.top + body.scrollTop;
+      body.scrollTo({ top: offset, behavior: "smooth" });
+    }, SCROLL_INTO_VIEW_DELAY_MS);
+  });
+}
+
 // ── Public: init dev console ──
 
 let panelInstance = null;
@@ -1160,6 +1196,7 @@ export function openDevConsole() {
   document.body.appendChild(panel);
   setupDocking(panel);
   setupModeObserver(panel);
+  setupSectionActivateListener(panel);
   panelInstance = { panel, searchInput };
 
   // Close button

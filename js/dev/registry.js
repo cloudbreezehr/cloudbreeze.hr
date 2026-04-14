@@ -178,3 +178,17 @@ export function importConfig(config) {
     }
   }
 }
+
+// ── Section activation notifications ──
+// Modules call notifySectionActivate when an interactive feature first activates.
+// The dev console listens to scroll to the relevant config section.
+
+const _activationCallbacks = [];
+
+export function onSectionActivate(callback) {
+  _activationCallbacks.push(callback);
+}
+
+export function notifySectionActivate(category) {
+  for (const cb of _activationCallbacks) cb(category);
+}

@@ -1,4 +1,4 @@
-import { defineConstants } from "./dev/registry.js";
+import { defineConstants, notifySectionActivate } from "./dev/registry.js";
 
 // ── Click Particles ──
 const CLICK = defineConstants("interactions.click", {
@@ -752,6 +752,7 @@ export function createInteractions() {
 
     // Spawn click burst particles at (x, y). Skipped in blocky mode.
     click(x, y, pal) {
+      notifySectionActivate("interactions.click");
       const count =
         CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);
       for (let i = 0; i < count; i++) {
@@ -776,13 +777,18 @@ export function createInteractions() {
     updateHold(forces, now) {
       if (!forces.isDragging) return;
       const heldMs = now - holdStart;
+      const prevHold = forces.holdStrength;
       forces.holdStrength = Math.min(heldMs / HOLD.RAMP_MS, 1);
+      if (forces.holdStrength >= 1 && prevHold < 1) {
+        notifySectionActivate("interactions.hold");
+      }
       const prevWell = forces.wellStrength;
       forces.wellStrength =
         heldMs > WELL.ACTIVATE_MS
           ? Math.min((heldMs - WELL.ACTIVATE_MS) / WELL.RAMP_MS, 1)
           : 0;
       if (forces.wellStrength > 0 && prevWell === 0) {
+        notifySectionActivate("interactions.well");
         cursorDot?.classList.add("gravity-well");
         cursorRing?.classList.add("gravity-well");
       }

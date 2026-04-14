@@ -1,6 +1,6 @@
 import { drawTrail } from "./canvas-utils.js";
 import { SKY_SHARED } from "./sky.js";
-import { defineConstants } from "./dev/registry.js";
+import { defineConstants, notifySectionActivate } from "./dev/registry.js";
 
 // ── Click Fury ──
 const FURY = defineConstants("fury.click", {
@@ -651,10 +651,27 @@ export function createFury() {
     maxLife: 0,
     opacity: 0,
   }));
+  let lightningActive = false;
+  let auroraActive = false;
+  let meteorsActive = false;
 
   return {
     // Draw fury effects: decay, lightning, aurora, meteors.
     draw(ctx, canvas, pal, sp, dt, now) {
+      // Detect fury tier activations (before decay)
+      if (clickFury >= LN.TIER && !lightningActive) {
+        lightningActive = true;
+        notifySectionActivate("fury.lightning");
+      }
+      if (clickFury >= AURORA.TIER && !auroraActive) {
+        auroraActive = true;
+        notifySectionActivate("fury.aurora");
+      }
+      if (clickFury >= METEOR.TIER && !meteorsActive) {
+        meteorsActive = true;
+        notifySectionActivate("fury.meteors");
+      }
+
       // Fury decay — no decay while actively clicking, then ramps up fast
       const idleSec = (now - lastClickTime) / 1000;
       if (idleSec >= FURY.IDLE_GRACE) {
@@ -662,6 +679,11 @@ export function createFury() {
           FURY.DECAY_BASE + (idleSec - FURY.IDLE_GRACE) * FURY.DECAY_ACCEL;
         clickFury = Math.max(0, clickFury - dt * decayRate);
       }
+
+      // Reset tier flags after decay
+      if (clickFury < LN.TIER) lightningActive = false;
+      if (clickFury < AURORA.TIER) auroraActive = false;
+      if (clickFury < METEOR.TIER) meteorsActive = false;
 
       // Tier 1: Lightning bolts — multi-layer rendering
       let flashThisFrame = false;
