@@ -1160,6 +1160,8 @@ function setupDocking(panel) {
       dockState === "docked-left" &&
       e.clientX - dragStartX > DOCK_UNDOCK_DRAG
     ) {
+      const r = panel.getBoundingClientRect();
+      flashSnapEdge("left", r.top, r.height);
       animateToState("floating", {
         floatX: Math.max(0, nx),
         floatY: Math.max(0, ny),
@@ -1171,6 +1173,8 @@ function setupDocking(panel) {
       dockState === "docked-right" &&
       dragStartX - e.clientX > DOCK_UNDOCK_DRAG
     ) {
+      const r = panel.getBoundingClientRect();
+      flashSnapEdge("right", r.top, r.height);
       animateToState("floating", {
         floatX: Math.max(0, nx),
         floatY: Math.max(0, ny),
