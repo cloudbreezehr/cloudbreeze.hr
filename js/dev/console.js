@@ -36,6 +36,12 @@ const WALL_GLOW_SPREAD = 18;
 const SNAP_FLASH_DURATION_MS = 350;
 const SNAP_FLASH_SPREAD = 24;
 const SNAP_FLASH_OPACITY = 0.9;
+// ── Undock Release Effect ──
+const RELEASE_FLASH_DURATION_MS = 450;
+const RELEASE_FLASH_START_SPREAD = 8;
+const RELEASE_FLASH_END_SPREAD = 36;
+const RELEASE_FLASH_OPACITY = 0.6;
+const RELEASE_FLASH_END_WIDTH = 10;
 const SECTION_LABEL_MAP = {
   "sky.stars": "Stars",
   "sky.shooting": "Shooting Stars",
@@ -1048,6 +1054,36 @@ function setupDocking(panel) {
     anim.onfinish = () => flash.remove();
   }
 
+  function flashReleaseEdge(side, top, height) {
+    const flash = document.createElement("div");
+    flash.style.cssText =
+      `position:fixed;top:${top}px;height:${height}px;` +
+      `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
+      `${side}:0;` +
+      `background:rgba(${DOCK_GLOW_COLOR},${RELEASE_FLASH_OPACITY});` +
+      `box-shadow:0 0 ${RELEASE_FLASH_START_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.4);`;
+    document.body.appendChild(flash);
+    const anim = flash.animate(
+      [
+        {
+          opacity: 1,
+          width: `${WALL_GLOW_THICKNESS}px`,
+          boxShadow: `0 0 ${RELEASE_FLASH_START_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.4)`,
+        },
+        {
+          opacity: 0,
+          width: `${RELEASE_FLASH_END_WIDTH}px`,
+          boxShadow: `0 0 ${RELEASE_FLASH_END_SPREAD}px rgba(${DOCK_GLOW_COLOR},0)`,
+        },
+      ],
+      {
+        duration: RELEASE_FLASH_DURATION_MS,
+        easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+      },
+    );
+    anim.onfinish = () => flash.remove();
+  }
+
   function animateToState(newState, opts = {}) {
     const fromRect = panel.getBoundingClientRect();
     const wasFloating = dockState === "floating";
@@ -1161,7 +1197,7 @@ function setupDocking(panel) {
       e.clientX - dragStartX > DOCK_UNDOCK_DRAG
     ) {
       const r = panel.getBoundingClientRect();
-      flashSnapEdge("left", r.top, r.height);
+      flashReleaseEdge("left", r.top, r.height);
       animateToState("floating", {
         floatX: Math.max(0, nx),
         floatY: Math.max(0, ny),
@@ -1174,7 +1210,7 @@ function setupDocking(panel) {
       dragStartX - e.clientX > DOCK_UNDOCK_DRAG
     ) {
       const r = panel.getBoundingClientRect();
-      flashSnapEdge("right", r.top, r.height);
+      flashReleaseEdge("right", r.top, r.height);
       animateToState("floating", {
         floatX: Math.max(0, nx),
         floatY: Math.max(0, ny),
