@@ -508,6 +508,11 @@ function renderSections(container) {
       card.appendChild(text);
       card.appendChild(cardPts);
 
+      // Click pop on unlocked cards
+      if (isUnlocked) {
+        card.addEventListener("click", onCardClick);
+      }
+
       // Hint tooltip on hover — unlocked always, locked only when reveal is on
       const showHint =
         ach.hint && (isUnlocked || (revealHints && (!ach.hidden || isDevMode)));
@@ -523,6 +528,20 @@ function renderSections(container) {
 
     container.appendChild(section);
   }
+}
+
+function onCardClick(e) {
+  const card = e.currentTarget;
+  card.classList.remove("clicked");
+  void card.offsetHeight;
+  card.classList.add("clicked");
+  card.addEventListener(
+    "animationend",
+    () => card.classList.remove("clicked"),
+    {
+      once: true,
+    },
+  );
 }
 
 // Refresh a single card in-place when it unlocks while panel is open
@@ -570,6 +589,9 @@ export function refreshCard(achievementId) {
       textEl.appendChild(timeEl);
     }
   }
+
+  // Click pop for newly unlocked card
+  card.addEventListener("click", onCardClick);
 
   // Shine animation
   card.classList.add("shine");
@@ -648,6 +670,19 @@ export function showToast(achievement) {
   `;
 
   if (achievement.hint) toast.dataset.hint = achievement.hint;
+
+  toast.addEventListener("click", () => {
+    toast.classList.remove("clicked");
+    void toast.offsetHeight;
+    toast.classList.add("clicked");
+    toast.addEventListener(
+      "animationend",
+      () => toast.classList.remove("clicked"),
+      {
+        once: true,
+      },
+    );
+  });
 
   toastContainer.appendChild(toast);
 

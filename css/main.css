@@ -2690,6 +2690,7 @@ nav.nav-light .achievement-btn::after {
 .achievement-card.unlocked {
   opacity: 1;
   background: rgba(255, 255, 255, 0.04);
+  cursor: pointer;
 }
 .achievement-card.unlocked:hover {
   background: rgba(255, 255, 255, 0.06);
@@ -2750,6 +2751,40 @@ nav.nav-light .achievement-btn::after {
   animation: card-shimmer 6s linear infinite;
 }
 @keyframes card-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+/* Click pop — squish then spring back */
+.achievement-card.unlocked.clicked,
+.achievement-toast.clicked {
+  animation: card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes card-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(0) scale(0.96);
+  }
+  70% {
+    transform: translateY(0) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Click shimmer — fast single sweep */
+.achievement-toast.clicked::after {
+  opacity: 1;
+  animation: card-shimmer-flash 0.4s ease-out;
+}
+@keyframes card-shimmer-flash {
   0% {
     background-position: 150% 0;
   }
@@ -2895,6 +2930,7 @@ body.light-mode .achievement-tooltip {
   align-items: center;
   gap: 0.6rem;
   padding: 0.65rem 0.9rem;
+  cursor: pointer;
   background: rgba(10, 22, 40, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
