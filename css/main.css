@@ -2891,7 +2891,8 @@ body.light-mode .achievement-tooltip {
   transition:
     transform 0.3s ease-in,
     opacity 0.3s ease-in;
-  max-width: 340px;
+  width: 340px;
+  max-width: calc(100vw - 3rem);
 }
 .achievement-toast.enter {
   transform: translateY(0);
