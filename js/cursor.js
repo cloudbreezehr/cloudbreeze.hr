@@ -65,15 +65,17 @@ export function initCursor(dotEl, ringEl) {
     ringEl.style.height = `${ringSize}px`;
   }
 
-  document.querySelectorAll("a, button").forEach((el) => {
-    el.addEventListener("mouseenter", () => {
+  document.addEventListener("mouseover", (e) => {
+    if (e.target.closest("a, button")) {
       hovering = true;
       applySizes();
-    });
-    el.addEventListener("mouseleave", () => {
+    }
+  });
+  document.addEventListener("mouseout", (e) => {
+    if (e.target.closest("a, button")) {
       hovering = false;
       applySizes();
-    });
+    }
   });
 
   document.addEventListener("mousedown", () => {
