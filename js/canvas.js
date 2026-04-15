@@ -345,9 +345,13 @@ export function initCanvas(canvasEl, theme, options) {
   }
 
   // UI overlays that should not trigger canvas fury or click-burst effects
-  const UI_OVERLAY = "nav, .achievement-panel, .dev-console";
+  const UI_OVERLAY =
+    "nav, .achievement-panel, .achievement-toast-container, .dev-console";
 
   document.addEventListener("click", (e) => {
+    // Skip all canvas effects for clicks on UI controls
+    if (e.target.closest(UI_OVERLAY)) return;
+
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
     forces.clickImpulse.x = cx;
@@ -358,9 +362,6 @@ export function initCanvas(canvasEl, theme, options) {
         detail: { type: "click", x: e.clientX, y: e.clientY },
       }),
     );
-
-    // Skip fury + bursts for clicks on UI controls
-    if (e.target.closest(UI_OVERLAY)) return;
 
     fury.click(cx, cy, canvas, scrollProgress);
 
