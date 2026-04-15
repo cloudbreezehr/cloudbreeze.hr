@@ -139,31 +139,38 @@ function ensureTooltip() {
   document.body.appendChild(tooltipEl);
 }
 
-function showHintTooltip(card, hint) {
+function showHintTooltip(anchor, hint, preferAbove) {
   ensureTooltip();
   tooltipEl.textContent = hint;
   tooltipEl.classList.add("visible");
-  positionTooltip(card);
+  positionTooltip(anchor, preferAbove);
 }
 
 function hideHintTooltip() {
   if (tooltipEl) tooltipEl.classList.remove("visible");
 }
 
-function positionTooltip(card) {
+function positionTooltip(anchor, preferAbove) {
   if (!tooltipEl) return;
-  const rect = card.getBoundingClientRect();
+  const rect = anchor.getBoundingClientRect();
   tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
-  // Try below first; flip above if it would overflow the viewport
-  const belowY = rect.bottom + TOOLTIP_OFFSET_Y;
-  tooltipEl.style.top = `${belowY}px`;
-  tooltipEl.style.transform = "translateX(-50%) translateY(0)";
-  // Measure and flip if needed
-  const tipRect = tooltipEl.getBoundingClientRect();
-  if (tipRect.bottom > window.innerHeight) {
+
+  // Place on preferred side, flip if it overflows
+  const above = () => {
     tooltipEl.style.top = `${rect.top - TOOLTIP_OFFSET_Y}px`;
     tooltipEl.style.transform = "translateX(-50%) translateY(-100%)";
-  }
+  };
+  const below = () => {
+    tooltipEl.style.top = `${rect.bottom + TOOLTIP_OFFSET_Y}px`;
+    tooltipEl.style.transform = "translateX(-50%) translateY(0)";
+  };
+
+  (preferAbove ? above : below)();
+  const tipRect = tooltipEl.getBoundingClientRect();
+  const overflows = preferAbove
+    ? tipRect.top < 0
+    : tipRect.bottom > window.innerHeight;
+  if (overflows) (preferAbove ? below : above)();
 }
 
 // ── Nav Button ──
@@ -588,7 +595,8 @@ function ensureToastContainer() {
   });
   toastContainer.addEventListener("mouseover", (e) => {
     const toast = e.target.closest(".achievement-toast");
-    if (toast && toast.dataset.hint) showHintTooltip(toast, toast.dataset.hint);
+    if (toast && toast.dataset.hint)
+      showHintTooltip(toast, toast.dataset.hint, true);
   });
 }
 
