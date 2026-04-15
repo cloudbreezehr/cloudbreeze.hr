@@ -20,6 +20,7 @@ const TOAST_STAGGER_MS = 200;
 const TOAST_MAX_VISIBLE = 3;
 const TOAST_GAP_PX = 8;
 const TOAST_EASING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
+const TOAST_RESUME_DELAY_MS = 800;
 
 // ── Panel Constants ──
 const PANEL_WIDTH_PX = 360;
@@ -42,6 +43,7 @@ let panelOpen = false;
 let toastContainer = null;
 let toastQueue = [];
 let activeToasts = [];
+let toastsPaused = false;
 let isDevMode = false;
 let revealHints = false;
 let _escHandler = null;
@@ -578,6 +580,39 @@ function ensureToastContainer() {
   toastContainer = document.createElement("div");
   toastContainer.className = "achievement-toast-container";
   document.body.appendChild(toastContainer);
+
+  toastContainer.addEventListener("mouseenter", pauseToasts);
+  toastContainer.addEventListener("mouseleave", () => {
+    resumeToasts();
+    hideHintTooltip();
+  });
+  toastContainer.addEventListener("mouseover", (e) => {
+    const toast = e.target.closest(".achievement-toast");
+    if (toast && toast.dataset.hint) showHintTooltip(toast, toast.dataset.hint);
+  });
+}
+
+function pauseToasts() {
+  toastsPaused = true;
+  for (const ref of activeToasts) {
+    if (ref.timer) {
+      clearTimeout(ref.timer);
+      ref.timer = null;
+      ref.remaining = Math.max(0, ref.dismissAt - Date.now());
+    }
+  }
+}
+
+function resumeToasts() {
+  toastsPaused = false;
+  for (const ref of activeToasts) {
+    if (ref.remaining != null) {
+      const delay = Math.max(ref.remaining, TOAST_RESUME_DELAY_MS);
+      ref.dismissAt = Date.now() + delay;
+      ref.timer = setTimeout(() => dismissToast(ref), delay);
+      ref.remaining = null;
+    }
+  }
 }
 
 export function showToast(achievement) {
@@ -604,6 +639,8 @@ export function showToast(achievement) {
     <div class="achievement-toast-pts">${achievement.points}</div>
   `;
 
+  if (achievement.hint) toast.dataset.hint = achievement.hint;
+
   toastContainer.appendChild(toast);
 
   // Slide in
@@ -620,15 +657,15 @@ export function showToast(achievement) {
     });
   }, FIREWORKS_DELAY_MS);
 
-  const toastRef = { el: toast };
+  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
   activeToasts.push(toastRef);
 
-  // Auto dismiss
-  const dismissTimer = setTimeout(() => {
-    dismissToast(toastRef);
-  }, TOAST_HOLD_MS);
-
-  toastRef.timer = dismissTimer;
+  // Auto dismiss (skip timer if queue is paused — resumeToasts will start it)
+  if (!toastsPaused) {
+    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
+  } else {
+    toastRef.remaining = TOAST_HOLD_MS;
+  }
 }
 
 function dismissToast(toastRef) {
