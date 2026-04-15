@@ -25,7 +25,7 @@ export const SETS = [
 // ── Achievement Definitions ──
 
 export const ACHIEVEMENTS = [
-  // ── Exploration ──
+  // ── Exploration: Cloudlog ──
   {
     id: "cloudlog-activated",
     title: "Cloudlog Activated",
@@ -36,6 +36,16 @@ export const ACHIEVEMENTS = [
     hidden: false,
   },
   {
+    id: "cloud-reader",
+    title: "Cloud Reader",
+    description: "The first page turns.",
+    hint: "Open the Cloudlog panel",
+    set: "exploration",
+    points: COMMON,
+    hidden: false,
+  },
+  // ── Exploration: Interaction ──
+  {
     id: "first-light",
     title: "First Light",
     description: "A ripple in the stillness.",
@@ -44,6 +54,34 @@ export const ACHIEVEMENTS = [
     points: TRIVIAL,
     hidden: false,
   },
+  {
+    id: "spark",
+    title: "Spark",
+    description: "Something stirs where you touched.",
+    hint: "Click to create a particle burst",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
+  {
+    id: "trail-blazer",
+    title: "Trail Blazer",
+    description: "You leave a mark wherever you go.",
+    hint: "Click and drag across the canvas",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "the-long-drag",
+    title: "The Long Drag",
+    description: "A trail across the sky.",
+    hint: "Drag across 40% of the screen in one motion",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  // ── Exploration: Scroll ──
   {
     id: "stargazer",
     title: "Stargazer",
@@ -72,19 +110,29 @@ export const ACHIEVEMENTS = [
     hidden: false,
   },
   {
-    id: "nightfall",
-    title: "Nightfall",
-    description: "The sky darkens at your command.",
-    hint: "Switch to dark mode",
+    id: "scroll-surge",
+    title: "Scroll Surge",
+    description: "The page blurs past.",
+    hint: "Scroll fast enough to blur the particles",
     set: "exploration",
-    points: TRIVIAL,
-    hidden: false,
+    points: UNCOMMON,
+    hidden: true,
   },
+  // ── Exploration: Theme ──
   {
     id: "daybreak",
     title: "Daybreak",
     description: "Light breaks through.",
     hint: "Switch to light mode",
+    set: "exploration",
+    points: TRIVIAL,
+    hidden: false,
+  },
+  {
+    id: "nightfall",
+    title: "Nightfall",
+    description: "The sky darkens at your command.",
+    hint: "Switch to dark mode",
     set: "exploration",
     points: TRIVIAL,
     hidden: false,
@@ -107,33 +155,7 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: false,
   },
-  {
-    id: "spark",
-    title: "Spark",
-    description: "Something stirs where you touched.",
-    hint: "Click to create a particle burst",
-    set: "exploration",
-    points: COMMON,
-    hidden: true,
-  },
-  {
-    id: "trail-blazer",
-    title: "Trail Blazer",
-    description: "You leave a mark wherever you go.",
-    hint: "Click and drag across the canvas",
-    set: "exploration",
-    points: UNCOMMON,
-    hidden: true,
-  },
-  {
-    id: "cloud-reader",
-    title: "Cloud Reader",
-    description: "The first page turns.",
-    hint: "Open the Cloudlog panel",
-    set: "exploration",
-    points: COMMON,
-    hidden: false,
-  },
+  // ── Exploration: Social ──
   {
     id: "landfall",
     title: "Landfall",
@@ -152,24 +174,7 @@ export const ACHIEVEMENTS = [
     points: COMMON,
     hidden: false,
   },
-  {
-    id: "scroll-surge",
-    title: "Scroll Surge",
-    description: "The page blurs past.",
-    hint: "Scroll fast enough to blur the particles",
-    set: "exploration",
-    points: UNCOMMON,
-    hidden: true,
-  },
-  {
-    id: "the-long-drag",
-    title: "The Long Drag",
-    description: "A trail across the sky.",
-    hint: "Drag across 40% of the screen in one motion",
-    set: "exploration",
-    points: UNCOMMON,
-    hidden: true,
-  },
+  // ── Exploration: Time ──
   {
     id: "moonlit",
     title: "Moonlit",
@@ -179,6 +184,7 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  // ── Exploration: Dev ──
   {
     id: "reverse-engineer",
     title: "Reverse Engineer",
@@ -189,7 +195,7 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
 
-  // ── Mastery ──
+  // ── Mastery: Hold / Gravity Progression ──
   {
     id: "gathering-storm",
     title: "Gathering Storm",
@@ -206,6 +212,15 @@ export const ACHIEVEMENTS = [
     hint: "Hold click until a full orbit forms",
     set: "mastery",
     points: RARE,
+    hidden: true,
+  },
+  {
+    id: "orbit-lock",
+    title: "Orbit Lock",
+    description: "They circle endlessly.",
+    hint: "Hold click until particles lock into orbit",
+    set: "mastery",
+    points: UNCOMMON,
     hidden: true,
   },
   {
@@ -227,6 +242,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "void-caller",
+    title: "Void Caller",
+    description: "The well opens again.",
+    hint: "Open the gravity well 3 times in one session",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  // ── Mastery: Fury ──
+  {
     id: "fury-unleashed",
     title: "Fury Unleashed",
     description: "Lightning answered your call.",
@@ -245,6 +270,25 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "chain-lightning",
+    title: "Chain Lightning",
+    description: "The sky won't stop flashing.",
+    hint: "Trigger lightning 5 times in one session",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "aftershock",
+    title: "Aftershock",
+    description: "The click echoes.",
+    hint: "Click within 2 seconds of a lightning strike",
+    set: "mastery",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  // ── Mastery: Shake ──
+  {
     id: "snow-globe",
     title: "Snow Globe",
     description: "You shook the sky.",
@@ -253,6 +297,7 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
   },
+  // ── Mastery: Click Skill ──
   {
     id: "rapid-fire",
     title: "Rapid Fire",
@@ -272,6 +317,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "pixel-perfect",
+    title: "Pixel Perfect",
+    description: "Bullseye.",
+    hint: "Click the exact center of the viewport",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  // ── Mastery: Time / Dedication ──
+  {
     id: "night-owl",
     title: "Night Owl",
     description: "Still here? The sky notices.",
@@ -289,60 +344,7 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
   },
-  {
-    id: "orbit-lock",
-    title: "Orbit Lock",
-    description: "They circle endlessly.",
-    hint: "Hold click until particles lock into orbit",
-    set: "mastery",
-    points: UNCOMMON,
-    hidden: true,
-  },
-  {
-    id: "chain-lightning",
-    title: "Chain Lightning",
-    description: "The sky won't stop flashing.",
-    hint: "Trigger lightning 5 times in one session",
-    set: "mastery",
-    points: RARE,
-    hidden: true,
-  },
-  {
-    id: "void-caller",
-    title: "Void Caller",
-    description: "The well opens again.",
-    hint: "Open the gravity well 3 times in one session",
-    set: "mastery",
-    points: RARE,
-    hidden: true,
-  },
-  {
-    id: "aftershock",
-    title: "Aftershock",
-    description: "The click echoes.",
-    hint: "Click within 2 seconds of a lightning strike",
-    set: "mastery",
-    points: UNCOMMON,
-    hidden: true,
-  },
-  {
-    id: "pixel-perfect",
-    title: "Pixel Perfect",
-    description: "Bullseye.",
-    hint: "Click the exact center of the viewport",
-    set: "mastery",
-    points: RARE,
-    hidden: true,
-  },
-  {
-    id: "elemental",
-    title: "Elemental",
-    description: "Every sky, one session.",
-    hint: "Activate all 5 modes in a single session",
-    set: "mastery",
-    points: EPIC,
-    hidden: true,
-  },
+  // ── Mastery: Cross-Mode Combos ──
   {
     id: "storm-surge",
     title: "Storm Surge",
@@ -362,6 +364,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "frozen-lightning",
+    title: "Frozen Lightning",
+    description: "Ice and fire.",
+    hint: "Trigger lightning in frozen mode",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  {
     id: "glitch",
     title: "Glitch",
     description: "Reality errors in the rift.",
@@ -371,12 +382,12 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
-    id: "frozen-lightning",
-    title: "Frozen Lightning",
-    description: "Ice and fire.",
-    hint: "Trigger lightning in frozen mode",
+    id: "elemental",
+    title: "Elemental",
+    description: "Every sky, one session.",
+    hint: "Activate all 5 modes in a single session",
     set: "mastery",
-    points: RARE,
+    points: EPIC,
     hidden: true,
   },
 
