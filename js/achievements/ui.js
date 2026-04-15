@@ -269,7 +269,8 @@ export function openPanel(onHide) {
       if (
         panelEl &&
         !panelEl.contains(e.target) &&
-        !(navBtn && navBtn.contains(e.target))
+        !(navBtn && navBtn.contains(e.target)) &&
+        !(toastContainer && toastContainer.contains(e.target))
       ) {
         closePanel();
       }
