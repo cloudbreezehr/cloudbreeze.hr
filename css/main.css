@@ -2810,6 +2810,13 @@ nav.nav-light .achievement-btn::after {
 .achievement-card.unlocked .achievement-card-desc {
   color: rgba(255, 255, 255, 0.5);
 }
+.achievement-card-time {
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.25);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+}
 .achievement-card-pts {
   flex-shrink: 0;
   font-family: "DM Mono", monospace;
@@ -3087,6 +3094,9 @@ body.light-mode .achievement-card-desc {
 }
 body.light-mode .achievement-card.unlocked .achievement-card-desc {
   color: rgba(10, 22, 40, 0.55);
+}
+body.light-mode .achievement-card-time {
+  color: rgba(10, 22, 40, 0.3);
 }
 body.light-mode .achievement-icon {
   color: rgba(10, 22, 40, 0.35);

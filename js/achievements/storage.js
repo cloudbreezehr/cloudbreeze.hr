@@ -108,6 +108,11 @@ export function isUnlocked(id) {
   return getState().unlocked.some((u) => u.id === id);
 }
 
+export function getUnlockTime(id) {
+  const entry = getState().unlocked.find((u) => u.id === id);
+  return entry ? entry.ts : null;
+}
+
 export function unlock(id) {
   const state = getState();
   if (state.unlocked.some((u) => u.id === id)) return false;

@@ -67,6 +67,27 @@ const CLOUD_HIDDEN_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentCo
 
 // ── Helpers ──
 
+// ── Relative time thresholds ──
+const MINUTE_MS = 60000;
+const HOUR_MS = 3600000;
+const DAY_MS = 86400000;
+const WEEK_MS = 604800000;
+
+const SHORT_MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
+function formatRelativeTime(ts) {
+  const delta = Date.now() - ts;
+  if (delta < MINUTE_MS) return "just now";
+  if (delta < HOUR_MS) return `${Math.floor(delta / MINUTE_MS)}m ago`;
+  if (delta < DAY_MS) return `${Math.floor(delta / HOUR_MS)}h ago`;
+  if (delta < WEEK_MS) return `${Math.floor(delta / DAY_MS)}d ago`;
+  const d = new Date(ts);
+  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
+
 function totalPoints() {
   return sumPoints(storage.getUnlocked());
 }
@@ -441,6 +462,17 @@ function renderSections(container) {
       text.appendChild(cardTitle);
       text.appendChild(cardDesc);
 
+      // Timestamp for unlocked achievements
+      if (isUnlocked) {
+        const ts = storage.getUnlockTime(ach.id);
+        if (ts) {
+          const timeEl = document.createElement("div");
+          timeEl.className = "achievement-card-time";
+          timeEl.textContent = formatRelativeTime(ts);
+          text.appendChild(timeEl);
+        }
+      }
+
       card.appendChild(icon);
       card.appendChild(text);
       card.appendChild(cardPts);
@@ -492,6 +524,18 @@ export function refreshCard(achievementId) {
   if (title) title.textContent = ach.title;
   const desc = card.querySelector(".achievement-card-desc");
   if (desc) desc.textContent = ach.description;
+
+  // Add timestamp
+  const textEl = card.querySelector(".achievement-text");
+  if (textEl && !card.querySelector(".achievement-card-time")) {
+    const ts = storage.getUnlockTime(achievementId);
+    if (ts) {
+      const timeEl = document.createElement("div");
+      timeEl.className = "achievement-card-time";
+      timeEl.textContent = formatRelativeTime(ts);
+      textEl.appendChild(timeEl);
+    }
+  }
 
   // Shine animation
   card.classList.add("shine");
