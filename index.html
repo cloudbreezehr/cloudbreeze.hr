@@ -462,7 +462,10 @@
       window.addEventListener(
         "scroll",
         () => {
-          const y = window.scrollY;
+          const isFlipped = document.body.classList.contains("upside-down");
+          const maxScroll =
+            document.documentElement.scrollHeight - window.innerHeight;
+          const y = isFlipped ? maxScroll - window.scrollY : window.scrollY;
           if (y > window.innerHeight) return;
           for (const p of parallaxEls) {
             if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
