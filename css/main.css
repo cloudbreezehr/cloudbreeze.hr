@@ -2561,8 +2561,8 @@ nav.nav-light .achievement-btn::after {
   }
 }
 
-/* Dev toggle */
-.achievement-dev-toggle {
+/* Hint toggle */
+.achievement-hint-toggle {
   width: 100%;
   font-family: "DM Mono", monospace;
   font-size: 0.6rem;
@@ -2573,7 +2573,7 @@ nav.nav-light .achievement-btn::after {
   cursor: pointer;
   margin-top: 0.3rem;
 }
-.achievement-dev-toggle input {
+.achievement-hint-toggle input {
   accent-color: var(--sky-4);
 }
 

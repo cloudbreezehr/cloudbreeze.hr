@@ -43,7 +43,7 @@ let toastContainer = null;
 let toastQueue = [];
 let activeToasts = [];
 let isDevMode = false;
-let devRevealHints = false;
+let revealHints = false;
 let _escHandler = null;
 let _outsideHandler = null;
 let tooltipEl = null;
@@ -320,21 +320,19 @@ function buildPanel(onHide) {
   header.appendChild(titleRow);
   header.appendChild(closeBtn);
 
-  // Dev mode reveal toggle
-  if (isDevMode) {
-    const devToggle = document.createElement("label");
-    devToggle.className = "achievement-dev-toggle";
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = devRevealHints;
-    cb.addEventListener("change", () => {
-      devRevealHints = cb.checked;
-      refreshPanel();
-    });
-    devToggle.appendChild(cb);
-    devToggle.appendChild(document.createTextNode(" Reveal hints"));
-    header.appendChild(devToggle);
-  }
+  // Hint toggle — reveals descriptions on hidden achievements + tooltip clues on all locked
+  const hintToggle = document.createElement("label");
+  hintToggle.className = "achievement-hint-toggle";
+  const cb = document.createElement("input");
+  cb.type = "checkbox";
+  cb.checked = revealHints;
+  cb.addEventListener("change", () => {
+    revealHints = cb.checked;
+    refreshPanel();
+  });
+  hintToggle.appendChild(cb);
+  hintToggle.appendChild(document.createTextNode(" Reveal hints"));
+  header.appendChild(hintToggle);
 
   panel.appendChild(header);
 
@@ -447,7 +445,7 @@ function renderSections(container) {
       if (isUnlocked) {
         icon.innerHTML = CLOUD_CHECK_SVG;
         if (set.color) icon.style.color = set.color;
-      } else if (ach.hidden && !isDevMode) {
+      } else if (ach.hidden && !revealHints) {
         icon.innerHTML = CLOUD_HIDDEN_SVG;
       } else {
         icon.innerHTML = CLOUD_LOCK_SVG;
@@ -470,13 +468,9 @@ function renderSections(container) {
       if (isUnlocked) {
         cardTitle.textContent = ach.title;
         cardDesc.textContent = ach.description;
-      } else if (ach.hidden && !isDevMode) {
-        cardTitle.textContent = "???";
-        cardDesc.textContent = "Hidden achievement";
-      } else if (ach.hidden && isDevMode) {
-        // Dev mode: show title always, description if reveal toggled
-        cardTitle.textContent = ach.title;
-        cardDesc.textContent = devRevealHints
+      } else if (ach.hidden) {
+        cardTitle.textContent = revealHints ? ach.title : "???";
+        cardDesc.textContent = revealHints
           ? ach.description
           : "Hidden achievement";
       } else {
@@ -505,8 +499,9 @@ function renderSections(container) {
       card.appendChild(text);
       card.appendChild(cardPts);
 
-      // Hint tooltip on hover (skip for hidden-locked — would spoil the secret)
-      const showHint = ach.hint && (isUnlocked || !ach.hidden || isDevMode);
+      // Hint tooltip on hover — unlocked always, locked only when reveal is on
+      const showHint =
+        ach.hint && (isUnlocked || (revealHints && (!ach.hidden || isDevMode)));
       if (showHint) {
         card.addEventListener("mouseenter", () =>
           showHintTooltip(card, ach.hint),
