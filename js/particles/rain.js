@@ -1196,19 +1196,13 @@ export function createRain(canvasEl, ctxEl) {
     if (pageEl && now < rumbleEnd) {
       const dx = (Math.random() - 0.5) * THUNDER.RUMBLE_PX;
       const dy = (Math.random() - 0.5) * THUNDER.RUMBLE_PX;
-      const base = document.body.classList.contains("upside-down")
-        ? "scaleY(-1) "
-        : "";
-      pageEl.style.transform = `${base}translate(${dx}px, ${dy}px)`;
+      pageEl.style.translate = `${dx}px ${dy}px`;
     } else if (
       pageEl &&
       now >= rumbleEnd &&
       now < rumbleEnd + THUNDER.RUMBLE_RESET_MS
     ) {
-      const base = document.body.classList.contains("upside-down")
-        ? "scaleY(-1)"
-        : "";
-      pageEl.style.transform = base;
+      pageEl.style.translate = "";
     }
 
     return now < thunderBoostEnd ? THUNDER.SPEED_BOOST : 0;

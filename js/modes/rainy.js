@@ -184,17 +184,16 @@ export function initRainy() {
 
     const pageEl = document.querySelector(".page");
     if (pageEl) {
-      const origTransform = pageEl.style.transform;
       let frames = 0;
       const shake = () => {
         frames++;
         if (frames > RUMBLE_DURATION_MS / RUMBLE_FRAME_MS) {
-          pageEl.style.transform = origTransform;
+          pageEl.style.translate = "";
           return;
         }
         const dx = (Math.random() - 0.5) * RUMBLE_PX;
         const dy = (Math.random() - 0.5) * RUMBLE_PX;
-        pageEl.style.transform = `translate(${dx}px, ${dy}px)`;
+        pageEl.style.translate = `${dx}px ${dy}px`;
         requestAnimationFrame(shake);
       };
       shake();

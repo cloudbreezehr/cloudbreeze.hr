@@ -165,15 +165,14 @@ export function initUpsideDown() {
         ? `radial-gradient(ellipse at center, transparent ${VIGNETTE_INNER_STOP}, rgba(${VIGNETTE_COLOR},${intensity * UD_VFX.VIGNETTE_MAX_OPACITY}) 100%)`
         : "none";
 
-    // Screen shake on .page — compose with flip transform
+    // Screen shake on .page
     if (force > UD_VFX.SHAKE_THRESHOLD && !isTransitioning) {
       const shake = force * UD_VFX.SHAKE_INTENSITY;
       const dx = (Math.random() - 0.5) * shake;
       const dy = (Math.random() - 0.5) * shake;
-      const base = isFlipped ? "scaleY(-1) " : "";
-      pageEl.style.transform = `${base}translate(${dx}px, ${dy}px)`;
+      pageEl.style.translate = `${dx}px ${dy}px`;
     } else if (!isTransitioning) {
-      pageEl.style.transform = isFlipped ? "scaleY(-1)" : "";
+      pageEl.style.translate = "";
     }
   }
 
@@ -252,7 +251,7 @@ export function initUpsideDown() {
           },
         }),
       );
-      pageEl.style.transform = isFlipped ? "scaleY(-1)" : "";
+      pageEl.style.translate = "";
       overlay.style.background = "none";
 
       if (isFlipped) {
