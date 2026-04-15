@@ -254,6 +254,7 @@ export function initFrozen() {
   // ── Click handler ──
   logoEl.addEventListener("click", (e) => {
     e.preventDefault();
+    window.scrollTo({ top: 0, behavior: "smooth" });
     if (isTransitioning) return;
 
     lastClickX = e.clientX;
