@@ -1,5 +1,6 @@
 import { bindPointer } from "../pointer.js";
 import { playWipe } from "../effects/wipe.js";
+import { spawnRipple } from "../effects/ripple.js";
 
 export function initDeepSea() {
   // ── Trigger tuning ──
@@ -52,40 +53,21 @@ export function initDeepSea() {
   }
 
   // ── 1. Ripple rings from cursor ──
-  function spawnRipple(x, y) {
-    for (let i = 0; i < RIPPLE_COUNT; i++) {
-      const ring = document.createElement("div");
-      ring.className = "deep-sea-ripple";
-      ring.style.left = x + "px";
-      ring.style.top = y + "px";
-
-      document.body.appendChild(ring);
-
-      const delay = i * 150;
-      ring.animate(
-        [
-          { transform: "translate(-50%,-50%) scale(0)", opacity: 0.6 },
-          {
-            transform: `translate(-50%,-50%) scale(${RIPPLE_MAX_SCALE})`,
-            opacity: 0,
-          },
-        ],
-        {
-          duration: RIPPLE_DURATION,
-          delay,
-          easing: "ease-out",
-          fill: "forwards",
-        },
-      ).onfinish = () => ring.remove();
-    }
-  }
+  const rippleOpts = {
+    className: "deep-sea-ripple",
+    count: RIPPLE_COUNT,
+    staggerMs: 150,
+    duration: RIPPLE_DURATION,
+    maxScale: RIPPLE_MAX_SCALE,
+    startOpacity: 0.6,
+  };
 
   function startRipples(x, y) {
     holdX = x;
     holdY = y;
-    spawnRipple(x, y);
+    spawnRipple(x, y, rippleOpts);
     rippleTimer = setInterval(
-      () => spawnRipple(holdX, holdY),
+      () => spawnRipple(holdX, holdY, rippleOpts),
       RIPPLE_INTERVAL_MS,
     );
   }

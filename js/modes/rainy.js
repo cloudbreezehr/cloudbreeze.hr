@@ -1,4 +1,5 @@
 import { playWipe } from "../effects/wipe.js";
+import { spawnRipple } from "../effects/ripple.js";
 
 export function initRainy() {
   const CLICKS_TO_RAIN = 15;
@@ -279,25 +280,13 @@ export function initRainy() {
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const ripple = document.createElement("div");
-    ripple.className = "rain-ripple";
-    ripple.style.left = x + "px";
-    ripple.style.top = y + "px";
-    card.appendChild(ripple);
-
-    ripple.animate(
-      [
-        {
-          transform: "translate(-50%,-50%) scale(0)",
-          opacity: RIPPLE_START_OPACITY,
-        },
-        {
-          transform: `translate(-50%,-50%) scale(${RIPPLE_SCALE})`,
-          opacity: 0,
-        },
-      ],
-      { duration: RIPPLE_DURATION_MS, easing: "ease-out", fill: "forwards" },
-    ).onfinish = () => ripple.remove();
+    spawnRipple(x, y, {
+      className: "rain-ripple",
+      parent: card,
+      duration: RIPPLE_DURATION_MS,
+      maxScale: RIPPLE_SCALE,
+      startOpacity: RIPPLE_START_OPACITY,
+    });
   }
 
   // ── Rain transition (storm front wipe) ──

@@ -1,4 +1,5 @@
 import { playWipe } from "../effects/wipe.js";
+import { spawnRipple } from "../effects/ripple.js";
 
 export function initFrozen() {
   const CLICKS_TO_FREEZE = 25;
@@ -181,23 +182,16 @@ export function initFrozen() {
     const card = e.currentTarget;
     card.classList.toggle("card-frozen");
 
-    // Spawn frost ripple at click point
     const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    const ripple = document.createElement("div");
-    ripple.className = "frost-ripple";
-    ripple.style.left = x + "px";
-    ripple.style.top = y + "px";
-    card.appendChild(ripple);
-
-    ripple.animate(
-      [
-        { transform: "translate(-50%,-50%) scale(0)", opacity: 0.6 },
-        { transform: "translate(-50%,-50%) scale(4)", opacity: 0 },
-      ],
-      { duration: 600, easing: "ease-out", fill: "forwards" },
-    ).onfinish = () => ripple.remove();
+    spawnRipple(x, y, {
+      className: "frost-ripple",
+      parent: card,
+      duration: 600,
+      maxScale: 4,
+      startOpacity: 0.6,
+    });
   }
 
   // ── Wipe timing ──
