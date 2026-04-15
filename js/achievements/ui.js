@@ -67,16 +67,13 @@ const CLOUD_HIDDEN_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentCo
 
 // ── Helpers ──
 
-// ── Relative time thresholds ──
+// ── Timestamp formatting ──
 const MINUTE_MS = 60000;
 const HOUR_MS = 3600000;
 const DAY_MS = 86400000;
 const WEEK_MS = 604800000;
 
-const SHORT_MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+let showAbsoluteTime = false;
 
 function formatRelativeTime(ts) {
   const delta = Date.now() - ts;
@@ -84,8 +81,37 @@ function formatRelativeTime(ts) {
   if (delta < HOUR_MS) return `${Math.floor(delta / MINUTE_MS)}m ago`;
   if (delta < DAY_MS) return `${Math.floor(delta / HOUR_MS)}h ago`;
   if (delta < WEEK_MS) return `${Math.floor(delta / DAY_MS)}d ago`;
+  return formatAbsoluteDate(ts);
+}
+
+function formatAbsoluteTime(ts) {
   const d = new Date(ts);
-  return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+  const day = d.getDate();
+  const month = d.toLocaleString("en", { month: "short" });
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${day} ${month} ${year}, ${hours}:${minutes}`;
+}
+
+function formatAbsoluteDate(ts) {
+  const d = new Date(ts);
+  const day = d.getDate();
+  const month = d.toLocaleString("en", { month: "short" });
+  return `${month} ${day}`;
+}
+
+function formatTimestamp(ts) {
+  return showAbsoluteTime ? formatAbsoluteTime(ts) : formatRelativeTime(ts);
+}
+
+function toggleTimestampMode() {
+  showAbsoluteTime = !showAbsoluteTime;
+  if (!panelEl) return;
+  panelEl.querySelectorAll(".achievement-card-time").forEach((el) => {
+    const ts = Number(el.dataset.ts);
+    if (ts) el.textContent = formatTimestamp(ts);
+  });
 }
 
 function totalPoints() {
@@ -468,7 +494,9 @@ function renderSections(container) {
         if (ts) {
           const timeEl = document.createElement("div");
           timeEl.className = "achievement-card-time";
-          timeEl.textContent = formatRelativeTime(ts);
+          timeEl.dataset.ts = String(ts);
+          timeEl.textContent = formatTimestamp(ts);
+          timeEl.addEventListener("click", toggleTimestampMode);
           text.appendChild(timeEl);
         }
       }
@@ -532,7 +560,9 @@ export function refreshCard(achievementId) {
     if (ts) {
       const timeEl = document.createElement("div");
       timeEl.className = "achievement-card-time";
-      timeEl.textContent = formatRelativeTime(ts);
+      timeEl.dataset.ts = String(ts);
+      timeEl.textContent = formatTimestamp(ts);
+      timeEl.addEventListener("click", toggleTimestampMode);
       textEl.appendChild(timeEl);
     }
   }

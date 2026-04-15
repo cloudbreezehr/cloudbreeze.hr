@@ -2816,6 +2816,11 @@ nav.nav-light .achievement-btn::after {
   color: rgba(255, 255, 255, 0.25);
   margin-top: 2px;
   letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.achievement-card-time:hover {
+  color: rgba(255, 255, 255, 0.45);
 }
 .achievement-card-pts {
   flex-shrink: 0;
@@ -3097,6 +3102,9 @@ body.light-mode .achievement-card.unlocked .achievement-card-desc {
 }
 body.light-mode .achievement-card-time {
   color: rgba(10, 22, 40, 0.3);
+}
+body.light-mode .achievement-card-time:hover {
+  color: rgba(10, 22, 40, 0.5);
 }
 body.light-mode .achievement-icon {
   color: rgba(10, 22, 40, 0.35);
