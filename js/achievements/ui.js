@@ -10,6 +10,7 @@ import {
   sumPoints,
 } from "./registry.js";
 import * as storage from "./storage.js";
+import { burstFireworks } from "../effects/fireworks.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -26,6 +27,9 @@ const PANEL_SLIDE_MS = 300;
 
 // ── Badge animation ──
 const BADGE_PULSE_MS = 600;
+
+// ── Fireworks ──
+const FIREWORKS_DELAY_MS = TOAST_SLIDE_IN_MS;
 
 // ── Tooltip Constants ──
 const TOOLTIP_OFFSET_Y = 6;
@@ -536,6 +540,16 @@ export function showToast(achievement) {
   // Slide in
   void toast.offsetHeight;
   toast.classList.add("enter");
+
+  // Fireworks burst around the toast after slide-in completes
+  const accentColor = (set && set.color) || null;
+  setTimeout(() => {
+    if (!toast.parentNode) return;
+    const rect = toast.getBoundingClientRect();
+    burstFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2, {
+      color: accentColor,
+    });
+  }, FIREWORKS_DELAY_MS);
 
   const toastRef = { el: toast };
   activeToasts.push(toastRef);
