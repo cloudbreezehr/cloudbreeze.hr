@@ -2696,7 +2696,8 @@ nav.nav-light .achievement-btn::after {
 }
 
 /* Glow pseudo-element — opacity animation is GPU-composited */
-.achievement-card.unlocked::before {
+.achievement-card.unlocked::before,
+.achievement-toast::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -2709,7 +2710,8 @@ nav.nav-light .achievement-btn::after {
   transition: opacity 0.3s;
   will-change: opacity;
 }
-.achievement-card.unlocked:hover::before {
+.achievement-card.unlocked:hover::before,
+.achievement-toast:hover::before {
   animation: card-glow 2s ease-in-out infinite;
 }
 @keyframes card-glow {
@@ -2723,7 +2725,8 @@ nav.nav-light .achievement-btn::after {
 }
 
 /* Shimmer sweep on hover */
-.achievement-card.unlocked::after {
+.achievement-card.unlocked::after,
+.achievement-toast::after {
   content: "";
   position: absolute;
   inset: 0;
@@ -2741,7 +2744,8 @@ nav.nav-light .achievement-btn::after {
   opacity: 0;
   transition: opacity 0.3s;
 }
-.achievement-card.unlocked:hover::after {
+.achievement-card.unlocked:hover::after,
+.achievement-toast:hover::after {
   opacity: 1;
   animation: card-shimmer 6s linear infinite;
 }
@@ -2885,6 +2889,8 @@ body.light-mode .achievement-tooltip {
 
 .achievement-toast {
   --toast-accent: var(--sky-4, #378add);
+  --set-color: var(--toast-accent);
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.6rem;
