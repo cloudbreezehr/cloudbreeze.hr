@@ -1,3 +1,5 @@
+import { playWipe } from "../effects/wipe.js";
+
 export function initBlocky(toggleEl) {
   // ── Trigger tuning ──
   const PRESSES_TO_ACTIVATE = 20;
@@ -207,36 +209,26 @@ export function initBlocky(toggleEl) {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "blocky-wipe";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    // Phase 1: Collapse — pixelation grows to massive blocks
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      // Phase 2: Swap state while covered
-      isBlocky = true;
-      document.body.classList.add("blocky");
-      document.body.dataset.lastSubmode = "blocky";
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-activate", mode: "blocky" },
-        }),
-      );
-      clearIndicators();
-      enableCardPixel();
-
-      // Phase 3: Refine — reveal blocky world
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, CASCADE_REFINE_MS + CASCADE_TERRAIN_MS);
-      });
-    }, CASCADE_COLLAPSE_MS);
+    playWipe({
+      className: "blocky-wipe",
+      coverMs: CASCADE_COLLAPSE_MS,
+      revealMs: CASCADE_REFINE_MS + CASCADE_TERRAIN_MS,
+      onMidpoint() {
+        isBlocky = true;
+        document.body.classList.add("blocky");
+        document.body.dataset.lastSubmode = "blocky";
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-activate", mode: "blocky" },
+          }),
+        );
+        clearIndicators();
+        enableCardPixel();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Reverse cascade transition ──
@@ -244,32 +236,25 @@ export function initBlocky(toggleEl) {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "blocky-wipe unblocky";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isBlocky = false;
-      document.body.classList.remove("blocky");
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-deactivate", mode: "blocky" },
-        }),
-      );
-      clearIndicators();
-      disableCardPixel();
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, CASCADE_REFINE_MS + CASCADE_TERRAIN_MS);
-      });
-    }, CASCADE_COLLAPSE_MS);
+    playWipe({
+      className: "blocky-wipe unblocky",
+      coverMs: CASCADE_COLLAPSE_MS,
+      revealMs: CASCADE_REFINE_MS + CASCADE_TERRAIN_MS,
+      onMidpoint() {
+        isBlocky = false;
+        document.body.classList.remove("blocky");
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-deactivate", mode: "blocky" },
+          }),
+        );
+        clearIndicators();
+        disableCardPixel();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Toggle press handler ──

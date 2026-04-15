@@ -1,3 +1,5 @@
+import { playWipe } from "../effects/wipe.js";
+
 export function initRainy() {
   const CLICKS_TO_RAIN = 15;
   const CLICKS_TO_CLEAR = 8;
@@ -303,34 +305,27 @@ export function initRainy() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "storm-wipe";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isRainy = true;
-      document.body.classList.add("rainy");
-      document.body.dataset.lastSubmode = "rainy";
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-activate", mode: "rainy" },
-        }),
-      );
-      clearIndicators();
-      enableCardRain();
-      heroTagEl.textContent = activeTagText;
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, WIPE_REVEAL_MS);
-      });
-    }, WIPE_COVER_MS);
+    playWipe({
+      className: "storm-wipe",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isRainy = true;
+        document.body.classList.add("rainy");
+        document.body.dataset.lastSubmode = "rainy";
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-activate", mode: "rainy" },
+          }),
+        );
+        clearIndicators();
+        enableCardRain();
+        heroTagEl.textContent = activeTagText;
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Clear transition (storm lifting wipe) ──
@@ -338,33 +333,26 @@ export function initRainy() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "storm-wipe clearing";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isRainy = false;
-      document.body.classList.remove("rainy");
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-deactivate", mode: "rainy" },
-        }),
-      );
-      clearIndicators();
-      disableCardRain();
-      heroTagEl.textContent = originalTagText;
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, WIPE_REVEAL_MS);
-      });
-    }, WIPE_COVER_MS);
+    playWipe({
+      className: "storm-wipe clearing",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isRainy = false;
+        document.body.classList.remove("rainy");
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-deactivate", mode: "rainy" },
+          }),
+        );
+        clearIndicators();
+        disableCardRain();
+        heroTagEl.textContent = originalTagText;
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Click handler ──

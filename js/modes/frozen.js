@@ -1,3 +1,5 @@
+import { playWipe } from "../effects/wipe.js";
+
 export function initFrozen() {
   const CLICKS_TO_FREEZE = 25;
   const CLICKS_TO_THAW = 13;
@@ -198,41 +200,35 @@ export function initFrozen() {
     ).onfinish = () => ripple.remove();
   }
 
+  // ── Wipe timing ──
+  const WIPE_COVER_MS = 400;
+  const WIPE_REVEAL_MS = 600;
+
   // ── Freeze transition ──
   function triggerFreeze() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "frost-wipe";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    // Phase 1: wipe covers screen
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      // Phase 2: swap state while covered
-      isFrozen = true;
-      document.body.classList.add("frozen");
-      document.body.dataset.lastSubmode = "frozen";
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-activate", mode: "frozen" },
-        }),
-      );
-      clearIndicators();
-      enableCardFrost();
-
-      // Phase 3: reveal
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, 600);
-      });
-    }, 400);
+    playWipe({
+      className: "frost-wipe",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isFrozen = true;
+        document.body.classList.add("frozen");
+        document.body.dataset.lastSubmode = "frozen";
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-activate", mode: "frozen" },
+          }),
+        );
+        clearIndicators();
+        enableCardFrost();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Thaw transition ──
@@ -240,32 +236,25 @@ export function initFrozen() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "frost-wipe thaw";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isFrozen = false;
-      document.body.classList.remove("frozen");
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-deactivate", mode: "frozen" },
-        }),
-      );
-      clearIndicators();
-      disableCardFrost();
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, 600);
-      });
-    }, 400);
+    playWipe({
+      className: "frost-wipe thaw",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isFrozen = false;
+        document.body.classList.remove("frozen");
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-deactivate", mode: "frozen" },
+          }),
+        );
+        clearIndicators();
+        disableCardFrost();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Click handler ──

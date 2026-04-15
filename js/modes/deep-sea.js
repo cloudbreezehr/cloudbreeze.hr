@@ -1,4 +1,5 @@
 import { bindPointer } from "../pointer.js";
+import { playWipe } from "../effects/wipe.js";
 
 export function initDeepSea() {
   // ── Trigger tuning ──
@@ -192,38 +193,35 @@ export function initDeepSea() {
     e.currentTarget.style.removeProperty("--caustic-y");
   }
 
+  // ── Wipe timing ──
+  const WIPE_COVER_MS = 400;
+  const WIPE_REVEAL_MS = 600;
+
   // ── Dive transition ──
   function triggerDive() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "deep-sea-wipe";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isSubmerged = true;
-      document.body.classList.add("deep-sea");
-      document.body.dataset.lastSubmode = "deep-sea";
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-activate", mode: "deep-sea" },
-        }),
-      );
-      clearIndicators();
-      enableCardCaustics();
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, 600);
-      });
-    }, 400);
+    playWipe({
+      className: "deep-sea-wipe",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isSubmerged = true;
+        document.body.classList.add("deep-sea");
+        document.body.dataset.lastSubmode = "deep-sea";
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-activate", mode: "deep-sea" },
+          }),
+        );
+        clearIndicators();
+        enableCardCaustics();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Resurface transition ──
@@ -231,32 +229,25 @@ export function initDeepSea() {
     if (isTransitioning) return;
     isTransitioning = true;
 
-    const wipe = document.createElement("div");
-    wipe.className = "deep-sea-wipe resurface";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
-
-    wipe.style.opacity = "1";
-
-    setTimeout(() => {
-      isSubmerged = false;
-      document.body.classList.remove("deep-sea");
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: { type: "mode-deactivate", mode: "deep-sea" },
-        }),
-      );
-      clearIndicators();
-      disableCardCaustics();
-
-      requestAnimationFrame(() => {
-        wipe.style.opacity = "0";
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, 600);
-      });
-    }, 400);
+    playWipe({
+      className: "deep-sea-wipe resurface",
+      coverMs: WIPE_COVER_MS,
+      revealMs: WIPE_REVEAL_MS,
+      onMidpoint() {
+        isSubmerged = false;
+        document.body.classList.remove("deep-sea");
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "mode-deactivate", mode: "deep-sea" },
+          }),
+        );
+        clearIndicators();
+        disableCardCaustics();
+      },
+      onComplete() {
+        isTransitioning = false;
+      },
+    });
   }
 
   // ── Hold detection ──
