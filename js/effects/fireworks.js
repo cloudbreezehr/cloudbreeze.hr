@@ -49,16 +49,15 @@ const FW = defineConstants("effects.fireworks", {
   GLOW_RADIUS_MULT: 3.5,
   GLOW_MID_STOP: 0.4,
   GLOW_MID_OPACITY: 0.45,
-  DRAW_THRESHOLD: 0.01,
   FADE_START: 0.55,
 
   // ── Color ──
   HUE_SHIFT_RANGE: 30,
   SATURATION_JITTER: 0.15,
   BRIGHTNESS_BOOST: 45,
-  FALLBACK_COLOR: 0, // placeholder — actual default is [150, 210, 255]
 
   // ── Overlay ──
+  DRAW_THRESHOLD: 0.01,
   OVERLAY_Z_INDEX: 500,
   CLEANUP_CHECK_INTERVAL: 10,
 });

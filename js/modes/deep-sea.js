@@ -1,24 +1,45 @@
+import { defineConstants } from "../dev/registry.js";
 import { bindPointer } from "../pointer.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 
+// ── Force & Activation ──
+const DF = defineConstants(
+  "modes.deepSeaForce",
+  {
+    HOLD_TO_DIVE_MS: 10000,
+    HOLD_TO_SURFACE_MS: 5000,
+    DECAY_RATE: 0.15,
+    WATER_CREEP_AT: 0.2,
+    COLOR_SHIFT_AT: 0.4,
+    VIGNETTE_AT: 0.6,
+    WIPE_COVER_MS: 400,
+    WIPE_REVEAL_MS: 600,
+  },
+  { mode: "deep-sea" },
+);
+
+// ── Visual Effects ──
+const DV = defineConstants(
+  "modes.deepSeaVisuals",
+  {
+    RIPPLE_INTERVAL_MS: 400,
+    RIPPLE_COUNT: 3,
+    RIPPLE_DURATION: 1200,
+    RIPPLE_MAX_SCALE: 3,
+    RIPPLE_STAGGER_MS: 150,
+    RIPPLE_START_OPACITY: 0.6,
+    WATER_SIZE_MIN: 8,
+    WATER_SIZE_RANGE: 25,
+    HUE_ROTATE: 50,
+    SAT_BOOST: 0.4,
+    BRI_DROP: 0.65,
+    VIGNETTE_MAX_OPACITY: 0.7,
+  },
+  { mode: "deep-sea" },
+);
+
 export function initDeepSea() {
-  // ── Trigger tuning ──
-  const HOLD_TO_DIVE_MS = 10000;
-  const HOLD_TO_SURFACE_MS = 5000;
-  const DECAY_RATE = 0.15; // force/sec after release
-
-  // ── Indicator thresholds (fraction of 1.0) ──
-  const WATER_CREEP_AT = 0.2;
-  const COLOR_SHIFT_AT = 0.4;
-  const VIGNETTE_AT = 0.6;
-
-  // ── Ripple ring tuning ──
-  const RIPPLE_INTERVAL_MS = 400;
-  const RIPPLE_COUNT = 3;
-  const RIPPLE_DURATION = 1200;
-  const RIPPLE_MAX_SCALE = 3;
-
   let force = 0;
   let isSubmerged = false;
   let isTransitioning = false;
@@ -55,11 +76,11 @@ export function initDeepSea() {
   // ── 1. Ripple rings from cursor ──
   const rippleOpts = {
     className: "deep-sea-ripple",
-    count: RIPPLE_COUNT,
-    staggerMs: 150,
-    duration: RIPPLE_DURATION,
-    maxScale: RIPPLE_MAX_SCALE,
-    startOpacity: 0.6,
+    count: DV.RIPPLE_COUNT,
+    staggerMs: DV.RIPPLE_STAGGER_MS,
+    duration: DV.RIPPLE_DURATION,
+    maxScale: DV.RIPPLE_MAX_SCALE,
+    startOpacity: DV.RIPPLE_START_OPACITY,
   };
 
   function startRipples(x, y) {
@@ -68,7 +89,7 @@ export function initDeepSea() {
     spawnRipple(x, y, rippleOpts);
     rippleTimer = setInterval(
       () => spawnRipple(holdX, holdY, rippleOpts),
-      RIPPLE_INTERVAL_MS,
+      DV.RIPPLE_INTERVAL_MS,
     );
   }
 
@@ -81,13 +102,16 @@ export function initDeepSea() {
 
   // ── 2. Screen-edge water creep ──
   function updateWaterCreep(progress) {
-    if (progress < WATER_CREEP_AT) {
+    if (progress < DF.WATER_CREEP_AT) {
       waterOverlay.style.opacity = "0";
       return;
     }
-    const t = Math.min(1, (progress - WATER_CREEP_AT) / (1 - WATER_CREEP_AT));
+    const t = Math.min(
+      1,
+      (progress - DF.WATER_CREEP_AT) / (1 - DF.WATER_CREEP_AT),
+    );
     waterOverlay.style.opacity = String(t);
-    const size = 8 + t * 25;
+    const size = DV.WATER_SIZE_MIN + t * DV.WATER_SIZE_RANGE;
     waterOverlay.style.setProperty("--water-size", size + "%");
   }
 
@@ -100,29 +124,29 @@ export function initDeepSea() {
       canvasEl.style.filter = "";
       return;
     }
-    if (progress < COLOR_SHIFT_AT) {
+    if (progress < DF.COLOR_SHIFT_AT) {
       canvasEl.style.filter = "";
       return;
     }
-    const t = Math.min(1, (progress - COLOR_SHIFT_AT) / (1 - COLOR_SHIFT_AT));
-    const hue = 360 - t * 50; // rotate toward teal: 360→310deg
-    const sat = 1 + t * 0.4;
-    const bri = 1 - t * 0.65;
+    const t = Math.min(
+      1,
+      (progress - DF.COLOR_SHIFT_AT) / (1 - DF.COLOR_SHIFT_AT),
+    );
+    const hue = 360 - t * DV.HUE_ROTATE;
+    const sat = 1 + t * DV.SAT_BOOST;
+    const bri = 1 - t * DV.BRI_DROP;
     canvasEl.style.filter = `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
   }
 
   // ── 4. Pressure vignette ──
   function updateVignette(progress) {
-    if (progress < VIGNETTE_AT) {
+    if (progress < DF.VIGNETTE_AT) {
       vignetteOverlay.style.opacity = "0";
       return;
     }
-    const t = Math.min(1, (progress - VIGNETTE_AT) / (1 - VIGNETTE_AT));
-    vignetteOverlay.style.opacity = String(t * 0.7);
+    const t = Math.min(1, (progress - DF.VIGNETTE_AT) / (1 - DF.VIGNETTE_AT));
+    vignetteOverlay.style.opacity = String(t * DV.VIGNETTE_MAX_OPACITY);
   }
-
-  // ── 5. Light extinction (further brightness drop) ──
-  // Handled within updateColorShift — the brightness drops to 0.35 at force=1.0
 
   // ── Update all indicators ──
   function updateVisuals() {
@@ -175,10 +199,6 @@ export function initDeepSea() {
     e.currentTarget.style.removeProperty("--caustic-y");
   }
 
-  // ── Wipe timing ──
-  const WIPE_COVER_MS = 400;
-  const WIPE_REVEAL_MS = 600;
-
   // ── Dive transition ──
   function triggerDive() {
     if (isTransitioning) return;
@@ -186,8 +206,8 @@ export function initDeepSea() {
 
     playWipe({
       className: "deep-sea-wipe",
-      coverMs: WIPE_COVER_MS,
-      revealMs: WIPE_REVEAL_MS,
+      coverMs: DF.WIPE_COVER_MS,
+      revealMs: DF.WIPE_REVEAL_MS,
       onMidpoint() {
         isSubmerged = true;
         document.body.classList.add("deep-sea");
@@ -213,8 +233,8 @@ export function initDeepSea() {
 
     playWipe({
       className: "deep-sea-wipe resurface",
-      coverMs: WIPE_COVER_MS,
-      revealMs: WIPE_REVEAL_MS,
+      coverMs: DF.WIPE_COVER_MS,
+      revealMs: DF.WIPE_REVEAL_MS,
       onMidpoint() {
         isSubmerged = false;
         document.body.classList.remove("deep-sea");
@@ -237,7 +257,7 @@ export function initDeepSea() {
     if (!isHolding || isTransitioning) return;
 
     const elapsed = performance.now() - holdStartTime;
-    const target = isSubmerged ? HOLD_TO_SURFACE_MS : HOLD_TO_DIVE_MS;
+    const target = isSubmerged ? DF.HOLD_TO_SURFACE_MS : DF.HOLD_TO_DIVE_MS;
     force = Math.min(1, elapsed / target);
 
     updateVisuals();
@@ -264,7 +284,7 @@ export function initDeepSea() {
     lastTick = now;
 
     if (!isHolding && force > 0 && !isTransitioning) {
-      force = Math.max(0, force - DECAY_RATE * dt);
+      force = Math.max(0, force - DF.DECAY_RATE * dt);
       updateVisuals();
     }
     requestAnimationFrame(tick);

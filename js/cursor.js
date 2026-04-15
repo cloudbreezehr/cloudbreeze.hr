@@ -1,13 +1,18 @@
-const RING_EASING = 0.12;
-const RING_EASING_SNAP = 1;
-const DOT_SIZE_DEFAULT = 12;
-const DOT_SIZE_HOVER = 6;
-const DOT_SIZE_PRESS = 16;
-const DOT_SIZE_HOVER_PRESS = 10;
-const RING_SIZE_DEFAULT = 36;
-const RING_SIZE_HOVER = 52;
-const RING_SIZE_PRESS = 20;
-const RING_SIZE_HOVER_PRESS = 32;
+import { defineConstants } from "./dev/registry.js";
+
+const C = defineConstants("cursor", {
+  RING_EASING: 0.12,
+  RING_EASING_SNAP: 1,
+  DOT_SIZE_DEFAULT: 12,
+  DOT_SIZE_HOVER: 6,
+  DOT_SIZE_PRESS: 16,
+  DOT_SIZE_HOVER_PRESS: 10,
+  RING_SIZE_DEFAULT: 36,
+  RING_SIZE_HOVER: 52,
+  RING_SIZE_PRESS: 20,
+  RING_SIZE_HOVER_PRESS: 32,
+});
+
 const NATIVE_CURSOR_SELECTOR = ".dev-console";
 
 export function initCursor(dotEl, ringEl) {
@@ -39,7 +44,7 @@ export function initCursor(dotEl, ringEl) {
   });
 
   function animRing() {
-    const ease = overNativeCursor ? RING_EASING_SNAP : RING_EASING;
+    const ease = overNativeCursor ? C.RING_EASING_SNAP : C.RING_EASING;
     rx += (mx - rx) * ease;
     ry += (my - ry) * ease;
     setPos(ringEl, rx, ry);
@@ -50,18 +55,18 @@ export function initCursor(dotEl, ringEl) {
   function applySizes() {
     const dotSize = pressing
       ? hovering
-        ? DOT_SIZE_HOVER_PRESS
-        : DOT_SIZE_PRESS
+        ? C.DOT_SIZE_HOVER_PRESS
+        : C.DOT_SIZE_PRESS
       : hovering
-        ? DOT_SIZE_HOVER
-        : DOT_SIZE_DEFAULT;
+        ? C.DOT_SIZE_HOVER
+        : C.DOT_SIZE_DEFAULT;
     const ringSize = pressing
       ? hovering
-        ? RING_SIZE_HOVER_PRESS
-        : RING_SIZE_PRESS
+        ? C.RING_SIZE_HOVER_PRESS
+        : C.RING_SIZE_PRESS
       : hovering
-        ? RING_SIZE_HOVER
-        : RING_SIZE_DEFAULT;
+        ? C.RING_SIZE_HOVER
+        : C.RING_SIZE_DEFAULT;
     dotEl.style.width = `${dotSize}px`;
     dotEl.style.height = `${dotSize}px`;
     ringEl.style.width = `${ringSize}px`;

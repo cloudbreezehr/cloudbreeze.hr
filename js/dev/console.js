@@ -86,6 +86,16 @@ const SECTION_LABEL_MAP = {
   "particles.rainThunder": "Thunder",
   "modes.upsideForce": "Force & Drain",
   "modes.upsideVisuals": "Visual Effects",
+  "modes.rainyForce": "Force & Activation",
+  "modes.rainyVisuals": "Visual Effects",
+  "modes.frozenForce": "Force & Activation",
+  "modes.frozenVisuals": "Visual Effects",
+  "modes.deepSeaForce": "Force & Activation",
+  "modes.deepSeaVisuals": "Visual Effects",
+  "modes.blockyForce": "Force & Activation",
+  "modes.blockyVisuals": "Visual Effects",
+  cursor: "Cursor",
+  "effects.fireworks": "Fireworks",
 };
 
 // ── Group categories into top-level sections ──
@@ -95,6 +105,8 @@ const GROUP_ORDER = [
   { label: "Atmosphere", prefix: "atmosphere." },
   { label: "Fury", prefix: "fury." },
   { label: "Interactions", prefix: "interactions." },
+  { label: "Cursor", prefix: "cursor" },
+  { label: "Effects", prefix: "effects." },
 ];
 
 // ── Mode metadata ──
@@ -774,7 +786,15 @@ function buildPanel() {
       subHeader.style.setProperty("--mode-color", MODE_COLORS[mode]);
       subHeader.textContent = MODE_LABELS[mode];
       modesGroupBody.appendChild(subHeader);
-      for (const cat of byMode.get(mode)) {
+      const cats = byMode
+        .get(mode)
+        .slice()
+        .sort((a, b) => {
+          const aMode = a.startsWith("modes.") ? 0 : 1;
+          const bMode = b.startsWith("modes.") ? 0 : 1;
+          return aMode - bMode;
+        });
+      for (const cat of cats) {
         modesGroupBody.appendChild(buildSectionEl(cat, registry, rowMap));
       }
     }

@@ -131,14 +131,20 @@ const UD_VFX = defineConstants(
       step: 50,
       description: "Settle time before state changes",
     },
+    FPS_BASELINE_MS: {
+      value: 16.667,
+      min: 8,
+      max: 33,
+      step: 0.001,
+      description: "Frame normalization baseline (16.667 = 60fps)",
+    },
   },
   { mode: "upside-down" },
 );
 
-// ── Non-tweakable constants ──
+// ── Non-numeric constants ──
 const VIGNETTE_INNER_STOP = "30%";
 const VIGNETTE_COLOR = [180, 0, 0];
-const FPS_BASELINE_MS = 16.667;
 
 export function initUpsideDown() {
   let force = 0;
@@ -405,7 +411,7 @@ export function initUpsideDown() {
   let lastTick = performance.now();
   function tick() {
     const now = performance.now();
-    const dt = (now - lastTick) / FPS_BASELINE_MS; // normalize to 60fps baseline
+    const dt = (now - lastTick) / UD_VFX.FPS_BASELINE_MS; // normalize to 60fps baseline
     lastTick = now;
     if (force > 0 && !isTransitioning) {
       const drain =
