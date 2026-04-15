@@ -344,8 +344,10 @@ export function initCanvas(canvasEl, theme, options) {
     requestAnimationFrame(render);
   }
 
+  // UI overlays that should not trigger canvas fury or click-burst effects
+  const UI_OVERLAY = "nav, .achievement-panel, .dev-console";
+
   document.addEventListener("click", (e) => {
-    if (e.target.closest(".dev-console")) return;
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
     forces.clickImpulse.x = cx;
@@ -356,6 +358,10 @@ export function initCanvas(canvasEl, theme, options) {
         detail: { type: "click", x: e.clientX, y: e.clientY },
       }),
     );
+
+    // Skip fury + bursts for clicks on UI controls
+    if (e.target.closest(UI_OVERLAY)) return;
+
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
@@ -385,7 +391,7 @@ export function initCanvas(canvasEl, theme, options) {
   // Pointer events — drag/trail/release delegated to interactions module
   bindPointer(document, {
     onDown(x, y, e) {
-      if (e.target.closest(".dev-console")) return false;
+      if (e.target.closest(UI_OVERLAY)) return false;
       const cx = x,
         cy = canvasY(y);
       interactions.startDrag(forces, cx, cy);
