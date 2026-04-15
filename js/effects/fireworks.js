@@ -59,7 +59,7 @@ const FW = defineConstants("effects.fireworks", {
   FALLBACK_COLOR: 0, // placeholder — actual default is [150, 210, 255]
 
   // ── Overlay ──
-  OVERLAY_Z: 10002,
+  OVERLAY_Z_INDEX: 500,
   CLEANUP_CHECK_INTERVAL: 10,
 });
 
@@ -424,7 +424,7 @@ let overlayResizeHandler = null;
 
 function createOverlay() {
   overlayCanvas = document.createElement("canvas");
-  overlayCanvas.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:${FW.OVERLAY_Z}`;
+  overlayCanvas.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:${FW.OVERLAY_Z_INDEX}`;
   overlayCanvas.width = window.innerWidth;
   overlayCanvas.height = window.innerHeight;
   document.body.appendChild(overlayCanvas);

@@ -33,6 +33,9 @@ const DOCK_GLOW_SPREAD = 12;
 const DOCK_GLOW_WIDTH = 3;
 const WALL_GLOW_THICKNESS = 4;
 const WALL_GLOW_SPREAD = 18;
+// ── Z-Index Layers ──
+const Z_INDEX_CONSOLE = 400;
+const Z_INDEX_TOOLTIP = 450;
 // ── Dock Snap Effect ──
 const SNAP_FLASH_DURATION_MS = 350;
 const SNAP_FLASH_SPREAD = 24;
@@ -115,7 +118,7 @@ const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy", "upside-down"];
 const STYLES = /* css */ `
 .dev-console {
   position: fixed;
-  z-index: 10000;
+  z-index: ${Z_INDEX_CONSOLE};
   font-family: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
   font-size: 11px;
   color: #c8d6e5;
@@ -175,7 +178,7 @@ const STYLES = /* css */ `
 .dc-wall-glow {
   position: fixed;
   width: ${WALL_GLOW_THICKNESS}px;
-  z-index: 9999;
+  z-index: ${Z_INDEX_CONSOLE};
   pointer-events: none;
   background: rgba(${DOCK_GLOW_COLOR}, ${DOCK_GLOW_OPACITY});
   box-shadow: 0 0 ${WALL_GLOW_SPREAD}px ${Math.round(WALL_GLOW_SPREAD / 2)}px rgba(${DOCK_GLOW_COLOR}, 0.35);
@@ -455,7 +458,7 @@ const STYLES = /* css */ `
 /* ── Tooltip ── */
 .dc-tooltip {
   position: fixed;
-  z-index: 10001;
+  z-index: ${Z_INDEX_TOOLTIP};
   background: rgba(10, 18, 30, 0.95);
   border: 1px solid rgba(120, 160, 220, 0.3);
   border-radius: 6px;
@@ -1056,7 +1059,7 @@ function setupDocking(panel) {
     const flash = document.createElement("div");
     flash.style.cssText =
       `position:fixed;top:${top}px;height:${height}px;` +
-      `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
+      `width:${WALL_GLOW_THICKNESS}px;z-index:${Z_INDEX_CONSOLE};pointer-events:none;` +
       edgePos(side) +
       `background:rgba(${DOCK_GLOW_COLOR},${SNAP_FLASH_OPACITY});` +
       `box-shadow:0 0 ${SNAP_FLASH_SPREAD}px ${SNAP_FLASH_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.5);`;
@@ -1075,7 +1078,7 @@ function setupDocking(panel) {
     const flash = document.createElement("div");
     flash.style.cssText =
       `position:fixed;top:${top}px;height:${height}px;` +
-      `width:${WALL_GLOW_THICKNESS}px;z-index:10000;pointer-events:none;` +
+      `width:${WALL_GLOW_THICKNESS}px;z-index:${Z_INDEX_CONSOLE};pointer-events:none;` +
       edgePos(side) +
       `background:rgba(${DOCK_GLOW_COLOR},${RELEASE_FLASH_OPACITY});` +
       `box-shadow:0 0 ${RELEASE_FLASH_START_SPREAD}px rgba(${DOCK_GLOW_COLOR},0.4);`;

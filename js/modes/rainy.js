@@ -34,6 +34,7 @@ export function initRainy() {
   const RUMBLE_DURATION_MS = 200;
   const FLASH_OPACITY = 0.08;
   const FLASH_DURATION_MS = 80;
+  const FLASH_Z_INDEX = 100;
   const SPLASH_PARTICLE_COUNT_MIN = 3;
   const SPLASH_PARTICLE_COUNT_RANGE = 3;
   const SPLASH_DIST_MIN = 20;
@@ -175,7 +176,8 @@ export function initRainy() {
     flash.style.cssText =
       "position:fixed;inset:0;background:rgba(220,235,255," +
       FLASH_OPACITY +
-      ");pointer-events:none;z-index:9998";
+      ");pointer-events:none;z-index:" +
+      FLASH_Z_INDEX;
     document.body.appendChild(flash);
     flash.animate([{ opacity: 1 }, { opacity: 0 }], {
       duration: FLASH_DURATION_MS,
