@@ -1,5 +1,6 @@
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
+import { enableCardEffects } from "../service-cards.js";
 
 // ── Force & Activation ──
 const BF = defineConstants(
@@ -198,15 +199,11 @@ export function initBlocky(toggleEl) {
   }
 
   // ── Card pixel interactions ──
-  function enableCardPixel() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.add("pixel-card");
-    });
-  }
+  let disableCardPixel = null;
 
-  function disableCardPixel() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.remove("pixel-card");
+  function enableCardPixel() {
+    disableCardPixel = enableCardEffects({
+      className: "pixel-card",
     });
   }
 
@@ -255,7 +252,7 @@ export function initBlocky(toggleEl) {
           }),
         );
         clearIndicators();
-        disableCardPixel();
+        if (disableCardPixel) disableCardPixel();
       },
       onComplete() {
         isTransitioning = false;

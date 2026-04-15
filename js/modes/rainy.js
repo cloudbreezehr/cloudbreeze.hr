@@ -1,6 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
+import { enableCardEffects } from "../service-cards.js";
 
 // ── Force & Activation ──
 const RF = defineConstants(
@@ -261,42 +262,7 @@ export function initRainy() {
   }
 
   // ── Card rain interactions ──
-  function enableCardRain() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.add("rain-card");
-      card.addEventListener("mousemove", cardMouseMove);
-      card.addEventListener("mouseleave", cardMouseLeave);
-      card.addEventListener("click", cardClick);
-    });
-  }
-
-  function disableCardRain() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.remove("rain-card");
-      card.style.removeProperty("--rain-x");
-      card.style.removeProperty("--rain-y");
-      card.removeEventListener("mousemove", cardMouseMove);
-      card.removeEventListener("mouseleave", cardMouseLeave);
-      card.removeEventListener("click", cardClick);
-    });
-  }
-
-  function cardMouseMove(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty(
-      "--rain-x",
-      ((e.clientX - rect.left) / rect.width) * 100 + "%",
-    );
-    e.currentTarget.style.setProperty(
-      "--rain-y",
-      ((e.clientY - rect.top) / rect.height) * 100 + "%",
-    );
-  }
-
-  function cardMouseLeave(e) {
-    e.currentTarget.style.removeProperty("--rain-x");
-    e.currentTarget.style.removeProperty("--rain-y");
-  }
+  let disableCardRain = null;
 
   function cardClick(e) {
     const card = e.currentTarget;
@@ -309,6 +275,14 @@ export function initRainy() {
       duration: RV.RIPPLE_DURATION_MS,
       maxScale: RV.RIPPLE_SCALE,
       startOpacity: RV.RIPPLE_START_OPACITY,
+    });
+  }
+
+  function enableCardRain() {
+    disableCardRain = enableCardEffects({
+      className: "rain-card",
+      trackingPrefix: "rain",
+      onClick: cardClick,
     });
   }
 
@@ -358,7 +332,7 @@ export function initRainy() {
           }),
         );
         clearIndicators();
-        disableCardRain();
+        if (disableCardRain) disableCardRain();
         heroTagEl.textContent = originalTagText;
       },
       onComplete() {

@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { bindPointer } from "../pointer.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
+import { enableCardEffects } from "../service-cards.js";
 
 // ── Force & Activation ──
 const DF = defineConstants(
@@ -164,39 +165,13 @@ export function initDeepSea() {
   }
 
   // ── Card caustic interactions ──
+  let disableCardCaustics = null;
+
   function enableCardCaustics() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.add("caustic-card");
-      card.addEventListener("mousemove", cardMouseMove);
-      card.addEventListener("mouseleave", cardMouseLeave);
+    disableCardCaustics = enableCardEffects({
+      className: "caustic-card",
+      trackingPrefix: "caustic",
     });
-  }
-
-  function disableCardCaustics() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.remove("caustic-card");
-      card.style.removeProperty("--caustic-x");
-      card.style.removeProperty("--caustic-y");
-      card.removeEventListener("mousemove", cardMouseMove);
-      card.removeEventListener("mouseleave", cardMouseLeave);
-    });
-  }
-
-  function cardMouseMove(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty(
-      "--caustic-x",
-      ((e.clientX - rect.left) / rect.width) * 100 + "%",
-    );
-    e.currentTarget.style.setProperty(
-      "--caustic-y",
-      ((e.clientY - rect.top) / rect.height) * 100 + "%",
-    );
-  }
-
-  function cardMouseLeave(e) {
-    e.currentTarget.style.removeProperty("--caustic-x");
-    e.currentTarget.style.removeProperty("--caustic-y");
   }
 
   // ── Dive transition ──
@@ -244,7 +219,7 @@ export function initDeepSea() {
           }),
         );
         clearIndicators();
-        disableCardCaustics();
+        if (disableCardCaustics) disableCardCaustics();
       },
       onComplete() {
         isTransitioning = false;

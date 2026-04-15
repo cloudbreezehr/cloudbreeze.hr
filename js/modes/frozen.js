@@ -1,6 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
+import { enableCardEffects } from "../service-cards.js";
 
 // ── Force & Activation ──
 const FF = defineConstants(
@@ -184,43 +185,7 @@ export function initFrozen() {
   }
 
   // ── Card frost interactions ──
-  function enableCardFrost() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.add("frost-card");
-
-      card.addEventListener("mousemove", cardMouseMove);
-      card.addEventListener("mouseleave", cardMouseLeave);
-      card.addEventListener("click", cardClick);
-    });
-  }
-
-  function disableCardFrost() {
-    document.querySelectorAll(".service-card").forEach((card) => {
-      card.classList.remove("frost-card", "card-frozen");
-      card.style.removeProperty("--frost-x");
-      card.style.removeProperty("--frost-y");
-      card.removeEventListener("mousemove", cardMouseMove);
-      card.removeEventListener("mouseleave", cardMouseLeave);
-      card.removeEventListener("click", cardClick);
-    });
-  }
-
-  function cardMouseMove(e) {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty(
-      "--frost-x",
-      ((e.clientX - rect.left) / rect.width) * 100 + "%",
-    );
-    e.currentTarget.style.setProperty(
-      "--frost-y",
-      ((e.clientY - rect.top) / rect.height) * 100 + "%",
-    );
-  }
-
-  function cardMouseLeave(e) {
-    e.currentTarget.style.removeProperty("--frost-x");
-    e.currentTarget.style.removeProperty("--frost-y");
-  }
+  let disableCardFrost = null;
 
   function cardClick(e) {
     const card = e.currentTarget;
@@ -235,6 +200,14 @@ export function initFrozen() {
       duration: FV.RIPPLE_DURATION_MS,
       maxScale: FV.RIPPLE_SCALE,
       startOpacity: FV.RIPPLE_START_OPACITY,
+    });
+  }
+
+  function enableCardFrost() {
+    disableCardFrost = enableCardEffects({
+      className: "frost-card",
+      trackingPrefix: "frost",
+      onClick: cardClick,
     });
   }
 
@@ -283,7 +256,7 @@ export function initFrozen() {
           }),
         );
         clearIndicators();
-        disableCardFrost();
+        if (disableCardFrost) disableCardFrost("card-frozen");
       },
       onComplete() {
         isTransitioning = false;
