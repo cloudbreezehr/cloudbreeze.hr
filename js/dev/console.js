@@ -575,7 +575,7 @@ function buildSectionEl(category, registry, rowMap) {
   const entries = registry.get(category);
   const meta = getSectionMeta(category);
   const sectionEl = document.createElement("div");
-  sectionEl.className = "dc-section";
+  sectionEl.className = "dc-section collapsed";
   sectionEl.dataset.category = category;
   if (meta && meta.mode) {
     sectionEl.dataset.mode = meta.mode;
@@ -736,7 +736,7 @@ function buildPanel() {
     if (matchingSections.length === 0) continue;
 
     const groupEl = document.createElement("div");
-    groupEl.className = "dc-group";
+    groupEl.className = "dc-group collapsed";
     const groupHeader = document.createElement("div");
     groupHeader.className = "dc-group-header";
     groupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>${group.label}`;
@@ -766,7 +766,7 @@ function buildPanel() {
 
   if (byMode.size > 0) {
     const modesGroupEl = document.createElement("div");
-    modesGroupEl.className = "dc-group";
+    modesGroupEl.className = "dc-group collapsed";
     const modesGroupHeader = document.createElement("div");
     modesGroupHeader.className = "dc-group-header";
     modesGroupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>Modes`;
