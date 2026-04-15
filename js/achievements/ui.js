@@ -514,9 +514,8 @@ function renderSections(container) {
         card.addEventListener("click", onCardClick);
       }
 
-      // Hint tooltip on hover — unlocked always, locked only when reveal is on
-      const showHint =
-        ach.hint && (isUnlocked || (revealHints && (!ach.hidden || isDevMode)));
+      // Hint tooltip on hover — unlocked always, locked/hidden when reveal is on
+      const showHint = ach.hint && (isUnlocked || revealHints);
       if (showHint) {
         card.addEventListener("mouseenter", () =>
           showHintTooltip(card, ach.hint),
