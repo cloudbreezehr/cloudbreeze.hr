@@ -109,6 +109,13 @@ function formatTimestamp(ts) {
 
 function toggleTimestampMode() {
   showAbsoluteTime = !showAbsoluteTime;
+  if (showAbsoluteTime) {
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "timestamp-toggle" },
+      }),
+    );
+  }
   if (!panelEl) return;
   panelEl.querySelectorAll(".achievement-card-time").forEach((el) => {
     const ts = Number(el.dataset.ts);

@@ -452,6 +452,10 @@ export function createTracker(onUnlock) {
     "cloudlog-activate"() {
       tryUnlock("cloudlog-activated");
     },
+
+    "timestamp-toggle"() {
+      tryUnlock("time-warp");
+    },
   };
 
   // ── Visibility tracking for night-owl ──

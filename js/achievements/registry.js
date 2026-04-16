@@ -44,6 +44,15 @@ export const ACHIEVEMENTS = [
     points: COMMON,
     hidden: false,
   },
+  {
+    id: "time-warp",
+    title: "Time Warp",
+    description: "Time stands still when you look closely.",
+    hint: "Click a relative timestamp to see absolute time",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
   // ── Exploration: Interaction ──
   {
     id: "first-light",
