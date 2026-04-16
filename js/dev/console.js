@@ -2,6 +2,7 @@
 // Dockable, searchable panel for live-tweaking registry constants.
 // Activated via URL hash #dev or Ctrl+Shift+Period.
 
+import { Z_DEV_CONSOLE } from "../layers.js";
 import { showFps, hideFps } from "./fps.js";
 import {
   getRegistry,
@@ -34,8 +35,6 @@ const DOCK_GLOW_SPREAD = 12;
 const DOCK_GLOW_WIDTH = 3;
 const WALL_GLOW_THICKNESS = 4;
 const WALL_GLOW_SPREAD = 18;
-// ── Z-Index Layers ──
-const Z_DEV_CONSOLE = 400;
 // ── Dock Snap Effect ──
 const SNAP_FLASH_DURATION_MS = 350;
 const SNAP_FLASH_SPREAD = 24;

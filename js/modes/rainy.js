@@ -1,3 +1,4 @@
+import { Z_MODE_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
@@ -52,7 +53,7 @@ const RV = defineConstants(
     RIPPLE_DURATION_MS: 700,
     RIPPLE_SCALE: 4,
     RIPPLE_START_OPACITY: 0.5,
-    FLASH_Z_INDEX: 100,
+    FLASH_Z_INDEX: Z_MODE_FLASH,
     RUMBLE_FRAME_MS: 16,
   },
   { mode: "rainy" },

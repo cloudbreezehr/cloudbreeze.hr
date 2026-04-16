@@ -4,6 +4,7 @@
 //   burstFireworks(x, y, opts)         — one-shot overlay mode (self-cleaning)
 //   createFireworksRenderer()          — shared-canvas mode for render loops
 
+import { Z_FIREWORKS } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 
 // ── Constants ──
@@ -58,7 +59,7 @@ const FW = defineConstants("effects.fireworks", {
 
   // ── Overlay ──
   DRAW_THRESHOLD: 0.01,
-  OVERLAY_Z_INDEX: 500,
+  OVERLAY_Z_INDEX: Z_FIREWORKS,
   CLEANUP_CHECK_INTERVAL: 10,
 });
 

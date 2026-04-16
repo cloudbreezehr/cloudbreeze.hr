@@ -1,3 +1,4 @@
+import { Z_RAIN_GLASS } from "../layers.js";
 import {
   applyRepulsion,
   applyAttraction,
@@ -1031,8 +1032,7 @@ export function createRain(canvasEl, ctxEl) {
 
   // Overlay canvas for glass drops — sits on top of page content
   const glassCanvas = document.createElement("canvas");
-  glassCanvas.style.cssText =
-    "position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:6";
+  glassCanvas.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:${Z_RAIN_GLASS}`;
   glassCanvas.width = window.innerWidth;
   glassCanvas.height = window.innerHeight;
   document.body.appendChild(glassCanvas);
