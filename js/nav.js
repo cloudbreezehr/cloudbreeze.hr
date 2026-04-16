@@ -70,6 +70,11 @@ export function initNav(navEl, theme) {
   const burger = navEl.querySelector(".nav-burger");
   const navLinksEl = navEl.querySelector(".nav-links");
 
+  // Stagger index for menu item entrance animation
+  navLinksEl.querySelectorAll("li").forEach((li, i) => {
+    li.style.setProperty("--i", i);
+  });
+
   burger.addEventListener("click", () => {
     burger.classList.toggle("active");
     navLinksEl.classList.toggle("open");
