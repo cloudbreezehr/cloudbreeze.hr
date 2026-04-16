@@ -3045,6 +3045,7 @@ nav.nav-light .achievement-btn::after {
   color: rgba(255, 255, 255, 0.5);
 }
 .achievement-card-time {
+  display: inline-block;
   font-family: "DM Mono", monospace;
   font-size: 0.5rem;
   color: rgba(255, 255, 255, 0.25);
