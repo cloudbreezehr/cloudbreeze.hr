@@ -21,6 +21,22 @@
   --glass-border: rgba(255, 255, 255, 0.35);
 }
 
+/* ── Keyboard Focus Rings ── */
+:focus-visible {
+  outline-color: rgb(var(--cursor-glow));
+  outline-offset: 2px;
+  animation: focusPulse 2s ease-in-out infinite;
+}
+@keyframes focusPulse {
+  0%,
+  100% {
+    outline-color: rgba(var(--cursor-glow), 0.4);
+  }
+  50% {
+    outline-color: rgba(var(--cursor-glow), 0.9);
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
