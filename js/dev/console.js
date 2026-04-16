@@ -2,6 +2,7 @@
 // Dockable, searchable panel for live-tweaking registry constants.
 // Activated via URL hash #dev or Ctrl+Shift+Period.
 
+import { showFps, hideFps } from "./fps.js";
 import {
   getRegistry,
   getSectionMeta,
@@ -1490,6 +1491,7 @@ function setupSectionActivateListener(panel) {
 let panelInstance = null;
 
 export function openDevConsole() {
+  showFps();
   window.dispatchEvent(
     new CustomEvent("achievement", { detail: { type: "dev-console-open" } }),
   );
@@ -1522,6 +1524,7 @@ export function openDevConsole() {
 }
 
 export function closeDevConsole() {
+  hideFps();
   if (panelInstance) {
     panelInstance.panel.style.display = "none";
   }
