@@ -208,6 +208,18 @@ nav {
   height: 32px;
   filter: drop-shadow(0 0 12px rgba(55, 138, 221, 0.6));
 }
+.cloud-svg.logo-breathing {
+  animation: logoBreath 3s ease-in-out infinite;
+}
+@keyframes logoBreath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
 
 .logo-text {
   font-size: 1.15rem;
