@@ -621,6 +621,7 @@ function setupDocking(panel) {
   let floatX = 100;
   let floatY = 0;
   let dockAnimating = false;
+  let recalibrateDrag = false;
   let dragStartX = 0;
   let magnetSuppressedSide = null;
 
@@ -777,6 +778,7 @@ function setupDocking(panel) {
     const cleanup = () => {
       panel.style.transformOrigin = "";
       dockAnimating = false;
+      if (isDragging) recalibrateDrag = true;
       clearMagnet();
     };
     anim.onfinish = cleanup;
@@ -831,6 +833,17 @@ function setupDocking(panel) {
   header.addEventListener("pointermove", (e) => {
     if (!isDragging || dockAnimating) return;
     didDrag = true;
+
+    // After a dock animation, the mouse has moved during the blocked
+    // interval — recalibrate so the undock threshold measures from here.
+    if (recalibrateDrag) {
+      recalibrateDrag = false;
+      dragStartX = e.clientX;
+      const rect = panel.getBoundingClientRect();
+      dragOffX = e.clientX - rect.left;
+      dragOffY = e.clientY - rect.top;
+    }
+
     const nx = e.clientX - dragOffX;
     const ny = e.clientY - dragOffY;
 
@@ -905,7 +918,6 @@ function setupDocking(panel) {
       if (edgeDist < DOCK_COMMIT_DISTANCE) {
         const panelR = panel.getBoundingClientRect();
         flashSnapEdge(side, panelR.top, panelR.height);
-        dragStartX = e.clientX;
         animateToState(nearLeft ? "docked-left" : "docked-right");
         return;
       }
