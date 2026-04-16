@@ -614,6 +614,7 @@ function propagateModified(panel) {
 
 function setupDocking(panel) {
   let isDragging = false;
+  let didDrag = false;
   let dragOffX = 0;
   let dragOffY = 0;
   let dockState = "docked-right"; // docked-right | docked-left | floating
@@ -799,8 +800,12 @@ function setupDocking(panel) {
     btnCollapse.innerHTML = collapsed ? "&#43;" : "&#8722;";
   });
 
-  // Docked collapsed: click anywhere on header to expand
+  // Docked collapsed: click anywhere on header to expand (but not after a drag)
   header.addEventListener("click", (e) => {
+    if (didDrag) {
+      didDrag = false;
+      return;
+    }
     if (
       panel.classList.contains("collapsed") &&
       dockState !== "floating" &&
@@ -825,6 +830,7 @@ function setupDocking(panel) {
 
   header.addEventListener("pointermove", (e) => {
     if (!isDragging || dockAnimating) return;
+    didDrag = true;
     const nx = e.clientX - dragOffX;
     const ny = e.clientY - dragOffY;
 
