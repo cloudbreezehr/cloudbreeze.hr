@@ -897,7 +897,16 @@ function setupDocking(panel) {
     const nearSide = nearLeft ? "left" : "right";
     const magnetBlocked = magnetSuppressedSide === nearSide;
 
-    if (!magnetBlocked && edgeDist < DOCK_MAGNET_ZONE && edgeDist >= 0) {
+    if (!magnetBlocked && edgeDist < DOCK_MAGNET_ZONE) {
+      // Commit to dock when close enough (or overshot on a fast drag)
+      if (edgeDist < DOCK_COMMIT_DISTANCE) {
+        const side = nearLeft ? "left" : "right";
+        const panelR = panel.getBoundingClientRect();
+        flashSnapEdge(side, panelR.top, panelR.height);
+        animateToState(nearLeft ? "docked-left" : "docked-right");
+        return;
+      }
+
       const progress = Math.pow(
         1 - edgeDist / DOCK_MAGNET_ZONE,
         DOCK_MAGNET_POWER,
@@ -913,14 +922,6 @@ function setupDocking(panel) {
       // Position bias: accelerate toward the edge
       const bias = progress * edgeDist;
       magnetNx = nearLeft ? nx - bias : nx + bias;
-
-      // Commit to dock when close enough
-      if (edgeDist < DOCK_COMMIT_DISTANCE) {
-        const panelR = panel.getBoundingClientRect();
-        flashSnapEdge(side, panelR.top, panelR.height);
-        animateToState(nearLeft ? "docked-left" : "docked-right");
-        return;
-      }
     } else {
       clearMagnet();
     }
