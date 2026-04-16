@@ -171,6 +171,12 @@ export function initDeepSea() {
     disableCardCaustics = enableCardEffects({
       className: "caustic-card",
       trackingPrefix: "caustic",
+      tilt: {
+        intensity: 10,
+        scale: 1.03,
+        transition: "background 0.4s, transform 0.8s ease",
+        transitionEnter: "background 0.4s, transform 0.6s ease",
+      },
     });
   }
 

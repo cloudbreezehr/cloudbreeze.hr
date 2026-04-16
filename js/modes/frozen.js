@@ -208,6 +208,7 @@ export function initFrozen() {
       className: "frost-card",
       trackingPrefix: "frost",
       onClick: cardClick,
+      tilt: { intensity: 3, scale: 1.01 },
     });
   }
 

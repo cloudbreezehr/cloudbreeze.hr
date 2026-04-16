@@ -202,8 +202,22 @@ export function initBlocky(toggleEl) {
   let disableCardPixel = null;
 
   function enableCardPixel() {
+    // ── Blocky Tilt ──
+    const SNAP_DEG = 4;
+    const BLOCKY_INTENSITY = 8;
+    const BLOCKY_PERSPECTIVE = 600;
+
     disableCardPixel = enableCardEffects({
       className: "pixel-card",
+      tilt: {
+        transformFn(x, y) {
+          const rx = Math.round((-y * BLOCKY_INTENSITY) / SNAP_DEG) * SNAP_DEG;
+          const ry = Math.round((x * BLOCKY_INTENSITY) / SNAP_DEG) * SNAP_DEG;
+          return `perspective(${BLOCKY_PERSPECTIVE}px) rotateX(${rx}deg) rotateY(${ry}deg) scale(1.01)`;
+        },
+        transition: "background 0.4s, transform 0.15s steps(3)",
+        transitionEnter: "background 0.4s",
+      },
     });
   }
 

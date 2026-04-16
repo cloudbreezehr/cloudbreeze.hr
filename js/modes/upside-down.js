@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { enableCardEffects } from "../service-cards.js";
 
 // ── Force & Activation ──
 const UD_FORCE = defineConstants(
@@ -154,6 +155,7 @@ export function initUpsideDown() {
   let lastForceTime = 0;
   let warningShowTime = 0;
   let lastEdgeWasBottom = true;
+  let disableCardUpside = null;
 
   const pageEl = document.querySelector(".page");
   const navEl = document.querySelector("nav");
@@ -261,9 +263,14 @@ export function initUpsideDown() {
       overlay.style.background = "none";
 
       if (isFlipped) {
+        disableCardUpside = enableCardEffects({
+          className: "upside-card",
+          tilt: { intensity: 8, scale: 1.02, invertY: true },
+        });
         document.body.appendChild(navEl);
         window.scrollTo(0, 0);
       } else {
+        if (disableCardUpside) disableCardUpside();
         pageEl.insertBefore(navEl, pageEl.firstChild);
         // Bottom edge → land on top (mirror of where we left), top edge → land on bottom
         window.scrollTo(
