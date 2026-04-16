@@ -299,6 +299,12 @@ export function updateBadge() {
   } else {
     badgeEl.classList.remove("visible");
   }
+  if (navBtn) {
+    navBtn.setAttribute(
+      "data-tooltip",
+      count > 0 ? `Cloudlog (${count} new)` : "Cloudlog",
+    );
+  }
 }
 
 function pulseBadge() {
