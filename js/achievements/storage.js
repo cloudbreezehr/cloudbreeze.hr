@@ -13,6 +13,7 @@ function defaultState() {
     active: false,
     hidden: false,
     unlocked: [],
+    seen: [],
     counters: {
       totalClicks: 0,
       totalModeActivations: 0,
@@ -36,6 +37,7 @@ function read() {
     state.active = !!parsed.active;
     state.hidden = !!parsed.hidden;
     if (Array.isArray(parsed.unlocked)) state.unlocked = parsed.unlocked;
+    if (Array.isArray(parsed.seen)) state.seen = parsed.seen;
     if (parsed.counters && typeof parsed.counters === "object") {
       Object.assign(state.counters, parsed.counters);
     }
@@ -123,6 +125,23 @@ export function unlock(id) {
 
 export function getUnlocked() {
   return getState().unlocked;
+}
+
+export function isSeen(id) {
+  return getState().seen.includes(id);
+}
+
+export function markSeen(id) {
+  const state = getState();
+  if (state.seen.includes(id)) return false;
+  state.seen.push(id);
+  save();
+  return true;
+}
+
+export function getUnseenCount() {
+  const state = getState();
+  return state.unlocked.filter((u) => !state.seen.includes(u.id)).length;
 }
 
 export function getCounter(key) {

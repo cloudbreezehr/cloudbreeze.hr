@@ -35,6 +35,10 @@ const FIREWORKS_DELAY_MS = TOAST_SLIDE_IN_MS;
 // ── Tooltip Constants ──
 const TOOLTIP_OFFSET_Y = 6;
 
+// ── Unseen Observer Constants ──
+const SEEN_DWELL_MS = 1000;
+const SEEN_INTERSECTION_RATIO = 0.5;
+
 // ── State ──
 let navBtn = null;
 let badgeEl = null;
@@ -49,6 +53,8 @@ let revealHints = false;
 let _escHandler = null;
 let _outsideHandler = null;
 let tooltipEl = null;
+let _seenObserver = null;
+let _seenTimers = new Map();
 
 // ── Cloud-check SVG icon ──
 const CLOUD_CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
@@ -180,6 +186,69 @@ function positionTooltip(anchor, preferAbove) {
   if (overflows) (preferAbove ? below : above)();
 }
 
+// ── Unseen Observer ──
+
+function createSeenObserver() {
+  if (_seenObserver) return;
+  const body = panelEl && panelEl.querySelector(".achievement-body");
+  if (!body) return;
+
+  _seenObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        const card = entry.target;
+        const id = card.dataset.id;
+        if (!id) continue;
+
+        if (entry.intersectionRatio >= SEEN_INTERSECTION_RATIO) {
+          // Start dwell timer
+          if (!_seenTimers.has(id)) {
+            _seenTimers.set(
+              id,
+              setTimeout(() => {
+                _seenTimers.delete(id);
+                markCardSeen(card, id);
+              }, SEEN_DWELL_MS),
+            );
+          }
+        } else {
+          // Scrolled away before dwell completed — cancel
+          const timer = _seenTimers.get(id);
+          if (timer) {
+            clearTimeout(timer);
+            _seenTimers.delete(id);
+          }
+        }
+      }
+    },
+    { root: body, threshold: SEEN_INTERSECTION_RATIO },
+  );
+}
+
+function destroySeenObserver() {
+  if (_seenObserver) {
+    _seenObserver.disconnect();
+    _seenObserver = null;
+  }
+  for (const timer of _seenTimers.values()) clearTimeout(timer);
+  _seenTimers.clear();
+}
+
+function observeUnseenCards() {
+  if (!_seenObserver || !panelEl) return;
+  panelEl.querySelectorAll(".achievement-card.unseen").forEach((card) => {
+    _seenObserver.observe(card);
+  });
+}
+
+function markCardSeen(card, id) {
+  if (!storage.markSeen(id)) return;
+  card.classList.add("seen-fade");
+  card.classList.remove("unseen");
+  if (_seenObserver) _seenObserver.unobserve(card);
+  updateBadge();
+}
+
 // ── Nav Button ──
 
 export function createNavButton(onPanelToggle) {
@@ -223,7 +292,7 @@ export function hideNavButton() {
 
 export function updateBadge() {
   if (!badgeEl) return;
-  const count = storage.getUnlocked().length;
+  const count = storage.getUnseenCount();
   badgeEl.textContent = String(count);
   if (count > 0) {
     badgeEl.classList.add("visible");
@@ -262,6 +331,10 @@ export function openPanel(onHide) {
   void panelEl.offsetHeight;
   requestAnimationFrame(() => panelEl.classList.add("open"));
 
+  // Start observing unseen cards
+  createSeenObserver();
+  observeUnseenCards();
+
   // Close on escape
   _escHandler = (e) => {
     if (e.key === "Escape") closePanel();
@@ -291,6 +364,7 @@ export function closePanel() {
   if (navBtn) navBtn.classList.remove("active");
   panelEl.classList.remove("open");
   hideHintTooltip();
+  destroySeenObserver();
 
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
@@ -391,6 +465,9 @@ function refreshPanel() {
     body.innerHTML = "";
     renderSections(body);
   }
+
+  // Re-observe new unseen cards after DOM rebuild
+  observeUnseenCards();
 }
 
 function renderSections(container) {
@@ -447,8 +524,11 @@ function renderSections(container) {
       card.className = "achievement-card";
       card.dataset.id = ach.id;
 
+      const isUnseen = isUnlocked && !storage.isSeen(ach.id);
+
       if (isUnlocked) {
         card.classList.add("unlocked");
+        if (isUnseen) card.classList.add("unseen");
       } else if (ach.hidden) {
         card.classList.add("hidden-ach");
       } else {
@@ -567,7 +647,7 @@ export function refreshCard(achievementId) {
   const set = SETS.find((s) => s.id === ach.set);
 
   card.classList.remove("locked", "hidden-ach");
-  card.classList.add("unlocked");
+  card.classList.add("unlocked", "unseen");
 
   // Update icon
   const icon = card.querySelector(".achievement-icon");
@@ -598,6 +678,9 @@ export function refreshCard(achievementId) {
 
   // Click pop for newly unlocked card
   card.addEventListener("click", onCardClick);
+
+  // Observe for seen tracking
+  if (_seenObserver) _seenObserver.observe(card);
 
   // Shine animation
   card.classList.add("shine");
@@ -788,6 +871,7 @@ export function onAchievementUnlocked(achievement) {
 }
 
 export function destroy() {
+  destroySeenObserver();
   if (navBtn && navBtn.parentNode) navBtn.remove();
   if (panelEl && panelEl.parentNode) panelEl.remove();
   if (toastContainer && toastContainer.parentNode) toastContainer.remove();

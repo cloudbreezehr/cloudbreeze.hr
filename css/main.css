@@ -3071,6 +3071,41 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
 }
 
+/* ── Unseen Indicator ── */
+
+.achievement-card.unseen .achievement-card-time::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--set-color, var(--sky-4, #378add));
+  box-shadow: 0 0 6px var(--set-color, var(--sky-4, #378add));
+  margin-right: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+  animation: unseen-pulse 2s ease-in-out infinite;
+  transition:
+    opacity 0.4s,
+    transform 0.4s;
+}
+@keyframes unseen-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    box-shadow: 0 0 4px var(--set-color, var(--sky-4, #378add));
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--set-color, var(--sky-4, #378add));
+  }
+}
+.achievement-card.seen-fade .achievement-card-time::before {
+  opacity: 0;
+  transform: scale(0);
+}
+
 /* ── Achievement Tooltip ── */
 
 .achievement-tooltip {
@@ -3341,6 +3376,9 @@ body.light-mode .achievement-card-time {
 }
 body.light-mode .achievement-card-time:hover {
   color: rgba(10, 22, 40, 0.5);
+}
+body.light-mode .achievement-card.unseen .achievement-card-time::before {
+  box-shadow: 0 0 6px var(--set-color, var(--sky-5, #1a5fa8));
 }
 body.light-mode .achievement-icon {
   color: rgba(10, 22, 40, 0.35);
