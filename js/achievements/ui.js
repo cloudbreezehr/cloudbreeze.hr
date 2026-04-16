@@ -198,8 +198,7 @@ export function createNavButton(onPanelToggle) {
     actions.insertBefore(navBtn, actions.firstChild);
   }
 
-  navBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
+  navBtn.addEventListener("click", () => {
     onPanelToggle();
   });
 
