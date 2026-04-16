@@ -30,12 +30,7 @@ function tick() {
 
 function createEl() {
   el = document.createElement("div");
-  el.style.cssText =
-    "position:fixed;bottom:12px;left:12px;z-index:500;" +
-    "font:600 11px/1 'DM Mono',monospace;letter-spacing:0.05em;" +
-    "padding:4px 8px;border-radius:4px;" +
-    "background:rgba(10,22,40,0.85);pointer-events:none;" +
-    "user-select:none";
+  el.className = "dev-fps";
   document.body.appendChild(el);
 }
 
