@@ -380,6 +380,26 @@ export function isPanelOpen() {
   return panelOpen;
 }
 
+function scrollToCard(achievementId) {
+  if (!panelEl) return;
+  const card = panelEl.querySelector(
+    `.achievement-card[data-id="${achievementId}"]`,
+  );
+  if (!card) return;
+  const body = panelEl.querySelector(".achievement-body");
+  if (!body) return;
+
+  card.scrollIntoView({ behavior: "smooth", block: "center" });
+
+  // Highlight with the shine animation
+  card.classList.remove("shine");
+  void card.offsetHeight;
+  card.classList.add("shine");
+  card.addEventListener("animationend", () => card.classList.remove("shine"), {
+    once: true,
+  });
+}
+
 function buildPanel(onHide) {
   const panel = document.createElement("div");
   panel.className = "achievement-panel";
@@ -771,6 +791,14 @@ export function showToast(achievement) {
         once: true,
       },
     );
+
+    // Open panel and scroll to this achievement's card
+    if (!panelOpen) {
+      openPanel();
+      setTimeout(() => scrollToCard(achievement.id), PANEL_SLIDE_MS);
+    } else {
+      scrollToCard(achievement.id);
+    }
   });
 
   toastContainer.appendChild(toast);
