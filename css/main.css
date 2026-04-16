@@ -289,6 +289,12 @@ nav {
 .nav-links a.active::after {
   width: 100%;
 }
+.nav-sparkle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgb(var(--cursor-glow));
+  pointer-events: none;
+}
 
 .nav-cta {
   font-family: "DM Mono", monospace;
