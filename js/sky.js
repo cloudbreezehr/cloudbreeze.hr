@@ -192,6 +192,20 @@ const STARS = defineConstants("sky.stars", {
     step: 0.01,
     description: "Glare spike rotation speed",
   },
+  HOVER_RADIUS: {
+    value: 120,
+    min: 30,
+    max: 400,
+    step: 5,
+    description: "Cursor proximity radius for brightness boost",
+  },
+  HOVER_BOOST: {
+    value: 0.6,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Max opacity boost at cursor center",
+  },
 });
 
 // ── Shooting Stars ──
@@ -355,7 +369,7 @@ export function createSky(starCount) {
   let t = 0;
 
   return {
-    draw(ctx, canvas, sp, pal) {
+    draw(ctx, canvas, sp, pal, forces) {
       const starVis = scrollFade(
         sp,
         0,
@@ -377,15 +391,25 @@ export function createSky(starCount) {
           s.glare =
             s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
         }
-        const base =
-          s.opacity *
-          (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
-        const op = Math.min(1, base + s.flash) * starVis;
         // Parallax — closer stars (higher depth) shift more on scroll
         const shift = s.depth * sp * canvas.height * STARS.PARALLAX_SCALE;
         const py =
           (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
         const sx = s.x % canvas.width;
+        const base =
+          s.opacity *
+          (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
+        // Hover proximity — stars near the cursor glow brighter
+        let hoverBoost = 0;
+        if (forces && forces.hover.active) {
+          const hdx = sx - forces.hover.x;
+          const hdy = py - forces.hover.y;
+          const hDist = Math.sqrt(hdx * hdx + hdy * hdy);
+          if (hDist < STARS.HOVER_RADIUS) {
+            hoverBoost = STARS.HOVER_BOOST * (1 - hDist / STARS.HOVER_RADIUS);
+          }
+        }
+        const op = Math.min(1, base + s.flash + hoverBoost) * starVis;
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {

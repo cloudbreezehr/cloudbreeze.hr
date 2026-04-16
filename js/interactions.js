@@ -701,6 +701,28 @@ export function applyWellForce(forces, p) {
   p.vy += ny * f + nx * f * WELL.TANGENT;
 }
 
+/**
+ * Gentle drift toward the cursor on hover (no click/drag required).
+ * Particles within `radius` receive a soft pull toward the hover point.
+ * The force is intentionally weak — decorative, not interactive.
+ *
+ * @param {object} forces - Shared forces object (needs forces.hover)
+ * @param {object} p      - Particle with {x, y, vx, vy}
+ * @param {number} radius - Influence radius in pixels
+ * @param {number} strength - Maximum force at cursor center
+ */
+export function applyHoverDrift(forces, p, radius, strength) {
+  if (!forces.hover.active || forces.isDragging) return;
+  const dx = forces.hover.x - p.x;
+  const dy = forces.hover.y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < radius && dist > 1) {
+    const f = strength * (1 - dist / radius);
+    p.vx += (dx / dist) * f;
+    p.vy += (dy / dist) * f;
+  }
+}
+
 // Re-export for cross-module use (atmosphere, particles)
 export { HOLD, WELL };
 

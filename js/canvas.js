@@ -246,13 +246,14 @@ export function initCanvas(canvasEl, theme, options) {
   });
   window.addEventListener("scroll", updateScroll, { passive: true });
 
-  // Interaction forces — click repels, drag attracts, hold charges
+  // Interaction forces — click repels, drag attracts, hold charges, hover attracts gently
   const forces = {
     clickImpulse: { x: 0, y: 0, strength: 0 },
     isDragging: false,
     dragPos: { x: 0, y: 0 },
     holdStrength: 0,
     wellStrength: 0,
+    hover: { x: 0, y: 0, active: false },
   };
   const interactions = createInteractions();
 
@@ -307,7 +308,7 @@ export function initCanvas(canvasEl, theme, options) {
     }
 
     // Stars and shooting stars
-    if (sky) sky.draw(ctx, canvas, sp, pal);
+    if (sky) sky.draw(ctx, canvas, sp, pal, forces);
 
     // Click fury — lightning, aurora, meteors
     fury.draw(ctx, canvas, pal, sp, dt, now);
@@ -423,6 +424,24 @@ export function initCanvas(canvasEl, theme, options) {
       interactions.releaseDrag(forces, currentPal);
     },
   });
+
+  // Hover tracking — passive cursor position for proximity effects
+  canvas.addEventListener(
+    "mousemove",
+    (e) => {
+      forces.hover.x = e.clientX;
+      forces.hover.y = canvasY(e.clientY);
+      forces.hover.active = true;
+    },
+    { passive: true },
+  );
+  canvas.addEventListener(
+    "mouseleave",
+    () => {
+      forces.hover.active = false;
+    },
+    { passive: true },
+  );
 
   // Dock snap / undock release — dev console notifies via custom events
   function handleDockEvent(e, type) {
