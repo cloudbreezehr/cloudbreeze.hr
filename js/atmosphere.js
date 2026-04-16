@@ -302,6 +302,34 @@ const CLOUD = defineConstants("atmosphere.clouds", {
     step: 10,
     description: "Drag pull radius",
   },
+  BLUR_VEL_THRESHOLD: {
+    value: 1,
+    min: 0,
+    max: 5,
+    step: 0.1,
+    description: "Scroll velocity to begin vertical stretch",
+  },
+  BLUR_MAX_STRETCH: {
+    value: 1.3,
+    min: 1,
+    max: 2,
+    step: 0.05,
+    description: "Maximum vertical stretch factor at peak velocity",
+  },
+  BLUR_VEL_SCALE: {
+    value: 0.03,
+    min: 0,
+    max: 0.2,
+    step: 0.005,
+    description: "Stretch growth per velocity unit above threshold",
+  },
+  BLUR_OPACITY_MUL: {
+    value: 0.85,
+    min: 0.5,
+    max: 1,
+    step: 0.05,
+    description: "Opacity multiplier at maximum stretch",
+  },
 });
 
 // ── Breeze Wisps ──
@@ -743,17 +771,30 @@ class Cloud {
     if (this.x < -m) this.x += _canvas.width + m * 2;
     if (this.x > _canvas.width + m) this.x -= _canvas.width + m * 2;
   }
-  draw(yOffset, vis, pal) {
+  draw(yOffset, vis, pal, stretch) {
     if (vis <= 0) return;
     const y = this.baseY + yOffset;
     if (y < -CLOUD.CULL_MARGIN || y > _canvas.height + CLOUD.CULL_MARGIN)
       return;
     const cw = pal.cloudWhite;
     const cm = pal.cloudMid;
+    const hasStretch = stretch > 1;
+    const opFade = hasStretch
+      ? 1 -
+        ((stretch - 1) / (CLOUD.BLUR_MAX_STRETCH - 1)) *
+          (1 - CLOUD.BLUR_OPACITY_MUL)
+      : 1;
+    if (hasStretch) {
+      _ctx.save();
+      _ctx.translate(this.x, y);
+      _ctx.scale(1, stretch);
+      _ctx.translate(-this.x, -y);
+    }
     this.blobs.forEach((b) => {
       const bx = this.x + b.ox;
       const by = y + b.oy;
-      const op = (CLOUD.OPACITY_BASE + CLOUD.OPACITY_DEPTH * this.scale) * vis;
+      const op =
+        (CLOUD.OPACITY_BASE + CLOUD.OPACITY_DEPTH * this.scale) * vis * opFade;
       const grad = _ctx.createRadialGradient(
         bx,
         by,
@@ -773,6 +814,9 @@ class Cloud {
       _ctx.arc(bx, by, b.r, 0, Math.PI * 2);
       _ctx.fill();
     });
+    if (hasStretch) {
+      _ctx.restore();
+    }
   }
 }
 
@@ -966,6 +1010,15 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           CLOUD.FADE_OUT_START,
           CLOUD.FADE_OUT_END,
         );
+        // Scroll velocity stretch — clouds smear vertically during fast scroll
+        const absVel = Math.abs(scrollVelocity);
+        const cloudStretch =
+          absVel > CLOUD.BLUR_VEL_THRESHOLD
+            ? Math.min(
+                CLOUD.BLUR_MAX_STRETCH,
+                1 + (absVel - CLOUD.BLUR_VEL_THRESHOLD) * CLOUD.BLUR_VEL_SCALE,
+              )
+            : 1;
         clouds.forEach((c) => {
           c.update();
           // Click gently pushes nearby clouds sideways
@@ -989,7 +1042,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
               c.x += (dx / dist) * CLOUD.PULL_FORCE;
             }
           }
-          c.draw(cloudYOffset, cloudVis, pal);
+          c.draw(cloudYOffset, cloudVis, pal, cloudStretch);
         });
       }
 
