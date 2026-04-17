@@ -15,12 +15,12 @@ import {
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 import * as storage from "./storage.js";
 
-// ── Progressive Achievement Totals ──
-// Maps progressKey strings to thunks that return the current total.
-// When a source module adds new items (e.g. new idle animations),
-// the total grows and checkProgressiveRelocks() handles re-locking.
-const PROGRESS_TOTALS = {
-  "idle-animations": () => IDLE_ANIMATION_NAMES.length,
+// ── Progressive Achievement Definitions ──
+// Maps progressKey strings to thunks that return the current valid item names.
+// When items are added or removed, syncProgressTotals() updates storage
+// and checkProgressiveRelocks() handles re-locking/unlocking.
+const PROGRESS_VALID_ITEMS = {
+  "idle-animations": () => IDLE_ANIMATION_NAMES,
 };
 
 // ── Timing Constants ──
@@ -139,8 +139,8 @@ export function createTracker(onUnlock, onRelock) {
   // ── Progressive Achievement Helpers ──
 
   function resolveProgressTotal(progressKey) {
-    const resolver = PROGRESS_TOTALS[progressKey];
-    return resolver ? resolver() : 0;
+    const resolver = PROGRESS_VALID_ITEMS[progressKey];
+    return resolver ? resolver().length : 0;
   }
 
   function tryProgressItem(progressKey, item) {
@@ -160,23 +160,31 @@ export function createTracker(onUnlock, onRelock) {
   }
 
   function syncProgressTotals() {
-    for (const [key, resolver] of Object.entries(PROGRESS_TOTALS)) {
-      storage.setProgressTotal(key, resolver());
+    for (const [key, resolver] of Object.entries(PROGRESS_VALID_ITEMS)) {
+      const validNames = resolver();
+      storage.setProgressTotal(key, validNames.length);
+      storage.pruneProgressItems(key, validNames);
     }
   }
 
-  function checkProgressiveRelocks() {
+  function checkProgressiveState() {
     const progressiveAchs = getProgressiveAchievements();
     for (const ach of progressiveAchs) {
-      if (!storage.isUnlocked(ach.id)) continue;
       const total = resolveProgressTotal(ach.progressKey);
       const count = storage.getProgressItems(ach.progressKey).length;
-      if (count < total) {
-        storage.relock(ach.id);
-        if (onRelock) {
-          const full = getAchievement(ach.id);
-          if (full) onRelock(full);
+      if (storage.isUnlocked(ach.id)) {
+        // Re-lock if collected items no longer cover the total
+        if (count < total) {
+          storage.relock(ach.id);
+          if (onRelock) {
+            const full = getAchievement(ach.id);
+            if (full) onRelock(full);
+          }
         }
+      } else if (count >= total && total > 0) {
+        // Auto-unlock if total shrank to match collected
+        storage.clearRelocked(ach.id);
+        tryUnlock(ach.id);
       }
     }
   }
@@ -585,9 +593,9 @@ export function createTracker(onUnlock, onRelock) {
 
     trackSession();
 
-    // Sync progressive achievement totals and check for re-locks
+    // Sync progressive achievement totals, prune stale items, check state
     syncProgressTotals();
-    checkProgressiveRelocks();
+    checkProgressiveState();
 
     // Moonlit — visiting between midnight and 5am
     const hour = new Date().getHours();

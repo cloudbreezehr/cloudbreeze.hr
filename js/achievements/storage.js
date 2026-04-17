@@ -199,6 +199,15 @@ export function addProgressItem(key, item) {
   return true;
 }
 
+export function pruneProgressItems(key, validNames) {
+  const state = getState();
+  const entry = state.progress[key];
+  if (!entry) return;
+  const before = entry.items.length;
+  entry.items = entry.items.filter((item) => validNames.includes(item));
+  if (entry.items.length < before) save();
+}
+
 // ── Re-locking ──
 
 export function relock(id) {
