@@ -3020,6 +3020,7 @@ nav.nav-light .achievement-btn::after {
 .achievement-text {
   flex: 1;
   min-width: 0;
+  min-height: 2.9rem;
 }
 .achievement-card-title {
   font-family: "Syne", sans-serif;
