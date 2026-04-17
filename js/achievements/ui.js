@@ -505,7 +505,12 @@ function buildPanel(onHide) {
     closePanel();
     if (onHide) onHide();
   });
+  const countEl = document.createElement("span");
+  countEl.className = "achievement-count-total";
+  countEl.textContent = `${storage.getUnlocked().length}/${ACHIEVEMENTS.length}`;
+
   footer.appendChild(hideBtn);
+  footer.appendChild(countEl);
   panel.appendChild(footer);
 
   // Hide "Mark all read" when nothing is unseen
@@ -517,9 +522,11 @@ function buildPanel(onHide) {
 
 function refreshPanel() {
   if (!panelEl) return;
-  // Update points
+  // Update points and count
   const pointsEl = panelEl.querySelector(".achievement-points-total");
   if (pointsEl) pointsEl.textContent = `${totalPoints()} pts`;
+  const countEl = panelEl.querySelector(".achievement-count-total");
+  if (countEl) countEl.textContent = `${storage.getUnlocked().length}/${ACHIEVEMENTS.length}`;
 
   // Re-render sections
   const body = panelEl.querySelector(".achievement-body");

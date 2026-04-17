@@ -2885,6 +2885,9 @@ nav.nav-light .achievement-btn::after {
 .achievement-footer {
   padding: 0.8rem 1.2rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .achievement-hide-btn {
   background: none;
@@ -2899,6 +2902,12 @@ nav.nav-light .achievement-btn::after {
 }
 .achievement-hide-btn:hover {
   color: rgba(255, 255, 255, 0.6);
+}
+.achievement-count-total {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
 }
 
 /* ── Achievement Set ── */
@@ -3488,6 +3497,9 @@ body.light-mode .achievement-hide-btn {
 }
 body.light-mode .achievement-hide-btn:hover {
   color: rgba(10, 22, 40, 0.6);
+}
+body.light-mode .achievement-count-total {
+  color: rgba(10, 22, 40, 0.3);
 }
 body.light-mode .achievement-body::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
