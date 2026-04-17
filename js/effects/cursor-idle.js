@@ -45,6 +45,21 @@ const ANIMATIONS = [
   { name: "coin-spin", dotClass: null, ringClass: "idle-coin-spin" },
   { name: "drift", dotClass: "idle-drift", ringClass: "idle-drift" },
   {
+    name: "fidget-spinner",
+    dotClass: null,
+    ringClass: "idle-fidget-spinner",
+    intro: {
+      dotClass: null,
+      ringClass: "idle-fidget-spinner-intro",
+      durationMs: 500,
+    },
+    outro: {
+      dotClass: null,
+      ringClass: "idle-fidget-spinner-outro",
+      durationMs: 300,
+    },
+  },
+  {
     name: "hula-hoop",
     dotClass: "idle-hula-hoop",
     ringClass: "idle-hula-hoop",

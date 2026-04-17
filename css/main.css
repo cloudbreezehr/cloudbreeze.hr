@@ -231,6 +231,83 @@ body {
   animation-delay: -1.5s;
 }
 
+/* Fidget spinner: ring becomes one of three lobes orbiting the dot
+   (the bearing) at radius 18px. Two box-shadow copies render the
+   other lobes in the element's local frame, so a single rotate()
+   spins the tri-lobe silhouette around the cursor. Main lobe sits
+   at (18, 0); shadow for lobe at angle φ is (18·cos φ − 18, 18·sin φ).
+   φ = 120°: (−27, 15.59). φ = 240°: (−27, −15.59). */
+@keyframes cursor-idle-fidget-spinner-intro {
+  0% {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border-color: rgba(55, 138, 221, 0.5);
+    transform: translate(0, 0);
+    box-shadow:
+      0 0 0 rgba(55, 138, 221, 0),
+      0 0 0 rgba(55, 138, 221, 0);
+  }
+  100% {
+    width: 14px;
+    height: 14px;
+    background: rgba(55, 138, 221, 0.5);
+    border-color: transparent;
+    transform: translate(18px, 0);
+    box-shadow:
+      -27px 15.59px 0 rgba(55, 138, 221, 0.5),
+      -27px -15.59px 0 rgba(55, 138, 221, 0.5);
+  }
+}
+#cursor-ring.idle-fidget-spinner-intro {
+  animation: cursor-idle-fidget-spinner-intro 0.5s ease-in forwards;
+}
+
+@keyframes cursor-idle-fidget-spinner {
+  0% {
+    transform: rotate(0deg) translate(18px, 0);
+  }
+  100% {
+    transform: rotate(360deg) translate(18px, 0);
+  }
+}
+#cursor-ring.idle-fidget-spinner {
+  width: 14px;
+  height: 14px;
+  background: rgba(55, 138, 221, 0.5);
+  border-color: transparent;
+  box-shadow:
+    -27px 15.59px 0 rgba(55, 138, 221, 0.5),
+    -27px -15.59px 0 rgba(55, 138, 221, 0.5);
+  animation: cursor-idle-fidget-spinner 0.9s linear infinite;
+}
+
+@keyframes cursor-idle-fidget-spinner-outro {
+  0% {
+    width: 14px;
+    height: 14px;
+    background: rgba(55, 138, 221, 0.5);
+    border-color: transparent;
+    transform: translate(18px, 0);
+    box-shadow:
+      -27px 15.59px 0 rgba(55, 138, 221, 0.5),
+      -27px -15.59px 0 rgba(55, 138, 221, 0.5);
+  }
+  100% {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border-color: rgba(55, 138, 221, 0.5);
+    transform: translate(0, 0);
+    box-shadow:
+      0 0 0 rgba(55, 138, 221, 0),
+      0 0 0 rgba(55, 138, 221, 0);
+  }
+}
+#cursor-ring.idle-fidget-spinner-outro {
+  animation: cursor-idle-fidget-spinner-outro 0.3s ease-out forwards;
+}
+
 @keyframes cursor-idle-hula-hoop-ring {
   0% {
     transform: translate(8px, 0) scale(1.06);
