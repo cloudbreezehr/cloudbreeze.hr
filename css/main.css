@@ -311,6 +311,131 @@ body {
   animation: cursor-idle-orbit 8s ease-in-out infinite;
 }
 
+/* Yo-yo: ring acts like a rope cut under tension, then winds up to the
+   hand — string and dot end at the wound-at-rest state so the main loop
+   can begin its first throw. The dot stays put (translateY 0) for the
+   entire intro; the ring does all the motion. Invariant across every
+   keyframe of the main loop: translateY = 36·scaleY − 18. */
+@keyframes cursor-idle-yo-yo-intro {
+  0% {
+    transform: scaleX(1) scaleY(1) rotate(0deg);
+    border-radius: 50%;
+  }
+  10% {
+    transform: scaleX(1.08) scaleY(0.88) rotate(0deg);
+    border-radius: 45%;
+  }
+  25% {
+    transform: scaleX(0.78) scaleY(1.3) rotate(14deg);
+    border-radius: 35%;
+  }
+  40% {
+    transform: scaleX(0.55) scaleY(1.6) rotate(-10deg);
+    border-radius: 25%;
+  }
+  55% {
+    transform: scaleX(0.32) scaleY(1.74) rotate(6deg);
+    border-radius: 15%;
+  }
+  70% {
+    transform: scaleX(0.16) scaleY(1.3) rotate(-3deg);
+    border-radius: 8%;
+  }
+  85% {
+    transform: scaleX(0.07) scaleY(0.8) rotate(1deg);
+    border-radius: 4px;
+  }
+  100% {
+    transform: scaleX(0.04) scaleY(0.5) rotate(0deg);
+    border-radius: 2px;
+  }
+}
+#cursor-ring.idle-yo-yo-intro {
+  transform-origin: center top;
+  animation: cursor-idle-yo-yo-intro 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)
+    forwards;
+}
+
+/* String and dot stay bottom-paired throughout: the invariant
+   translateY = 36·scaleY − 18 keeps the string's bottom edge at the dot's
+   center at every keyframe, so the string winds in as the yo-yo rises.
+   Per-keyframe easing gives physics-plausible motion: gravity accelerates
+   the fall, the string snaps taut at the bottom, then decelerates on the
+   way up as it rewinds. */
+@keyframes cursor-idle-yo-yo-string {
+  0% {
+    transform: scaleX(0.04) scaleY(0.5);
+    animation-timing-function: cubic-bezier(0.55, 0.05, 0.85, 0.4);
+  }
+  32% {
+    transform: scaleX(0.04) scaleY(2.67);
+    animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1);
+  }
+  37% {
+    transform: scaleX(0.06) scaleY(2.5);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.5, 1);
+  }
+  42% {
+    transform: scaleX(0.04) scaleY(2.58);
+    animation-timing-function: cubic-bezier(0.12, 0.55, 0.45, 1);
+  }
+  80% {
+    transform: scaleX(0.04) scaleY(0.5);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    transform: scaleX(0.04) scaleY(0.5);
+  }
+}
+@keyframes cursor-idle-yo-yo-dot {
+  0% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.55, 0.05, 0.85, 0.4);
+  }
+  32% {
+    transform: translateY(78px);
+    animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1);
+  }
+  37% {
+    transform: translateY(72px) scaleX(1.3) scaleY(0.72);
+    animation-timing-function: cubic-bezier(0.55, 0, 0.5, 1);
+  }
+  42% {
+    transform: translateY(75px) scaleX(1) scaleY(1);
+    animation-timing-function: cubic-bezier(0.12, 0.55, 0.45, 1);
+  }
+  80% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+#cursor-ring.idle-yo-yo {
+  transform-origin: center top;
+  border-radius: 2px;
+  animation: cursor-idle-yo-yo-string 1.6s linear infinite;
+}
+#cursor.idle-yo-yo {
+  animation: cursor-idle-yo-yo-dot 1.6s linear infinite;
+}
+
+@keyframes cursor-idle-yo-yo-outro {
+  0% {
+    transform: scaleX(0.04) scaleY(0.5);
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+}
+#cursor-ring.idle-yo-yo-outro {
+  transform-origin: center top;
+  animation: cursor-idle-yo-yo-outro 0.3s ease-out forwards;
+}
+
 #cursor.visible,
 #cursor-ring.visible {
   opacity: 1;

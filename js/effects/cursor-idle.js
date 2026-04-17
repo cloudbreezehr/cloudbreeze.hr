@@ -50,6 +50,21 @@ const ANIMATIONS = [
     ringClass: "idle-hula-hoop",
   },
   { name: "orbit", dotClass: null, ringClass: "idle-orbit" },
+  {
+    name: "yo-yo",
+    dotClass: "idle-yo-yo",
+    ringClass: "idle-yo-yo",
+    intro: {
+      dotClass: null,
+      ringClass: "idle-yo-yo-intro",
+      durationMs: 700,
+    },
+    outro: {
+      dotClass: null,
+      ringClass: "idle-yo-yo-outro",
+      durationMs: 300,
+    },
+  },
 ];
 
 export const IDLE_ANIMATION_NAMES = ANIMATIONS.map((a) => a.name);
