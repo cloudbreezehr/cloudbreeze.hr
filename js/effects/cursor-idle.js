@@ -110,6 +110,9 @@ export function initCursorIdle(dot, ring) {
   ringEl = ring;
 
   document.addEventListener("mousemove", resetIdle, { passive: true });
+  document.addEventListener("mousedown", resetIdle, { passive: true });
+  document.addEventListener("scroll", resetIdle, { passive: true });
+  document.addEventListener("wheel", resetIdle, { passive: true });
 
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
