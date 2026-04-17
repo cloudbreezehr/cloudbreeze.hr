@@ -311,6 +311,96 @@ body {
   animation: cursor-idle-orbit 8s ease-in-out infinite;
 }
 
+/* Pendulum: ring collapses into a rigid rod hanging from the cursor pivot
+   and swings ±25°; dot rides at the rod's tip on the same arc.
+   Both ring and dot pivot at (cursor_x, cursor_y − 18) — the top of the
+   ring — so the rod tip and dot stay aligned at every rotation:
+     ring transform-origin: center top   (ring top = 18px above cursor)
+     dot  transform-origin: 50% -12px    (12px above dot top = same point)
+   Transform order rotate() scaleX() scaleY() applies scale to the point
+   first, then rotate the already-rod-shaped element. */
+@keyframes cursor-idle-pendulum-intro-ring {
+  0% {
+    transform: rotate(0deg) scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+  100% {
+    transform: rotate(-25deg) scaleX(0.08) scaleY(1.8);
+    border-radius: 2px;
+  }
+}
+@keyframes cursor-idle-pendulum-intro-dot {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: rotate(-25deg) translateY(47px);
+  }
+}
+#cursor-ring.idle-pendulum-intro {
+  transform-origin: center top;
+  animation: cursor-idle-pendulum-intro-ring 0.4s ease-out forwards;
+}
+#cursor.idle-pendulum-intro {
+  transform-origin: 50% -12px;
+  animation: cursor-idle-pendulum-intro-dot 0.4s ease-out forwards;
+}
+
+@keyframes cursor-idle-pendulum-ring {
+  0%,
+  100% {
+    transform: rotate(-25deg) scaleX(0.08) scaleY(1.8);
+  }
+  50% {
+    transform: rotate(25deg) scaleX(0.08) scaleY(1.8);
+  }
+}
+@keyframes cursor-idle-pendulum-dot {
+  0%,
+  100% {
+    transform: rotate(-25deg) translateY(47px);
+  }
+  50% {
+    transform: rotate(25deg) translateY(47px);
+  }
+}
+#cursor-ring.idle-pendulum {
+  transform-origin: center top;
+  border-radius: 2px;
+  animation: cursor-idle-pendulum-ring 2.6s ease-in-out infinite;
+}
+#cursor.idle-pendulum {
+  transform-origin: 50% -12px;
+  animation: cursor-idle-pendulum-dot 2.6s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-pendulum-outro-ring {
+  0% {
+    transform: scaleX(0.08) scaleY(1.8);
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+}
+@keyframes cursor-idle-pendulum-outro-dot {
+  0% {
+    transform: translateY(47px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+#cursor-ring.idle-pendulum-outro {
+  transform-origin: center top;
+  animation: cursor-idle-pendulum-outro-ring 0.3s ease-out forwards;
+}
+#cursor.idle-pendulum-outro {
+  transform-origin: 50% -12px;
+  animation: cursor-idle-pendulum-outro-dot 0.3s ease-out forwards;
+}
+
 /* Yo-yo: ring acts like a rope cut under tension, then winds up to the
    hand — string and dot end at the wound-at-rest state so the main loop
    can begin its first throw. The dot stays put (translateY 0) for the
