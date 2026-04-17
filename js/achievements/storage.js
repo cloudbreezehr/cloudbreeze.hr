@@ -20,6 +20,8 @@ function defaultState() {
       sessions: 0,
       sessionDays: [],
     },
+    progress: {},
+    relocked: [],
   };
 }
 
@@ -41,6 +43,10 @@ function read() {
     if (parsed.counters && typeof parsed.counters === "object") {
       Object.assign(state.counters, parsed.counters);
     }
+    if (parsed.progress && typeof parsed.progress === "object") {
+      state.progress = parsed.progress;
+    }
+    if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;
     return state;
   } catch {
     return defaultState();
@@ -157,6 +163,67 @@ export function incrementCounter(key, amount) {
   const state = getState();
   state.counters[key] = (state.counters[key] || 0) + (amount || 1);
   save();
+}
+
+// ── Progressive Achievement Progress ──
+
+export function getProgressItems(key) {
+  const entry = getState().progress[key];
+  return entry ? entry.items : [];
+}
+
+export function getProgressTotal(key) {
+  const entry = getState().progress[key];
+  return entry ? entry.total : 0;
+}
+
+export function setProgressTotal(key, total) {
+  const state = getState();
+  if (!state.progress[key]) {
+    state.progress[key] = { items: [], total };
+  } else {
+    state.progress[key].total = total;
+  }
+  save();
+}
+
+export function addProgressItem(key, item) {
+  const state = getState();
+  if (!state.progress[key]) {
+    state.progress[key] = { items: [], total: 0 };
+  }
+  const entry = state.progress[key];
+  if (entry.items.includes(item)) return false;
+  entry.items.push(item);
+  save();
+  return true;
+}
+
+// ── Re-locking ──
+
+export function relock(id) {
+  const state = getState();
+  const idx = state.unlocked.findIndex((u) => u.id === id);
+  if (idx === -1) return false;
+  state.unlocked.splice(idx, 1);
+  const seenIdx = state.seen.indexOf(id);
+  if (seenIdx !== -1) state.seen.splice(seenIdx, 1);
+  if (!state.relocked.includes(id)) state.relocked.push(id);
+  save();
+  return true;
+}
+
+export function isRelocked(id) {
+  return getState().relocked.includes(id);
+}
+
+export function clearRelocked(id) {
+  const state = getState();
+  const idx = state.relocked.indexOf(id);
+  if (idx !== -1) {
+    state.relocked.splice(idx, 1);
+    save();
+  }
 }
 
 export function reset() {

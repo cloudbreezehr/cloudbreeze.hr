@@ -125,7 +125,14 @@ function toggleTimestampMode() {
   if (!panelEl) return;
   panelEl.querySelectorAll(".achievement-card-time").forEach((el) => {
     const ts = Number(el.dataset.ts);
-    if (ts) el.textContent = formatTimestamp(ts);
+    if (!ts) return;
+    // Update only the leading text node to preserve inline progress spans
+    const firstText = el.firstChild;
+    if (firstText && firstText.nodeType === Node.TEXT_NODE) {
+      firstText.textContent = formatTimestamp(ts);
+    } else {
+      el.textContent = formatTimestamp(ts);
+    }
   });
 }
 
@@ -607,10 +614,13 @@ function renderSections(container) {
       card.dataset.id = ach.id;
 
       const isUnseen = isUnlocked && !storage.isSeen(ach.id);
+      const isRelocked = !isUnlocked && storage.isRelocked(ach.id);
 
       if (isUnlocked) {
         card.classList.add("unlocked");
         if (isUnseen) card.classList.add("unseen");
+      } else if (isRelocked) {
+        card.classList.add("relocked");
       } else if (ach.hidden) {
         card.classList.add("hidden-ach");
       } else {
@@ -622,6 +632,9 @@ function renderSections(container) {
       icon.className = "achievement-icon";
       if (isUnlocked) {
         icon.innerHTML = CLOUD_CHECK_SVG;
+        if (set.color) icon.style.color = set.color;
+      } else if (isRelocked) {
+        icon.innerHTML = CLOUD_LOCK_SVG;
         if (set.color) icon.style.color = set.color;
       } else if (ach.hidden && !revealHints) {
         icon.innerHTML = CLOUD_HIDDEN_SVG;
@@ -643,7 +656,7 @@ function renderSections(container) {
       const cardDesc = document.createElement("div");
       cardDesc.className = "achievement-card-desc";
 
-      if (isUnlocked) {
+      if (isUnlocked || isRelocked) {
         cardTitle.textContent = ach.title;
         cardDesc.textContent = ach.description;
       } else if (ach.hidden) {
@@ -660,7 +673,7 @@ function renderSections(container) {
       text.appendChild(cardTitle);
       text.appendChild(cardDesc);
 
-      // Timestamp for unlocked achievements
+      // Timestamp + inline progress for unlocked achievements
       if (isUnlocked) {
         const ts = storage.getUnlockTime(ach.id);
         if (ts) {
@@ -669,7 +682,39 @@ function renderSections(container) {
           timeEl.dataset.ts = String(ts);
           timeEl.textContent = formatTimestamp(ts);
           timeEl.addEventListener("click", toggleTimestampMode);
+
+          // Append inline progress count after timestamp
+          if (ach.progressKey) {
+            const total = storage.getProgressTotal(ach.progressKey);
+            const collected = storage.getProgressItems(ach.progressKey).length;
+            if (total > 0) {
+              const sep = document.createTextNode(" \u00B7 ");
+              const progressSpan = document.createElement("span");
+              progressSpan.className = "achievement-card-progress-text";
+              progressSpan.textContent =
+                collected >= total
+                  ? `${collected}/${total} \u2713`
+                  : `${collected}/${total}`;
+              timeEl.appendChild(sep);
+              timeEl.appendChild(progressSpan);
+            }
+          }
+
           text.appendChild(timeEl);
+        }
+      } else if (ach.progressKey) {
+        // Locked/relocked: show progress on its own line (where timestamp would be)
+        const total = storage.getProgressTotal(ach.progressKey);
+        const collected = storage.getProgressItems(ach.progressKey).length;
+        if (total > 0) {
+          const progressLine = document.createElement("div");
+          progressLine.className =
+            "achievement-card-time achievement-card-progress-line";
+          const progressSpan = document.createElement("span");
+          progressSpan.className = "achievement-card-progress-text";
+          progressSpan.textContent = `${collected}/${total}`;
+          progressLine.appendChild(progressSpan);
+          text.appendChild(progressLine);
         }
       }
 
@@ -677,13 +722,28 @@ function renderSections(container) {
       card.appendChild(text);
       card.appendChild(cardPts);
 
+      // Progress bar — absolutely positioned at card bottom edge
+      if (ach.progressKey) {
+        const total = storage.getProgressTotal(ach.progressKey);
+        const collected = storage.getProgressItems(ach.progressKey).length;
+        if (total > 0) {
+          const barWrap = document.createElement("div");
+          barWrap.className = "achievement-card-progress-bar-wrap";
+          const barFill = document.createElement("div");
+          barFill.className = "achievement-card-progress-bar-fill";
+          barFill.style.width = `${Math.min((collected / total) * 100, 100)}%`;
+          barWrap.appendChild(barFill);
+          card.appendChild(barWrap);
+        }
+      }
+
       // Click pop on unlocked cards
       if (isUnlocked) {
         card.addEventListener("click", onCardClick);
       }
 
-      // Hint tooltip on hover — unlocked always, locked/hidden when reveal is on
-      const showHint = ach.hint && (isUnlocked || revealHints);
+      // Hint tooltip on hover — unlocked/relocked always, locked/hidden when reveal is on
+      const showHint = ach.hint && (isUnlocked || isRelocked || revealHints);
       if (showHint) {
         card.addEventListener("mouseenter", () =>
           showHintTooltip(card, ach.hint),
@@ -910,6 +970,57 @@ function dismissToast(toastRef) {
   }, TOAST_SLIDE_OUT_MS);
 }
 
+// ── Re-lock Toast ──
+
+export function showRelockToast(achievement) {
+  ensureToastContainer();
+
+  const set = SETS.find((s) => s.id === achievement.set);
+  const toast = document.createElement("div");
+  toast.className = "achievement-toast achievement-toast-relock";
+  if (set && set.color) {
+    toast.style.setProperty("--toast-accent", set.color);
+  }
+
+  const total = achievement.progressKey
+    ? storage.getProgressTotal(achievement.progressKey)
+    : 0;
+  const collected = achievement.progressKey
+    ? storage.getProgressItems(achievement.progressKey).length
+    : 0;
+  const progressHint = total > 0 ? ` (${collected}/${total})` : "";
+
+  toast.innerHTML = `
+    <div class="achievement-toast-icon achievement-toast-relock-icon">${CLOUD_LOCK_SVG}</div>
+    <div class="achievement-toast-body">
+      <div class="achievement-toast-title">Re-locked: ${achievement.title}</div>
+      <div class="achievement-toast-desc">New content added${progressHint}</div>
+    </div>
+  `;
+
+  toast.addEventListener("click", () => {
+    if (!panelOpen) {
+      openPanel();
+      setTimeout(() => scrollToCard(achievement.id), PANEL_SLIDE_MS);
+    } else {
+      scrollToCard(achievement.id);
+    }
+  });
+
+  toastContainer.appendChild(toast);
+  void toast.offsetHeight;
+  toast.classList.add("enter");
+
+  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
+  activeToasts.push(toastRef);
+
+  if (!toastsPaused) {
+    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
+  } else {
+    toastRef.remaining = TOAST_HOLD_MS;
+  }
+}
+
 // ── Activation Toast ──
 
 export function showActivationToast(message) {
@@ -958,6 +1069,12 @@ export function onAchievementUnlocked(achievement) {
   updateBadge();
   pulseBadge();
   refreshCard(achievement.id);
+}
+
+export function onAchievementRelocked(achievement) {
+  showRelockToast(achievement);
+  updateBadge();
+  refreshPanel();
 }
 
 export function destroy() {

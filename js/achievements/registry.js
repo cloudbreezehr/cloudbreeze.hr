@@ -354,6 +354,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "idle-watcher",
+    title: "Idle Watcher",
+    description: "Every idle animation, witnessed.",
+    hint: "See all cursor idle animations",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+    progressKey: "idle-animations",
+  },
+  {
     id: "night-owl",
     title: "Night Owl",
     description: "Still here? The sky notices.",
@@ -847,4 +857,11 @@ export function getAllNonMeta() {
  */
 export function isModeSet(setId) {
   return MODE_SETS.includes(setId);
+}
+
+/**
+ * Return all achievements that track progressive (cumulative) progress.
+ */
+export function getProgressiveAchievements() {
+  return ACHIEVEMENTS.filter((a) => a.progressKey);
 }

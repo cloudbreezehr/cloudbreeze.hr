@@ -43,6 +43,8 @@ const ANIMATIONS = [
   { name: "orbit", dotClass: null, ringClass: "idle-orbit" },
 ];
 
+export const IDLE_ANIMATION_NAMES = ANIMATIONS.map((a) => a.name);
+
 // ── State ──
 
 let dotEl = null;
@@ -50,7 +52,6 @@ let ringEl = null;
 let idleTimer = null;
 let lastAnimIndex = -1;
 let currentAnim = null;
-let hasFiredAchievement = false;
 
 // ── Helpers ──
 
@@ -82,12 +83,11 @@ function playAnimation() {
   const anim = pickAnimation();
   applyAnimation(anim);
 
-  if (!hasFiredAchievement) {
-    hasFiredAchievement = true;
-    window.dispatchEvent(
-      new CustomEvent("achievement", { detail: { type: "cursor-idle" } }),
-    );
-  }
+  window.dispatchEvent(
+    new CustomEvent("achievement", {
+      detail: { type: "cursor-idle", animation: anim.name },
+    }),
+  );
 
   // Schedule next animation with jitter
   const delay = C.RECUR_MS + Math.random() * C.RECUR_JITTER_MS;

@@ -3224,6 +3224,68 @@ nav.nav-light .achievement-btn::after {
   transform: scale(0);
 }
 
+/* ── Card Progress (progressive achievements) ── */
+
+.achievement-card-progress-text {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.achievement-card-progress-bar-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+}
+.achievement-card-progress-bar-fill {
+  height: 100%;
+  background: var(--set-color, var(--sky-4, #378add));
+  border-radius: 0 0 6px 6px;
+  transition: width 0.4s ease-out;
+}
+
+/* ── Relocked Card State ── */
+
+.achievement-card.relocked {
+  opacity: 0.7;
+  border-left: 2px dashed rgba(255, 200, 50, 0.35);
+}
+.achievement-card.relocked .achievement-icon {
+  opacity: 0.7;
+}
+.achievement-card.relocked .achievement-card-pts {
+  opacity: 0.5;
+}
+.achievement-card.de-shine {
+  animation: achievement-de-shine 0.8s ease-out;
+}
+@keyframes achievement-de-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  30% {
+    background: rgba(255, 200, 50, 0.08);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+/* ── Re-lock Toast ── */
+
+.achievement-toast-relock {
+  border-left-color: rgba(255, 200, 50, 0.5);
+}
+.achievement-toast-relock-icon {
+  opacity: 0.6;
+}
+
 /* ── Achievement Tooltip ── */
 
 .achievement-tooltip {
@@ -3503,6 +3565,15 @@ body.light-mode .achievement-card-time:hover {
 }
 body.light-mode .achievement-card.unseen .achievement-card-time::before {
   box-shadow: 0 0 6px var(--set-color, var(--sky-5, #1a5fa8));
+}
+body.light-mode .achievement-card-progress-text {
+  color: rgba(10, 22, 40, 0.35);
+}
+body.light-mode .achievement-card-progress-bar-wrap {
+  background: rgba(0, 0, 0, 0.06);
+}
+body.light-mode .achievement-card.relocked {
+  border-left-color: rgba(180, 140, 20, 0.35);
 }
 body.light-mode .achievement-icon {
   color: rgba(10, 22, 40, 0.35);

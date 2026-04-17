@@ -16,6 +16,7 @@ import {
   showActivationToast,
   showActivationPulse,
   onAchievementUnlocked,
+  onAchievementRelocked,
 } from "./ui.js";
 import { onKey } from "../keyboard.js";
 
@@ -35,7 +36,7 @@ export function initAchievements() {
 
   function startTracking() {
     if (tracker) return;
-    tracker = createTracker(onAchievementUnlocked);
+    tracker = createTracker(onAchievementUnlocked, onAchievementRelocked);
     tracker.start();
   }
 
