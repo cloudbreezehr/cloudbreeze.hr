@@ -49,6 +49,21 @@ const ANIMATIONS = [
     dotClass: "idle-hula-hoop",
     ringClass: "idle-hula-hoop",
   },
+  {
+    name: "metronome",
+    dotClass: "idle-metronome",
+    ringClass: "idle-metronome",
+    intro: {
+      dotClass: "idle-metronome-intro",
+      ringClass: "idle-metronome-intro",
+      durationMs: 400,
+    },
+    outro: {
+      dotClass: "idle-metronome-outro",
+      ringClass: "idle-metronome-outro",
+      durationMs: 300,
+    },
+  },
   { name: "orbit", dotClass: null, ringClass: "idle-orbit" },
   {
     name: "pendulum",
