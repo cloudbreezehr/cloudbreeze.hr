@@ -67,10 +67,17 @@ export function initCursor(dotEl, ringEl) {
       : hovering
         ? C.RING_SIZE_HOVER
         : C.RING_SIZE_DEFAULT;
-    dotEl.style.width = `${dotSize}px`;
-    dotEl.style.height = `${dotSize}px`;
-    ringEl.style.width = `${ringSize}px`;
-    ringEl.style.height = `${ringSize}px`;
+    // Publish via custom properties so idle animations that depend on
+    // ring/dot geometry (pendulum, metronome, yo-yo) stay in sync as
+    // sizes transition.
+    document.documentElement.style.setProperty(
+      "--cursor-dot-size",
+      `${dotSize}px`,
+    );
+    document.documentElement.style.setProperty(
+      "--cursor-ring-size",
+      `${ringSize}px`,
+    );
   }
 
   document.addEventListener("mouseover", (e) => {
