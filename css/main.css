@@ -2942,6 +2942,9 @@ nav.nav-light .achievement-btn::after {
   opacity: 0.6;
 }
 .achievement-set-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -2949,7 +2952,7 @@ nav.nav-light .achievement-btn::after {
   padding: 0.4rem 0.5rem;
   border-left: 3px solid rgba(255, 255, 255, 0.15);
   border-radius: 0 4px 4px 0;
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(10, 18, 32, 0.95);
 }
 .achievement-set-name {
   font-family: "Syne", sans-serif;
@@ -3512,7 +3515,7 @@ body.light-mode .achievement-mark-read:hover {
   color: rgba(10, 22, 40, 0.6);
 }
 body.light-mode .achievement-set-header {
-  background: rgba(0, 0, 0, 0.03);
+  background: rgba(240, 247, 255, 0.95);
   border-left-color: rgba(0, 0, 0, 0.12);
 }
 body.light-mode .achievement-set-name {
