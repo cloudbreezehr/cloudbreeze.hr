@@ -219,6 +219,71 @@ body {
   animation-delay: -1.5s;
 }
 
+@keyframes cursor-idle-hula-hoop-ring {
+  0% {
+    transform: translate(8px, 0) scale(1.06);
+  }
+  8% {
+    transform: translate(7px, 4px) scale(1.03);
+  }
+  17% {
+    transform: translate(4px, 7px) scale(0.97);
+  }
+  25% {
+    transform: translate(0, 8px) scale(0.94);
+  }
+  33% {
+    transform: translate(-4px, 7px) scale(0.97);
+  }
+  42% {
+    transform: translate(-7px, 4px) scale(1.03);
+  }
+  50% {
+    transform: translate(-8px, 0) scale(1.06);
+  }
+  58% {
+    transform: translate(-7px, -4px) scale(1.03);
+  }
+  67% {
+    transform: translate(-4px, -7px) scale(0.97);
+  }
+  75% {
+    transform: translate(0, -8px) scale(0.94);
+  }
+  83% {
+    transform: translate(4px, -7px) scale(0.97);
+  }
+  92% {
+    transform: translate(7px, -4px) scale(1.03);
+  }
+  100% {
+    transform: translate(8px, 0) scale(1.06);
+  }
+}
+@keyframes cursor-idle-hula-hoop-dot {
+  0% {
+    transform: translate(-1.5px, 0);
+  }
+  25% {
+    transform: translate(0, -1.5px);
+  }
+  50% {
+    transform: translate(1.5px, 0);
+  }
+  75% {
+    transform: translate(0, 1.5px);
+  }
+  100% {
+    transform: translate(-1.5px, 0);
+  }
+}
+#cursor-ring.idle-hula-hoop {
+  animation: cursor-idle-hula-hoop-ring 0.8s linear infinite;
+}
+#cursor.idle-hula-hoop {
+  animation: cursor-idle-hula-hoop-dot 0.8s ease-in-out infinite;
+}
+
 @keyframes cursor-idle-orbit {
   0% {
     transform: rotate(0deg) scale(1);
