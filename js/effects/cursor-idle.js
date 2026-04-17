@@ -35,6 +35,9 @@ const C = defineConstants("cursor.idle", {
 // ── Animation Pool ──
 // Each entry defines CSS classes to apply to the dot and/or ring.
 // Either class can be null if the animation only targets one element.
+// Animations can optionally define intro/outro phases:
+// intro: { dotClass, ringClass, durationMs } — played before the main loop
+// outro: { dotClass, ringClass, durationMs } — played when interrupted by user movement
 
 const ANIMATIONS = [
   { name: "blink", dotClass: "idle-blink", ringClass: null },
@@ -56,8 +59,10 @@ export const IDLE_ANIMATION_NAMES = ANIMATIONS.map((a) => a.name);
 let dotEl = null;
 let ringEl = null;
 let idleTimer = null;
+let phaseTimer = null;
 let lastAnimIndex = -1;
 let currentAnim = null;
+let phase = null; // "intro", "main", or "outro"
 
 // ── Helpers ──
 
@@ -71,23 +76,52 @@ function pickAnimation() {
   return ANIMATIONS[idx];
 }
 
-function applyAnimation(anim) {
-  if (anim.dotClass) dotEl.classList.add(anim.dotClass);
-  if (anim.ringClass) ringEl.classList.add(anim.ringClass);
-  currentAnim = anim;
+function applyClasses(dotClass, ringClass) {
+  if (dotClass) dotEl.classList.add(dotClass);
+  if (ringClass) ringEl.classList.add(ringClass);
+}
+
+function removeClasses(dotClass, ringClass) {
+  if (dotClass) dotEl.classList.remove(dotClass);
+  if (ringClass) ringEl.classList.remove(ringClass);
+}
+
+function removeAllAnimClasses() {
+  if (!currentAnim) return;
+  const a = currentAnim;
+  removeClasses(a.dotClass, a.ringClass);
+  if (a.intro) removeClasses(a.intro.dotClass, a.intro.ringClass);
+  if (a.outro) removeClasses(a.outro.dotClass, a.outro.ringClass);
 }
 
 function clearAnimation() {
+  clearTimeout(phaseTimer);
+  phaseTimer = null;
+
   if (!currentAnim) return;
-  if (currentAnim.dotClass) dotEl.classList.remove(currentAnim.dotClass);
-  if (currentAnim.ringClass) ringEl.classList.remove(currentAnim.ringClass);
+
+  // If the animation has an outro and we're not already in it, play it
+  if (currentAnim.outro && phase !== "outro") {
+    const anim = currentAnim;
+    removeAllAnimClasses();
+    applyClasses(anim.outro.dotClass, anim.outro.ringClass);
+    phase = "outro";
+    phaseTimer = setTimeout(() => {
+      removeClasses(anim.outro.dotClass, anim.outro.ringClass);
+      currentAnim = null;
+      phase = null;
+    }, anim.outro.durationMs);
+    return;
+  }
+
+  removeAllAnimClasses();
   currentAnim = null;
+  phase = null;
 }
 
-function playAnimation() {
-  clearAnimation();
-  const anim = pickAnimation();
-  applyAnimation(anim);
+function startMainPhase(anim) {
+  applyClasses(anim.dotClass, anim.ringClass);
+  phase = "main";
 
   window.dispatchEvent(
     new CustomEvent("achievement", {
@@ -100,9 +134,29 @@ function playAnimation() {
   idleTimer = setTimeout(playAnimation, delay);
 }
 
+function playAnimation() {
+  clearTimeout(phaseTimer);
+  removeAllAnimClasses();
+  phase = null;
+
+  const anim = pickAnimation();
+  currentAnim = anim;
+
+  if (anim.intro) {
+    applyClasses(anim.intro.dotClass, anim.intro.ringClass);
+    phase = "intro";
+    phaseTimer = setTimeout(() => {
+      removeClasses(anim.intro.dotClass, anim.intro.ringClass);
+      startMainPhase(anim);
+    }, anim.intro.durationMs);
+  } else {
+    startMainPhase(anim);
+  }
+}
+
 function resetIdle() {
-  clearAnimation();
   clearTimeout(idleTimer);
+  clearAnimation();
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
 
