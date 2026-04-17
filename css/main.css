@@ -80,9 +80,28 @@ body {
   inherits: true;
   initial-value: 36px;
 }
+/* --rod-scale-y: ring's vertical scale factor when collapsed into a
+   rod (pendulum, metronome, yo-yo). Registered so animations can
+   interpolate it smoothly and the --rod-tip calc() cascades.
+   Inherited so a single keyframe on :root can drive both the ring
+   scaleY and the dot's derived translateY in lockstep. */
+@property --rod-scale-y {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
 :root {
   --cursor-dot-size: 12px;
   --cursor-ring-size: 36px;
+  /* Pivot points on the cursor column where rod-style idle animations
+     hinge. Ring pivots via center top/bottom; the dot reaches the same
+     point by translating its transform-origin by these offsets. */
+  --cursor-pivot-top: calc(
+    (var(--cursor-dot-size) - var(--cursor-ring-size)) / 2
+  );
+  --cursor-pivot-bottom: calc(
+    (var(--cursor-dot-size) + var(--cursor-ring-size)) / 2
+  );
   transition:
     --cursor-dot-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
     --cursor-ring-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -382,20 +401,58 @@ body {
   animation: cursor-idle-hula-hoop-dot 0.8s ease-in-out infinite;
 }
 
-/* Metronome: inverted pendulum — rod ticks back and forth above the
-   cursor at a fixed tempo with a brief pause at each extreme. The
-   weight dot rides the tip of the rod. Pivot is at the rod base (ring
-   bottom = cursor + ring_size/2); dot transform-origin aligns to that
-   pivot so both elements swing around the same point. Rod reaches up
-   by (ring_size · scaleY − ring_size/2) = ring_size · (scaleY − 0.5),
-   so at scaleY 1.8 the tip is 1.3 · ring_size above the pivot. */
+/* ── String-based idle animations (pendulum, metronome, yo-yo) ──
+
+   All three collapse the ring into a vertical rod and attach the dot
+   at its free tip. They share three invariants so hover/press size
+   changes stay aligned automatically:
+
+     1. Ring scaleY determines rod length. Default is --rod-scale-y
+        (1.8 for pendulum & metronome; yo-yo overrides per keyframe).
+     2. Rod tip sits at ring_size · (scaleY − 0.5) from the hinge pivot.
+        --rod-tip encodes this so the dot's translateY matches.
+     3. Dot's transform-origin is --cursor-pivot-top (ring top, for rods
+        hanging below the cursor) or --cursor-pivot-bottom (for rods
+        rising above), both defined on :root.
+
+   To add a new rod-style animation: set --rod-tip on the dot rule,
+   choose a pivot, and write paired keyframes. No pixel math required. */
+
+#cursor-ring[class*="idle-pendulum"],
+#cursor-ring[class*="idle-metronome"] {
+  border-radius: 2px;
+}
+#cursor-ring[class*="idle-pendulum"],
+#cursor[class*="idle-pendulum"],
+#cursor-ring[class*="idle-metronome"],
+#cursor[class*="idle-metronome"] {
+  --rod-scale-y: 1.8;
+}
+#cursor-ring[class*="idle-pendulum"] {
+  transform-origin: center top;
+}
+#cursor-ring[class*="idle-metronome"] {
+  transform-origin: center bottom;
+}
+#cursor[class*="idle-pendulum"] {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5));
+  transform-origin: 50% var(--cursor-pivot-top);
+}
+#cursor[class*="idle-metronome"] {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5) * -1);
+  transform-origin: 50% var(--cursor-pivot-bottom);
+}
+
+/* Metronome: rod ticks back and forth above the cursor at a fixed
+   tempo with a brief pause at each extreme. The weight dot rides
+   the tip of the rod (rising upward via the negative --rod-tip). */
 @keyframes cursor-idle-metronome-intro-ring {
   0% {
     transform: rotate(0deg) scaleX(1) scaleY(1);
     border-radius: 50%;
   }
   100% {
-    transform: rotate(-18deg) scaleX(0.1) scaleY(1.8);
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
     border-radius: 2px;
   }
 }
@@ -404,69 +461,58 @@ body {
     transform: translateY(0);
   }
   100% {
-    transform: rotate(-18deg) translateY(calc(var(--rod-tip) * -1));
+    transform: rotate(-18deg) translateY(var(--rod-tip));
   }
 }
 #cursor-ring.idle-metronome-intro {
-  transform-origin: center bottom;
   animation: cursor-idle-metronome-intro-ring 0.4s ease-out forwards;
 }
 #cursor.idle-metronome-intro {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) + var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-metronome-intro-dot 0.4s ease-out forwards;
 }
 
 @keyframes cursor-idle-metronome-ring {
   0%,
   8% {
-    transform: rotate(-18deg) scaleX(0.1) scaleY(1.8);
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
   }
   50%,
   58% {
-    transform: rotate(18deg) scaleX(0.1) scaleY(1.8);
+    transform: rotate(18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
   }
   100% {
-    transform: rotate(-18deg) scaleX(0.1) scaleY(1.8);
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
   }
 }
 @keyframes cursor-idle-metronome-dot {
   0%,
   8% {
-    transform: rotate(-18deg) translateY(calc(var(--rod-tip) * -1)) scale(1);
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1);
   }
   4% {
-    transform: rotate(-18deg) translateY(calc(var(--rod-tip) * -1)) scale(1.4);
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1.4);
   }
   50%,
   58% {
-    transform: rotate(18deg) translateY(calc(var(--rod-tip) * -1)) scale(1);
+    transform: rotate(18deg) translateY(var(--rod-tip)) scale(1);
   }
   54% {
-    transform: rotate(18deg) translateY(calc(var(--rod-tip) * -1)) scale(1.4);
+    transform: rotate(18deg) translateY(var(--rod-tip)) scale(1.4);
   }
   100% {
-    transform: rotate(-18deg) translateY(calc(var(--rod-tip) * -1)) scale(1);
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1);
   }
 }
 #cursor-ring.idle-metronome {
-  transform-origin: center bottom;
-  border-radius: 2px;
   animation: cursor-idle-metronome-ring 1.2s linear infinite;
 }
 #cursor.idle-metronome {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) + var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-metronome-dot 1.2s linear infinite;
 }
 
 @keyframes cursor-idle-metronome-outro-ring {
   0% {
-    transform: scaleX(0.1) scaleY(1.8);
+    transform: scaleX(0.1) scaleY(var(--rod-scale-y));
     border-radius: 2px;
   }
   100% {
@@ -476,21 +522,16 @@ body {
 }
 @keyframes cursor-idle-metronome-outro-dot {
   0% {
-    transform: translateY(calc(var(--rod-tip) * -1)) scale(1);
+    transform: translateY(var(--rod-tip)) scale(1);
   }
   100% {
     transform: translateY(0) scale(1);
   }
 }
 #cursor-ring.idle-metronome-outro {
-  transform-origin: center bottom;
   animation: cursor-idle-metronome-outro-ring 0.3s ease-out forwards;
 }
 #cursor.idle-metronome-outro {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) + var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-metronome-outro-dot 0.3s ease-out forwards;
 }
 
@@ -509,20 +550,15 @@ body {
   animation: cursor-idle-orbit 8s ease-in-out infinite;
 }
 
-/* Pendulum: ring collapses into a rigid rod hanging from the cursor
-   pivot and swings ±25°; dot rides at the rod's tip on the same arc.
-   Both ring and dot pivot at (cursor_x, cursor_y − ring_size/2) — the
-   top of the ring — so the rod tip and dot stay aligned at every
-   rotation. Dot origin (50%, (dot_size − ring_size)/2) resolves to
-   that same point. Rod reaches down by ring_size · (scaleY − 0.5),
-   so at scaleY 1.8 the tip is 1.3 · ring_size below the pivot. */
+/* Pendulum: rod hangs from the cursor pivot and swings ±25°; dot
+   rides at the rod's tip on the same arc. */
 @keyframes cursor-idle-pendulum-intro-ring {
   0% {
     transform: rotate(0deg) scaleX(1) scaleY(1);
     border-radius: 50%;
   }
   100% {
-    transform: rotate(-25deg) scaleX(0.08) scaleY(1.8);
+    transform: rotate(-25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
     border-radius: 2px;
   }
 }
@@ -535,24 +571,19 @@ body {
   }
 }
 #cursor-ring.idle-pendulum-intro {
-  transform-origin: center top;
   animation: cursor-idle-pendulum-intro-ring 0.4s ease-out forwards;
 }
 #cursor.idle-pendulum-intro {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) - var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-pendulum-intro-dot 0.4s ease-out forwards;
 }
 
 @keyframes cursor-idle-pendulum-ring {
   0%,
   100% {
-    transform: rotate(-25deg) scaleX(0.08) scaleY(1.8);
+    transform: rotate(-25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
   }
   50% {
-    transform: rotate(25deg) scaleX(0.08) scaleY(1.8);
+    transform: rotate(25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
   }
 }
 @keyframes cursor-idle-pendulum-dot {
@@ -565,21 +596,15 @@ body {
   }
 }
 #cursor-ring.idle-pendulum {
-  transform-origin: center top;
-  border-radius: 2px;
   animation: cursor-idle-pendulum-ring 2.6s ease-in-out infinite;
 }
 #cursor.idle-pendulum {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) - var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-pendulum-dot 2.6s ease-in-out infinite;
 }
 
 @keyframes cursor-idle-pendulum-outro-ring {
   0% {
-    transform: scaleX(0.08) scaleY(1.8);
+    transform: scaleX(0.08) scaleY(var(--rod-scale-y));
     border-radius: 2px;
   }
   100% {
@@ -596,14 +621,9 @@ body {
   }
 }
 #cursor-ring.idle-pendulum-outro {
-  transform-origin: center top;
   animation: cursor-idle-pendulum-outro-ring 0.3s ease-out forwards;
 }
 #cursor.idle-pendulum-outro {
-  --rod-tip: calc(var(--cursor-ring-size) * 1.3);
-  transform-origin: 50% calc(
-      (var(--cursor-dot-size) - var(--cursor-ring-size)) / 2
-    );
   animation: cursor-idle-pendulum-outro-dot 0.3s ease-out forwards;
 }
 
@@ -652,62 +672,64 @@ body {
     forwards;
 }
 
-/* String and dot stay bottom-paired throughout: the invariant
-   translateY = ring_size · (scaleY − 0.5) keeps the string's bottom
-   edge at the dot's center at every keyframe, so the string winds in
-   as the yo-yo rises. Per-keyframe easing gives physics-plausible
-   motion: gravity accelerates the fall, the string snaps taut at the
-   bottom, then decelerates on the way up as it rewinds. */
-@keyframes cursor-idle-yo-yo-string {
+/* The yo-yo's scaleY timeline lives on :root as a single keyframes
+   block; :has() activates it only while the ring is animating. Ring
+   and dot then read --rod-scale-y and --rod-tip, keeping the string
+   bottom and dot center paired without duplicated timelines. */
+:root:has(#cursor.idle-yo-yo) {
+  animation: cursor-idle-yo-yo-rod 1.6s linear infinite;
+}
+@keyframes cursor-idle-yo-yo-rod {
   0% {
-    transform: scaleX(0.04) scaleY(0.5);
+    --rod-scale-y: 0.5;
     animation-timing-function: cubic-bezier(0.55, 0.05, 0.85, 0.4);
   }
   32% {
-    transform: scaleX(0.04) scaleY(2.67);
+    --rod-scale-y: 2.67;
     animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1);
   }
   37% {
-    transform: scaleX(0.06) scaleY(2.5);
+    --rod-scale-y: 2.5;
     animation-timing-function: cubic-bezier(0.55, 0, 0.5, 1);
   }
   42% {
-    transform: scaleX(0.04) scaleY(2.58);
+    --rod-scale-y: 2.58;
     animation-timing-function: cubic-bezier(0.12, 0.55, 0.45, 1);
   }
   80% {
-    transform: scaleX(0.04) scaleY(0.5);
+    --rod-scale-y: 0.5;
     animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
   }
   100% {
-    transform: scaleX(0.04) scaleY(0.5);
+    --rod-scale-y: 0.5;
+  }
+}
+/* Ring animates its own transform (scaleX narrows as the string goes
+   taut); scaleY reads the shared --rod-scale-y. Dot carries the bounce
+   squash on keyframe 37%/42% and reads --rod-tip for position. */
+@keyframes cursor-idle-yo-yo-string {
+  0%,
+  32%,
+  42%,
+  80%,
+  100% {
+    transform: scaleX(0.04) scaleY(var(--rod-scale-y));
+  }
+  37% {
+    transform: scaleX(0.06) scaleY(var(--rod-scale-y));
   }
 }
 @keyframes cursor-idle-yo-yo-dot {
-  0% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0.55, 0.05, 0.85, 0.4);
-  }
-  32% {
-    transform: translateY(calc(var(--cursor-ring-size) * 2.17));
-    animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1);
+  0%,
+  80%,
+  100% {
+    transform: translateY(var(--rod-tip));
   }
   37% {
-    transform: translateY(calc(var(--cursor-ring-size) * 2)) scaleX(1.3)
-      scaleY(0.72);
-    animation-timing-function: cubic-bezier(0.55, 0, 0.5, 1);
+    transform: translateY(var(--rod-tip)) scaleX(1.3) scaleY(0.72);
   }
   42% {
-    transform: translateY(calc(var(--cursor-ring-size) * 2.08)) scaleX(1)
-      scaleY(1);
-    animation-timing-function: cubic-bezier(0.12, 0.55, 0.45, 1);
-  }
-  80% {
-    transform: translateY(0);
-    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
-  }
-  100% {
-    transform: translateY(0);
+    transform: translateY(var(--rod-tip)) scaleX(1) scaleY(1);
   }
 }
 #cursor-ring.idle-yo-yo {
@@ -716,6 +738,7 @@ body {
   animation: cursor-idle-yo-yo-string 1.6s linear infinite;
 }
 #cursor.idle-yo-yo {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5));
   animation: cursor-idle-yo-yo-dot 1.6s linear infinite;
 }
 
