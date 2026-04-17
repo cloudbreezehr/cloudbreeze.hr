@@ -39,6 +39,7 @@ const C = defineConstants("cursor.idle", {
 const ANIMATIONS = [
   { name: "blink", dotClass: "idle-blink", ringClass: null },
   { name: "breathe", dotClass: null, ringClass: "idle-breathe" },
+  { name: "coin-spin", dotClass: null, ringClass: "idle-coin-spin" },
   { name: "drift", dotClass: "idle-drift", ringClass: "idle-drift" },
   {
     name: "hula-hoop",

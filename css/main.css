@@ -194,6 +194,18 @@ body {
   animation: cursor-idle-breathe 4s ease-in-out infinite;
 }
 
+@keyframes cursor-idle-coin-spin-ring {
+  0% {
+    transform: perspective(100px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(100px) rotateY(360deg);
+  }
+}
+#cursor-ring.idle-coin-spin {
+  animation: cursor-idle-coin-spin-ring 0.6s linear infinite;
+}
+
 @keyframes cursor-idle-drift {
   0% {
     transform: translate(0, 0);
