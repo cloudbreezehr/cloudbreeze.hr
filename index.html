@@ -429,6 +429,7 @@
       import { initButtonRipple } from "./js/effects/button-ripple.js";
       import { initNavSparkle } from "./js/effects/nav-sparkle.js";
       import { initLogoBreathing } from "./js/effects/logo-breathing.js";
+      import { initCursorIdle } from "./js/effects/cursor-idle.js";
       import { initFooterHint } from "./js/effects/footer-hint.js";
       import { initUpsideDown } from "./js/modes/upside-down.js";
       import { initFrozen } from "./js/modes/frozen.js";
@@ -450,6 +451,10 @@
       initButtonRipple();
       initNavSparkle();
       initLogoBreathing();
+      initCursorIdle(
+        document.getElementById("cursor"),
+        document.getElementById("cursor-ring"),
+      );
       initFooterHint();
       initUpsideDown();
       initFrozen();

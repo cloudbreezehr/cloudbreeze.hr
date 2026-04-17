@@ -165,6 +165,75 @@ body {
     transform: scale(1.2);
   }
 }
+
+/* ── Cursor Idle Animations ── */
+@keyframes cursor-idle-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+#cursor-ring.idle-breathe {
+  animation: cursor-idle-breathe 4s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(3px, -3px);
+  }
+  50% {
+    transform: translate(0, -5px);
+  }
+  75% {
+    transform: translate(-3px, -3px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+#cursor.idle-drift {
+  animation: cursor-idle-drift 6s ease-in-out infinite;
+}
+#cursor-ring.idle-drift {
+  animation: cursor-idle-drift 6s ease-in-out infinite;
+  animation-delay: -1.5s;
+}
+
+@keyframes cursor-idle-blink {
+  0%,
+  30%,
+  100% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0;
+  }
+}
+#cursor.idle-blink {
+  animation: cursor-idle-blink 4s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-orbit {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+#cursor-ring.idle-orbit {
+  animation: cursor-idle-orbit 8s ease-in-out infinite;
+}
+
 #cursor.visible,
 #cursor-ring.visible {
   opacity: 1;
