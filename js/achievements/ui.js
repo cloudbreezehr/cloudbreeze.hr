@@ -507,7 +507,9 @@ function buildPanel(onHide) {
   });
   const countEl = document.createElement("span");
   countEl.className = "achievement-count-total";
-  countEl.textContent = `${storage.getUnlocked().length}/${ACHIEVEMENTS.length}`;
+  const unlocked = storage.getUnlocked().length;
+  countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+  countEl.setAttribute("data-tooltip", `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`);
 
   footer.appendChild(hideBtn);
   footer.appendChild(countEl);
@@ -526,7 +528,11 @@ function refreshPanel() {
   const pointsEl = panelEl.querySelector(".achievement-points-total");
   if (pointsEl) pointsEl.textContent = `${totalPoints()} pts`;
   const countEl = panelEl.querySelector(".achievement-count-total");
-  if (countEl) countEl.textContent = `${storage.getUnlocked().length}/${ACHIEVEMENTS.length}`;
+  if (countEl) {
+    const unlocked = storage.getUnlocked().length;
+    countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+    countEl.setAttribute("data-tooltip", `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`);
+  }
 
   // Re-render sections
   const body = panelEl.querySelector(".achievement-body");
