@@ -25,7 +25,6 @@ export function initCursor(dotEl, ringEl) {
   let hovering = false;
   let pressing = false;
   let overNativeCursor = false;
-  let idleActive = false;
 
   function setPos(el, x, y) {
     el.style.translate = `calc(${x}px - 50%) calc(${y}px - 50%)`;
@@ -54,9 +53,6 @@ export function initCursor(dotEl, ringEl) {
   animRing();
 
   function applySizes() {
-    // Idle animations own the cursor geometry while running — rod
-    // lengths and pivot offsets assume the default 12/36px sizes.
-    if (idleActive) return;
     const dotSize = pressing
       ? hovering
         ? C.DOT_SIZE_HOVER_PRESS
@@ -76,14 +72,6 @@ export function initCursor(dotEl, ringEl) {
     ringEl.style.width = `${ringSize}px`;
     ringEl.style.height = `${ringSize}px`;
   }
-
-  window.addEventListener("cursor-idle:start", () => {
-    idleActive = true;
-  });
-  window.addEventListener("cursor-idle:end", () => {
-    idleActive = false;
-    applySizes();
-  });
 
   document.addEventListener("mouseover", (e) => {
     if (e.target.closest("a, button")) {

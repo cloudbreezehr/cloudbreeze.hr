@@ -170,7 +170,6 @@ function clearAnimation() {
       removeClasses(anim.outro.dotClass, anim.outro.ringClass);
       currentAnim = null;
       phase = null;
-      window.dispatchEvent(new CustomEvent("cursor-idle:end"));
     }, anim.outro.durationMs);
     return;
   }
@@ -178,7 +177,6 @@ function clearAnimation() {
   removeAllAnimClasses();
   currentAnim = null;
   phase = null;
-  window.dispatchEvent(new CustomEvent("cursor-idle:end"));
 }
 
 function startMainPhase(anim) {
@@ -200,14 +198,6 @@ function playAnimation() {
   clearTimeout(phaseTimer);
   removeAllAnimClasses();
   phase = null;
-
-  // Clear any hover/press inline sizes so the idle keyframes start from
-  // the default 12/36px geometry that their rod lengths and pivots assume.
-  dotEl.style.width = "";
-  dotEl.style.height = "";
-  ringEl.style.width = "";
-  ringEl.style.height = "";
-  window.dispatchEvent(new CustomEvent("cursor-idle:start"));
 
   const anim = pickAnimation();
   currentAnim = anim;
