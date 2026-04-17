@@ -17,6 +17,7 @@ import {
   showActivationPulse,
   onAchievementUnlocked,
 } from "./ui.js";
+import { onKey } from "../keyboard.js";
 
 // ── Triple-click detection ──
 const TRIPLE_CLICK_MAX_MS = 600;
@@ -108,6 +109,24 @@ export function initAchievements() {
         new CustomEvent("achievement", { detail: { type: "linkedin-click" } }),
       );
     });
+  });
+
+  // Keyboard shortcut — L opens/closes Cloudlog
+  onKey("L", () => {
+    if (!storage.isActive()) return;
+    if (isPanelOpen()) {
+      closePanel();
+    } else {
+      openPanel(() => {
+        storage.setHidden(true);
+        hideNavButton();
+      });
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "cloudlog-shortcut" },
+        }),
+      );
+    }
   });
 
   // Triple-click detection

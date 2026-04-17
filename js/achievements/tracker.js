@@ -457,6 +457,10 @@ export function createTracker(onUnlock) {
       tryUnlock("time-warp");
     },
 
+    "cloudlog-shortcut"() {
+      tryUnlock("shortcut-master");
+    },
+
     "cursor-idle"() {
       tryUnlock("idle-hands");
     },

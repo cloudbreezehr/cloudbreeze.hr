@@ -53,6 +53,15 @@ export const ACHIEVEMENTS = [
     points: COMMON,
     hidden: true,
   },
+  {
+    id: "shortcut-master",
+    title: "Shortcut Master",
+    description: "You found the quick way in.",
+    hint: "Open the Cloudlog with a keyboard shortcut",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
   // ── Exploration: Interaction ──
   {
     id: "first-light",
