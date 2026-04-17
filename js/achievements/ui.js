@@ -509,7 +509,10 @@ function buildPanel(onHide) {
   countEl.className = "achievement-count-total";
   const unlocked = storage.getUnlocked().length;
   countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
-  countEl.setAttribute("data-tooltip", `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`);
+  countEl.setAttribute(
+    "data-tooltip",
+    `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
+  );
 
   footer.appendChild(hideBtn);
   footer.appendChild(countEl);
@@ -531,7 +534,10 @@ function refreshPanel() {
   if (countEl) {
     const unlocked = storage.getUnlocked().length;
     countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
-    countEl.setAttribute("data-tooltip", `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`);
+    countEl.setAttribute(
+      "data-tooltip",
+      `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
+    );
   }
 
   // Re-render sections
