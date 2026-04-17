@@ -167,6 +167,20 @@ body {
 }
 
 /* ── Cursor Idle Animations ── */
+@keyframes cursor-idle-blink {
+  0%,
+  30%,
+  100% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0;
+  }
+}
+#cursor.idle-blink {
+  animation: cursor-idle-blink 4s ease-in-out infinite;
+}
+
 @keyframes cursor-idle-breathe {
   0%,
   100% {
@@ -203,20 +217,6 @@ body {
 #cursor-ring.idle-drift {
   animation: cursor-idle-drift 6s ease-in-out infinite;
   animation-delay: -1.5s;
-}
-
-@keyframes cursor-idle-blink {
-  0%,
-  30%,
-  100% {
-    opacity: 1;
-  }
-  15% {
-    opacity: 0;
-  }
-}
-#cursor.idle-blink {
-  animation: cursor-idle-blink 4s ease-in-out infinite;
 }
 
 @keyframes cursor-idle-orbit {

@@ -37,9 +37,9 @@ const C = defineConstants("cursor.idle", {
 // Either class can be null if the animation only targets one element.
 
 const ANIMATIONS = [
+  { name: "blink", dotClass: "idle-blink", ringClass: null },
   { name: "breathe", dotClass: null, ringClass: "idle-breathe" },
   { name: "drift", dotClass: "idle-drift", ringClass: "idle-drift" },
-  { name: "blink", dotClass: "idle-blink", ringClass: null },
   { name: "orbit", dotClass: null, ringClass: "idle-orbit" },
 ];
 
