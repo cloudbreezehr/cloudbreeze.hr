@@ -249,6 +249,27 @@ function markCardSeen(card, id) {
   updateBadge();
 }
 
+function markAllSeen() {
+  const unlocked = storage.getUnlocked();
+  for (const u of unlocked) storage.markSeen(u.id);
+  if (panelEl) {
+    panelEl.querySelectorAll(".achievement-card.unseen").forEach((card) => {
+      card.classList.add("seen-fade");
+      card.classList.remove("unseen");
+      if (_seenObserver) _seenObserver.unobserve(card);
+    });
+  }
+  updateBadge();
+  updateMarkReadVisibility();
+}
+
+function updateMarkReadVisibility() {
+  if (!panelEl) return;
+  const btn = panelEl.querySelector(".achievement-mark-read");
+  if (!btn) return;
+  btn.style.display = storage.getUnseenCount() > 0 ? "" : "none";
+}
+
 // ── Nav Button ──
 
 export function createNavButton(onPanelToggle) {
@@ -448,7 +469,18 @@ function buildPanel(onHide) {
   });
   hintToggle.appendChild(cb);
   hintToggle.appendChild(document.createTextNode(" Reveal hints"));
-  header.appendChild(hintToggle);
+
+  const headerControls = document.createElement("div");
+  headerControls.className = "achievement-header-controls";
+  headerControls.appendChild(hintToggle);
+
+  const markReadBtn = document.createElement("button");
+  markReadBtn.className = "achievement-mark-read";
+  markReadBtn.textContent = "Mark all read";
+  markReadBtn.addEventListener("click", markAllSeen);
+  headerControls.appendChild(markReadBtn);
+
+  header.appendChild(headerControls);
 
   panel.appendChild(header);
 
@@ -476,6 +508,10 @@ function buildPanel(onHide) {
   footer.appendChild(hideBtn);
   panel.appendChild(footer);
 
+  // Hide "Mark all read" when nothing is unseen
+  const markBtn = panel.querySelector(".achievement-mark-read");
+  if (markBtn && storage.getUnseenCount() === 0) markBtn.style.display = "none";
+
   return panel;
 }
 
@@ -494,6 +530,7 @@ function refreshPanel() {
 
   // Re-observe new unseen cards after DOM rebuild
   observeUnseenCards();
+  updateMarkReadVisibility();
 }
 
 function renderSections(container) {

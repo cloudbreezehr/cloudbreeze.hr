@@ -2826,8 +2826,14 @@ nav.nav-light .achievement-btn::after {
 }
 
 /* Hint toggle */
-.achievement-hint-toggle {
+.achievement-header-controls {
   width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.3rem;
+}
+.achievement-hint-toggle {
   font-family: "DM Mono", monospace;
   font-size: 0.6rem;
   color: rgba(255, 255, 255, 0.4);
@@ -2835,10 +2841,22 @@ nav.nav-light .achievement-btn::after {
   align-items: center;
   gap: 0.4rem;
   cursor: pointer;
-  margin-top: 0.3rem;
 }
 .achievement-hint-toggle input {
   accent-color: var(--sky-4);
+}
+.achievement-mark-read {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+.achievement-mark-read:hover {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* ── Panel Body ── */
@@ -3394,6 +3412,12 @@ body.light-mode .achievement-close {
 }
 body.light-mode .achievement-close:hover {
   color: var(--ink);
+}
+body.light-mode .achievement-mark-read {
+  color: rgba(10, 22, 40, 0.3);
+}
+body.light-mode .achievement-mark-read:hover {
+  color: rgba(10, 22, 40, 0.6);
 }
 body.light-mode .achievement-set-header {
   background: rgba(0, 0, 0, 0.03);
