@@ -437,6 +437,7 @@
       import { initBlocky } from "./js/modes/blocky.js";
       import { initRainy } from "./js/modes/rainy.js";
       import { toggleDevConsole, openDevConsole } from "./js/dev/console.js";
+      import { onKey } from "./js/keyboard.js";
       import { initAchievements } from "./js/achievements/index.js";
 
       const theme = initTheme(document.querySelector(".theme-toggle"));
@@ -511,12 +512,7 @@
       window.addEventListener("hashchange", () => {
         if (window.location.hash === "#dev") openDevConsole();
       });
-      document.addEventListener("keydown", (e) => {
-        if (e.ctrlKey && e.shiftKey && e.key === ".") {
-          e.preventDefault();
-          toggleDevConsole();
-        }
-      });
+      onKey(".", toggleDevConsole, { ctrl: true, shift: true });
     </script>
   </body>
 </html>
