@@ -456,6 +456,10 @@ export function createTracker(onUnlock) {
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },
+
+    "cursor-idle"() {
+      tryUnlock("idle-hands");
+    },
   };
 
   // ── Visibility tracking for night-owl ──

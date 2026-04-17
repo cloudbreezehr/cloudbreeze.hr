@@ -336,6 +336,15 @@ export const ACHIEVEMENTS = [
   },
   // ── Mastery: Time / Dedication ──
   {
+    id: "idle-hands",
+    title: "Idle Hands",
+    description: "The cursor stirs on its own.",
+    hint: "Leave the cursor idle long enough to see it animate",
+    set: "mastery",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
     id: "night-owl",
     title: "Night Owl",
     description: "Still here? The sky notices.",
