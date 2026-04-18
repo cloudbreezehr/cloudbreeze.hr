@@ -9,6 +9,7 @@ import {
   isModeSet,
   sumPoints,
 } from "./registry.js";
+import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 import { burstFireworks } from "../effects/fireworks.js";
 
@@ -701,8 +702,11 @@ function renderSections(container) {
 
           // Append inline progress count after timestamp
           if (ach.progressKey) {
-            const total = storage.getProgressTotal(ach.progressKey);
-            const collected = storage.getProgressItems(ach.progressKey).length;
+            const total = resolveProgressTotal(ach.progressKey);
+            const collected = Math.min(
+              resolveProgressCurrent(ach.progressKey),
+              total,
+            );
             if (total > 0) {
               const sep = document.createTextNode(" \u00B7 ");
               const progressSpan = document.createElement("span");
@@ -720,8 +724,8 @@ function renderSections(container) {
         }
       } else if (ach.progressKey) {
         // Locked/relocked: show progress on its own line (where timestamp would be)
-        const total = storage.getProgressTotal(ach.progressKey);
-        const collected = storage.getProgressItems(ach.progressKey).length;
+        const total = resolveProgressTotal(ach.progressKey);
+        const collected = resolveProgressCurrent(ach.progressKey);
         if (total > 0) {
           const progressLine = document.createElement("div");
           progressLine.className =
@@ -740,8 +744,8 @@ function renderSections(container) {
 
       // Progress bar — absolutely positioned at card bottom edge
       if (ach.progressKey) {
-        const total = storage.getProgressTotal(ach.progressKey);
-        const collected = storage.getProgressItems(ach.progressKey).length;
+        const total = resolveProgressTotal(ach.progressKey);
+        const collected = resolveProgressCurrent(ach.progressKey);
         if (total > 0) {
           const barWrap = document.createElement("div");
           barWrap.className = "achievement-card-progress-bar-wrap";
@@ -1000,10 +1004,10 @@ export function showRelockToast(achievement) {
   }
 
   const total = achievement.progressKey
-    ? storage.getProgressTotal(achievement.progressKey)
+    ? resolveProgressTotal(achievement.progressKey)
     : 0;
   const collected = achievement.progressKey
-    ? storage.getProgressItems(achievement.progressKey).length
+    ? Math.min(resolveProgressCurrent(achievement.progressKey), total)
     : 0;
   const progressHint = total > 0 ? ` (${collected}/${total})` : "";
 

@@ -4,53 +4,31 @@
 // This is the only module that triggers unlocks — everything else just
 // dispatches events.
 
+import { getAchievement, getProgressiveAchievements } from "./registry.js";
 import {
-  getSetPrereqs,
-  getAllNonMeta,
-  SET_MASTERY_MAP,
-  MODE_SETS,
-  getAchievement,
-  getProgressiveAchievements,
-  isModeSet,
-  sumPoints,
-} from "./registry.js";
-import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
+  PROGRESS_ITEMS,
+  resolveProgressCurrent,
+  resolveProgressTotal,
+} from "./progress.js";
 import * as storage from "./storage.js";
-
-// ── Progressive Achievement Definitions ──
-// Maps progressKey strings to thunks that return the current valid item names.
-// When items are added or removed, syncProgressTotals() updates storage
-// and checkProgressiveRelocks() handles re-locking/unlocking.
-const PROGRESS_VALID_ITEMS = {
-  "idle-animations": () => IDLE_ANIMATION_NAMES,
-  "modes-activated": () => MODE_SETS,
-};
 
 // ── Timing Constants ──
 const RAPID_FIRE_WINDOW_MS = 3000;
 const RAPID_FIRE_CLICKS = 10;
 const NIGHT_OWL_MS = 600000; // 10 minutes
+const NIGHT_OWL_CHECK_INTERVAL = 30000;
 const SCROLL_STARGAZER = 0.25;
 const SCROLL_BOTTOM = 0.95;
 const SCROLL_TOP = 0.05;
-const THEME_TOGGLE_THRESHOLD = 3;
 const SCROLL_SURGE_VELOCITY = 50;
 const LONG_DRAG_SCREEN_FRACTION = 0.4;
 const PIXEL_PERFECT_RADIUS = 30;
 const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
+const MODE_HOPPER_COUNT = 3;
 const MOONLIT_START_HOUR = 0;
 const MOONLIT_END_HOUR = 5;
-
-// ── Meta thresholds ──
-const META_CURIOUS_COUNT = 5;
-const META_DEDICATED_COUNT = 15;
-const META_HUNDRED_POINTS = 100;
-const META_FIVEHUNDRED_POINTS = 500;
-const META_THOUSAND_POINTS = 1000;
-const MODE_HOPPER_COUNT = 3;
-const TENACIOUS_DAYS = 7;
 
 export function createTracker(onUnlock, onRelock) {
   // ── Session State ──
@@ -59,20 +37,14 @@ export function createTracker(onUnlock, onRelock) {
     clickTimestamps: [],
     hasScrolled25: false,
     hasScrolledBottom: false,
-    themeToggles: 0,
-    hasToggledDark: false,
-    hasToggledLight: false,
-    hasToggledAuto: false,
     hasDragged: false,
     wellActivated: false,
     wellFull: false,
     lightningTriggered: false,
     auroraTriggered: false,
     snowGlobeTriggered: false,
-    quadrants: new Set(), // "tl", "tr", "bl", "br"
     modesActivated: new Set(),
     panelOpened: false,
-    jellyPulses: 0,
     startTime: Date.now(),
     visibleMs: 0,
     lastVisibleTime: document.hidden ? 0 : Date.now(),
@@ -83,118 +55,55 @@ export function createTracker(onUnlock, onRelock) {
     lastFuryTime: 0,
   };
 
-  // ── Helpers ──
+  // ── Unlock ──
 
   function tryUnlock(id) {
     if (storage.isUnlocked(id)) return false;
     const success = storage.unlock(id);
-    if (success) {
-      const achievement = getAchievement(id);
-      if (achievement && onUnlock) onUnlock(achievement);
-      // Unlocking an achievement in a mode set may complete that set's
-      // "unlock all" mastery achievement. Skip when the mastery itself
-      // is the one being unlocked — it can't be its own prerequisite.
-      if (
-        achievement &&
-        isModeSet(achievement.set) &&
-        SET_MASTERY_MAP[achievement.set] !== id
-      ) {
-        checkSetMastery(achievement.set);
-      }
-      checkMeta();
-    }
-    return success;
+    if (!success) return false;
+    const achievement = getAchievement(id);
+    if (achievement && onUnlock) onUnlock(achievement);
+    // Any unlock may satisfy count-based progressives (meta totals,
+    // set mastery, point thresholds). Re-evaluate the progressive set.
+    checkProgressiveState();
+    return true;
   }
 
-  function unlockedCount() {
-    return storage.getUnlocked().length;
-  }
-
-  function checkSetMastery(setId) {
-    const masteryId = SET_MASTERY_MAP[setId];
-    if (!masteryId || storage.isUnlocked(masteryId)) return;
-    const prereqs = getSetPrereqs(setId);
-    if (prereqs.every((id) => storage.isUnlocked(id))) {
-      tryUnlock(masteryId);
-    }
-  }
-
-  function checkMeta() {
-    const count = unlockedCount();
-    const pts = sumPoints(storage.getUnlocked());
-
-    if (count >= META_CURIOUS_COUNT) tryUnlock("curious-mind");
-    if (count >= META_DEDICATED_COUNT) tryUnlock("dedicated");
-    if (pts >= META_HUNDRED_POINTS) tryUnlock("hundred-club");
-    if (pts >= META_FIVEHUNDRED_POINTS) tryUnlock("five-hundred");
-    if (pts >= META_THOUSAND_POINTS) tryUnlock("thousand-club");
-
-    if (session.modesActivated.size >= MODE_HOPPER_COUNT) {
-      tryUnlock("mode-hopper");
-    }
-
-    // Halfway there — 50% of non-meta achievements
-    const allNonMeta = getAllNonMeta();
-    const nonMetaUnlocked = allNonMeta.filter((id) =>
-      storage.isUnlocked(id),
-    ).length;
-    if (nonMetaUnlocked >= Math.ceil(allNonMeta.length / 2)) {
-      tryUnlock("halfway-there");
-    }
-
-    // Completionist: all non-meta achievements
-    if (allNonMeta.every((id) => storage.isUnlocked(id))) {
-      tryUnlock("completionist");
-    }
-  }
-
-  // ── Progressive Achievement Helpers ──
-
-  function resolveProgressTotal(progressKey) {
-    const resolver = PROGRESS_VALID_ITEMS[progressKey];
-    return resolver ? resolver().length : 0;
-  }
+  // ── Progressive Achievements ──
 
   function tryProgressItem(progressKey, item) {
     const added = storage.addProgressItem(progressKey, item);
     if (!added) return;
-    const achievements = getProgressiveAchievements().filter(
-      (a) => a.progressKey === progressKey,
-    );
-    const total = resolveProgressTotal(progressKey);
-    const count = storage.getProgressItems(progressKey).length;
-    if (count >= total) {
-      for (const ach of achievements) {
-        storage.clearRelocked(ach.id);
-        tryUnlock(ach.id);
-      }
-    }
+    checkProgressiveState(progressKey);
   }
 
   function syncProgressTotals() {
-    for (const [key, resolver] of Object.entries(PROGRESS_VALID_ITEMS)) {
+    for (const [key, resolver] of Object.entries(PROGRESS_ITEMS)) {
       const validNames = resolver();
       storage.setProgressTotal(key, validNames.length);
       storage.pruneProgressItems(key, validNames);
     }
   }
 
-  function checkProgressiveState() {
-    const progressiveAchs = getProgressiveAchievements();
-    for (const ach of progressiveAchs) {
+  // Re-evaluate progressive achievements. Pass a progressKey to check only
+  // those achievements; omit it to check all. Count-based and collection-based
+  // both follow the same "current >= total" rule; re-locks fire when current
+  // drops below total (e.g. registry grew, or an unlock was rolled back).
+  function checkProgressiveState(progressKey) {
+    const targets = progressKey
+      ? getProgressiveAchievements().filter(
+          (a) => a.progressKey === progressKey,
+        )
+      : getProgressiveAchievements();
+    for (const ach of targets) {
       const total = resolveProgressTotal(ach.progressKey);
-      const count = storage.getProgressItems(ach.progressKey).length;
+      const current = resolveProgressCurrent(ach.progressKey);
       if (storage.isUnlocked(ach.id)) {
-        // Re-lock if collected items no longer cover the total
-        if (count < total) {
+        if (current < total) {
           storage.relock(ach.id);
-          if (onRelock) {
-            const full = getAchievement(ach.id);
-            if (full) onRelock(full);
-          }
+          if (onRelock) onRelock(ach);
         }
-      } else if (count >= total && total > 0) {
-        // Auto-unlock if total shrank to match collected
+      } else if (current >= total && total > 0) {
         storage.clearRelocked(ach.id);
         tryUnlock(ach.id);
       }
@@ -234,10 +143,7 @@ export function createTracker(onUnlock, onRelock) {
         const midY = window.innerHeight / 2;
         const qx = data.x < midX ? "l" : "r";
         const qy = data.y < midY ? "t" : "b";
-        session.quadrants.add(qy + qx);
-        if (session.quadrants.size >= 4) {
-          tryUnlock("cartographer");
-        }
+        tryProgressItem("quadrants-clicked", qy + qx);
 
         // Pixel perfect — click near viewport center
         const dx = data.x - midX;
@@ -304,28 +210,12 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "theme-change"(data) {
-      session.themeToggles++;
-      if (data && data.theme === "dark") {
-        session.hasToggledDark = true;
-        tryUnlock("nightfall");
-      }
-      if (data && data.theme === "light") {
-        session.hasToggledLight = true;
-        tryUnlock("daybreak");
-      }
-      if (data && data.theme === "auto") {
-        session.hasToggledAuto = true;
-      }
-      if (session.themeToggles >= THEME_TOGGLE_THRESHOLD) {
-        tryUnlock("dusk-and-dawn");
-      }
-      if (
-        session.hasToggledDark &&
-        session.hasToggledLight &&
-        session.hasToggledAuto
-      ) {
-        tryUnlock("full-spectrum");
-      }
+      storage.incrementCounter("themeToggles");
+      checkProgressiveState("theme-toggles-3");
+
+      if (data && data.theme === "dark") tryUnlock("nightfall");
+      if (data && data.theme === "light") tryUnlock("daybreak");
+      if (data && data.theme) tryProgressItem("themes-used", data.theme);
     },
 
     drag(data) {
@@ -460,11 +350,8 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "jellyfish-pulse"() {
-      session.jellyPulses++;
-      const JELLY_PULSE_THRESHOLD = 5;
-      if (session.jellyPulses >= JELLY_PULSE_THRESHOLD) {
-        tryUnlock("jellyfish-drift");
-      }
+      storage.incrementCounter("jellyfishPulses");
+      checkProgressiveState("jellyfish-pulses");
     },
 
     "panel-open"() {
@@ -535,7 +422,10 @@ export function createTracker(onUnlock, onRelock) {
     }
   }
 
-  // ── Session tracking for persistent-explorer ──
+  // ── Session-day tracking ──
+  // Persistent-explorer / tenacious read their totals from progress.js,
+  // which derives from counters.sessionDays. Just record today and let
+  // checkProgressiveState pick them up.
   function trackSession() {
     const today = new Date().toISOString().slice(0, 10);
     const state = storage.getState();
@@ -544,13 +434,6 @@ export function createTracker(onUnlock, onRelock) {
       days.push(today);
       state.counters.sessionDays = days;
       storage.save();
-    }
-    const PERSISTENT_DAYS = 3;
-    if (days.length >= PERSISTENT_DAYS) {
-      tryUnlock("persistent-explorer");
-    }
-    if (days.length >= TENACIOUS_DAYS) {
-      tryUnlock("tenacious");
     }
   }
 
@@ -567,7 +450,6 @@ export function createTracker(onUnlock, onRelock) {
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     // Night owl check every 30 seconds
-    const NIGHT_OWL_CHECK_INTERVAL = 30000;
     setInterval(checkNightOwl, NIGHT_OWL_CHECK_INTERVAL);
 
     trackSession();
@@ -606,7 +488,7 @@ export function createTracker(onUnlock, onRelock) {
     if (session.lightningCount >= CHAIN_LIGHTNING_COUNT)
       tryUnlock("chain-lightning");
     if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
-    checkMeta();
+    checkProgressiveState();
   }
 
   return { start, stop, catchUp, record: handleEvent };

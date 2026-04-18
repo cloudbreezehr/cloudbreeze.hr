@@ -163,6 +163,7 @@ export const ACHIEVEMENTS = [
     set: "exploration",
     points: UNCOMMON,
     hidden: false,
+    progressKey: "theme-toggles-3",
   },
   {
     id: "full-spectrum",
@@ -172,6 +173,7 @@ export const ACHIEVEMENTS = [
     set: "exploration",
     points: UNCOMMON,
     hidden: false,
+    progressKey: "themes-used",
   },
   // ── Exploration: Social ──
   {
@@ -333,6 +335,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: UNCOMMON,
     hidden: true,
+    progressKey: "quadrants-clicked",
   },
   {
     id: "pixel-perfect",
@@ -380,6 +383,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: RARE,
     hidden: true,
+    progressKey: "days-3",
   },
   {
     id: "elemental",
@@ -419,6 +423,7 @@ export const ACHIEVEMENTS = [
     set: "deep-sea",
     points: UNCOMMON,
     hidden: true,
+    progressKey: "jellyfish-pulses",
   },
   {
     id: "pressure-drop",
@@ -473,6 +478,7 @@ export const ACHIEVEMENTS = [
     set: "deep-sea",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "deep-sea-set",
   },
 
   // ── Frozen ──
@@ -538,6 +544,7 @@ export const ACHIEVEMENTS = [
     set: "frozen",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "frozen-set",
   },
 
   // ── Blocky ──
@@ -585,6 +592,7 @@ export const ACHIEVEMENTS = [
     set: "blocky",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "blocky-set",
   },
 
   // ── Rainy ──
@@ -641,6 +649,7 @@ export const ACHIEVEMENTS = [
     set: "rainy",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "rainy-set",
   },
 
   // ── Upside Down ──
@@ -715,6 +724,7 @@ export const ACHIEVEMENTS = [
     set: "upside-down",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "upside-down-set",
   },
 
   // ── Meta / Milestones ──
@@ -726,6 +736,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: UNCOMMON,
     hidden: false,
+    progressKey: "unlocks-5",
   },
   {
     id: "dedicated",
@@ -735,6 +746,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: RARE,
     hidden: true,
+    progressKey: "unlocks-15",
   },
   {
     id: "completionist",
@@ -744,6 +756,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: LEGENDARY,
     hidden: true,
+    progressKey: "non-meta-all",
   },
   {
     id: "mode-hopper",
@@ -762,6 +775,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: UNCOMMON,
     hidden: true,
+    progressKey: "points-100",
   },
   {
     id: "five-hundred",
@@ -771,6 +785,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: RARE,
     hidden: true,
+    progressKey: "points-500",
   },
   {
     id: "thousand-club",
@@ -780,6 +795,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: EPIC,
     hidden: true,
+    progressKey: "points-1000",
   },
   {
     id: "tenacious",
@@ -789,6 +805,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: EPIC,
     hidden: true,
+    progressKey: "days-7",
   },
   {
     id: "halfway-there",
@@ -798,6 +815,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: RARE,
     hidden: true,
+    progressKey: "non-meta-half",
   },
 ];
 

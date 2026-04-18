@@ -172,11 +172,6 @@ export function getProgressItems(key) {
   return entry ? entry.items : [];
 }
 
-export function getProgressTotal(key) {
-  const entry = getState().progress[key];
-  return entry ? entry.total : 0;
-}
-
 export function setProgressTotal(key, total) {
   const state = getState();
   if (!state.progress[key]) {
