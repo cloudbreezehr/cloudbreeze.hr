@@ -400,12 +400,15 @@ export function createTracker(onUnlock, onRelock) {
       }
       if (mode === "deep-sea") {
         tryUnlock("storm-surge");
+        checkSetMastery("deep-sea");
       }
       if (mode === "frozen") {
         tryUnlock("frozen-lightning");
+        checkSetMastery("frozen");
       }
       if (mode === "upside-down") {
         tryUnlock("glitch");
+        checkSetMastery("upside-down");
       }
     },
 
@@ -424,6 +427,7 @@ export function createTracker(onUnlock, onRelock) {
       }
       if (activeMode() === "deep-sea") {
         tryUnlock("permafrost");
+        checkSetMastery("deep-sea");
       }
     },
 
