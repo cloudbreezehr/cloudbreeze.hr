@@ -34,6 +34,7 @@ const FIREWORKS_DELAY_MS = TOAST_SLIDE_IN_MS;
 
 // ── Tooltip Constants ──
 const TOOLTIP_OFFSET_Y = 6;
+const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
 
 // ── Unseen Observer Constants ──
 const SEEN_DWELL_MS = 1000;
@@ -170,13 +171,18 @@ function hideHintTooltip() {
   if (tooltipEl) tooltipEl.classList.remove("visible");
 }
 
-// Hidden achievements never leak their hint via Reveal hints — the reveal
-// toggle only affects their title/description. Their hint is a spoiler and
-// is only exposed while dev tools are active (`body.dev-active`).
-function shouldShowHint(ach, isUnlocked, isRelocked) {
-  if (isUnlocked || isRelocked) return true;
-  if (ach.hidden) return document.body.classList.contains("dev-active");
-  return revealHints;
+// Returns the tooltip string to show on hover, or null to suppress.
+// Hidden achievements never leak their real hint via Reveal hints —
+// that toggle only affects their title/description. A non-revealing
+// placeholder is shown instead so the UI stays consistent. The real
+// hint is only exposed while dev tools are active (`body.dev-active`).
+function resolveHintText(ach, isUnlocked, isRelocked) {
+  if (isUnlocked || isRelocked) return ach.hint;
+  if (ach.hidden) {
+    if (document.body.classList.contains("dev-active")) return ach.hint;
+    return revealHints ? HIDDEN_HINT_PLACEHOLDER : null;
+  }
+  return revealHints ? ach.hint : null;
 }
 
 function positionTooltip(anchor, preferAbove) {
@@ -752,13 +758,12 @@ function renderSections(container) {
         card.addEventListener("click", onCardClick);
       }
 
-      // Hint tooltip on hover.
-      // Unlocked/relocked: always. Locked: when reveal is on.
-      // Hidden: only when dev tools are active (never leak via Reveal hints).
+      // Hint tooltip on hover. The text shown depends on lock/hidden state
+      // and the Reveal hints / dev-active flags — see `resolveHintText`.
       if (ach.hint) {
         card.addEventListener("mouseenter", () => {
-          if (!shouldShowHint(ach, isUnlocked, isRelocked)) return;
-          showHintTooltip(card, ach.hint);
+          const text = resolveHintText(ach, isUnlocked, isRelocked);
+          if (text) showHintTooltip(card, text);
         });
         card.addEventListener("mouseleave", hideHintTooltip);
       }
