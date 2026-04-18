@@ -437,6 +437,7 @@
       import { initBlocky } from "./js/modes/blocky.js";
       import { initRainy } from "./js/modes/rainy.js";
       import { toggleDevConsole, openDevConsole } from "./js/dev/console.js";
+      import { toggleFps } from "./js/dev/fps.js";
       import { onKey } from "./js/keyboard.js";
       import { initAchievements } from "./js/achievements/index.js";
 
@@ -513,6 +514,7 @@
         if (window.location.hash === "#dev") openDevConsole();
       });
       onKey(".", toggleDevConsole, { ctrl: true, shift: true });
+      onKey("F", toggleFps, { ctrl: true, shift: true });
     </script>
   </body>
 </html>

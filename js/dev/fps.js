@@ -50,3 +50,8 @@ export function hideFps() {
   }
   if (el) el.style.display = "none";
 }
+
+export function toggleFps() {
+  if (rafId !== null) hideFps();
+  else showFps();
+}
