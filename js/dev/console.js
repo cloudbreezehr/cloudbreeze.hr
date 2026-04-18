@@ -3,6 +3,7 @@
 // Activated via URL hash #dev or Ctrl+Shift+Period.
 
 import { Z_DEV_CONSOLE } from "../layers.js";
+import { loadDevCss } from "./css-loader.js";
 import { showFps, hideFps } from "./fps.js";
 import {
   getRegistry,
@@ -124,17 +125,6 @@ const MODE_LABELS = {
   "upside-down": "Upside Down Mode",
 };
 const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy", "upside-down"];
-
-// ── Helper: load dev CSS once ──
-let cssLoaded = false;
-function loadDevCss() {
-  if (cssLoaded) return;
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "css/dev.css";
-  document.head.appendChild(link);
-  cssLoaded = true;
-}
 
 // ── Tooltip singleton ──
 let tooltipEl = null;

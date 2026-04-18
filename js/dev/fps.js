@@ -2,6 +2,8 @@
 // Shows a real-time frames-per-second readout in the bottom-left corner.
 // Activated when the dev console opens, hidden when it closes.
 
+import { loadDevCss } from "./css-loader.js";
+
 const UPDATE_INTERVAL_MS = 250;
 const LOW_FPS = 30;
 const MID_FPS = 50;
@@ -36,6 +38,7 @@ function createEl() {
 
 export function showFps() {
   if (rafId !== null) return;
+  loadDevCss();
   if (!el) createEl();
   el.style.display = "";
   frameCount = 0;
