@@ -249,12 +249,13 @@ function playAnimation() {
   }
 }
 
-let pressed = false;
-
-function resetIdle() {
+function resetIdle(e) {
   clearTimeout(idleTimer);
   clearAnimation();
-  if (pressed) return;
+  // MouseEvent.buttons is a bitmask of currently-held buttons;
+  // skip rescheduling while any is down so holding the cursor in
+  // its pressed state doesn't trigger an idle animation.
+  if (e?.buttons) return;
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
 
@@ -268,24 +269,10 @@ export function initCursorIdle(dot, ring) {
   ringEl = ring;
 
   document.addEventListener("mousemove", resetIdle, { passive: true });
+  document.addEventListener("mousedown", resetIdle, { passive: true });
+  document.addEventListener("mouseup", resetIdle, { passive: true });
   document.addEventListener("scroll", resetIdle, { passive: true });
   document.addEventListener("wheel", resetIdle, { passive: true });
-  document.addEventListener(
-    "mousedown",
-    () => {
-      pressed = true;
-      resetIdle();
-    },
-    { passive: true },
-  );
-  document.addEventListener(
-    "mouseup",
-    () => {
-      pressed = false;
-      resetIdle();
-    },
-    { passive: true },
-  );
 
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
