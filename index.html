@@ -513,8 +513,12 @@
       window.addEventListener("hashchange", () => {
         if (window.location.hash === "#dev") openDevConsole();
       });
-      onKey(".", toggleDevConsole, { ctrl: true, shift: true });
-      onKey("F", toggleFps, { ctrl: true, shift: true });
+      onKey(".", toggleDevConsole, {
+        ctrl: true,
+        shift: true,
+        allowInInput: true,
+      });
+      onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
     </script>
   </body>
 </html>
