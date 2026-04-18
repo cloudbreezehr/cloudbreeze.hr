@@ -16,12 +16,19 @@ const C = defineConstants("cursor.idle", {
     step: 1000,
     description: "Idle time before first animation",
   },
+  MAIN_DURATION_MS: {
+    value: 10000,
+    min: 2000,
+    max: 30000,
+    step: 500,
+    description: "How long an animation plays before its outro",
+  },
   RECUR_MS: {
     value: 15000,
     min: 3000,
     max: 30000,
     step: 1000,
-    description: "Base interval between recurring animations",
+    description: "Base interval between recurring animation starts",
   },
   RECUR_JITTER_MS: {
     value: 5000,
@@ -189,9 +196,39 @@ function startMainPhase(anim) {
     }),
   );
 
-  // Schedule next animation with jitter
-  const delay = C.RECUR_MS + Math.random() * C.RECUR_JITTER_MS;
-  idleTimer = setTimeout(playAnimation, delay);
+  // Auto-end after a bounded duration so the outro plays and the
+  // cursor returns to rest before the next animation starts.
+  phaseTimer = setTimeout(endMainPhase, C.MAIN_DURATION_MS);
+
+  // Schedule the next pick so starts stay RECUR_MS (+jitter) apart,
+  // with a safety floor to ensure the outro completes first.
+  const outroMs = anim.outro?.durationMs ?? 0;
+  const delay = Math.max(
+    outroMs,
+    C.RECUR_MS + Math.random() * C.RECUR_JITTER_MS - C.MAIN_DURATION_MS,
+  );
+  idleTimer = setTimeout(playAnimation, C.MAIN_DURATION_MS + delay);
+}
+
+function endMainPhase() {
+  phaseTimer = null;
+  if (!currentAnim || phase !== "main") return;
+
+  const anim = currentAnim;
+  if (anim.outro) {
+    removeAllAnimClasses();
+    applyClasses(anim.outro.dotClass, anim.outro.ringClass);
+    phase = "outro";
+    phaseTimer = setTimeout(() => {
+      removeClasses(anim.outro.dotClass, anim.outro.ringClass);
+      currentAnim = null;
+      phase = null;
+    }, anim.outro.durationMs);
+  } else {
+    removeAllAnimClasses();
+    currentAnim = null;
+    phase = null;
+  }
 }
 
 function playAnimation() {
