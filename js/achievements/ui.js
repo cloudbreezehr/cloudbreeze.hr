@@ -254,6 +254,7 @@ function markCardSeen(card, id) {
   card.classList.remove("unseen");
   if (_seenObserver) _seenObserver.unobserve(card);
   updateBadge();
+  updateMarkReadVisibility();
 }
 
 function markAllSeen() {
