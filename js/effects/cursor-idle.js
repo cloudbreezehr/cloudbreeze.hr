@@ -249,9 +249,12 @@ function playAnimation() {
   }
 }
 
+let pressed = false;
+
 function resetIdle() {
   clearTimeout(idleTimer);
   clearAnimation();
+  if (pressed) return;
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
 
@@ -265,9 +268,24 @@ export function initCursorIdle(dot, ring) {
   ringEl = ring;
 
   document.addEventListener("mousemove", resetIdle, { passive: true });
-  document.addEventListener("mousedown", resetIdle, { passive: true });
   document.addEventListener("scroll", resetIdle, { passive: true });
   document.addEventListener("wheel", resetIdle, { passive: true });
+  document.addEventListener(
+    "mousedown",
+    () => {
+      pressed = true;
+      resetIdle();
+    },
+    { passive: true },
+  );
+  document.addEventListener(
+    "mouseup",
+    () => {
+      pressed = false;
+      resetIdle();
+    },
+    { passive: true },
+  );
 
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
