@@ -3,7 +3,7 @@
 // Activated via URL hash #dev or Ctrl+Shift+Period.
 
 import { Z_DEV_CONSOLE } from "../layers.js";
-import { loadDevCss } from "./css-loader.js";
+import { loadCssOnce } from "./css-loader.js";
 import { showFps, hideFps } from "./fps.js";
 import {
   getRegistry,
@@ -1102,7 +1102,7 @@ export function openDevConsole() {
     panelInstance.panel.querySelector(".dc-btn-collapse").innerHTML = "&#8722;";
     return;
   }
-  loadDevCss();
+  loadCssOnce("css/dev/console.css");
   const { panel, searchInput } = buildPanel();
   document.body.appendChild(panel);
   setupDocking(panel);

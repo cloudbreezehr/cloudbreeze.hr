@@ -5,7 +5,7 @@
  *   100–199   Mode warnings & fullscreen effects
  *   200–299   Transition wipes
  *   300–399   Panels & sidebars (achievements)
- *   400–499   Dev tools (console, tooltips) — loaded via css/dev.css
+ *   400–499   Dev tools (console, tooltips) — loaded via css/dev/*.css
  *   500–599   Toasts, fireworks & ephemeral overlays
  *   600–699   Tooltips & popovers
  *   9000+     Cursor (always on top)
