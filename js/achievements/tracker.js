@@ -8,6 +8,7 @@ import {
   getSetPrereqs,
   getAllNonMeta,
   SET_MASTERY_MAP,
+  MODE_SETS,
   getAchievement,
   getProgressiveAchievements,
   sumPoints,
@@ -21,6 +22,7 @@ import * as storage from "./storage.js";
 // and checkProgressiveRelocks() handles re-locking/unlocking.
 const PROGRESS_VALID_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
+  "modes-activated": () => MODE_SETS,
 };
 
 // ── Timing Constants ──
@@ -47,7 +49,6 @@ const META_HUNDRED_POINTS = 100;
 const META_FIVEHUNDRED_POINTS = 500;
 const META_THOUSAND_POINTS = 1000;
 const MODE_HOPPER_COUNT = 3;
-const ELEMENTAL_MODE_COUNT = 5;
 const TENACIOUS_DAYS = 7;
 
 export function createTracker(onUnlock, onRelock) {
@@ -450,10 +451,8 @@ export function createTracker(onUnlock, onRelock) {
         tryUnlock("mode-hopper");
       }
 
-      // Elemental — all 5 modes in one session
-      if (session.modesActivated.size >= ELEMENTAL_MODE_COUNT) {
-        tryUnlock("elemental");
-      }
+      // Elemental — every mode activated at least once (persistent)
+      tryProgressItem("modes-activated", data.mode);
     },
 
     "mode-deactivate"(data) {

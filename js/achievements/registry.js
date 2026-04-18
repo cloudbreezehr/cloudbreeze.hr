@@ -384,11 +384,12 @@ export const ACHIEVEMENTS = [
   {
     id: "elemental",
     title: "Elemental",
-    description: "Every sky, one session.",
-    hint: "Activate all 5 modes in a single session",
+    description: "Every sky, sampled.",
+    hint: "Activate every mode at least once",
     set: "mastery",
     points: EPIC,
     hidden: true,
+    progressKey: "modes-activated",
   },
 
   // ── Deep Sea ──
@@ -822,7 +823,13 @@ export function sumPoints(unlockedList) {
 }
 
 // Mode set IDs for "unlock all in set" meta-achievements
-const MODE_SETS = ["deep-sea", "frozen", "blocky", "rainy", "upside-down"];
+export const MODE_SETS = [
+  "deep-sea",
+  "frozen",
+  "blocky",
+  "rainy",
+  "upside-down",
+];
 
 // Map from mode set id to its "unlock all" achievement id
 export const SET_MASTERY_MAP = {
