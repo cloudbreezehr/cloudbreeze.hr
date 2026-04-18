@@ -1093,6 +1093,7 @@ let panelInstance = null;
 
 export function openDevConsole() {
   showFps();
+  document.body.classList.add("dev-active");
   window.dispatchEvent(
     new CustomEvent("achievement", { detail: { type: "dev-console-open" } }),
   );
@@ -1126,6 +1127,7 @@ export function openDevConsole() {
 
 export function closeDevConsole() {
   hideFps();
+  document.body.classList.remove("dev-active");
   if (panelInstance) {
     panelInstance.panel.style.display = "none";
   }

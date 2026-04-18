@@ -170,6 +170,15 @@ function hideHintTooltip() {
   if (tooltipEl) tooltipEl.classList.remove("visible");
 }
 
+// Hidden achievements never leak their hint via Reveal hints — the reveal
+// toggle only affects their title/description. Their hint is a spoiler and
+// is only exposed while dev tools are active (`body.dev-active`).
+function shouldShowHint(ach, isUnlocked, isRelocked) {
+  if (isUnlocked || isRelocked) return true;
+  if (ach.hidden) return document.body.classList.contains("dev-active");
+  return revealHints;
+}
+
 function positionTooltip(anchor, preferAbove) {
   if (!tooltipEl) return;
   const rect = anchor.getBoundingClientRect();
@@ -743,12 +752,14 @@ function renderSections(container) {
         card.addEventListener("click", onCardClick);
       }
 
-      // Hint tooltip on hover — unlocked/relocked always, locked/hidden when reveal is on
-      const showHint = ach.hint && (isUnlocked || isRelocked || revealHints);
-      if (showHint) {
-        card.addEventListener("mouseenter", () =>
-          showHintTooltip(card, ach.hint),
-        );
+      // Hint tooltip on hover.
+      // Unlocked/relocked: always. Locked: when reveal is on.
+      // Hidden: only when dev tools are active (never leak via Reveal hints).
+      if (ach.hint) {
+        card.addEventListener("mouseenter", () => {
+          if (!shouldShowHint(ach, isUnlocked, isRelocked)) return;
+          showHintTooltip(card, ach.hint);
+        });
         card.addEventListener("mouseleave", hideHintTooltip);
       }
 
