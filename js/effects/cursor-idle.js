@@ -28,7 +28,8 @@ const C = defineConstants("cursor.idle", {
     min: 3000,
     max: 30000,
     step: 1000,
-    description: "Base interval between recurring animation starts",
+    description:
+      "Base idle gap between one animation ending and the next starting",
   },
   RECUR_JITTER_MS: {
     value: 5000,
@@ -200,14 +201,11 @@ function startMainPhase(anim) {
   // cursor returns to rest before the next animation starts.
   phaseTimer = setTimeout(endMainPhase, C.MAIN_DURATION_MS);
 
-  // Schedule the next pick so starts stay RECUR_MS (+jitter) apart,
-  // with a safety floor to ensure the outro completes first.
+  // Schedule the next pick so the cursor sits idle for RECUR_MS
+  // (+jitter) after the outro completes before the next intro begins.
   const outroMs = anim.outro?.durationMs ?? 0;
-  const delay = Math.max(
-    outroMs,
-    C.RECUR_MS + Math.random() * C.RECUR_JITTER_MS - C.MAIN_DURATION_MS,
-  );
-  idleTimer = setTimeout(playAnimation, C.MAIN_DURATION_MS + delay);
+  const gap = C.RECUR_MS + Math.random() * C.RECUR_JITTER_MS;
+  idleTimer = setTimeout(playAnimation, C.MAIN_DURATION_MS + outroMs + gap);
 }
 
 function endMainPhase() {
