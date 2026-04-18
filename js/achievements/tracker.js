@@ -11,6 +11,7 @@ import {
   MODE_SETS,
   getAchievement,
   getProgressiveAchievements,
+  isModeSet,
   sumPoints,
 } from "./registry.js";
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
@@ -90,6 +91,16 @@ export function createTracker(onUnlock, onRelock) {
     if (success) {
       const achievement = getAchievement(id);
       if (achievement && onUnlock) onUnlock(achievement);
+      // Unlocking an achievement in a mode set may complete that set's
+      // "unlock all" mastery achievement. Skip when the mastery itself
+      // is the one being unlocked — it can't be its own prerequisite.
+      if (
+        achievement &&
+        isModeSet(achievement.set) &&
+        SET_MASTERY_MAP[achievement.set] !== id
+      ) {
+        checkSetMastery(achievement.set);
+      }
       checkMeta();
     }
     return success;
@@ -364,14 +375,8 @@ export function createTracker(onUnlock, onRelock) {
       }
 
       const mode = activeMode();
-      if (mode === "deep-sea") {
-        tryUnlock("pressure-drop");
-        checkSetMastery("deep-sea");
-      }
-      if (mode === "rainy") {
-        tryUnlock("monsoon");
-        checkSetMastery("rainy");
-      }
+      if (mode === "deep-sea") tryUnlock("pressure-drop");
+      if (mode === "rainy") tryUnlock("monsoon");
     },
 
     "well-full"() {
@@ -391,26 +396,11 @@ export function createTracker(onUnlock, onRelock) {
       }
 
       const mode = activeMode();
-      if (mode === "blocky") {
-        tryUnlock("8-bit-storm");
-        checkSetMastery("blocky");
-      }
-      if (mode === "rainy") {
-        tryUnlock("thunder-roll");
-        checkSetMastery("rainy");
-      }
-      if (mode === "deep-sea") {
-        tryUnlock("storm-surge");
-        checkSetMastery("deep-sea");
-      }
-      if (mode === "frozen") {
-        tryUnlock("frozen-lightning");
-        checkSetMastery("frozen");
-      }
-      if (mode === "upside-down") {
-        tryUnlock("glitch");
-        checkSetMastery("upside-down");
-      }
+      if (mode === "blocky") tryUnlock("8-bit-storm");
+      if (mode === "rainy") tryUnlock("thunder-roll");
+      if (mode === "deep-sea") tryUnlock("storm-surge");
+      if (mode === "frozen") tryUnlock("frozen-lightning");
+      if (mode === "upside-down") tryUnlock("glitch");
     },
 
     "fury-aurora"() {
@@ -422,14 +412,8 @@ export function createTracker(onUnlock, onRelock) {
       session.snowGlobeTriggered = true;
       tryUnlock("snow-globe");
 
-      if (activeMode() === "frozen") {
-        tryUnlock("blizzard");
-        checkSetMastery("frozen");
-      }
-      if (activeMode() === "deep-sea") {
-        tryUnlock("permafrost");
-        checkSetMastery("deep-sea");
-      }
+      if (activeMode() === "frozen") tryUnlock("blizzard");
+      if (activeMode() === "deep-sea") tryUnlock("permafrost");
     },
 
     "mode-activate"(data) {
@@ -464,10 +448,7 @@ export function createTracker(onUnlock, onRelock) {
         rainy: "rainbow",
         "upside-down": "restoration",
       };
-      if (deactivateMap[data.mode]) {
-        tryUnlock(deactivateMap[data.mode]);
-        checkSetMastery(data.mode);
-      }
+      if (deactivateMap[data.mode]) tryUnlock(deactivateMap[data.mode]);
     },
 
     "upside-down-warning"() {
@@ -476,7 +457,6 @@ export function createTracker(onUnlock, onRelock) {
 
     "frost-breath"() {
       tryUnlock("frost-breath");
-      checkSetMastery("frozen");
     },
 
     "jellyfish-pulse"() {
@@ -484,7 +464,6 @@ export function createTracker(onUnlock, onRelock) {
       const JELLY_PULSE_THRESHOLD = 5;
       if (session.jellyPulses >= JELLY_PULSE_THRESHOLD) {
         tryUnlock("jellyfish-drift");
-        checkSetMastery("deep-sea");
       }
     },
 
@@ -505,10 +484,7 @@ export function createTracker(onUnlock, onRelock) {
 
     orbit() {
       tryUnlock("orbit-lock");
-      if (activeMode() === "deep-sea") {
-        tryUnlock("deep-orbit");
-        checkSetMastery("deep-sea");
-      }
+      if (activeMode() === "deep-sea") tryUnlock("deep-orbit");
     },
 
     "dev-console-open"() {
