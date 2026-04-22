@@ -920,7 +920,6 @@ nav {
 .nav-links a.nav-cta {
   font-family: "DM Mono", monospace;
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--sky-3);
   border: 1px solid rgba(55, 138, 221, 0.4);
