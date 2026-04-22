@@ -970,7 +970,7 @@ function flashHighlight(el) {
   el.animate(
     [
       { backgroundColor: `rgba(${rgb}, ${HIGHLIGHT_PEAK_ALPHA})` },
-      { backgroundColor: "rgba(0, 0, 0, 0)" },
+      { backgroundColor: `rgba(${rgb}, 0)` },
     ],
     { duration: HIGHLIGHT_DURATION_MS, easing: "ease-out" },
   );
