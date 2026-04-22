@@ -1053,16 +1053,21 @@ function isAutoScrollSuppressed() {
 
 // ── Section activation auto-scroll ──
 // When an interactive feature activates (e.g. lightning tier reached),
-// scroll to its config section once per session so the user can tweak it.
+// scroll to its config section so the user can tweak it.  A per-category
+// cooldown prevents continuous activations (like every click firing
+// interactions.click) from scroll-thrashing the panel.
 
-const _seenActiveSections = new Set();
+const SECTION_ACTIVATE_COOLDOWN_MS = 3000;
+const _lastActivatedAt = new Map();
 
 function setupSectionActivateListener(panel) {
   onSectionActivate((category) => {
-    if (_seenActiveSections.has(category)) return;
     if (panel.style.display === "none") return;
     if (isAutoScrollSuppressed()) return;
-    _seenActiveSections.add(category);
+    const now = performance.now();
+    const last = _lastActivatedAt.get(category) || 0;
+    if (now - last < SECTION_ACTIVATE_COOLDOWN_MS) return;
+    _lastActivatedAt.set(category, now);
 
     const sectionEl = panel.querySelector(
       `.dc-section[data-category="${category}"]`,
