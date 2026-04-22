@@ -948,6 +948,33 @@ function setsEqual(a, b) {
 }
 
 const SCROLL_INTO_VIEW_DELAY_MS = 80;
+// ── Highlight pulse on auto-scroll target ──
+const HIGHLIGHT_DURATION_MS = 1200;
+const HIGHLIGHT_FALLBACK_COLOR = "125, 191, 232"; // matches --mode-color default
+const HIGHLIGHT_PEAK_ALPHA = 0.22;
+
+function parseModeColor(cssColor) {
+  // Accept #rrggbb — the only format used in MODE_COLORS.
+  if (!cssColor || cssColor[0] !== "#" || cssColor.length !== 7) return null;
+  const r = parseInt(cssColor.slice(1, 3), 16);
+  const g = parseInt(cssColor.slice(3, 5), 16);
+  const b = parseInt(cssColor.slice(5, 7), 16);
+  if ([r, g, b].some(Number.isNaN)) return null;
+  return `${r}, ${g}, ${b}`;
+}
+
+function flashHighlight(el) {
+  if (!el) return;
+  const modeColor = parseModeColor(el.style.getPropertyValue("--mode-color"));
+  const rgb = modeColor || HIGHLIGHT_FALLBACK_COLOR;
+  el.animate(
+    [
+      { backgroundColor: `rgba(${rgb}, ${HIGHLIGHT_PEAK_ALPHA})` },
+      { backgroundColor: "rgba(0, 0, 0, 0)" },
+    ],
+    { duration: HIGHLIGHT_DURATION_MS, easing: "ease-out" },
+  );
+}
 
 function updateModeStates(panel) {
   const activeModes = new Set();
@@ -1012,6 +1039,7 @@ function updateModeStates(panel) {
         const targetRect = scrollTarget.getBoundingClientRect();
         const offset = targetRect.top - bodyRect.top + body.scrollTop;
         body.scrollTo({ top: offset, behavior: "smooth" });
+        flashHighlight(scrollTarget);
       }, SCROLL_INTO_VIEW_DELAY_MS);
     }
   }
@@ -1088,6 +1116,7 @@ function setupSectionActivateListener(panel) {
       const targetRect = sectionEl.getBoundingClientRect();
       const offset = targetRect.top - bodyRect.top + body.scrollTop;
       body.scrollTo({ top: offset, behavior: "smooth" });
+      flashHighlight(sectionEl);
     }, SCROLL_INTO_VIEW_DELAY_MS);
   });
 }
