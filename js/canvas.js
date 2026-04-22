@@ -268,6 +268,18 @@ export function initCanvas(canvasEl, theme, options) {
 
   let lastFrameTime = performance.now();
   let wasRainy = false;
+
+  // ── Sky gradient cache ──
+  // Rebuilding the gradient every frame is the most expensive per-frame op.
+  // Cache and invalidate only when inputs meaningfully change: palette color
+  // arrays, canvas height, or scroll progress (quantized to 512 buckets — the
+  // visual difference between adjacent buckets is imperceptible).
+  const SKY_GRADIENT_BUCKETS = 512;
+  let cachedSkyGradient = null;
+  let cachedSkyTop = null;
+  let cachedSkyBot = null;
+  let cachedSkyHeight = 0;
+  let cachedSkyBucket = -1;
   function render() {
     const now = performance.now();
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
@@ -296,15 +308,29 @@ export function initCanvas(canvasEl, theme, options) {
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Scroll-interpolated sky gradient
+    // Scroll-interpolated sky gradient — rebuilt only when inputs change
     if (opts.sky) {
-      const skyTop = multiLerp(pal.skyTop, sp);
-      const skyBot = multiLerp(pal.skyBot, sp);
-      const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
-      bg.addColorStop(0, toRgba(skyTop));
-      bg.addColorStop(0.5, toRgba(lerpColor(skyTop, skyBot, 0.5)));
-      bg.addColorStop(1, toRgba(skyBot));
-      ctx.fillStyle = bg;
+      const bucket = Math.round(sp * SKY_GRADIENT_BUCKETS);
+      if (
+        cachedSkyGradient === null ||
+        cachedSkyTop !== pal.skyTop ||
+        cachedSkyBot !== pal.skyBot ||
+        cachedSkyHeight !== canvas.height ||
+        cachedSkyBucket !== bucket
+      ) {
+        const skyTop = multiLerp(pal.skyTop, sp);
+        const skyBot = multiLerp(pal.skyBot, sp);
+        const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        bg.addColorStop(0, toRgba(skyTop));
+        bg.addColorStop(0.5, toRgba(lerpColor(skyTop, skyBot, 0.5)));
+        bg.addColorStop(1, toRgba(skyBot));
+        cachedSkyGradient = bg;
+        cachedSkyTop = pal.skyTop;
+        cachedSkyBot = pal.skyBot;
+        cachedSkyHeight = canvas.height;
+        cachedSkyBucket = bucket;
+      }
+      ctx.fillStyle = cachedSkyGradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
