@@ -918,7 +918,6 @@ export function createInteractions() {
 
     // Spawn click burst particles at (x, y). Skipped in blocky mode.
     click(x, y, pal) {
-      notifySectionActivate("interactions.click");
       const count =
         CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);
       for (let i = 0; i < count; i++) {
