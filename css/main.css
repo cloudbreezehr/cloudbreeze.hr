@@ -917,12 +917,12 @@ nav {
   pointer-events: none;
 }
 
-.nav-cta {
+.nav-links a.nav-cta {
   font-family: "DM Mono", monospace;
   font-size: 0.72rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--sky-3) !important;
+  color: var(--sky-3);
   border: 1px solid rgba(55, 138, 221, 0.4);
   padding: 0.55rem 1.2rem;
   border-radius: 100px;
@@ -930,15 +930,15 @@ nav {
   transition:
     background 0.3s,
     border-color 0.3s,
-    color 0.3s !important;
+    color 0.3s;
 }
-.nav-cta:hover,
-.nav-cta.active {
-  background: rgba(55, 138, 221, 0.15) !important;
-  border-color: var(--sky-3) !important;
+.nav-links a.nav-cta:hover,
+.nav-links a.nav-cta.active {
+  background: rgba(55, 138, 221, 0.15);
+  border-color: var(--sky-3);
 }
-.nav-cta::after {
-  display: none !important;
+.nav-links a.nav-cta::after {
+  display: none;
 }
 
 /* Hamburger menu */
@@ -1730,11 +1730,11 @@ nav.nav-light .nav-links a::after {
   background: var(--sky-5);
 }
 nav.nav-light .nav-cta {
-  color: var(--sky-5) !important;
+  color: var(--sky-5);
   border-color: rgba(26, 95, 168, 0.4);
 }
 nav.nav-light .nav-cta:hover {
-  background: rgba(55, 138, 221, 0.1) !important;
+  background: rgba(55, 138, 221, 0.1);
 }
 nav.nav-light .nav-burger {
   color: rgba(10, 22, 40, 0.6);
@@ -2198,12 +2198,12 @@ body[data-active-theme="upside-down"] .service-card:hover {
 }
 
 body[data-active-theme="upside-down"] .nav-cta {
-  color: var(--sky-3) !important;
+  color: var(--sky-3);
   border-color: rgba(221, 55, 55, 0.4);
 }
 body[data-active-theme="upside-down"] .nav-cta:hover {
-  background: rgba(221, 55, 55, 0.15) !important;
-  border-color: var(--sky-3) !important;
+  background: rgba(221, 55, 55, 0.15);
+  border-color: var(--sky-3);
 }
 
 body[data-active-theme="upside-down"] .contact-card {
@@ -2425,27 +2425,27 @@ body.frozen .frost-card:hover::after {
 }
 
 /* Frozen card state */
-body.frozen .card-frozen {
-  background: rgba(0, 200, 240, 0.08) !important;
+body.frozen .service-card.card-frozen {
+  background: rgba(0, 200, 240, 0.08);
   box-shadow: inset 0 0 20px rgba(0, 220, 255, 0.1);
 }
-body.frozen .card-frozen::before {
-  transform: scaleX(1) !important;
+body.frozen .service-card.card-frozen::before {
+  transform: scaleX(1);
   background: linear-gradient(
     90deg,
     transparent,
     rgba(0, 220, 255, 0.6),
     transparent
-  ) !important;
+  );
 }
 
 body[data-active-theme="frozen"] .nav-cta {
-  color: rgb(0, 200, 240) !important;
+  color: rgb(0, 200, 240);
   border-color: rgba(0, 200, 240, 0.4);
 }
 body[data-active-theme="frozen"] .nav-cta:hover {
-  background: rgba(0, 200, 240, 0.15) !important;
-  border-color: rgb(0, 200, 240) !important;
+  background: rgba(0, 200, 240, 0.15);
+  border-color: rgb(0, 200, 240);
 }
 
 body[data-active-theme="frozen"] .contact-card {
@@ -2675,12 +2675,12 @@ body.deep-sea .caustic-card:hover::after {
 }
 
 body[data-active-theme="deep-sea"] .nav-cta {
-  color: rgb(0, 200, 160) !important;
+  color: rgb(0, 200, 160);
   border-color: rgba(0, 200, 160, 0.4);
 }
 body[data-active-theme="deep-sea"] .nav-cta:hover {
-  background: rgba(0, 200, 160, 0.15) !important;
-  border-color: rgb(0, 200, 160) !important;
+  background: rgba(0, 200, 160, 0.15);
+  border-color: rgb(0, 200, 160);
 }
 
 body[data-active-theme="deep-sea"] .contact-card {
@@ -2899,12 +2899,12 @@ body.blocky .pixel-card:hover::after {
 }
 
 body[data-active-theme="blocky"] .nav-cta {
-  color: rgb(100, 255, 100) !important;
+  color: rgb(100, 255, 100);
   border-color: rgba(100, 255, 100, 0.4);
 }
 body[data-active-theme="blocky"] .nav-cta:hover {
-  background: rgba(100, 255, 100, 0.15) !important;
-  border-color: rgb(100, 255, 100) !important;
+  background: rgba(100, 255, 100, 0.15);
+  border-color: rgb(100, 255, 100);
 }
 
 body[data-active-theme="blocky"] .contact-card {
