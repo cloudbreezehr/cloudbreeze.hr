@@ -9,6 +9,7 @@ import { createBlocky } from "./particles/blocky.js";
 import { createRain } from "./particles/rain.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
+import { prefersReducedMotion } from "./motion.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -310,16 +311,23 @@ export function initCanvas(canvasEl, theme, options) {
     // Stars and shooting stars
     if (sky) sky.draw(ctx, canvas, sp, pal, forces);
 
-    // Click fury — lightning, aurora, meteors
-    fury.draw(ctx, canvas, pal, sp, dt, now);
+    const reducedMotion = prefersReducedMotion();
 
-    // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes
+    // Click fury — lightning, aurora, meteors.  Skipped under reduced-motion:
+    // flashing/sweeping effects are the riskiest for vestibular sensitivity.
+    if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);
+
+    // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
+    // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
     scrollVelocity *= SCROLL.VEL_DECAY;
+    const drawVelocity = reducedMotion ? 0 : scrollVelocity;
     interactions.updateHold(forces, performance.now());
-    atmosphere.draw(sp, scrollVelocity, pal, forces, isBlocky);
-    // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe
+    atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
+    // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe.
+    // Under reduced-motion, suppress snow-globe turbulence so reversals don't shake.
     if (isFrozen) {
-      snow.draw(forces, scrollVelocity, snowTurbulence);
+      const turbulence = reducedMotion ? { value: 0 } : snowTurbulence;
+      snow.draw(forces, drawVelocity, turbulence);
     }
 
     // Bubbles + Jellyfish — deep-sea mode
