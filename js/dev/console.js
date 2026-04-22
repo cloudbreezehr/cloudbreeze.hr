@@ -1023,7 +1023,11 @@ function updateModeStates(panel) {
       if (subHeader) scrollTarget = subHeader;
     }
 
-    if (scrollTarget && !isAutoScrollSuppressed()) {
+    if (
+      scrollTarget &&
+      panel.style.display !== "none" &&
+      !isAutoScrollSuppressed()
+    ) {
       // Expand parent group if collapsed
       const parentGroup = scrollTarget.closest(".dc-group");
       if (parentGroup && parentGroup.classList.contains("collapsed")) {
