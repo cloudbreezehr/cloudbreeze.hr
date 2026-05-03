@@ -111,27 +111,43 @@ function ensureHud() {
   hudEl.setAttribute("aria-label", "Mode history");
   hudEl.setAttribute("role", "group");
 
-  // Tucked-state handle — a small chevron tab users click/hover to reveal the
-  // HUD when no mode is active.  Hidden (display:none via CSS) when expanded.
-  const handle = document.createElement("button");
-  handle.type = "button";
-  handle.className = "mhh-handle";
-  handle.setAttribute("aria-label", "Expand mode history");
-  handle.innerHTML =
-    '<svg viewBox="0 0 12 6" aria-hidden="true"><path d="M1 1l5 4 5-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-  hudEl.appendChild(handle);
+  // Down-chevron handle — visible when tucked.  Click to expand.
+  const expandHandle = document.createElement("button");
+  expandHandle.type = "button";
+  expandHandle.className = "mhh-handle mhh-handle-expand";
+  expandHandle.setAttribute("aria-label", "Expand mode history");
+  expandHandle.innerHTML = chevronSvg("down");
+  hudEl.appendChild(expandHandle);
 
   const track = document.createElement("div");
   track.className = "mhh-track";
   hudEl.appendChild(track);
 
-  document.body.appendChild(hudEl);
+  // Up-chevron handle — visible when expanded.  Click to tuck even if a mode
+  // is active.  The manual-tuck state lives in memory; a reload re-reveals
+  // the HUD so its discoverability isn't lost between sessions.
+  const tuckHandle = document.createElement("button");
+  tuckHandle.type = "button";
+  tuckHandle.className = "mhh-handle mhh-handle-tuck";
+  tuckHandle.setAttribute("aria-label", "Tuck mode history");
+  tuckHandle.innerHTML = chevronSvg("up");
+  hudEl.appendChild(tuckHandle);
 
-  hudEl.addEventListener("pointerenter", expand);
+  // Parent to the nav so the HUD sticks to its bottom edge — when the nav
+  // scrolls up/down during overscroll, the HUD rides along.  Falls back to
+  // body if nav isn't found.
+  const navEl = document.querySelector("nav");
+  (navEl || document.body).appendChild(hudEl);
+
+  // Hover reveals labels while the HUD is already visible (compact state).
+  // Tuck ↔ expand transitions are click-only — those are commitments, not
+  // drive-bys.  Focus also expands for keyboard users.
+  hudEl.addEventListener("pointerenter", onHoverEnter);
   hudEl.addEventListener("pointerleave", scheduleTuck);
   hudEl.addEventListener("focusin", expand);
   hudEl.addEventListener("focusout", scheduleTuck);
-  handle.addEventListener("click", expand);
+  expandHandle.addEventListener("click", expand);
+  tuckHandle.addEventListener("click", manualTuck);
 
   // Size slots consistently by the longest label so layout is stable.
   hudEl.style.setProperty("--mhh-slot-width", `${longestLabelCh()}ch`);
@@ -223,19 +239,36 @@ function pulse(modeId, firstDiscovery) {
   setTimeout(() => slot.classList.remove("pulse"), HUD.ACTIVE_PULSE_MS);
 }
 
-let isHovered = false;
+// User manually tucked via the up-chevron.  Overrides the "active mode keeps
+// HUD visible" rule.  In-memory only — a page reload restores discoverability.
+let userTucked = false;
 
 function expand() {
   if (!hudEl) return;
-  isHovered = true;
+  userTucked = false;
   clearTimeout(collapseTimer);
   hudEl.classList.remove("tucked");
   hudEl.classList.add("expanded");
 }
 
+// Pointer enter: only reveal labels if the HUD is already visible.  Hovering
+// the tiny tucked chevron shouldn't silently slide the full HUD open —
+// expanding from tucked is a click action.
+function onHoverEnter() {
+  if (!hudEl || hudEl.classList.contains("tucked")) return;
+  expand();
+}
+
+function manualTuck() {
+  if (!hudEl) return;
+  userTucked = true;
+  clearTimeout(collapseTimer);
+  hudEl.classList.remove("expanded");
+  hudEl.classList.add("tucked");
+}
+
 function scheduleTuck() {
   if (!hudEl) return;
-  isHovered = false;
   clearTimeout(collapseTimer);
   collapseTimer = setTimeout(() => {
     hudEl.classList.remove("expanded");
@@ -243,11 +276,17 @@ function scheduleTuck() {
   }, HUD.COLLAPSE_DELAY_MS);
 }
 
-// Tucked iff no mode is currently active AND the user isn't interacting.
-// Any active mode pins the HUD in compact-visible state.
+// Tucked iff:
+//   - the user has manually tucked it, OR
+//   - no mode is currently active.
+// An active mode keeps the HUD in compact-visible state until manually tucked.
 function updateTucked() {
   if (!hudEl) return;
-  if (isHovered) return; // expand() already cleared tucked
+  if (hudEl.classList.contains("expanded")) return;
+  if (userTucked) {
+    hudEl.classList.add("tucked");
+    return;
+  }
   const anyActive = SUBMODE_IDS.some((id) =>
     document.body.classList.contains(id),
   );
@@ -277,6 +316,15 @@ function saveDiscovered() {
 }
 
 // ── Helpers ──
+
+function chevronSvg(direction) {
+  const path = direction === "up" ? "M1 5l5-4 5 4" : "M1 1l5 4 5-4";
+  return (
+    '<svg viewBox="0 0 12 6" aria-hidden="true">' +
+    `<path d="${path}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    "</svg>"
+  );
+}
 
 function formatRelative(ts) {
   const diff = Date.now() - ts;

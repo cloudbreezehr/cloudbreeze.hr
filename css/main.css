@@ -4028,10 +4028,11 @@ body.light-mode .achievement-tooltip {
 /* ── Mode History HUD ── */
 
 .mode-history-hud {
-  position: fixed;
-  top: 4.5rem;
+  position: absolute;
+  top: 100%;
   left: 50%;
   translate: -50% -4px;
+  margin-top: 8px;
   opacity: 0;
   padding: 5px 10px;
   background: rgba(10, 18, 32, 0.55);
@@ -4057,7 +4058,7 @@ body.light-mode .achievement-tooltip {
   border-color: rgba(120, 160, 220, 0.32);
 }
 
-/* ── Tucked state — compact down-chevron tab ── */
+/* ── Expand / tuck chevron buttons ── */
 .mhh-handle {
   display: none;
   align-items: center;
@@ -4080,16 +4081,27 @@ body.light-mode .achievement-tooltip {
   width: 12px;
   height: 6px;
 }
+.mhh-handle-tuck {
+  margin-left: 6px;
+  margin-right: -2px;
+}
+
 .mode-history-hud.tucked {
   padding: 2px 6px;
   background: rgba(10, 18, 32, 0.35);
   border-color: rgba(120, 160, 220, 0.1);
 }
-.mode-history-hud.tucked .mhh-handle {
+.mode-history-hud.tucked .mhh-handle-expand {
   display: flex;
 }
-.mode-history-hud.tucked .mhh-track {
+.mode-history-hud.tucked .mhh-track,
+.mode-history-hud.tucked .mhh-handle-tuck {
   display: none;
+}
+/* Up-chevron is shown whenever the HUD isn't tucked — gives the user a
+   persistent "tuck me" affordance in compact and expanded states alike. */
+.mode-history-hud:not(.tucked) .mhh-handle-tuck {
+  display: flex;
 }
 
 .mhh-track {
@@ -4225,9 +4237,6 @@ body.light-mode .achievement-tooltip {
 
 /* Mobile — tighter, no hover-to-expand (tap expands via focus) */
 @media (max-width: 600px) {
-  .mode-history-hud {
-    top: 3.5rem;
-  }
   .mhh-track {
     gap: 2px;
   }
@@ -4241,10 +4250,6 @@ body.light-mode .achievement-tooltip {
 body.upside-down .achievement-toast-container {
   bottom: auto;
   top: 1.5rem;
-  transform: scaleY(-1);
-}
-
-body.upside-down .mode-history-hud {
   transform: scaleY(-1);
 }
 
