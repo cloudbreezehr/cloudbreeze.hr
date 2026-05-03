@@ -110,6 +110,15 @@ export const ACHIEVEMENTS = [
     points: COMMON,
     hidden: true,
   },
+  {
+    id: "historian",
+    title: "Historian",
+    description: "Your path becomes visible.",
+    hint: "Discover your first hidden mode",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Exploration: Scroll ──
   {
     id: "stargazer",

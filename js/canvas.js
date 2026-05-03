@@ -10,6 +10,7 @@ import { createRain } from "./particles/rain.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
+import { SUBMODE_IDS } from "./modes/registry.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -28,11 +29,6 @@ const SCROLL = defineConstants("canvas.scroll", {
     description: "Scroll velocity decay per frame",
   },
 });
-
-// ── Sub-mode registry ──
-// Body class names for each easter-egg mode. Used for active mode detection
-// and palette resolution. Adding a new mode: push its body class here.
-const SUBMODES = ["deep-sea", "frozen", "blocky", "rainy", "upside-down"];
 
 // ── Particle counts ──
 const COUNTS = defineConstants("canvas.particles", {
@@ -290,7 +286,7 @@ export function initCanvas(canvasEl, theme, options) {
     const isBlocky = document.body.classList.contains("blocky");
     const isRainy = document.body.classList.contains("rainy");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
-    const activeModes = SUBMODES.filter((m) =>
+    const activeModes = SUBMODE_IDS.filter((m) =>
       document.body.classList.contains(m),
     );
     const lastSub = document.body.dataset.lastSubmode;

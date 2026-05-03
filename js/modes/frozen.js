@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { registerMode } from "./registry.js";
 
 // ── Force & Activation ──
 const FF = defineConstants(
@@ -318,4 +319,8 @@ export function initFrozen() {
     requestAnimationFrame(tick);
   }
   tick();
+
+  registerMode("frozen", {
+    toggle: () => (isFrozen ? triggerThaw() : triggerFreeze()),
+  });
 }

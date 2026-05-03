@@ -382,6 +382,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("magnetic-letters");
     },
 
+    "mode-history-reveal"() {
+      tryUnlock("historian");
+    },
+
     "cloudlog-activate"() {
       tryUnlock("cloudlog-activated");
     },

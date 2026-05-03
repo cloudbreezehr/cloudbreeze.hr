@@ -3,6 +3,7 @@ import { bindPointer } from "../pointer.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { registerMode } from "./registry.js";
 
 // ── Force & Activation ──
 const DF = defineConstants(
@@ -291,5 +292,9 @@ export function initDeepSea() {
       isHolding = false;
       stopRipples();
     },
+  });
+
+  registerMode("deep-sea", {
+    toggle: () => (isSubmerged ? triggerResurface() : triggerDive()),
   });
 }

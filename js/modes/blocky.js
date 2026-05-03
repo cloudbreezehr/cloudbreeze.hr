@@ -1,6 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { enableCardEffects } from "../service-cards.js";
+import { registerMode } from "./registry.js";
 
 // ── Force & Activation ──
 const BF = defineConstants(
@@ -316,4 +317,8 @@ export function initBlocky(toggleEl) {
     requestAnimationFrame(tick);
   }
   tick();
+
+  registerMode("blocky", {
+    toggle: () => (isBlocky ? triggerUnblocky() : triggerBlocky()),
+  });
 }

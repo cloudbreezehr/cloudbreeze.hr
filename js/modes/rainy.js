@@ -3,6 +3,7 @@ import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { registerMode } from "./registry.js";
 
 // ── Force & Activation ──
 const RF = defineConstants(
@@ -384,4 +385,8 @@ export function initRainy() {
     requestAnimationFrame(tick);
   }
   tick();
+
+  registerMode("rainy", {
+    toggle: () => (isRainy ? triggerClear() : triggerRain()),
+  });
 }

@@ -1,5 +1,6 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
+import { registerMode } from "./registry.js";
 
 // ── Force & Activation ──
 const UD_FORCE = defineConstants(
@@ -434,4 +435,8 @@ export function initUpsideDown() {
     requestAnimationFrame(tick);
   }
   tick();
+
+  registerMode("upside-down", {
+    toggle: () => triggerFlip(),
+  });
 }

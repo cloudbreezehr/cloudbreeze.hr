@@ -4025,11 +4025,190 @@ body.light-mode .achievement-tooltip {
   }
 }
 
+/* ── Mode History HUD ── */
+
+.mode-history-hud {
+  position: fixed;
+  top: 4.5rem;
+  left: 50%;
+  translate: -50% -4px;
+  opacity: 0;
+  padding: 5px 8px;
+  background: rgba(10, 18, 32, 0.5);
+  border: 1px solid rgba(120, 160, 220, 0.14);
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: auto;
+  transition:
+    opacity 0.5s ease-out,
+    translate 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+    padding 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease;
+}
+.mode-history-hud.ready {
+  opacity: 1;
+  translate: -50% 0;
+}
+.mode-history-hud:not(.collapsed) {
+  padding: 8px 12px;
+  background: rgba(10, 18, 32, 0.78);
+  border-color: rgba(120, 160, 220, 0.28);
+}
+
+.mhh-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.mhh-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  margin: 0;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "DM Mono", monospace;
+  cursor: default;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.mhh-slot.discovered {
+  color: var(--mode-color, #7dbfe8);
+  cursor: pointer;
+}
+.mhh-slot.discovered:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+.mhh-slot.discovered:focus-visible {
+  outline: 1px solid var(--mode-color, #7dbfe8);
+  outline-offset: 2px;
+}
+.mhh-slot.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--mode-color, #7dbfe8);
+  box-shadow: 0 0 6px 1px var(--mode-color, #7dbfe8);
+  translate: -50% 0;
+}
+
+.mhh-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.mhh-slot.undiscovered .mhh-icon {
+  filter: none;
+  opacity: 0.35;
+}
+
+.mhh-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.25s ease 0.05s;
+}
+.mode-history-hud:not(.collapsed) .mhh-label {
+  max-height: 14px;
+  opacity: 0.9;
+}
+
+/* Active-mode pulse — soft halo in the mode's accent color */
+@keyframes mhh-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--mode-color, #7dbfe8);
+    opacity: 0.6;
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+    opacity: 0;
+  }
+}
+.mhh-slot.pulse .mhh-icon {
+  animation: mhh-pulse 1.2s ease-out;
+}
+
+/* Newly discovered — periodic sheen sweep for the first few seconds */
+@keyframes mhh-shimmer {
+  0% {
+    background-position: -120% 0;
+  }
+  60%,
+  100% {
+    background-position: 120% 0;
+  }
+}
+.mhh-slot.just-discovered::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  background-position: -120% 0;
+  animation: mhh-shimmer 2.2s ease-in-out infinite;
+}
+
+/* Reduced motion — keep HUD functional but drop shimmer + pulse */
+@media (prefers-reduced-motion: reduce) {
+  .mhh-slot.just-discovered::before,
+  .mhh-slot.pulse .mhh-icon {
+    animation: none;
+  }
+}
+
+/* Mobile — tighter, no hover-to-expand (tap expands via focus) */
+@media (max-width: 600px) {
+  .mode-history-hud {
+    top: 3.5rem;
+  }
+  .mhh-track {
+    gap: 2px;
+  }
+  .mhh-slot {
+    padding: 3px;
+  }
+}
+
 /* ── Upside-down mode adjustments ── */
 
 body.upside-down .achievement-toast-container {
   bottom: auto;
   top: 1.5rem;
+  transform: scaleY(-1);
+}
+
+body.upside-down .mode-history-hud {
   transform: scaleY(-1);
 }
 

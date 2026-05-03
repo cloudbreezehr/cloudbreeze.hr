@@ -20,6 +20,9 @@ export const Z_RAIN_GLASS = 6;
 // ── Mode Effects ──
 export const Z_MODE_FLASH = 100;
 
+// ── Panels & HUDs ──
+export const Z_MODE_HISTORY_HUD = 300;
+
 // ── Dev Tools ──
 export const Z_DEV_CONSOLE = 400;
 export const Z_DEV_TOOLTIP = 450;
