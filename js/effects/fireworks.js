@@ -11,7 +11,11 @@ import { defineConstants } from "../dev/registry.js";
 
 const FW = defineConstants("effects.fireworks", {
   // ── Pool ──
-  MAX_PARTICLES: 200,
+  // Pool sizes are read once at module load — changing them in the dev
+  // console takes effect on reload, not live.  Values chosen to cover the
+  // default LEGENDARY launch (10 rockets × ~40 primaries × burst overlap)
+  // with headroom for cranked values.
+  MAX_PARTICLES: { value: 400, min: 50, max: 2000, step: 10 },
   MAX_BURSTS: 5,
   MAX_ROCKETS: { value: 16, min: 1, max: 100, step: 1 },
 
@@ -500,6 +504,24 @@ function createRendererCore() {
     }
   }
 
+  // Spawn primary particles for a burst at (x, y).  Internal — no cap check.
+  function spawnBurst(x, y, rgb) {
+    const count =
+      FW.PRIMARY_COUNT_MIN + Math.floor(Math.random() * FW.PRIMARY_COUNT_RANGE);
+    const palette = generateBurstPalette(rgb, count);
+    for (let i = 0; i < count; i++) {
+      const p = acquireParticle();
+      if (!p) break;
+      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const speed =
+        FW.PRIMARY_SPEED_MIN + Math.random() * FW.PRIMARY_SPEED_RANGE;
+      p.spawnPrimary(x, y, palette[i], angle, speed);
+    }
+  }
+
+  // Public burst entry — honors MAX_BURSTS so rapid click-fury bursts are
+  // capped.  Rocket detonations bypass this (they're already rate-limited by
+  // the rocket pool and stagger timing).
   function burst(x, y, opts = {}) {
     if (activeBursts >= FW.MAX_BURSTS) return false;
     activeBursts++;
@@ -510,20 +532,7 @@ function createRendererCore() {
         : opts.color
       : null;
     const rgb = baseRgb || FALLBACK_RGB;
-
-    const count =
-      FW.PRIMARY_COUNT_MIN + Math.floor(Math.random() * FW.PRIMARY_COUNT_RANGE);
-    const palette = generateBurstPalette(rgb, count);
-
-    for (let i = 0; i < count; i++) {
-      const p = acquireParticle();
-      if (!p) break;
-      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
-      const speed =
-        FW.PRIMARY_SPEED_MIN + Math.random() * FW.PRIMARY_SPEED_RANGE;
-      p.spawnPrimary(x, y, palette[i], angle, speed);
-    }
-
+    spawnBurst(x, y, rgb);
     return true;
   }
 
@@ -585,12 +594,14 @@ function createRendererCore() {
       }
     }
 
-    // Rockets: update and detonate on arrival
+    // Rockets: update and detonate on arrival.  Call spawnBurst directly to
+    // bypass MAX_BURSTS — a LEGENDARY launch can have 10+ rockets in flight
+    // and every one must detonate.
     for (let i = 0; i < rockets.length; i++) {
       const r = rockets[i];
       if (!r.active) continue;
       const detonated = r.update();
-      if (detonated) burst(r.x, r.y, { color: r.color });
+      if (detonated) spawnBurst(r.x, r.y, r.color);
     }
   }
 
