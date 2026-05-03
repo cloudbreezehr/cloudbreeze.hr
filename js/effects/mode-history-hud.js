@@ -115,27 +115,30 @@ function ensureHud() {
   hudEl.setAttribute("aria-label", "Mode history");
   hudEl.setAttribute("role", "group");
 
-  // Down-chevron handle — visible when tucked.  Click to expand.
+  // Both chevrons live in the same top-center "handle slot" — they swap
+  // visibility based on tucked/expanded state so the affordance doesn't
+  // dance around when the HUD changes size.
+  const handleSlot = document.createElement("div");
+  handleSlot.className = "mhh-handle-slot";
+  hudEl.appendChild(handleSlot);
+
   const expandHandle = document.createElement("button");
   expandHandle.type = "button";
   expandHandle.className = "mhh-handle mhh-handle-expand";
   expandHandle.setAttribute("aria-label", "Expand mode history");
   expandHandle.innerHTML = chevronSvg("down");
-  hudEl.appendChild(expandHandle);
+  handleSlot.appendChild(expandHandle);
 
-  const track = document.createElement("div");
-  track.className = "mhh-track";
-  hudEl.appendChild(track);
-
-  // Up-chevron handle — visible when expanded.  Click to tuck even if a mode
-  // is active.  The manual-tuck state lives in memory; a reload re-reveals
-  // the HUD so its discoverability isn't lost between sessions.
   const tuckHandle = document.createElement("button");
   tuckHandle.type = "button";
   tuckHandle.className = "mhh-handle mhh-handle-tuck";
   tuckHandle.setAttribute("aria-label", "Tuck mode history");
   tuckHandle.innerHTML = chevronSvg("up");
-  hudEl.appendChild(tuckHandle);
+  handleSlot.appendChild(tuckHandle);
+
+  const track = document.createElement("div");
+  track.className = "mhh-track";
+  hudEl.appendChild(track);
 
   // Parent to the nav so the HUD sticks to its bottom edge — when the nav
   // scrolls up/down during overscroll, the HUD rides along.  Falls back to
@@ -148,7 +151,7 @@ function ensureHud() {
   // drive-bys.  Focus also expands for keyboard users.
   hudEl.addEventListener("pointerenter", onHoverEnter);
   hudEl.addEventListener("pointerleave", scheduleTuck);
-  hudEl.addEventListener("focusin", expand);
+  hudEl.addEventListener("focusin", onHoverEnter);
   hudEl.addEventListener("focusout", scheduleTuck);
   expandHandle.addEventListener("click", expandClick);
   tuckHandle.addEventListener("click", manualTuck);
@@ -243,48 +246,42 @@ function pulse(modeId, firstDiscovery) {
   setTimeout(() => slot.classList.remove("pulse"), HUD.ACTIVE_PULSE_MS);
 }
 
-// User manually tucked via the up-chevron.  Overrides the "active mode keeps
-// HUD visible" rule.  In-memory only — a page reload restores discoverability.
-let userTucked = false;
-// True when the user clicked the expand chevron — the HUD is "pinned open"
-// and won't auto-collapse on pointer leave.  Cleared by manualTuck() or
-// re-tucking from updateTucked() when deliberately collapsing.
-let stickyExpanded = false;
+// Three user intents, tracked as explicit state (clearer than a pile of
+// booleans).  "auto" means the HUD reacts to hover/mode-changes; "pinned"
+// means the user clicked the down-chevron and wants it open; "tucked" means
+// the user clicked the up-chevron and wants it away.  Reloads reset to auto.
+let userIntent = "auto";
 
 function expandClick() {
-  stickyExpanded = true;
-  expand();
-}
-
-function expand() {
   if (!hudEl) return;
-  userTucked = false;
+  userIntent = "pinned";
   clearTimeout(collapseTimer);
   hudEl.classList.remove("tucked");
   hudEl.classList.add("expanded");
 }
 
-// Pointer enter: only reveal labels if the HUD is already visible.  Hovering
-// the tiny tucked chevron shouldn't silently slide the full HUD open —
-// expanding from tucked is a click action.
-function onHoverEnter() {
-  if (!hudEl || hudEl.classList.contains("tucked")) return;
-  expand();
-}
-
 function manualTuck() {
   if (!hudEl) return;
-  userTucked = true;
-  stickyExpanded = false;
+  userIntent = "tucked";
   clearTimeout(collapseTimer);
   hudEl.classList.remove("expanded");
   hudEl.classList.add("tucked");
 }
 
+// Hover: only reveal labels if the HUD isn't pinned-open and isn't tucked.
+// Transitions in/out of tucked/pinned are click-only — those are commitments,
+// not drive-bys.
+function onHoverEnter() {
+  if (!hudEl) return;
+  if (userIntent !== "auto") return;
+  if (hudEl.classList.contains("tucked")) return;
+  clearTimeout(collapseTimer);
+  hudEl.classList.add("expanded");
+}
+
 function scheduleTuck() {
   if (!hudEl) return;
-  // Click-expanded HUD stays open until explicitly tucked — ignore leave.
-  if (stickyExpanded) return;
+  if (userIntent !== "auto") return;
   clearTimeout(collapseTimer);
   collapseTimer = setTimeout(() => {
     hudEl.classList.remove("expanded");
@@ -292,14 +289,14 @@ function scheduleTuck() {
   }, HUD.COLLAPSE_DELAY_MS);
 }
 
-// Tucked iff:
-//   - the user has manually tucked it, OR
-//   - no mode is currently active.
-// An active mode keeps the HUD in compact-visible state until manually tucked.
+// Computes the tucked class from userIntent + active-mode state.  Called
+// after any state change that could affect visibility (mode activate/deact,
+// init).  Pinned state ignores this — user's intent takes precedence.
 function updateTucked() {
   if (!hudEl) return;
+  if (userIntent === "pinned") return;
   if (hudEl.classList.contains("expanded")) return;
-  if (userTucked) {
+  if (userIntent === "tucked") {
     hudEl.classList.add("tucked");
     return;
   }

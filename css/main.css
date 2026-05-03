@@ -4058,13 +4058,23 @@ body.light-mode .achievement-tooltip {
   border-color: rgba(120, 160, 220, 0.32);
 }
 
-/* ── Expand / tuck chevron buttons ── */
+/* ── Handle slot ── */
+/* Shared top-center slot where one of the two chevron buttons is visible
+   at a time.  Keeps the chevron position stable across tucked / expanded
+   state changes — no dancing around. */
+.mhh-handle-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  margin-bottom: 2px;
+}
 .mhh-handle {
   display: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 14px;
+  width: 32px;
+  height: 12px;
   padding: 0;
   background: none;
   border: none;
@@ -4081,21 +4091,19 @@ body.light-mode .achievement-tooltip {
   width: 12px;
   height: 6px;
 }
-/* Tuck chevron sits below the slot row, centered under the HUD pill. */
-.mhh-handle-tuck {
-  margin: 2px auto 0;
-}
 
 .mode-history-hud.tucked {
   padding: 2px 6px;
   background: rgba(10, 18, 32, 0.35);
   border-color: rgba(120, 160, 220, 0.1);
 }
+.mode-history-hud.tucked .mhh-handle-slot {
+  margin-bottom: 0;
+}
 .mode-history-hud.tucked .mhh-handle-expand {
   display: flex;
 }
-.mode-history-hud.tucked .mhh-track,
-.mode-history-hud.tucked .mhh-handle-tuck {
+.mode-history-hud.tucked .mhh-track {
   display: none;
 }
 /* Up-chevron is shown whenever the HUD isn't tucked — gives the user a
