@@ -10,6 +10,8 @@ const RARE = 25;
 const EPIC = 50;
 const LEGENDARY = 100;
 
+export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
+
 // ── Achievement Sets ──
 export const SETS = [
   { id: "exploration", label: "Exploration", color: null },

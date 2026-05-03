@@ -13,6 +13,7 @@ const FW = defineConstants("effects.fireworks", {
   // ── Pool ──
   MAX_PARTICLES: 200,
   MAX_BURSTS: 5,
+  MAX_ROCKETS: { value: 16, min: 1, max: 100, step: 1 },
 
   // ── Primary burst ──
   PRIMARY_COUNT_MIN: 30,
@@ -35,6 +36,31 @@ const FW = defineConstants("effects.fireworks", {
   SECONDARY_RADIUS_MIN: 0.5,
   SECONDARY_RADIUS_RANGE: 0.8,
   SECONDARY_TRIGGER_FADE: 0.5,
+
+  // ── Rocket ──
+  // Frames to rise (at 60fps, 60 = 1 second).
+  ROCKET_LIFE_FRAMES: 60,
+  ROCKET_RADIUS: 2,
+  // Random horizontal target band, as fractions of viewport width.
+  ROCKET_TARGET_X_MIN: 0.2,
+  ROCKET_TARGET_X_RANGE: 0.6,
+  // Target burst height, as fraction of viewport height from the top.
+  ROCKET_TARGET_Y_MIN: 0.15,
+  ROCKET_TARGET_Y_RANGE: 0.35,
+  // Sideways jitter added as the rocket rises (px per frame, pre-easing).
+  ROCKET_DRIFT: 0.2,
+  // Count tiers per rarity, tuned by ui.js via opts.count.
+  ROCKET_COUNT_EPIC: { value: 3, min: 0, max: 30, step: 1 },
+  ROCKET_COUNT_LEGENDARY: { value: 10, min: 0, max: 100, step: 1 },
+  // Stagger between rockets in a multi-rocket launch (frames).
+  ROCKET_STAGGER_FRAMES: 8,
+
+  // ── Rocket trail ──
+  ROCKET_TRAIL_LENGTH: 16,
+  ROCKET_TRAIL_DECAY: 0.82,
+  ROCKET_TRAIL_RADIUS_SCALE: 0.65,
+  ROCKET_TRAIL_JITTER: 0.8,
+  ROCKET_TRAIL_EMBER_CHANCE: 0.4,
 
   // ── Physics ──
   GRAVITY: 0.055,
@@ -307,6 +333,133 @@ class FireworkParticle {
   }
 }
 
+// ── Rocket ──
+// Flies up from the bottom of the canvas, leaves an ember trail, bursts on
+// death into a standard primary burst.  Separate class because physics, trail
+// size, and death handler differ from FireworkParticle.
+
+class Rocket {
+  constructor() {
+    this.active = false;
+    this.x = 0;
+    this.y = 0;
+    this.startY = 0;
+    this.targetX = 0;
+    this.targetY = 0;
+    this.color = [255, 255, 255];
+    this.brightColor = [255, 255, 255];
+    this.life = 0;
+    this.maxLife = 0;
+    this.delay = 0;
+    this.trail = new Array(FW.ROCKET_TRAIL_LENGTH);
+    for (let i = 0; i < FW.ROCKET_TRAIL_LENGTH; i++) {
+      this.trail[i] = { x: 0, y: 0, active: false, ember: false };
+    }
+    this.trailIdx = 0;
+  }
+
+  spawn(startX, startY, targetX, targetY, color, delay) {
+    this.active = true;
+    this.x = startX;
+    this.y = startY;
+    this.startY = startY;
+    this.targetX = targetX;
+    this.targetY = targetY;
+    this.color = color;
+    this.brightColor = brightenRgb(color);
+    this.life = 0;
+    this.maxLife = FW.ROCKET_LIFE_FRAMES;
+    this.delay = delay;
+    for (let i = 0; i < FW.ROCKET_TRAIL_LENGTH; i++) {
+      this.trail[i].active = false;
+    }
+    this.trailIdx = 0;
+  }
+
+  // Returns true if the rocket just detonated this frame.
+  update() {
+    if (!this.active) return false;
+
+    if (this.delay > 0) {
+      this.delay--;
+      return false;
+    }
+
+    // Record current position in the trail ring buffer
+    const slot = this.trail[this.trailIdx];
+    slot.x = this.x + (Math.random() - 0.5) * FW.ROCKET_TRAIL_JITTER;
+    slot.y = this.y;
+    slot.active = true;
+    slot.ember = Math.random() < FW.ROCKET_TRAIL_EMBER_CHANCE;
+    this.trailIdx = (this.trailIdx + 1) % FW.ROCKET_TRAIL_LENGTH;
+
+    // Ease-out motion: fast at launch, slow approaching the target
+    this.life++;
+    const t = this.life / this.maxLife;
+    const eased = 1 - Math.pow(1 - t, 2);
+    this.x =
+      this.x +
+      (this.targetX - this.x) * eased * 0.2 +
+      (Math.random() - 0.5) * FW.ROCKET_DRIFT;
+    this.y = this.startY + (this.targetY - this.startY) * eased;
+
+    if (this.life >= this.maxLife) {
+      this.active = false;
+      return true;
+    }
+    return false;
+  }
+
+  draw(ctx) {
+    if (!this.active || this.delay > 0) return;
+
+    const c = this.color;
+    const bc = this.brightColor;
+
+    // Trail embers
+    for (let i = 0; i < FW.ROCKET_TRAIL_LENGTH; i++) {
+      const t = this.trail[i];
+      if (!t.active) continue;
+      const age =
+        (this.trailIdx - 1 - i + FW.ROCKET_TRAIL_LENGTH) %
+        FW.ROCKET_TRAIL_LENGTH;
+      const op = Math.pow(FW.ROCKET_TRAIL_DECAY, age + 1);
+      if (op < FW.DRAW_THRESHOLD) continue;
+      const tr =
+        FW.ROCKET_RADIUS * FW.ROCKET_TRAIL_RADIUS_SCALE * (t.ember ? 1.2 : 0.7);
+      ctx.globalAlpha = op;
+      ctx.fillStyle = t.ember
+        ? `rgb(${bc[0]},${bc[1]},${bc[2]})`
+        : `rgb(${c[0]},${c[1]},${c[2]})`;
+      ctx.beginPath();
+      ctx.arc(t.x, t.y, tr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Rocket head — bright glowing dot
+    const headR = FW.ROCKET_RADIUS * FW.GLOW_RADIUS_MULT;
+    const grad = ctx.createRadialGradient(
+      this.x,
+      this.y,
+      0,
+      this.x,
+      this.y,
+      headR,
+    );
+    grad.addColorStop(0, `rgba(${bc[0]},${bc[1]},${bc[2]},1)`);
+    grad.addColorStop(
+      FW.GLOW_MID_STOP,
+      `rgba(${c[0]},${c[1]},${c[2]},${FW.GLOW_MID_OPACITY})`,
+    );
+    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, headR, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
 // ── Renderer Core ──
 
 function createRendererCore() {
@@ -315,12 +468,20 @@ function createRendererCore() {
     { length: FW.MAX_PARTICLES },
     () => new FireworkParticle(),
   );
+  const rockets = Array.from({ length: FW.MAX_ROCKETS }, () => new Rocket());
   let activeBursts = 0;
   let frameCount = 0;
 
   function acquireParticle() {
     for (let i = 0; i < pool.length; i++) {
       if (!pool[i].active) return pool[i];
+    }
+    return null;
+  }
+
+  function acquireRocket() {
+    for (let i = 0; i < rockets.length; i++) {
+      if (!rockets[i].active) return rockets[i];
     }
     return null;
   }
@@ -366,6 +527,44 @@ function createRendererCore() {
     return true;
   }
 
+  // Launches `count` rockets from the visual bottom of the viewport.  Each
+  // rises for ROCKET_LIFE_FRAMES then detonates into a standard burst at its
+  // target.  Rockets are staggered by ROCKET_STAGGER_FRAMES so they don't
+  // launch as a perfect line.  In upside-down mode the page is flipped via
+  // CSS scaleY(-1) but the overlay canvas isn't, so we mirror the y coords
+  // here to keep rockets launching from what the user sees as the bottom.
+  function launchRockets(viewportWidth, viewportHeight, opts = {}) {
+    const count = Math.max(1, opts.count || 1);
+    const baseRgb = opts.color
+      ? typeof opts.color === "string"
+        ? parseHexToRgb(opts.color)
+        : opts.color
+      : null;
+    const rgb = baseRgb || FALLBACK_RGB;
+
+    const upsideDown = document.body.classList.contains("upside-down");
+    const mirrorY = (y) => (upsideDown ? viewportHeight - y : y);
+
+    let launched = 0;
+    for (let i = 0; i < count; i++) {
+      const r = acquireRocket();
+      if (!r) break;
+      const targetX =
+        viewportWidth *
+        (FW.ROCKET_TARGET_X_MIN + Math.random() * FW.ROCKET_TARGET_X_RANGE);
+      const targetY = mirrorY(
+        viewportHeight *
+          (FW.ROCKET_TARGET_Y_MIN + Math.random() * FW.ROCKET_TARGET_Y_RANGE),
+      );
+      const startX = targetX + (Math.random() - 0.5) * viewportWidth * 0.15;
+      const startY = mirrorY(viewportHeight + FW.ROCKET_RADIUS);
+      const delay = i * FW.ROCKET_STAGGER_FRAMES;
+      r.spawn(startX, startY, targetX, targetY, rgb, delay);
+      launched++;
+    }
+    return launched > 0;
+  }
+
   function update() {
     for (let i = 0; i < pool.length; i++) {
       const p = pool[i];
@@ -385,6 +584,14 @@ function createRendererCore() {
         }
       }
     }
+
+    // Rockets: update and detonate on arrival
+    for (let i = 0; i < rockets.length; i++) {
+      const r = rockets[i];
+      if (!r.active) continue;
+      const detonated = r.update();
+      if (detonated) burst(r.x, r.y, { color: r.color });
+    }
   }
 
   function draw(ctx) {
@@ -393,6 +600,9 @@ function createRendererCore() {
     for (let i = 0; i < pool.length; i++) {
       pool[i].draw(ctx);
     }
+    for (let i = 0; i < rockets.length; i++) {
+      rockets[i].draw(ctx);
+    }
     ctx.restore();
   }
 
@@ -400,7 +610,10 @@ function createRendererCore() {
     for (let i = 0; i < pool.length; i++) {
       if (pool[i].active) return true;
     }
-    // Reset burst counter when all particles are dead
+    for (let i = 0; i < rockets.length; i++) {
+      if (rockets[i].active) return true;
+    }
+    // Reset burst counter when all particles and rockets are dead
     activeBursts = 0;
     return false;
   }
@@ -411,7 +624,7 @@ function createRendererCore() {
     return !hasActive();
   }
 
-  return { burst, update, draw, hasActive, checkCleanup };
+  return { burst, launchRockets, update, draw, hasActive, checkCleanup };
 }
 
 // ── Mode A: Overlay (self-cleaning) ──
@@ -493,6 +706,45 @@ export function burstFireworks(x, y, opts = {}) {
   }
 }
 
+/**
+ * Map a rarity tier to the configured rocket count.  Callers pass the tier
+ * they've identified (e.g. from an achievement's point value); the tier-to-
+ * count mapping stays in the fireworks registry so dev-console changes to
+ * ROCKET_COUNT_EPIC / ROCKET_COUNT_LEGENDARY apply automatically.
+ *
+ * @param {"epic"|"legendary"} tier
+ * @returns {number} Number of rockets, or 0 for unrecognized tiers.
+ */
+export function rocketCountForTier(tier) {
+  if (tier === "legendary") return FW.ROCKET_COUNT_LEGENDARY;
+  if (tier === "epic") return FW.ROCKET_COUNT_EPIC;
+  return 0;
+}
+
+/**
+ * Launch one or more rockets from the bottom of the viewport.  Each rises for
+ * ~1s and detonates into a standard burst at a randomized target position.
+ *
+ * @param {object} [opts]
+ * @param {number}         [opts.count=1]  Number of rockets to launch.
+ * @param {string|number[]} [opts.color]   Hex string or [r,g,b] array.
+ */
+export function launchRocketFireworks(opts = {}) {
+  if (!overlayCanvas) {
+    createOverlay();
+  }
+
+  overlayRenderer.launchRockets(
+    overlayCanvas.width,
+    overlayCanvas.height,
+    opts,
+  );
+
+  if (!overlayRafId) {
+    overlayRafId = requestAnimationFrame(overlayLoop);
+  }
+}
+
 // ── Mode B: Shared Canvas Renderer ──
 
 /**
@@ -507,6 +759,10 @@ export function createFireworksRenderer() {
   return {
     burst(x, y, opts) {
       return core.burst(x, y, opts);
+    },
+
+    launchRockets(viewportWidth, viewportHeight, opts) {
+      return core.launchRockets(viewportWidth, viewportHeight, opts);
     },
 
     draw(ctx) {

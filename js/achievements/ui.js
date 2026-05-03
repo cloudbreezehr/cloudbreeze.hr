@@ -4,6 +4,7 @@
 
 import {
   ACHIEVEMENTS,
+  POINT_TIERS,
   SETS,
   getAchievement,
   isModeSet,
@@ -11,7 +12,11 @@ import {
 } from "./registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
-import { burstFireworks } from "../effects/fireworks.js";
+import {
+  burstFireworks,
+  launchRocketFireworks,
+  rocketCountForTier,
+} from "../effects/fireworks.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -950,14 +955,28 @@ export function showToast(achievement) {
   void toast.offsetHeight;
   toast.classList.add("enter");
 
-  // Fireworks burst around the toast after slide-in completes
+  // Fireworks burst around the toast after slide-in completes.  Epic+ and
+  // legendary achievements also launch rockets from the bottom of the viewport
+  // — these rise for ~1s and detonate mid-air shortly after the toast burst.
   const accentColor = (set && set.color) || null;
+  const rarityTier =
+    achievement.points >= POINT_TIERS.LEGENDARY
+      ? "legendary"
+      : achievement.points >= POINT_TIERS.EPIC
+        ? "epic"
+        : null;
   setTimeout(() => {
     if (!toast.parentNode) return;
     const rect = toast.getBoundingClientRect();
     burstFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2, {
       color: accentColor,
     });
+    if (rarityTier) {
+      launchRocketFireworks({
+        count: rocketCountForTier(rarityTier),
+        color: accentColor,
+      });
+    }
   }, FIREWORKS_DELAY_MS);
 
   const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
