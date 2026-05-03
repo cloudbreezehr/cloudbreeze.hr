@@ -4081,9 +4081,9 @@ body.light-mode .achievement-tooltip {
   width: 12px;
   height: 6px;
 }
+/* Tuck chevron sits below the slot row, centered under the HUD pill. */
 .mhh-handle-tuck {
-  margin-left: 6px;
-  margin-right: -2px;
+  margin: 2px auto 0;
 }
 
 .mode-history-hud.tucked {

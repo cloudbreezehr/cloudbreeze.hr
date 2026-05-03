@@ -150,7 +150,7 @@ function ensureHud() {
   hudEl.addEventListener("pointerleave", scheduleTuck);
   hudEl.addEventListener("focusin", expand);
   hudEl.addEventListener("focusout", scheduleTuck);
-  expandHandle.addEventListener("click", expand);
+  expandHandle.addEventListener("click", expandClick);
   tuckHandle.addEventListener("click", manualTuck);
 
   // Size slots consistently by the longest label so layout is stable.
@@ -246,6 +246,15 @@ function pulse(modeId, firstDiscovery) {
 // User manually tucked via the up-chevron.  Overrides the "active mode keeps
 // HUD visible" rule.  In-memory only — a page reload restores discoverability.
 let userTucked = false;
+// True when the user clicked the expand chevron — the HUD is "pinned open"
+// and won't auto-collapse on pointer leave.  Cleared by manualTuck() or
+// re-tucking from updateTucked() when deliberately collapsing.
+let stickyExpanded = false;
+
+function expandClick() {
+  stickyExpanded = true;
+  expand();
+}
 
 function expand() {
   if (!hudEl) return;
@@ -266,6 +275,7 @@ function onHoverEnter() {
 function manualTuck() {
   if (!hudEl) return;
   userTucked = true;
+  stickyExpanded = false;
   clearTimeout(collapseTimer);
   hudEl.classList.remove("expanded");
   hudEl.classList.add("tucked");
@@ -273,6 +283,8 @@ function manualTuck() {
 
 function scheduleTuck() {
   if (!hudEl) return;
+  // Click-expanded HUD stays open until explicitly tucked — ignore leave.
+  if (stickyExpanded) return;
   clearTimeout(collapseTimer);
   collapseTimer = setTimeout(() => {
     hudEl.classList.remove("expanded");
