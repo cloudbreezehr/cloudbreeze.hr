@@ -4113,6 +4113,7 @@ body.light-mode .achievement-tooltip {
   align-items: center;
   gap: 6px;
   padding: 5px 10px;
+  max-width: calc(100vw - 1rem);
   background: rgba(10, 18, 32, 0.55);
   border: 1px solid rgba(120, 160, 220, 0.18);
   border-radius: 100px;
@@ -4140,6 +4141,10 @@ body.light-mode .achievement-tooltip {
   gap: 3px;
   padding: 3px 4px;
   margin: 0;
+  /* Match the label's font-size so `1ch` in --mhh-slot-width resolves at
+     label scale — otherwise ch inherits the 16px body size and slots are
+     roughly 2x wider than needed. */
+  font-size: 9px;
   width: var(--mhh-slot-width, 8ch);
   background: none;
   border: none;
@@ -4257,13 +4262,19 @@ body.light-mode .achievement-tooltip {
   }
 }
 
-/* Mobile — tighter, no hover-to-expand (tap expands via focus) */
-@media (max-width: 600px) {
+/* Narrow viewport — below this, the labelled track would overflow past
+   nav's edges even with all five labels fitting individually (gaps +
+   padding accumulate).  Hide labels, collapse slot width to the icon. */
+@media (max-width: 560px) {
   .mhh-track {
     gap: 2px;
   }
   .mhh-slot {
-    padding: 3px;
+    width: auto;
+    padding: 3px 6px;
+  }
+  .mhh-label {
+    display: none;
   }
 }
 

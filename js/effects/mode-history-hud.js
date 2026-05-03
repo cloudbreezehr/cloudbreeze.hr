@@ -156,9 +156,6 @@ function ensureHud() {
   expandHandle.addEventListener("click", expandClick);
   tuckHandle.addEventListener("click", manualTuck);
 
-  // Size slots consistently by the longest label so layout is stable.
-  hudEl.style.setProperty("--mhh-slot-width", `${longestLabelCh()}ch`);
-
   rebuildSlots();
   syncActiveFromBody();
   updateTucked();
@@ -167,19 +164,21 @@ function ensureHud() {
   requestAnimationFrame(() => hudEl.classList.add("ready"));
 }
 
-// Measure the longest label in character units — no hardcoded width, grows
-// automatically when a new mode with a longer name is registered.
-function longestLabelCh() {
-  let max = 0;
+// Slot width is sized to the longest label among *discovered* modes.  Unknown
+// modes show "???" which is narrower, so the track stays compact until the
+// user unlocks a long-named mode — then it grows to accommodate.  +2 ch of
+// padding for breathing room around the widest label.
+function applySlotWidth() {
+  let max = 3; // "???" placeholder width
   for (const m of getModes()) {
-    if (m.label.length > max) max = m.label.length;
+    if (discovered.has(m.id) && m.label.length > max) max = m.label.length;
   }
-  // +1 ch padding so ascenders/descenders aren't flush against slot edges.
-  return max + 1;
+  hudEl.style.setProperty("--mhh-slot-width", `${max + 2}ch`);
 }
 
 function rebuildSlots() {
   if (!hudEl) return;
+  applySlotWidth();
   const track = hudEl.querySelector(".mhh-track");
   track.replaceChildren();
   slotsByMode = new Map();
