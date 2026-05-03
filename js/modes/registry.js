@@ -1,62 +1,60 @@
 // ── Sub-mode Registry ──
-// Two jobs:
-//   1. Shared metadata (id order, labels, accent colors) so multiple UIs
-//      don't re-declare MODE_COLORS / MODE_LABELS / SUBMODES in parallel.
-//   2. Runtime toggle lookup — modes call `registerMode` during init to
-//      expose a toggle handler; consumers call `toggleMode(id)` without
-//      knowing anything about the mode's internal state or trigger.
+// Each mode file declares itself via `registerMode(descriptor)` at module
+// load time — metadata (label, color, icon) is available immediately, the
+// toggle handler is bound later during `init` via `registerToggle`.
 //
-// The toggle handler is the same code the "force hits 1.0" path invokes —
-// pressing it from outside produces an identical transition.  Modes are
-// free to ignore calls (e.g. if a transition is in flight).
+// Consumers never hardcode mode ids.  They iterate `getModes()` or look up
+// a single mode via `getMode(id)`.
+//
+// Icons are inline SVG strings so there's no fetch step; they use
+// currentColor so the caller can tint with CSS.
 
-// Canonical order for sub-modes.  Iterate this when rendering lists.
-export const SUBMODE_IDS = [
-  "frozen",
-  "deep-sea",
-  "blocky",
-  "rainy",
-  "upside-down",
-];
-
-export const SUBMODE_LABELS = {
-  frozen: "Frozen",
-  "deep-sea": "Deep Sea",
-  blocky: "Blocky",
-  rainy: "Rainy",
-  "upside-down": "Upside Down",
-};
-
-// Accent colors for UI chrome (HUD icons, dev-console section borders).
-// Distinct from the sky palette overrides in colors.js, which are used by
-// the canvas render loop.
-export const SUBMODE_COLORS = {
-  frozen: "#88d4f7",
-  "deep-sea": "#00ffc8",
-  blocky: "#ffa040",
-  rainy: "#6a9fc0",
-  "upside-down": "#e04050",
-};
-
-const _modes = new Map();
+const _modes = new Map(); // id -> { id, label, color, icon, toggle? }
+const _order = []; // insertion order = canonical render order
 
 /**
- * Register a mode's toggle handler.  Called once per mode during init.
+ * Declare a mode.  Called at module-top-level from each mode file.
  *
- * @param {string}   id       Body class for the mode (e.g. "frozen").
- * @param {object}   handlers
- * @param {Function} handlers.toggle  Flips the mode on ↔ off.  Must
- *                                    dispatch the usual mode-activate /
- *                                    mode-deactivate achievement events.
+ * @param {object} descriptor
+ * @param {string} descriptor.id     Body class for the mode (e.g. "frozen").
+ * @param {string} descriptor.label  Human-readable short label ("Frozen").
+ * @param {string} descriptor.color  Hex accent color ("#88d4f7").
+ * @param {string} descriptor.icon   Inline SVG string, 16×16 viewBox.
  */
-export function registerMode(id, handlers) {
-  _modes.set(id, handlers);
+export function registerMode(descriptor) {
+  const { id } = descriptor;
+  if (!id) throw new Error("registerMode: id is required");
+  if (_modes.has(id)) return; // idempotent — tolerate re-imports
+  _modes.set(id, { ...descriptor });
+  _order.push(id);
 }
 
 /**
- * Toggle a mode by id.  No-op if the mode isn't registered (yet) or the
- * mode's internal guards reject the call.
+ * Bind the runtime toggle handler for a mode.  Called during the mode's
+ * `init()` after local state (isFrozen, etc.) exists.
  */
+export function registerToggle(id, toggle) {
+  const m = _modes.get(id);
+  if (!m) throw new Error(`registerToggle: unknown mode "${id}"`);
+  m.toggle = toggle;
+}
+
+/** All registered modes in declaration order. */
+export function getModes() {
+  return _order.map((id) => _modes.get(id));
+}
+
+/** Canonical id list — preferred over hardcoded arrays. */
+export function getModeIds() {
+  return _order.slice();
+}
+
+/** Single-mode lookup. */
+export function getMode(id) {
+  return _modes.get(id) || null;
+}
+
+/** Toggle a mode by id.  No-op if unregistered or bind-not-called. */
 export function toggleMode(id) {
   const m = _modes.get(id);
   if (m && typeof m.toggle === "function") m.toggle();

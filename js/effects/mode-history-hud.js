@@ -12,13 +12,17 @@
 import { Z_MODE_HISTORY_HUD } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
-import {
-  SUBMODE_IDS,
-  SUBMODE_LABELS,
-  SUBMODE_COLORS,
-  toggleMode,
-} from "../modes/registry.js";
-import { modeIcon, undiscoveredIcon } from "../modes/icons.js";
+import { getModes, getModeIds, toggleMode } from "../modes/registry.js";
+
+// Placeholder silhouette for undiscovered modes — a generic "???" glyph so
+// the HUD hints there's more without spoiling which modes exist or how to
+// reach them.  currentColor lets CSS tint it to match the dim slot state.
+const UNDISCOVERED_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
+  '<circle cx="8" cy="8" r="5.5"/>' +
+  '<path d="M6 7a2 2 0 014 0c0 1-.7 1.3-1.5 1.8-.4.3-.5.5-.5 1.2"/>' +
+  '<circle cx="8" cy="12" r="0.5" fill="currentColor"/>' +
+  "</svg>";
 
 const HUD = defineConstants("effects.modeHistoryHud", {
   // ms before the expanded HUD collapses after pointer leave
@@ -56,7 +60,7 @@ export function initModeHistoryHud() {
 // ── Discovery tracking ──
 
 function onModeActivate(modeId) {
-  if (!SUBMODE_IDS.includes(modeId)) return;
+  if (!getModeIds().includes(modeId)) return;
 
   const firstDiscovery = !discovered.has(modeId);
   if (firstDiscovery) {
@@ -93,10 +97,10 @@ function onModeDeactivate(modeId) {
 // so the HUD can never drift out of sync no matter which modes overlap.
 function syncActiveFromBody() {
   if (!hudEl) return;
-  for (const id of SUBMODE_IDS) {
-    const slot = slotsByMode.get(id);
+  for (const m of getModes()) {
+    const slot = slotsByMode.get(m.id);
     if (!slot) continue;
-    slot.classList.toggle("active", document.body.classList.contains(id));
+    slot.classList.toggle("active", document.body.classList.contains(m.id));
   }
 }
 
@@ -164,9 +168,8 @@ function ensureHud() {
 // automatically when a new mode with a longer name is registered.
 function longestLabelCh() {
   let max = 0;
-  for (const id of SUBMODE_IDS) {
-    const len = (SUBMODE_LABELS[id] || id).length;
-    if (len > max) max = len;
+  for (const m of getModes()) {
+    if (m.label.length > max) max = m.label.length;
   }
   // +1 ch padding so ascenders/descenders aren't flush against slot edges.
   return max + 1;
@@ -178,18 +181,19 @@ function rebuildSlots() {
   track.replaceChildren();
   slotsByMode = new Map();
 
-  for (const id of SUBMODE_IDS) {
+  for (const mode of getModes()) {
+    const { id, label, color, icon } = mode;
     const isDiscovered = discovered.has(id);
     const slot = document.createElement(isDiscovered ? "button" : "div");
     slot.className =
       "mhh-slot " + (isDiscovered ? "discovered" : "undiscovered");
     if (isDiscovered) {
       slot.type = "button";
-      slot.style.setProperty("--mode-color", SUBMODE_COLORS[id]);
+      slot.style.setProperty("--mode-color", color);
       slot.dataset.mode = id;
       slot.setAttribute(
         "aria-label",
-        `Revisit ${SUBMODE_LABELS[id]} mode (discovered ${formatRelative(discovered.get(id))})`,
+        `Revisit ${label} mode (discovered ${formatRelative(discovered.get(id))})`,
       );
       slot.addEventListener("click", () => toggleMode(id));
     } else {
@@ -199,13 +203,13 @@ function rebuildSlots() {
 
     const iconWrap = document.createElement("span");
     iconWrap.className = "mhh-icon";
-    iconWrap.innerHTML = isDiscovered ? modeIcon(id) : undiscoveredIcon();
+    iconWrap.innerHTML = isDiscovered ? icon : UNDISCOVERED_ICON;
     slot.appendChild(iconWrap);
 
-    const label = document.createElement("span");
-    label.className = "mhh-label";
-    label.textContent = isDiscovered ? SUBMODE_LABELS[id] : "???";
-    slot.appendChild(label);
+    const labelEl = document.createElement("span");
+    labelEl.className = "mhh-label";
+    labelEl.textContent = isDiscovered ? label : "???";
+    slot.appendChild(labelEl);
 
     // Newly discovered: temporarily mark for extra shimmer
     if (
@@ -287,8 +291,8 @@ function updateTucked() {
     hudEl.classList.add("tucked");
     return;
   }
-  const anyActive = SUBMODE_IDS.some((id) =>
-    document.body.classList.contains(id),
+  const anyActive = getModes().some((m) =>
+    document.body.classList.contains(m.id),
   );
   hudEl.classList.toggle("tucked", !anyActive);
 }

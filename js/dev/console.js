@@ -15,11 +15,7 @@ import {
   importConfig,
   onSectionActivate,
 } from "./registry.js";
-import {
-  SUBMODE_IDS,
-  SUBMODE_LABELS,
-  SUBMODE_COLORS,
-} from "../modes/registry.js";
+import { getMode, getModes, getModeIds } from "../modes/registry.js";
 
 // ── Layout Constants ──
 const PANEL_WIDTH = 340;
@@ -116,14 +112,16 @@ const GROUP_ORDER = [
   { label: "Effects", prefix: "effects." },
 ];
 
-// ── Mode metadata ──
+// ── Mode metadata helpers ──
 // Mode ids, short labels, and accent colors live in modes/registry.js.
 // The dev console appends " Mode" at render time — "Frozen" → "Frozen Mode".
-const MODE_COLORS = SUBMODE_COLORS;
-const MODE_LABELS = Object.fromEntries(
-  SUBMODE_IDS.map((id) => [id, `${SUBMODE_LABELS[id]} Mode`]),
-);
-const MODE_ORDER = SUBMODE_IDS;
+function modeColorOf(id) {
+  return getMode(id)?.color || "#7dbfe8";
+}
+function modeLabelOf(id) {
+  const m = getMode(id);
+  return m ? `${m.label} Mode` : id;
+}
 
 // ── Tooltip singleton ──
 let tooltipEl = null;
@@ -161,10 +159,7 @@ function buildSectionEl(category, registry, rowMap) {
   sectionEl.dataset.category = category;
   if (meta && meta.mode) {
     sectionEl.dataset.mode = meta.mode;
-    sectionEl.style.setProperty(
-      "--mode-color",
-      MODE_COLORS[meta.mode] || "#7dbfe8",
-    );
+    sectionEl.style.setProperty("--mode-color", modeColorOf(meta.mode));
   }
 
   const sectionHeader = document.createElement("div");
@@ -360,13 +355,13 @@ function buildPanel() {
     const modesGroupBody = document.createElement("div");
     modesGroupBody.className = "dc-group-body";
 
-    for (const mode of MODE_ORDER) {
+    for (const mode of getModeIds()) {
       if (!byMode.has(mode)) continue;
       const subHeader = document.createElement("div");
       subHeader.className = "dc-mode-subheader";
       subHeader.dataset.mode = mode;
-      subHeader.style.setProperty("--mode-color", MODE_COLORS[mode]);
-      subHeader.textContent = MODE_LABELS[mode];
+      subHeader.style.setProperty("--mode-color", modeColorOf(mode));
+      subHeader.textContent = modeLabelOf(mode);
       modesGroupBody.appendChild(subHeader);
       const cats = byMode
         .get(mode)
@@ -953,7 +948,7 @@ const HIGHLIGHT_FALLBACK_COLOR = "125, 191, 232"; // matches --mode-color defaul
 const HIGHLIGHT_PEAK_ALPHA = 0.22;
 
 function parseModeColor(cssColor) {
-  // Accept #rrggbb — the only format used in MODE_COLORS.
+  // Accept #rrggbb — the only format used for mode accent colors.
   if (!cssColor || cssColor[0] !== "#" || cssColor.length !== 7) return null;
   const r = parseInt(cssColor.slice(1, 3), 16);
   const g = parseInt(cssColor.slice(3, 5), 16);
@@ -977,7 +972,7 @@ function flashHighlight(el) {
 
 function updateModeStates(panel) {
   const activeModes = new Set();
-  for (const mode of MODE_ORDER) {
+  for (const mode of getModeIds()) {
     if (document.body.classList.contains(mode)) activeModes.add(mode);
   }
 
@@ -1012,9 +1007,9 @@ function updateModeStates(panel) {
 
   // Auto-scroll to newly activated mode's sub-header
   if (newlyActivated.size > 0) {
-    // Pick the last one in MODE_ORDER if multiple activated simultaneously
+    // Pick the last one in registration order if multiple activated at once
     let scrollTarget = null;
-    for (const mode of MODE_ORDER) {
+    for (const mode of getModeIds()) {
       if (!newlyActivated.has(mode)) continue;
       const subHeader = panel.querySelector(
         `.dc-mode-subheader[data-mode="${mode}"]`,

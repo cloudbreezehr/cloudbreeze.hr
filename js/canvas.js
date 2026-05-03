@@ -10,7 +10,7 @@ import { createRain } from "./particles/rain.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
-import { SUBMODE_IDS } from "./modes/registry.js";
+import { getModeIds } from "./modes/registry.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -286,7 +286,7 @@ export function initCanvas(canvasEl, theme, options) {
     const isBlocky = document.body.classList.contains("blocky");
     const isRainy = document.body.classList.contains("rainy");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
-    const activeModes = SUBMODE_IDS.filter((m) =>
+    const activeModes = getModeIds().filter((m) =>
       document.body.classList.contains(m),
     );
     const lastSub = document.body.dataset.lastSubmode;

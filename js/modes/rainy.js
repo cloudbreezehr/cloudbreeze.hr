@@ -3,7 +3,18 @@ import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerMode } from "./registry.js";
+import { registerMode, registerToggle } from "./registry.js";
+
+registerMode({
+  id: "rainy",
+  label: "Rainy",
+  color: "#6a9fc0",
+  icon:
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
+    '<path d="M4 3l-2 4M8 3l-2 4M12 3l-2 4"/>' +
+    '<path d="M3 10l-2 4M7 10l-2 4M11 10l-2 4M15 10l-2 4"/>' +
+    "</svg>",
+});
 
 // ── Force & Activation ──
 const RF = defineConstants(
@@ -386,7 +397,5 @@ export function initRainy() {
   }
   tick();
 
-  registerMode("rainy", {
-    toggle: () => (isRainy ? triggerClear() : triggerRain()),
-  });
+  registerToggle("rainy", () => (isRainy ? triggerClear() : triggerRain()));
 }

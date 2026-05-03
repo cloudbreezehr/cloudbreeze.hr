@@ -1,6 +1,17 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerMode } from "./registry.js";
+import { registerMode, registerToggle } from "./registry.js";
+
+registerMode({
+  id: "upside-down",
+  label: "Upside Down",
+  color: "#e04050",
+  icon:
+    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<path d="M3 6l5-4 5 4"/>' +
+    '<path d="M3 10l5 4 5-4"/>' +
+    "</svg>",
+});
 
 // ── Force & Activation ──
 const UD_FORCE = defineConstants(
@@ -436,7 +447,5 @@ export function initUpsideDown() {
   }
   tick();
 
-  registerMode("upside-down", {
-    toggle: () => triggerFlip(),
-  });
+  registerToggle("upside-down", () => triggerFlip());
 }
