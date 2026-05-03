@@ -1,4 +1,5 @@
 import { lerpColor, multiLerp, toRgba, resolvePalette } from "./colors.js";
+import { applyTimeOfDay } from "./time-of-day.js";
 import { bindPointer } from "./pointer.js";
 import { createSky } from "./sky.js";
 import { createFury } from "./fury.js";
@@ -304,7 +305,9 @@ export function initCanvas(canvasEl, theme, options) {
       if (submode) document.body.dataset.activeTheme = submode;
       else delete document.body.dataset.activeTheme;
     }
-    const pal = resolvePalette(isDarkMode ? "dark" : "light", submode);
+    const pal = applyTimeOfDay(
+      resolvePalette(isDarkMode ? "dark" : "light", submode),
+    );
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
