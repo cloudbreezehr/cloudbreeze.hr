@@ -4026,6 +4026,11 @@ body.light-mode .achievement-tooltip {
 }
 
 /* ── Mode History HUD ── */
+/* Two stacked pills: a small handle tab on top (with a chevron), and a
+   wider track pill below (with mode icons).  The handle tab looks
+   identical in tucked and expanded states — the track just shows/hides
+   beneath it.  That way the chevron's visual position is always "a small
+   tab hanging off the nav bar", never embedded in the track. */
 
 .mode-history-hud {
   position: absolute;
@@ -4034,40 +4039,40 @@ body.light-mode .achievement-tooltip {
   translate: -50% -4px;
   margin-top: 8px;
   opacity: 0;
-  padding: 5px 10px;
-  background: rgba(10, 18, 32, 0.55);
-  border: 1px solid rgba(120, 160, 220, 0.18);
-  border-radius: 100px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
   pointer-events: auto;
   transition:
     opacity 0.5s ease-out,
-    translate 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    padding 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.3s ease,
-    border-color 0.3s ease;
+    translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .mode-history-hud.ready {
   opacity: 1;
   translate: -50% 0;
 }
-.mode-history-hud.expanded {
-  padding: 8px 14px;
-  background: rgba(10, 18, 32, 0.82);
-  border-color: rgba(120, 160, 220, 0.32);
-}
 
-/* ── Handle slot ── */
-/* Shared top-center slot where one of the two chevron buttons is visible
-   at a time.  Keeps the chevron position stable across tucked / expanded
-   state changes — no dancing around. */
+/* ── Handle pill ── */
+/* Small floating tab at the top of the HUD column.  One of the two
+   chevrons is visible at a time (expand when tucked, tuck otherwise). */
 .mhh-handle-slot {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 12px;
-  margin-bottom: 2px;
+  padding: 2px 8px;
+  background: rgba(10, 18, 32, 0.5);
+  border: 1px solid rgba(120, 160, 220, 0.14);
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+.mode-history-hud:not(.tucked) .mhh-handle-slot {
+  background: rgba(10, 18, 32, 0.6);
+  border-color: rgba(120, 160, 220, 0.22);
 }
 .mhh-handle {
   display: none;
@@ -4078,33 +4083,21 @@ body.light-mode .achievement-tooltip {
   padding: 0;
   background: none;
   border: none;
-  color: rgba(180, 210, 240, 0.5);
+  color: rgba(180, 210, 240, 0.55);
   cursor: pointer;
   transition: color 0.2s ease;
 }
 .mhh-handle:hover,
 .mhh-handle:focus-visible {
-  color: rgba(200, 230, 255, 0.9);
+  color: rgba(200, 230, 255, 0.95);
   outline: none;
 }
 .mhh-handle svg {
   width: 12px;
   height: 6px;
 }
-
-.mode-history-hud.tucked {
-  padding: 2px 6px;
-  background: rgba(10, 18, 32, 0.35);
-  border-color: rgba(120, 160, 220, 0.1);
-}
-.mode-history-hud.tucked .mhh-handle-slot {
-  margin-bottom: 0;
-}
 .mode-history-hud.tucked .mhh-handle-expand {
   display: flex;
-}
-.mode-history-hud.tucked .mhh-track {
-  display: none;
 }
 /* Up-chevron is shown whenever the HUD isn't tucked — gives the user a
    persistent "tuck me" affordance in compact and expanded states alike. */
@@ -4112,10 +4105,31 @@ body.light-mode .achievement-tooltip {
   display: flex;
 }
 
+/* ── Track pill ── */
+/* Separate pill below the handle, holding the mode icons and labels.
+   Hidden entirely when tucked. */
 .mhh-track {
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 5px 10px;
+  background: rgba(10, 18, 32, 0.55);
+  border: 1px solid rgba(120, 160, 220, 0.18);
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    padding 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+.mode-history-hud.expanded .mhh-track {
+  padding: 8px 14px;
+  background: rgba(10, 18, 32, 0.82);
+  border-color: rgba(120, 160, 220, 0.32);
+}
+.mode-history-hud.tucked .mhh-track {
+  display: none;
 }
 
 .mhh-slot {
