@@ -15,6 +15,11 @@ import {
   importConfig,
   onSectionActivate,
 } from "./registry.js";
+import {
+  SUBMODE_IDS,
+  SUBMODE_LABELS,
+  SUBMODE_COLORS,
+} from "../modes/registry.js";
 
 // ── Layout Constants ──
 const PANEL_WIDTH = 340;
@@ -112,21 +117,13 @@ const GROUP_ORDER = [
 ];
 
 // ── Mode metadata ──
-const MODE_COLORS = {
-  frozen: "#88d4f7",
-  "deep-sea": "#00ffc8",
-  blocky: "#ffa040",
-  rainy: "#6a9fc0",
-  "upside-down": "#e04050",
-};
-const MODE_LABELS = {
-  frozen: "Frozen Mode",
-  "deep-sea": "Deep Sea Mode",
-  blocky: "Blocky Mode",
-  rainy: "Rainy Mode",
-  "upside-down": "Upside Down Mode",
-};
-const MODE_ORDER = ["frozen", "deep-sea", "blocky", "rainy", "upside-down"];
+// Mode ids, short labels, and accent colors live in modes/registry.js.
+// The dev console appends " Mode" at render time — "Frozen" → "Frozen Mode".
+const MODE_COLORS = SUBMODE_COLORS;
+const MODE_LABELS = Object.fromEntries(
+  SUBMODE_IDS.map((id) => [id, `${SUBMODE_LABELS[id]} Mode`]),
+);
+const MODE_ORDER = SUBMODE_IDS;
 
 // ── Tooltip singleton ──
 let tooltipEl = null;
