@@ -101,6 +101,15 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  {
+    id: "magnetic-letters",
+    title: "Magnetic Letters",
+    description: "The logo leans toward you.",
+    hint: "Move your cursor near the Cloudbreeze wordmark",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
   // ── Exploration: Scroll ──
   {
     id: "stargazer",

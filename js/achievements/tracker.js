@@ -378,6 +378,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("reverse-engineer");
     },
 
+    "logo-parallax"() {
+      tryUnlock("magnetic-letters");
+    },
+
     "cloudlog-activate"() {
       tryUnlock("cloudlog-activated");
     },

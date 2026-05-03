@@ -864,8 +864,13 @@ nav {
   letter-spacing: -0.02em;
   color: #fff;
 }
-.logo-text span {
+.logo-text > span:not(.logo-letter) {
   color: var(--sky-3);
+}
+.logo-letter {
+  display: inline-block;
+  will-change: translate;
+  color: inherit;
 }
 
 .nav-actions {
