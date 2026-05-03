@@ -29,8 +29,6 @@ const VOID_CALLER_COUNT = 3;
 const MODE_HOPPER_COUNT = 3;
 const MOONLIT_START_HOUR = 0;
 const MOONLIT_END_HOUR = 5;
-const GOLDEN_HOUR_START = 16;
-const GOLDEN_HOUR_END = 19;
 
 export function createTracker(onUnlock, onRelock) {
   // ── Session State ──
@@ -464,13 +462,10 @@ export function createTracker(onUnlock, onRelock) {
     syncProgressTotals();
     checkProgressiveState();
 
-    // Time-of-day window unlocks
+    // Moonlit — visiting between midnight and 5am
     const hour = new Date().getHours();
     if (hour >= MOONLIT_START_HOUR && hour <= MOONLIT_END_HOUR) {
       tryUnlock("moonlit");
-    }
-    if (hour >= GOLDEN_HOUR_START && hour <= GOLDEN_HOUR_END) {
-      tryUnlock("golden-hour");
     }
   }
 

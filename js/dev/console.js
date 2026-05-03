@@ -96,8 +96,6 @@ const SECTION_LABEL_MAP = {
   "modes.blockyVisuals": "Visual Effects",
   cursor: "Cursor",
   "effects.fireworks": "Fireworks",
-  "effects.logoParallax": "Logo Parallax",
-  "effects.timeOfDay": "Time of Day",
 };
 
 // ── Group categories into top-level sections ──

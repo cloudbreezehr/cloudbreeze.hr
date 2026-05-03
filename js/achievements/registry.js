@@ -215,15 +215,6 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
-  {
-    id: "golden-hour",
-    title: "Golden Hour",
-    description: "Warm light, just before the sky burns out.",
-    hint: "Visit the site between 4 PM and 7 PM",
-    set: "exploration",
-    points: UNCOMMON,
-    hidden: true,
-  },
   // ── Exploration: Dev ──
   {
     id: "reverse-engineer",
