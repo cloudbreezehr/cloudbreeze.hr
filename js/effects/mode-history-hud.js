@@ -75,11 +75,29 @@ function onModeActivate(modeId) {
 
   ensureHud();
   if (firstDiscovery) rebuildSlots();
-  applyActive(modeId, true, firstDiscovery);
+  syncActiveFromBody();
+  pulse(modeId, firstDiscovery);
+  updateTucked();
 }
 
 function onModeDeactivate(modeId) {
-  applyActive(modeId, false, false);
+  syncActiveFromBody();
+  updateTucked();
+  // modeId reserved for future fine-grained handling (e.g. deactivation-
+  // specific pulse); current behavior reads all state from body.classList.
+  void modeId;
+}
+
+// Read body's sub-mode classes and mirror them to slot .active state.
+// Source of truth is body.classList — the same flag rendering reads from —
+// so the HUD can never drift out of sync no matter which modes overlap.
+function syncActiveFromBody() {
+  if (!hudEl) return;
+  for (const id of SUBMODE_IDS) {
+    const slot = slotsByMode.get(id);
+    if (!slot) continue;
+    slot.classList.toggle("active", document.body.classList.contains(id));
+  }
 }
 
 // ── DOM ──
@@ -88,10 +106,20 @@ function ensureHud() {
   if (hudEl) return;
 
   hudEl = document.createElement("div");
-  hudEl.className = "mode-history-hud collapsed";
+  hudEl.className = "mode-history-hud tucked";
   hudEl.style.zIndex = String(Z_MODE_HISTORY_HUD);
   hudEl.setAttribute("aria-label", "Mode history");
   hudEl.setAttribute("role", "group");
+
+  // Tucked-state handle — a small chevron tab users click/hover to reveal the
+  // HUD when no mode is active.  Hidden (display:none via CSS) when expanded.
+  const handle = document.createElement("button");
+  handle.type = "button";
+  handle.className = "mhh-handle";
+  handle.setAttribute("aria-label", "Expand mode history");
+  handle.innerHTML =
+    '<svg viewBox="0 0 12 6" aria-hidden="true"><path d="M1 1l5 4 5-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  hudEl.appendChild(handle);
 
   const track = document.createElement("div");
   track.className = "mhh-track";
@@ -100,14 +128,32 @@ function ensureHud() {
   document.body.appendChild(hudEl);
 
   hudEl.addEventListener("pointerenter", expand);
-  hudEl.addEventListener("pointerleave", scheduleCollapse);
+  hudEl.addEventListener("pointerleave", scheduleTuck);
   hudEl.addEventListener("focusin", expand);
-  hudEl.addEventListener("focusout", scheduleCollapse);
+  hudEl.addEventListener("focusout", scheduleTuck);
+  handle.addEventListener("click", expand);
+
+  // Size slots consistently by the longest label so layout is stable.
+  hudEl.style.setProperty("--mhh-slot-width", `${longestLabelCh()}ch`);
 
   rebuildSlots();
+  syncActiveFromBody();
+  updateTucked();
 
   // Slide-in reveal on first appearance
   requestAnimationFrame(() => hudEl.classList.add("ready"));
+}
+
+// Measure the longest label in character units — no hardcoded width, grows
+// automatically when a new mode with a longer name is registered.
+function longestLabelCh() {
+  let max = 0;
+  for (const id of SUBMODE_IDS) {
+    const len = (SUBMODE_LABELS[id] || id).length;
+    if (len > max) max = len;
+  }
+  // +1 ch padding so ascenders/descenders aren't flush against slot edges.
+  return max + 1;
 }
 
 function rebuildSlots() {
@@ -162,35 +208,50 @@ function rebuildSlots() {
   }
 }
 
-function applyActive(modeId, isActive, firstDiscovery) {
+function pulse(modeId, firstDiscovery) {
+  if (prefersReducedMotion()) return;
   const slot = slotsByMode.get(modeId);
   if (!slot) return;
-  slot.classList.toggle("active", isActive);
-  if (isActive && firstDiscovery && !prefersReducedMotion()) {
+  if (firstDiscovery) {
     slot.classList.add("just-discovered");
     setTimeout(
       () => slot.classList.remove("just-discovered"),
       HUD.NEW_DISCOVERY_HIGHLIGHT_MS,
     );
   }
-  if (isActive && !prefersReducedMotion()) {
-    slot.classList.add("pulse");
-    setTimeout(() => slot.classList.remove("pulse"), HUD.ACTIVE_PULSE_MS);
-  }
+  slot.classList.add("pulse");
+  setTimeout(() => slot.classList.remove("pulse"), HUD.ACTIVE_PULSE_MS);
 }
+
+let isHovered = false;
 
 function expand() {
   if (!hudEl) return;
+  isHovered = true;
   clearTimeout(collapseTimer);
-  hudEl.classList.remove("collapsed");
+  hudEl.classList.remove("tucked");
+  hudEl.classList.add("expanded");
 }
 
-function scheduleCollapse() {
+function scheduleTuck() {
   if (!hudEl) return;
+  isHovered = false;
   clearTimeout(collapseTimer);
   collapseTimer = setTimeout(() => {
-    hudEl.classList.add("collapsed");
+    hudEl.classList.remove("expanded");
+    updateTucked();
   }, HUD.COLLAPSE_DELAY_MS);
+}
+
+// Tucked iff no mode is currently active AND the user isn't interacting.
+// Any active mode pins the HUD in compact-visible state.
+function updateTucked() {
+  if (!hudEl) return;
+  if (isHovered) return; // expand() already cleared tucked
+  const anyActive = SUBMODE_IDS.some((id) =>
+    document.body.classList.contains(id),
+  );
+  hudEl.classList.toggle("tucked", !anyActive);
 }
 
 // ── Persistence ──
