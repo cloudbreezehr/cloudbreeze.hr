@@ -1,0 +1,24 @@
+{
+  "name": "cloudbreeze.hr",
+  "version": "1.0.0",
+  "description": "Website for [Cloudbreeze d.o.o.](https://cloudbreeze.hr) — a cloud consultancy based in Croatia, EU.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cloudbreezehr/cloudbreeze.hr.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/cloudbreezehr/cloudbreeze.hr/issues"
+  },
+  "homepage": "https://github.com/cloudbreezehr/cloudbreeze.hr#readme",
+  "devDependencies": {
+    "prettier": "^3.8.2"
+  }
+}
