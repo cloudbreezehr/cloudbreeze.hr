@@ -13,6 +13,7 @@ import {
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 import * as activityLog from "./activity-log.js";
+import { formatRelativeTime, formatAbsoluteTime } from "../time-ago.js";
 import {
   burstFireworks,
   launchRocketFireworks,
@@ -83,39 +84,7 @@ const CLOUD_HIDDEN_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentCo
 
 // ── Helpers ──
 
-// ── Timestamp formatting ──
-const MINUTE_MS = 60000;
-const HOUR_MS = 3600000;
-const DAY_MS = 86400000;
-const WEEK_MS = 604800000;
-
 let showAbsoluteTime = false;
-
-function formatRelativeTime(ts) {
-  const delta = Date.now() - ts;
-  if (delta < MINUTE_MS) return "just now";
-  if (delta < HOUR_MS) return `${Math.floor(delta / MINUTE_MS)}m ago`;
-  if (delta < DAY_MS) return `${Math.floor(delta / HOUR_MS)}h ago`;
-  if (delta < WEEK_MS) return `${Math.floor(delta / DAY_MS)}d ago`;
-  return formatAbsoluteDate(ts);
-}
-
-function formatAbsoluteTime(ts) {
-  const d = new Date(ts);
-  const day = d.getDate();
-  const month = d.toLocaleString("en", { month: "short" });
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${day} ${month} ${year}, ${hours}:${minutes}`;
-}
-
-function formatAbsoluteDate(ts) {
-  const d = new Date(ts);
-  const day = d.getDate();
-  const month = d.toLocaleString("en", { month: "short" });
-  return `${month} ${day}`;
-}
 
 function formatTimestamp(ts) {
   return showAbsoluteTime ? formatAbsoluteTime(ts) : formatRelativeTime(ts);

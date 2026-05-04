@@ -13,6 +13,7 @@ import { Z_MODE_HISTORY_HUD } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 import { getModes, getModeIds, toggleMode } from "../modes/registry.js";
+import { formatRelativeTime } from "../time-ago.js";
 
 // Placeholder silhouette for undiscovered modes — a generic "???" glyph so
 // the HUD hints there's more without spoiling which modes exist or how to
@@ -195,7 +196,7 @@ function rebuildSlots() {
       slot.dataset.mode = id;
       slot.setAttribute(
         "aria-label",
-        `Revisit ${label} mode (discovered ${formatRelative(discovered.get(id))})`,
+        `Revisit ${label} mode (discovered ${formatRelativeTime(discovered.get(id))})`,
       );
       slot.addEventListener("click", () => toggleMode(id));
     } else {
@@ -336,15 +337,4 @@ function chevronSvg(direction) {
     `<path d="${path}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>` +
     "</svg>"
   );
-}
-
-function formatRelative(ts) {
-  const diff = Date.now() - ts;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return "just now";
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  const days = Math.floor(hr / 24);
-  return `${days}d ago`;
 }
