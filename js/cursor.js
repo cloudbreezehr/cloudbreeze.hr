@@ -117,4 +117,25 @@ export function initCursor(dotEl, ringEl) {
     ringEl.classList.remove("pressing");
     applySizes();
   });
+
+  // After a click, the element under the cursor may have been removed or
+  // swapped (a button dismissing a list row, a modal closing, etc.).
+  // mouseout doesn't fire for vanished elements, so the hover-expanded state
+  // gets stuck on a cursor sitting over empty space.  Re-check on the next
+  // frame whether we're still over a focusable control.  Registered in the
+  // capture phase so inner-handler stopPropagation can't suppress it.
+  document.addEventListener(
+    "click",
+    () => {
+      requestAnimationFrame(() => {
+        const el = document.elementFromPoint(mx, my);
+        const nowHovering = !!el?.closest("a, button");
+        if (nowHovering !== hovering) {
+          hovering = nowHovering;
+          applySizes();
+        }
+      });
+    },
+    true,
+  );
 }
