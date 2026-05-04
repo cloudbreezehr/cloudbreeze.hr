@@ -32,6 +32,10 @@
   --mist: rgba(255, 255, 255, 0.55);
   --glass: rgba(255, 255, 255, 0.18);
   --glass-border: rgba(255, 255, 255, 0.35);
+  /* Default accent for achievement toasts/cards when the set has no color.
+     Deliberately NOT bound to --sky-4 so sub-modes that retheme the sky
+     (e.g. upside-down turns --sky-4 red) don't hijack unrelated toasts. */
+  --achievement-default-accent: #378add;
 }
 
 /* ── Reduced Motion ──
@@ -3544,7 +3548,7 @@ nav.nav-light .achievement-btn::after {
 }
 .achievement-progress-bar {
   height: 100%;
-  background: var(--sky-4, #378add);
+  background: var(--achievement-default-accent);
   border-radius: 1px;
   transition: width 0.4s ease-out;
 }
@@ -3748,7 +3752,7 @@ nav.nav-light .achievement-btn::after {
   font-family: "DM Mono", monospace;
   font-size: 0.6rem;
   font-weight: 700;
-  color: var(--sky-4, #378add);
+  color: var(--achievement-default-accent);
   opacity: 0.6;
   min-width: 20px;
   text-align: right;
@@ -3765,8 +3769,8 @@ nav.nav-light .achievement-btn::after {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--set-color, var(--sky-4, #378add));
-  box-shadow: 0 0 6px var(--set-color, var(--sky-4, #378add));
+  background: var(--set-color, var(--achievement-default-accent));
+  box-shadow: 0 0 6px var(--set-color, var(--achievement-default-accent));
   margin-right: 5px;
   vertical-align: middle;
   position: relative;
@@ -3780,11 +3784,11 @@ nav.nav-light .achievement-btn::after {
   0%,
   100% {
     opacity: 0.7;
-    box-shadow: 0 0 4px var(--set-color, var(--sky-4, #378add));
+    box-shadow: 0 0 4px var(--set-color, var(--achievement-default-accent));
   }
   50% {
     opacity: 1;
-    box-shadow: 0 0 10px var(--set-color, var(--sky-4, #378add));
+    box-shadow: 0 0 10px var(--set-color, var(--achievement-default-accent));
   }
 }
 .achievement-card.seen-fade .achievement-card-time::before {
@@ -3813,7 +3817,7 @@ nav.nav-light .achievement-btn::after {
 }
 .achievement-card-progress-bar-fill {
   height: 100%;
-  background: var(--set-color, var(--sky-4, #378add));
+  background: var(--set-color, var(--achievement-default-accent));
   border-radius: 0 0 6px 6px;
   transition: width 0.4s ease-out;
 }
@@ -3902,7 +3906,7 @@ body.light-mode .achievement-tooltip {
 }
 
 .achievement-toast {
-  --toast-accent: var(--sky-4, #378add);
+  --toast-accent: var(--achievement-default-accent);
   --set-color: var(--toast-accent);
   position: relative;
   display: flex;
