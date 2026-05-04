@@ -3498,11 +3498,33 @@ nav.nav-light .achievement-btn::after {
   background: rgba(10, 18, 32, 0.95);
 }
 .achievement-set-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
   font-family: "Syne", sans-serif;
   font-size: 0.72rem;
   font-weight: 600;
   color: rgba(255, 255, 255, 0.8);
   flex: 1;
+}
+/* Mode icon shown next to the set name — tinted to the set accent color
+   via currentColor on the SVG.  Matches the HUD's mode icon sizing. */
+.achievement-set-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--set-color, rgba(255, 255, 255, 0.7));
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.achievement-set-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.achievement-set.dimmed .achievement-set-icon {
+  filter: none;
+  opacity: 0.6;
 }
 .achievement-set-count {
   font-family: "DM Mono", monospace;

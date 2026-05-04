@@ -10,6 +10,7 @@ import {
   isModeSet,
   sumPoints,
 } from "./registry.js";
+import { getMode } from "../modes/registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 import {
@@ -604,7 +605,21 @@ function renderSections(container) {
 
     const sName = document.createElement("span");
     sName.className = "achievement-set-name";
-    sName.textContent = set.label;
+    // Prepend the mode's icon (if this set corresponds to a sub-mode).  The
+    // icon SVG uses currentColor, so it tints to the set's accent color via
+    // the `color` property on the name span.
+    if (isModeSet(set.id)) {
+      const mode = getMode(set.id);
+      if (mode && mode.icon) {
+        const iconEl = document.createElement("span");
+        iconEl.className = "achievement-set-icon";
+        iconEl.innerHTML = mode.icon;
+        sName.appendChild(iconEl);
+      }
+    }
+    const labelEl = document.createElement("span");
+    labelEl.textContent = set.label;
+    sName.appendChild(labelEl);
 
     const { total, unlocked } = setCountForSet(set.id);
     const sCount = document.createElement("span");
