@@ -2,6 +2,26 @@
 // All achievement definitions as pure data. No logic, no conditions.
 // Conditions live in tracker.js where they have access to event state.
 
+import { getMode } from "../modes/registry.js";
+
+// Inline SVG icons for the non-mode sets.  Mode sets reuse their mode's
+// icon so there's one source of truth per mode.  All icons use a 16×16
+// viewBox and currentColor so they inherit the set's accent tint.
+const EXPLORATION_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<circle cx="8" cy="8" r="5.5"/>' +
+  '<path d="M11 5l-2 4-4 2 2-4z" fill="currentColor" stroke="none"/>' +
+  "</svg>";
+const MASTERY_ICON =
+  '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+  '<path d="M8 1.5l1.8 4 4.2.4-3.2 2.8 1 4.3L8 10.8 4.2 13l1-4.3L2 5.9l4.2-.4z"/>' +
+  "</svg>";
+const META_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<path d="M3 14V3"/>' +
+  '<path d="M3 3h8l-1.5 2.5L11 8H3" fill="currentColor"/>' +
+  "</svg>";
+
 // ── Point Tiers ──
 const TRIVIAL = 1;
 const COMMON = 5;
@@ -13,15 +33,53 @@ const LEGENDARY = 100;
 export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
 
 // ── Achievement Sets ──
+// Mode sets pull their icon from the mode registry so there's one source of
+// truth per mode.  Non-mode sets declare their icon inline above.
+//
+// Init order dependency: mode files must have already run their top-level
+// `registerMode(...)` calls by the time this module evaluates — otherwise
+// `getMode(...)` returns null and mode-set icons silently become undefined.
+// This currently holds because index.html imports each `initXxx` mode file
+// before `initAchievements`.  Missing icons are tolerated at render time.
 export const SETS = [
-  { id: "exploration", label: "Exploration", color: null },
-  { id: "mastery", label: "Mastery", color: null },
-  { id: "deep-sea", label: "Deep Sea", color: "#00ffc8" },
-  { id: "frozen", label: "Frozen", color: "#88d4f7" },
-  { id: "blocky", label: "Blocky", color: "#ffa040" },
-  { id: "rainy", label: "Rainy", color: "#6a9fc0" },
-  { id: "upside-down", label: "Upside Down", color: "#e04050" },
-  { id: "meta", label: "Milestones", color: null },
+  {
+    id: "exploration",
+    label: "Exploration",
+    color: null,
+    icon: EXPLORATION_ICON,
+  },
+  { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
+  {
+    id: "deep-sea",
+    label: "Deep Sea",
+    color: "#00ffc8",
+    icon: getMode("deep-sea")?.icon,
+  },
+  {
+    id: "frozen",
+    label: "Frozen",
+    color: "#88d4f7",
+    icon: getMode("frozen")?.icon,
+  },
+  {
+    id: "blocky",
+    label: "Blocky",
+    color: "#ffa040",
+    icon: getMode("blocky")?.icon,
+  },
+  {
+    id: "rainy",
+    label: "Rainy",
+    color: "#6a9fc0",
+    icon: getMode("rainy")?.icon,
+  },
+  {
+    id: "upside-down",
+    label: "Upside Down",
+    color: "#e04050",
+    icon: getMode("upside-down")?.icon,
+  },
+  { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
 
 // ── Achievement Definitions ──
