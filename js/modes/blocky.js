@@ -1,21 +1,10 @@
 import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerMode, registerToggle } from "./registry.js";
+import { registerToggle } from "./registry.js";
 
-registerMode({
-  id: "blocky",
-  label: "Blocky",
-  color: "#ffa040",
-  icon:
-    '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
-    '<rect x="2" y="2" width="4" height="4"/>' +
-    '<rect x="10" y="2" width="4" height="4"/>' +
-    '<rect x="6" y="6" width="4" height="4"/>' +
-    '<rect x="2" y="10" width="4" height="4"/>' +
-    '<rect x="10" y="10" width="4" height="4"/>' +
-    "</svg>",
-});
+// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// This file is for behavior only.
 
 // ── Force & Activation ──
 const BF = defineConstants(

@@ -34,13 +34,9 @@ export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
 
 // ── Achievement Sets ──
 // Mode sets pull their icon from the mode registry so there's one source of
-// truth per mode.  Non-mode sets declare their icon inline above.
-//
-// Init order dependency: mode files must have already run their top-level
-// `registerMode(...)` calls by the time this module evaluates — otherwise
-// `getMode(...)` returns null and mode-set icons silently become undefined.
-// This currently holds because index.html imports each `initXxx` mode file
-// before `initAchievements`.  Missing icons are tolerated at render time.
+// truth per mode.  Non-mode sets declare their icon inline above.  Mode
+// descriptors are static data in modes/registry.js, so `getMode(id)` is
+// safe to call at module load time — no init order dependency.
 export const SETS = [
   {
     id: "exploration",

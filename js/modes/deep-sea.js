@@ -3,18 +3,10 @@ import { bindPointer } from "../pointer.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerMode, registerToggle } from "./registry.js";
+import { registerToggle } from "./registry.js";
 
-registerMode({
-  id: "deep-sea",
-  label: "Deep Sea",
-  color: "#00ffc8",
-  icon:
-    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
-    '<path d="M1 6c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0"/>' +
-    '<path d="M1 10.5c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0"/>' +
-    "</svg>",
-});
+// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// This file is for behavior only.
 
 // ── Force & Activation ──
 const DF = defineConstants(

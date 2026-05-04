@@ -2,17 +2,10 @@ import { defineConstants } from "../dev/registry.js";
 import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerMode, registerToggle } from "./registry.js";
+import { registerToggle } from "./registry.js";
 
-registerMode({
-  id: "frozen",
-  label: "Frozen",
-  color: "#88d4f7",
-  icon:
-    '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
-    '<path d="M8 1.5v13M2 8h12M3.5 3.5l9 9M12.5 3.5l-9 9"/>' +
-    "</svg>",
-});
+// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// This file is for behavior only.
 
 // ── Force & Activation ──
 const FF = defineConstants(
