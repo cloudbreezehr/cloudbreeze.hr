@@ -3406,6 +3406,176 @@ nav.nav-light .achievement-btn::after {
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* ── Tabs ── */
+/* Horizontal tab row between the Cloudlog header and the scrollable body.
+   Switches between the Achievements view (grouped sets) and Activity
+   view (reverse-chron log of unlocks). */
+
+.achievement-tabs {
+  display: flex;
+  gap: 0.2rem;
+  padding: 0 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+.achievement-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.9rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "Syne", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.achievement-tab:hover {
+  color: rgba(255, 255, 255, 0.7);
+}
+.achievement-tab.active {
+  color: #fff;
+  border-bottom-color: var(--sky-3);
+}
+.achievement-tab-badge {
+  display: none;
+  padding: 1px 6px;
+  background: var(--sky-3);
+  color: #0a1628;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  border-radius: 100px;
+  min-width: 16px;
+  text-align: center;
+}
+.achievement-tab-badge.visible {
+  display: inline-block;
+}
+
+/* Tab views — only the active one is rendered.  The default (Achievements)
+   is marked .active at build time in buildPanel. */
+.achievement-view {
+  display: none;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+.achievement-view.active {
+  display: flex;
+}
+
+/* ── Activity view ── */
+/* Reverse-chron stack of toast-style rows.  Each row reuses the live
+   .achievement-toast markup so the two surfaces stay visually identical. */
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.2rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+.activity-clear {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.activity-clear:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.activity-empty {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: "DM Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.activity-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+/* Embedded toast inside the activity list — override the live-toast's
+   slide-in styles so it sits as a normal list item.  Higher specificity
+   (two classes + one type) wins over the live-toast rules without needing
+   !important. */
+.activity-list .activity-row .achievement-toast {
+  position: relative;
+  transform: none;
+  translate: none;
+  opacity: 1;
+  width: 100%;
+  cursor: pointer;
+}
+.activity-list .activity-row.unseen .achievement-toast {
+  outline: 1px solid rgba(125, 191, 232, 0.4);
+  outline-offset: 1px;
+}
+.activity-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.4rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.04em;
+}
+.activity-time {
+  flex: 1;
+}
+.activity-dismiss {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+.activity-dismiss:hover {
+  color: rgba(255, 100, 100, 0.8);
+}
+.activity-dismiss svg {
+  width: 10px;
+  height: 10px;
+}
+
 /* ── Panel Body ── */
 
 .achievement-body {

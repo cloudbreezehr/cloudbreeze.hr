@@ -12,6 +12,7 @@ import {
 } from "./registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
+import * as activityLog from "./activity-log.js";
 import {
   burstFireworks,
   launchRocketFireworks,
@@ -341,20 +342,24 @@ export function hideNavButton() {
 }
 
 export function updateBadge() {
-  if (!badgeEl) return;
-  const count = storage.getUnseenCount();
-  badgeEl.textContent = String(count);
-  if (count > 0) {
-    badgeEl.classList.add("visible");
-  } else {
-    badgeEl.classList.remove("visible");
+  if (badgeEl) {
+    const count = storage.getUnseenCount();
+    badgeEl.textContent = String(count);
+    if (count > 0) {
+      badgeEl.classList.add("visible");
+    } else {
+      badgeEl.classList.remove("visible");
+    }
+    if (navBtn) {
+      navBtn.setAttribute(
+        "data-tooltip",
+        count > 0 ? `Cloudlog (${count} new)` : "Cloudlog",
+      );
+    }
   }
-  if (navBtn) {
-    navBtn.setAttribute(
-      "data-tooltip",
-      count > 0 ? `Cloudlog (${count} new)` : "Cloudlog",
-    );
-  }
+  // Keep the Achievements tab badge in sync with the nav-button badge —
+  // both read the same storage.getUnseenCount().
+  updateTabBadges();
 }
 
 function pulseBadge() {
@@ -513,11 +518,45 @@ function buildPanel(onHide) {
 
   panel.appendChild(header);
 
-  // Body (scrollable)
+  // Tab switcher — Achievements | Activity.  Default tab is Achievements.
+  // Both tabs carry their own unseen badge — achievements counts unseen-in-
+  // panel cards, activity counts unseen-in-log entries.  The nav-button
+  // badge (outside the panel) mirrors only the achievement count.
+  const tabs = document.createElement("div");
+  tabs.className = "achievement-tabs";
+  tabs.setAttribute("role", "tablist");
+  tabs.appendChild(
+    buildTabButton("achievements", "Achievements", "achievements"),
+  );
+  tabs.appendChild(buildTabButton("activity", "Activity", "activity"));
+  panel.appendChild(tabs);
+
+  // Body (scrollable) — holds both tab views.  Only one is visible at a time.
   const body = document.createElement("div");
   body.className = "achievement-body";
 
-  renderSections(body);
+  const achievementsView = document.createElement("div");
+  achievementsView.className = "achievement-view achievement-view-achievements";
+  achievementsView.setAttribute("role", "tabpanel");
+  achievementsView.id = "achievement-panel-achievements";
+  achievementsView.setAttribute(
+    "aria-labelledby",
+    "achievement-tab-achievements",
+  );
+  // Achievements is the default tab on open — mark it active so the
+  // matching CSS display rule takes effect from the first paint.
+  if (activeTab === "achievements") achievementsView.classList.add("active");
+  renderSections(achievementsView);
+  body.appendChild(achievementsView);
+
+  const activityView = document.createElement("div");
+  activityView.className = "achievement-view achievement-view-activity";
+  activityView.setAttribute("role", "tabpanel");
+  activityView.id = "achievement-panel-activity";
+  activityView.setAttribute("aria-labelledby", "achievement-tab-activity");
+  if (activeTab === "activity") activityView.classList.add("active");
+  renderActivity(activityView);
+  body.appendChild(activityView);
 
   // Dismiss tooltip when scrolling the panel
   body.addEventListener("scroll", hideHintTooltip, { passive: true });
@@ -551,6 +590,18 @@ function buildPanel(onHide) {
   const markBtn = panel.querySelector(".achievement-mark-read");
   if (markBtn && storage.getUnseenCount() === 0) markBtn.style.display = "none";
 
+  // Keep Activity tab + badge in sync with the log.  The panel is a
+  // singleton (built once, reused), so no explicit unsubscribe is needed.
+  activityLog.onChange(() => {
+    if (!panelEl) return;
+    const view = panelEl.querySelector(".achievement-view-activity");
+    if (view) renderActivity(view);
+    updateTabBadges();
+  });
+
+  // Initial badge paint reflects any unseen entries from prior sessions.
+  updateTabBadges();
+
   return panel;
 }
 
@@ -569,16 +620,192 @@ function refreshPanel() {
     );
   }
 
-  // Re-render sections
-  const body = panelEl.querySelector(".achievement-body");
-  if (body) {
-    body.innerHTML = "";
-    renderSections(body);
+  // Re-render the Achievements view only — the Activity view is managed by
+  // its own onChange subscription so rebuilding it here would double-render.
+  const achView = panelEl.querySelector(".achievement-view-achievements");
+  if (achView) {
+    achView.innerHTML = "";
+    renderSections(achView);
   }
 
   // Re-observe new unseen cards after DOM rebuild
   observeUnseenCards();
   updateMarkReadVisibility();
+  updateTabBadges();
+}
+
+// ── Tabs ──
+// Panel body holds two views — "achievements" (grouped sets, the original
+// Cloudlog content) and "activity" (flat reverse-chron log of events).
+// Switching tabs toggles which view is shown; activity tab also marks all
+// entries seen on open, clearing its own unseen badge.
+
+let activeTab = "achievements";
+
+function buildTabButton(id, label, unseenSource) {
+  const btn = document.createElement("button");
+  btn.className = "achievement-tab";
+  btn.dataset.tab = id;
+  btn.setAttribute("role", "tab");
+  btn.id = `achievement-tab-${id}`;
+  btn.setAttribute("aria-controls", `achievement-panel-${id}`);
+  const isActive = id === activeTab;
+  btn.setAttribute("aria-selected", isActive ? "true" : "false");
+  btn.tabIndex = isActive ? 0 : -1;
+  if (isActive) btn.classList.add("active");
+
+  const labelEl = document.createElement("span");
+  labelEl.className = "achievement-tab-label";
+  labelEl.textContent = label;
+  btn.appendChild(labelEl);
+
+  // Badge is created even when count is zero so we can show/hide via CSS.
+  const badge = document.createElement("span");
+  badge.className = "achievement-tab-badge";
+  btn.appendChild(badge);
+  btn.dataset.unseenSource = unseenSource || "";
+
+  btn.addEventListener("click", () => setActiveTab(id));
+  // Left/Right arrow navigation between tabs — standard ARIA tab pattern.
+  btn.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    if (!panelEl) return;
+    const all = Array.from(panelEl.querySelectorAll(".achievement-tab"));
+    const i = all.indexOf(btn);
+    if (i === -1) return;
+    const next =
+      e.key === "ArrowRight"
+        ? all[(i + 1) % all.length]
+        : all[(i - 1 + all.length) % all.length];
+    setActiveTab(next.dataset.tab);
+    next.focus();
+    e.preventDefault();
+  });
+  return btn;
+}
+
+function setActiveTab(id) {
+  if (!panelEl) return;
+  activeTab = id;
+  panelEl.querySelectorAll(".achievement-tab").forEach((btn) => {
+    const isActive = btn.dataset.tab === id;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-selected", isActive ? "true" : "false");
+    btn.tabIndex = isActive ? 0 : -1;
+  });
+  panelEl
+    .querySelector(".achievement-view-achievements")
+    ?.classList.toggle("active", id === "achievements");
+  panelEl
+    .querySelector(".achievement-view-activity")
+    ?.classList.toggle("active", id === "activity");
+  // Opening the Activity tab marks all its entries as seen — matches how
+  // opening the Cloudlog clears the achievement-unseen badge.
+  if (id === "activity") activityLog.markAllSeen();
+  updateTabBadges();
+}
+
+function updateTabBadges() {
+  if (!panelEl) return;
+  panelEl.querySelectorAll(".achievement-tab").forEach((btn) => {
+    const source = btn.dataset.unseenSource;
+    if (!source) return;
+    const badge = btn.querySelector(".achievement-tab-badge");
+    if (!badge) return;
+    let count = 0;
+    if (source === "activity") count = activityLog.getUnseenCount();
+    else if (source === "achievements") count = storage.getUnseenCount();
+    badge.textContent = String(count);
+    badge.classList.toggle("visible", count > 0);
+  });
+}
+
+// ── Activity view ──
+// Re-chronological stack of achievement toasts with per-row dismiss plus
+// a "Clear all" button at the top.  Reuses buildAchievementToast so live
+// toasts and log entries stay visually identical.
+
+function renderActivity(container) {
+  container.replaceChildren();
+
+  const entries = activityLog.getEntries();
+
+  const header = document.createElement("div");
+  header.className = "activity-header";
+  const countEl = document.createElement("span");
+  countEl.className = "activity-count";
+  countEl.textContent =
+    entries.length === 0
+      ? "No activity yet"
+      : `${entries.length} ${entries.length === 1 ? "entry" : "entries"}`;
+  header.appendChild(countEl);
+
+  const clearBtn = document.createElement("button");
+  clearBtn.className = "activity-clear";
+  clearBtn.textContent = "Clear all";
+  clearBtn.addEventListener("click", () => activityLog.clear());
+  header.appendChild(clearBtn);
+
+  if (entries.length === 0) clearBtn.style.display = "none";
+
+  container.appendChild(header);
+
+  if (entries.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "activity-empty";
+    empty.textContent = "Earned achievements will appear here.";
+    container.appendChild(empty);
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "activity-list";
+  for (const entry of entries) {
+    const row = renderActivityEntry(entry);
+    if (row) list.appendChild(row);
+  }
+  container.appendChild(list);
+}
+
+// Build a single activity-log row.  Returns null if the entry's payload
+// can't be resolved (e.g. achievement removed from the registry).  Switch
+// on entry.type when new event types are added later.
+function renderActivityEntry(entry) {
+  const row = document.createElement("div");
+  row.className = "activity-row";
+  if (!entry.seen) row.classList.add("unseen");
+
+  let content = null;
+  if (entry.type === "achievement-unlocked") {
+    const achievement = getAchievement(entry.payload?.achievementId);
+    if (!achievement) return null;
+    content = buildAchievementToast(achievement);
+    wireToastClick(content, achievement);
+  }
+  if (!content) return null;
+
+  const meta = document.createElement("div");
+  meta.className = "activity-meta";
+  const time = document.createElement("span");
+  time.className = "activity-time";
+  time.textContent = formatRelativeTime(entry.timestamp);
+  time.title = new Date(entry.timestamp).toLocaleString();
+  meta.appendChild(time);
+
+  const dismissBtn = document.createElement("button");
+  dismissBtn.className = "activity-dismiss";
+  dismissBtn.setAttribute("aria-label", "Dismiss entry");
+  dismissBtn.innerHTML =
+    '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M3 3l6 6M3 9l6-6"/></svg>';
+  dismissBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    activityLog.dismiss(entry.id);
+  });
+  meta.appendChild(dismissBtn);
+
+  row.appendChild(content);
+  row.appendChild(meta);
+  return row;
 }
 
 function renderSections(container) {
@@ -912,14 +1139,11 @@ function resumeToasts() {
   }
 }
 
-export function showToast(achievement) {
-  ensureToastContainer();
-
-  if (activeToasts.length >= TOAST_MAX_VISIBLE) {
-    toastQueue.push(achievement);
-    return;
-  }
-
+// Build the achievement-toast DOM for a given achievement.  Shared between
+// the live toast system and the activity log list so both renderings match.
+// Returns the element without attaching any click handler — callers decide
+// whether the toast is clickable and what clicking does.
+export function buildAchievementToast(achievement) {
   const set = SETS.find((s) => s.id === achievement.set);
   const toast = document.createElement("div");
   toast.className = "achievement-toast";
@@ -937,7 +1161,12 @@ export function showToast(achievement) {
   `;
 
   if (achievement.hint) toast.dataset.hint = achievement.hint;
+  return toast;
+}
 
+// Click handler shared by live toasts and activity-log entries: pulse the
+// toast, then open the panel and scroll to the achievement's card.
+function wireToastClick(toast, achievement) {
   toast.addEventListener("click", () => {
     toast.classList.remove("clicked");
     void toast.offsetHeight;
@@ -945,19 +1174,34 @@ export function showToast(achievement) {
     toast.addEventListener(
       "animationend",
       () => toast.classList.remove("clicked"),
-      {
-        once: true,
-      },
+      { once: true },
     );
 
-    // Open panel and scroll to this achievement's card
     if (!panelOpen) {
       openPanel();
-      setTimeout(() => scrollToCard(achievement.id), PANEL_SLIDE_MS);
+      setTimeout(() => {
+        setActiveTab("achievements");
+        scrollToCard(achievement.id);
+      }, PANEL_SLIDE_MS);
     } else {
+      // Ensure the Achievements tab is active before scrolling to the card.
+      setActiveTab("achievements");
       scrollToCard(achievement.id);
     }
   });
+}
+
+export function showToast(achievement) {
+  ensureToastContainer();
+
+  if (activeToasts.length >= TOAST_MAX_VISIBLE) {
+    toastQueue.push(achievement);
+    return;
+  }
+
+  const set = SETS.find((s) => s.id === achievement.set);
+  const toast = buildAchievementToast(achievement);
+  wireToastClick(toast, achievement);
 
   toastContainer.appendChild(toast);
 
@@ -1116,6 +1360,7 @@ export function setDevMode(enabled) {
 
 export function onAchievementUnlocked(achievement) {
   showToast(achievement);
+  activityLog.log("achievement-unlocked", { achievementId: achievement.id });
   updateBadge();
   pulseBadge();
   refreshCard(achievement.id);

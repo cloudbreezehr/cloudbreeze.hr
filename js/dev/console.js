@@ -99,6 +99,7 @@ const SECTION_LABEL_MAP = {
   "effects.fireworks": "Fireworks",
   "effects.logoParallax": "Logo Parallax",
   "effects.modeHistoryHud": "Mode History HUD",
+  "achievements.activityLog": "Activity Log",
 };
 
 // ── Group categories into top-level sections ──
@@ -110,6 +111,7 @@ const GROUP_ORDER = [
   { label: "Interactions", prefix: "interactions." },
   { label: "Cursor", prefix: "cursor" },
   { label: "Effects", prefix: "effects." },
+  { label: "Achievements", prefix: "achievements." },
 ];
 
 // ── Mode metadata helpers ──
