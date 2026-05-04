@@ -3558,7 +3558,8 @@ nav.nav-light .achievement-btn::after {
 .activity-time {
   flex: 1;
 }
-.activity-dismiss {
+.activity-dismiss,
+.activity-restore {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.3);
@@ -3571,9 +3572,52 @@ nav.nav-light .achievement-btn::after {
 .activity-dismiss:hover {
   color: rgba(255, 100, 100, 0.8);
 }
-.activity-dismiss svg {
+.activity-restore:hover {
+  color: rgba(125, 191, 232, 0.95);
+}
+.activity-dismiss svg,
+.activity-restore svg {
   width: 10px;
   height: 10px;
+}
+
+/* Trashed rows are dimmed so they read as "out of sight, recoverable". */
+.activity-list .activity-row.trashed .achievement-toast {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+.activity-list .activity-row.trashed:hover .achievement-toast {
+  opacity: 0.85;
+  filter: none;
+}
+
+/* Footer — trash-view toggle.  Absent when the log is empty AND there's
+   nothing in the trash. */
+.activity-footer {
+  display: flex;
+  justify-content: center;
+  padding: 0.4rem 0 0.2rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.activity-trash-toggle {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.activity-trash-toggle:hover {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 /* ── Panel Body ── */
