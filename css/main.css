@@ -3095,8 +3095,12 @@ body.rainy .rain-card::before {
 }
 
 body[data-active-theme="rainy"] .nav-cta {
-  background: linear-gradient(135deg, #5a7a9a, #4a6a8a);
-  box-shadow: 0 0 15px rgba(90, 122, 154, 0.2);
+  color: rgb(160, 185, 210);
+  border-color: rgba(160, 185, 210, 0.4);
+}
+body[data-active-theme="rainy"] .nav-cta:hover {
+  background: rgba(160, 185, 210, 0.15);
+  border-color: rgb(160, 185, 210);
 }
 
 body[data-active-theme="rainy"] #contact {
@@ -4528,114 +4532,12 @@ body.upside-down .achievement-toast-container {
 
 /* ── Light mode ── */
 
-body.light-mode .achievement-panel {
-  background: rgba(240, 247, 255, 0.92);
-  border-left-color: rgba(0, 0, 0, 0.06);
-}
-body.light-mode .achievement-header {
-  border-bottom-color: rgba(0, 0, 0, 0.06);
-}
-body.light-mode .achievement-title {
-  color: var(--ink);
-}
-body.light-mode .achievement-close {
-  color: rgba(10, 22, 40, 0.4);
-}
-body.light-mode .achievement-close:hover {
-  color: var(--ink);
-}
-body.light-mode .achievement-mark-read {
-  color: rgba(10, 22, 40, 0.3);
-}
-body.light-mode .achievement-mark-read:hover {
-  color: rgba(10, 22, 40, 0.6);
-}
-body.light-mode .achievement-set-header {
-  background: rgba(240, 247, 255, 0.95);
-  border-left-color: rgba(0, 0, 0, 0.12);
-}
-body.light-mode .achievement-set-name {
-  color: var(--ink);
-}
-body.light-mode .achievement-set-count {
-  color: rgba(10, 22, 40, 0.4);
-}
-body.light-mode .achievement-progress {
-  background: rgba(0, 0, 0, 0.06);
-}
-body.light-mode .achievement-card {
-  background: rgba(0, 0, 0, 0.02);
-}
-body.light-mode .achievement-card.unlocked {
-  background: rgba(0, 0, 0, 0.04);
-}
-body.light-mode .achievement-card.unlocked:hover {
-  background: rgba(0, 0, 0, 0.04);
-}
-body.light-mode .achievement-card.unlocked::after {
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    transparent 40%,
-    rgba(0, 0, 0, 0.03) 50%,
-    transparent 60%,
-    transparent 100%
-  );
-  background-size: 400% 100%;
-}
-body.light-mode .achievement-card-title {
-  color: var(--ink);
-}
-body.light-mode .achievement-card.locked .achievement-card-title,
-body.light-mode .achievement-card.hidden-ach .achievement-card-title {
-  color: rgba(10, 22, 40, 0.4);
-}
-body.light-mode .achievement-card-desc {
-  color: rgba(10, 22, 40, 0.4);
-}
-body.light-mode .achievement-card.unlocked .achievement-card-desc {
-  color: rgba(10, 22, 40, 0.55);
-}
-body.light-mode .achievement-card-time {
-  color: rgba(10, 22, 40, 0.3);
-}
-body.light-mode .achievement-card-time:hover {
-  color: rgba(10, 22, 40, 0.5);
-}
-body.light-mode .achievement-card.unseen .achievement-card-time::before {
-  box-shadow: 0 0 6px var(--set-color, var(--sky-5, #1a5fa8));
-}
-body.light-mode .achievement-card-progress-text {
-  color: rgba(10, 22, 40, 0.35);
-}
-body.light-mode .achievement-card-progress-bar-wrap {
-  background: rgba(0, 0, 0, 0.06);
-}
-body.light-mode .achievement-card.relocked {
-  border-left-color: rgba(180, 140, 20, 0.35);
-}
-body.light-mode .achievement-icon {
-  color: rgba(10, 22, 40, 0.35);
-}
-body.light-mode .achievement-card.unlocked .achievement-icon {
-  color: var(--sky-5, #1a5fa8);
-}
-body.light-mode .achievement-footer {
-  border-top-color: rgba(0, 0, 0, 0.06);
-}
-body.light-mode .achievement-hide-btn {
-  color: rgba(10, 22, 40, 0.3);
-}
-body.light-mode .achievement-hide-btn:hover {
-  color: rgba(10, 22, 40, 0.6);
-}
-body.light-mode .achievement-count-total {
-  color: rgba(10, 22, 40, 0.3);
-}
-body.light-mode .achievement-count-total::after {
-  color: rgba(10, 22, 40, 0.7);
-  background: rgba(240, 247, 255, 0.95);
-}
+/* Cloudlog panel keeps its dark-mode palette in both themes — the panel
+   is dense with tab labels, hint toggles, mode icons, and progress bars
+   that were designed against a dark background.  Inverting to light
+   produced low-contrast greys across several elements, so we stay dark
+   for consistency.  The nav button and its badge still adopt light-mode
+   styling; those sit on the site chrome, not inside the panel. */
 body.light-mode .achievement-body::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
