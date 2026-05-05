@@ -7,6 +7,7 @@ import { createSnow } from "./particles/frozen.js";
 import { createDeepSea } from "./particles/deep-sea.js";
 import { createBlocky } from "./particles/blocky.js";
 import { createRain } from "./particles/rain.js";
+import { createPaper } from "./particles/paper.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
@@ -236,6 +237,7 @@ export function initCanvas(canvasEl, theme, options) {
   const deepSea = createDeepSea(canvas, ctx, COUNTS.BUBBLE, COUNTS.JELLY);
   const blocky = createBlocky(canvas, ctx, COUNTS.FIREFLY);
   const rain = createRain(canvas, ctx);
+  const paper = createPaper(canvas, ctx);
 
   window.addEventListener("resize", () => {
     resize();
@@ -264,6 +266,7 @@ export function initCanvas(canvasEl, theme, options) {
 
   let lastFrameTime = performance.now();
   let wasRainy = false;
+  let wasPaper = false;
 
   // ── Sky gradient cache ──
   // Rebuilding the gradient every frame is the most expensive per-frame op.
@@ -285,6 +288,7 @@ export function initCanvas(canvasEl, theme, options) {
     const isDeepSea = document.body.classList.contains("deep-sea");
     const isBlocky = document.body.classList.contains("blocky");
     const isRainy = document.body.classList.contains("rainy");
+    const isPaper = document.body.classList.contains("paper");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeModes = getModeIds().filter((m) =>
       document.body.classList.contains(m),
@@ -304,8 +308,9 @@ export function initCanvas(canvasEl, theme, options) {
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Scroll-interpolated sky gradient — rebuilt only when inputs change
-    if (opts.sky) {
+    // Scroll-interpolated sky gradient — rebuilt only when inputs change.
+    // Paper mode suppresses the sky entirely; its background comes from CSS.
+    if (opts.sky && !isPaper) {
       const bucket = Math.round(sp * SKY_GRADIENT_BUCKETS);
       if (
         cachedSkyGradient === null ||
@@ -330,8 +335,8 @@ export function initCanvas(canvasEl, theme, options) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Stars and shooting stars
-    if (sky) sky.draw(ctx, canvas, sp, pal, forces);
+    // Stars and shooting stars — suppressed in paper mode
+    if (sky && !isPaper) sky.draw(ctx, canvas, sp, pal, forces);
 
     const reducedMotion = prefersReducedMotion();
 
@@ -341,10 +346,11 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
     // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
+    // Paper mode suppresses the ambient particle system entirely.
     scrollVelocity *= SCROLL.VEL_DECAY;
     const drawVelocity = reducedMotion ? 0 : scrollVelocity;
     interactions.updateHold(forces, performance.now());
-    atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
+    if (!isPaper) atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
     // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe.
     // Under reduced-motion, suppress snow-globe turbulence so reversals don't shake.
     if (isFrozen) {
@@ -363,6 +369,13 @@ export function initCanvas(canvasEl, theme, options) {
     }
     if (wasRainy && !isRainy) rain.cleanup();
     wasRainy = isRainy;
+
+    // Paper mode — hand-drawn sketch elements
+    if (isPaper) {
+      paper.draw(pal);
+    }
+    if (wasPaper && !isPaper) paper.cleanup();
+    wasPaper = isPaper;
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
@@ -388,9 +401,12 @@ export function initCanvas(canvasEl, theme, options) {
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
+    // Forward the nearest service card so achievement handlers (e.g.
+    // paper's margin-notes) can evaluate hit-test without duplicating it.
+    const card = e.target.closest(".service-card") || null;
     window.dispatchEvent(
       new CustomEvent("achievement", {
-        detail: { type: "click", x: e.clientX, y: e.clientY },
+        detail: { type: "click", x: e.clientX, y: e.clientY, card },
       }),
     );
 
@@ -411,8 +427,17 @@ export function initCanvas(canvasEl, theme, options) {
       rain.clickBurst(cx, cy);
     }
 
-    // Normal click burst particles (skipped in blocky — block fragments replace them)
-    if (!document.body.classList.contains("blocky")) {
+    // Paper click — ink splat replaces the normal burst
+    if (document.body.classList.contains("paper")) {
+      paper.clickBurst(cx, cy);
+    }
+
+    // Normal click burst particles — blocky uses block fragments instead;
+    // paper uses ink splats.
+    if (
+      !document.body.classList.contains("blocky") &&
+      !document.body.classList.contains("paper")
+    ) {
       interactions.click(cx, cy, currentPal);
     }
     window.dispatchEvent(
@@ -427,6 +452,10 @@ export function initCanvas(canvasEl, theme, options) {
       const cx = x,
         cy = canvasY(y);
       interactions.startDrag(forces, cx, cy);
+      // Paper mode — start an SVG ink stroke that tracks the pointer
+      if (document.body.classList.contains("paper")) {
+        paper.startStroke(x, y);
+      }
     },
     onMove(x, y) {
       const cx = x,
@@ -442,6 +471,10 @@ export function initCanvas(canvasEl, theme, options) {
       if (trailAdded && document.body.classList.contains("deep-sea")) {
         deepSea.dragBubble(cx, cy);
       }
+      // Paper mode — extend the active ink stroke with the new point
+      if (document.body.classList.contains("paper")) {
+        paper.extendStroke(x, y);
+      }
     },
     onUp() {
       // Rainy well burst — massive splash on gravity well release
@@ -450,6 +483,17 @@ export function initCanvas(canvasEl, theme, options) {
         document.body.classList.contains("rainy")
       ) {
         rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
+      }
+      // Paper mode — finalize the stroke and fire the doodler event
+      if (document.body.classList.contains("paper")) {
+        const hadContent = paper.endStroke();
+        if (hadContent) {
+          window.dispatchEvent(
+            new CustomEvent("achievement", {
+              detail: { type: "paper-stroke" },
+            }),
+          );
+        }
       }
       interactions.releaseDrag(forces, currentPal);
     },

@@ -17,6 +17,9 @@
 // ── Background ──
 export const Z_RAIN_GLASS = 6;
 
+// ── Page Content Overlays ──
+export const Z_PAPER_INK = 40;
+
 // ── Mode Effects ──
 export const Z_MODE_FLASH = 100;
 

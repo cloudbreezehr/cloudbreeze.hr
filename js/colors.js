@@ -64,6 +64,9 @@ export const palettes = {
       [200, 225, 255],
       [230, 240, 255],
     ],
+    // Paper mode — consumed only when paper is active, safe defaults here
+    inkColor: [26, 21, 18],
+    paperColor: [245, 232, 210],
   },
   light: {
     // Sky
@@ -111,6 +114,8 @@ export const palettes = {
       [200, 225, 255],
       [230, 240, 255],
     ],
+    inkColor: [20, 14, 10],
+    paperColor: [251, 242, 221],
   },
 };
 
@@ -254,6 +259,58 @@ const overrides = {
       streakColor: [140, 165, 195],
       moteColor: [150, 170, 200],
       moteGlow: [120, 145, 180],
+    },
+  },
+  paper: {
+    dark: {
+      clickColor: [40, 28, 22],
+      orbitColor: [70, 55, 45],
+      trailColor: [40, 28, 22],
+      lightningColor: [20, 14, 10],
+      lightningShadow: [40, 28, 22, 0.7],
+      lightningFlash: [245, 232, 210],
+      auroraHueBase: 30,
+      auroraHueRange: 15,
+      meteorColors: [
+        [40, 28, 22],
+        [60, 45, 35],
+        [80, 60, 45],
+      ],
+      shootingColors: [
+        [40, 28, 22],
+        [60, 45, 35],
+        [80, 60, 45],
+      ],
+      streakColor: [50, 38, 30],
+      moteColor: [40, 28, 22],
+      moteGlow: [60, 45, 35],
+      inkColor: [26, 21, 18],
+      paperColor: [245, 232, 210],
+    },
+    light: {
+      clickColor: [30, 22, 18],
+      orbitColor: [50, 38, 30],
+      trailColor: [30, 22, 18],
+      lightningColor: [14, 10, 8],
+      lightningShadow: [30, 22, 18, 0.7],
+      lightningFlash: [251, 242, 221],
+      auroraHueBase: 30,
+      auroraHueRange: 15,
+      meteorColors: [
+        [30, 22, 18],
+        [50, 38, 30],
+        [70, 55, 45],
+      ],
+      shootingColors: [
+        [30, 22, 18],
+        [50, 38, 30],
+        [70, 55, 45],
+      ],
+      streakColor: [40, 28, 22],
+      moteColor: [30, 22, 18],
+      moteGlow: [50, 38, 30],
+      inkColor: [20, 14, 10],
+      paperColor: [251, 242, 221],
     },
   },
   blocky: {
