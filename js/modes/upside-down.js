@@ -182,21 +182,36 @@ export function initUpsideDown() {
     el.className = "ud-warning";
     el.id = "ud-warning";
     const flipped = modeCtx.isActive;
-    const title = flipped ? "THE RIFT IS REOPENING" : "THE WALL IS CRACKING";
-    const sub = flipped
+    const content = document.createElement("div");
+    content.className = "ud-warning-content";
+
+    const icon = document.createElement("p");
+    icon.className = "ud-warning-icon";
+    icon.textContent = "⚠";
+    content.appendChild(icon);
+
+    const title = document.createElement("h2");
+    title.className = "ud-warning-title";
+    title.textContent = flipped
+      ? "THE RIFT IS REOPENING"
+      : "THE WALL IS CRACKING";
+    content.appendChild(title);
+
+    const sub = document.createElement("p");
+    sub.className = "ud-warning-sub";
+    sub.textContent = flipped
       ? "You are clawing your way back to the surface."
       : "You are approaching the boundary between worlds.";
-    const hint = flipped
+    content.appendChild(sub);
+
+    const hint = document.createElement("p");
+    hint.className = "ud-warning-hint";
+    hint.textContent = flipped
       ? "Keep scrolling to break free…"
       : "Keep scrolling to break through… or stop while you can.";
-    el.innerHTML = `
-      <div class="ud-warning-content">
-        <p class="ud-warning-icon">⚠</p>
-        <h2 class="ud-warning-title">${title}</h2>
-        <p class="ud-warning-sub">${sub}</p>
-        <p class="ud-warning-hint">${hint}</p>
-      </div>
-    `;
+    content.appendChild(hint);
+
+    el.appendChild(content);
     document.body.appendChild(el);
     requestAnimationFrame(() => el.classList.add("visible"));
     warningShowTime = Date.now();
