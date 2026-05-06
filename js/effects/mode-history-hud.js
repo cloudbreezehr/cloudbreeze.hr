@@ -198,7 +198,9 @@ function rebuildSlots() {
         "aria-label",
         `Revisit ${label} mode (discovered ${formatRelativeTime(discovered.get(id))})`,
       );
-      slot.addEventListener("click", () => toggleMode(id));
+      // `silent: true` skips the deactivation achievement — leaving a mode
+      // from the HUD shouldn't count as discovering the original exit.
+      slot.addEventListener("click", () => toggleMode(id, { silent: true }));
     } else {
       slot.setAttribute("role", "presentation");
       slot.setAttribute("aria-label", "Undiscovered mode");

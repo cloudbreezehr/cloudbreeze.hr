@@ -109,10 +109,18 @@ export function getMode(id) {
   return _byId.get(id) || null;
 }
 
-/** Toggle a mode by id.  No-op if the toggle hasn't been bound yet. */
-export function toggleMode(id) {
+/**
+ * Toggle a mode by id.  No-op if the toggle hasn't been bound yet.
+ *
+ * @param {string} id
+ * @param {{silent?: boolean}} [opts]
+ *   `silent: true` marks the toggle as programmatic (e.g. triggered from
+ *   the HUD), so deactivation doesn't award the exit achievement — that
+ *   reward is reserved for users who discover the original exit gesture.
+ */
+export function toggleMode(id, opts) {
   const fn = _toggles.get(id);
-  if (typeof fn === "function") fn();
+  if (typeof fn === "function") fn(opts);
 }
 
 export function isModeRegistered(id) {

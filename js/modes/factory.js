@@ -119,11 +119,15 @@ export function createMode(def) {
     isActive = activating;
     document.body.classList.toggle(id, activating);
     if (activating) document.body.dataset.lastSubmode = id;
+    // `silent` marks this as a programmatic toggle (HUD click) so the
+    // tracker can skip the exit-achievement unlock on deactivation.
+    // The event still fires so other listeners (HUD state) stay in sync.
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: {
           type: activating ? "mode-activate" : "mode-deactivate",
           mode: id,
+          silent: !!(payload && payload.silent),
         },
       }),
     );
@@ -176,7 +180,7 @@ export function createMode(def) {
     isTransitioning: () => isTransitioning,
   });
 
-  registerToggle(id, () => complete());
+  registerToggle(id, (opts) => complete(opts));
 
   return ctx;
 }
