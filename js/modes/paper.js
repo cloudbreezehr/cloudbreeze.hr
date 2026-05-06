@@ -65,7 +65,78 @@ export function initPaper() {
   // ── Card paper interactions ──
   let disableCardPaper = null;
 
-  const modeCtx = createMode({
+  // ── Page-turn state — written by the scroll handler, read by pageTurnTick ──
+  let pageTargetX = 0;
+  let pageTargetRot = 0;
+  let pageCurrentX = 0;
+  let pageCurrentRot = 0;
+  let lastScrollY = window.scrollY || 0;
+  let pageTurnRaf = null;
+
+  function pageTurnTick() {
+    if (prefersReducedMotion() || !pageEl) {
+      pageTurnRaf = null;
+      return;
+    }
+    pageTargetX *= PV.PAGE_TURN_TARGET_DECAY;
+    pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY;
+    pageCurrentX += (pageTargetX - pageCurrentX) * PV.PAGE_TURN_LERP;
+    pageCurrentRot += (pageTargetRot - pageCurrentRot) * PV.PAGE_TURN_LERP;
+    if (
+      Math.abs(pageCurrentX) > PV.PAGE_TURN_SETTLE_PX ||
+      Math.abs(pageCurrentRot) > PV.PAGE_TURN_SETTLE_DEG
+    ) {
+      pageEl.style.setProperty(
+        "--paper-page-x",
+        pageCurrentX.toFixed(2) + "px",
+      );
+      pageEl.style.setProperty(
+        "--paper-page-rot",
+        pageCurrentRot.toFixed(3) + "deg",
+      );
+    } else {
+      pageEl.style.removeProperty("--paper-page-x");
+      pageEl.style.removeProperty("--paper-page-rot");
+    }
+    pageTurnRaf = requestAnimationFrame(pageTurnTick);
+  }
+
+  function startPageTurn() {
+    if (pageTurnRaf !== null) return;
+    lastScrollY = window.scrollY || 0;
+    pageTurnRaf = requestAnimationFrame(pageTurnTick);
+  }
+
+  function stopPageTurn() {
+    if (pageTurnRaf !== null) {
+      cancelAnimationFrame(pageTurnRaf);
+      pageTurnRaf = null;
+    }
+    pageTargetX = 0;
+    pageTargetRot = 0;
+    pageCurrentX = 0;
+    pageCurrentRot = 0;
+    if (pageEl) {
+      pageEl.style.removeProperty("--paper-page-x");
+      pageEl.style.removeProperty("--paper-page-rot");
+    }
+  }
+
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (pageTurnRaf === null) return;
+      const y = window.scrollY || 0;
+      const delta = y - lastScrollY;
+      lastScrollY = y;
+      const norm = Math.max(-1, Math.min(1, delta * PV.SCROLL_NORM_FACTOR));
+      pageTargetX = norm * PV.PAGE_TURN_AMP_PX;
+      pageTargetRot = norm * PV.PAGE_TURN_ROT_DEG;
+    },
+    { passive: true },
+  );
+
+  createMode({
     id: "paper",
     trigger: createKeySequenceTrigger({
       activationWords: ACTIVATION_WORDS,
@@ -177,64 +248,11 @@ export function initPaper() {
         className: "paper-card",
         tilt: { intensity: 2, scale: 1.005 },
       });
+      startPageTurn();
     },
     onDeactivate() {
       if (disableCardPaper) disableCardPaper();
+      stopPageTurn();
     },
   });
-
-  // ── Scroll page-turn shift — active only while in paper mode ──
-  let pageTargetX = 0;
-  let pageTargetRot = 0;
-  let pageCurrentX = 0;
-  let pageCurrentRot = 0;
-  let lastScrollY = window.scrollY || 0;
-
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (!modeCtx.isActive) return;
-      const y = window.scrollY || 0;
-      const delta = y - lastScrollY;
-      lastScrollY = y;
-      const norm = Math.max(-1, Math.min(1, delta * PV.SCROLL_NORM_FACTOR));
-      pageTargetX = norm * PV.PAGE_TURN_AMP_PX;
-      pageTargetRot = norm * PV.PAGE_TURN_ROT_DEG;
-    },
-    { passive: true },
-  );
-
-  function pageTurnTick() {
-    if (modeCtx.isActive && !prefersReducedMotion() && pageEl) {
-      pageTargetX *= PV.PAGE_TURN_TARGET_DECAY;
-      pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY;
-      pageCurrentX += (pageTargetX - pageCurrentX) * PV.PAGE_TURN_LERP;
-      pageCurrentRot += (pageTargetRot - pageCurrentRot) * PV.PAGE_TURN_LERP;
-      if (
-        Math.abs(pageCurrentX) > PV.PAGE_TURN_SETTLE_PX ||
-        Math.abs(pageCurrentRot) > PV.PAGE_TURN_SETTLE_DEG
-      ) {
-        pageEl.style.setProperty(
-          "--paper-page-x",
-          pageCurrentX.toFixed(2) + "px",
-        );
-        pageEl.style.setProperty(
-          "--paper-page-rot",
-          pageCurrentRot.toFixed(3) + "deg",
-        );
-      } else {
-        pageEl.style.removeProperty("--paper-page-x");
-        pageEl.style.removeProperty("--paper-page-rot");
-      }
-    } else if (pageEl) {
-      pageEl.style.removeProperty("--paper-page-x");
-      pageEl.style.removeProperty("--paper-page-rot");
-      pageCurrentX = 0;
-      pageCurrentRot = 0;
-      pageTargetX = 0;
-      pageTargetRot = 0;
-    }
-    requestAnimationFrame(pageTurnTick);
-  }
-  pageTurnTick();
 }
