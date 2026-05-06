@@ -3241,11 +3241,11 @@ body.light-mode[data-active-theme="rainy"] #cursor-ring {
     );
 }
 
-/* Paper drift — a tiny horizontal shift on scroll, like paper on a desk
-   reacting to nearby motion.  Translate only, no rotation.  Smoothing is
-   handled in JS via rAF lerp, so no CSS transition here. */
+/* Page-turn transform — applied only when paper is active.
+   Motion smoothing is handled in JS via rAF lerp; no CSS transition. */
 body.paper .page {
   translate: var(--paper-page-x, 0) 0;
+  rotate: var(--paper-page-rot, 0);
 }
 
 /* ── Paper — visual theme (only when active theme) ── */
