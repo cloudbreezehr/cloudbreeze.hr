@@ -471,7 +471,7 @@ export const ACHIEVEMENTS = [
     description: "Every sky, sampled.",
     hint: "Activate every mode at least once",
     set: "mastery",
-    points: EPIC,
+    points: LEGENDARY,
     hidden: true,
     progressKey: "modes-activated",
   },
