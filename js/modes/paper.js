@@ -37,13 +37,14 @@ const PV = defineConstants(
     LOGO_SAT_DROP: 0.9,
     LOGO_BRI_DROP: 0.6,
     LOGO_CONTRAST_BOOST: 0.4,
-    PAGE_TURN_AMP_PX: 2,
-    PAGE_TURN_ROT_DEG: 0.6,
-    PAGE_TURN_LERP: 0.08,
-    PAGE_TURN_TARGET_DECAY: 0.88,
-    SCROLL_NORM_FACTOR: 0.05,
-    PAGE_TURN_SETTLE_PX: 0.01,
-    PAGE_TURN_SETTLE_DEG: 0.001,
+    // Paper drift — a tiny horizontal shift on scroll, like paper on a desk
+    // reacting to nearby motion.  Pure translate, no rotation, no nav tilt
+    // (the .page rule is scoped so the nav isn't affected).
+    PAGE_DRIFT_AMP_PX: 1,
+    PAGE_DRIFT_LERP: 0.08,
+    PAGE_DRIFT_TARGET_DECAY: 0.88,
+    PAGE_DRIFT_SCROLL_NORM: 0.05,
+    PAGE_DRIFT_SETTLE_PX: 0.01,
   },
   { mode: "paper" },
 );
@@ -65,73 +66,55 @@ export function initPaper() {
   // ── Card paper interactions ──
   let disableCardPaper = null;
 
-  // ── Page-turn state — written by the scroll handler, read by pageTurnTick ──
-  let pageTargetX = 0;
-  let pageTargetRot = 0;
-  let pageCurrentX = 0;
-  let pageCurrentRot = 0;
+  // ── Paper drift state — written by the scroll handler, read by driftTick ──
+  let driftTargetX = 0;
+  let driftCurrentX = 0;
   let lastScrollY = window.scrollY || 0;
-  let pageTurnRaf = null;
+  let driftRaf = null;
 
-  function pageTurnTick() {
+  function driftTick() {
     if (prefersReducedMotion() || !pageEl) {
-      pageTurnRaf = null;
+      driftRaf = null;
       return;
     }
-    pageTargetX *= PV.PAGE_TURN_TARGET_DECAY;
-    pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY;
-    pageCurrentX += (pageTargetX - pageCurrentX) * PV.PAGE_TURN_LERP;
-    pageCurrentRot += (pageTargetRot - pageCurrentRot) * PV.PAGE_TURN_LERP;
-    if (
-      Math.abs(pageCurrentX) > PV.PAGE_TURN_SETTLE_PX ||
-      Math.abs(pageCurrentRot) > PV.PAGE_TURN_SETTLE_DEG
-    ) {
+    driftTargetX *= PV.PAGE_DRIFT_TARGET_DECAY;
+    driftCurrentX += (driftTargetX - driftCurrentX) * PV.PAGE_DRIFT_LERP;
+    if (Math.abs(driftCurrentX) > PV.PAGE_DRIFT_SETTLE_PX) {
       pageEl.style.setProperty(
         "--paper-page-x",
-        pageCurrentX.toFixed(2) + "px",
-      );
-      pageEl.style.setProperty(
-        "--paper-page-rot",
-        pageCurrentRot.toFixed(3) + "deg",
+        driftCurrentX.toFixed(2) + "px",
       );
     } else {
       pageEl.style.removeProperty("--paper-page-x");
-      pageEl.style.removeProperty("--paper-page-rot");
     }
-    pageTurnRaf = requestAnimationFrame(pageTurnTick);
+    driftRaf = requestAnimationFrame(driftTick);
   }
 
-  function startPageTurn() {
-    if (pageTurnRaf !== null) return;
+  function startDrift() {
+    if (driftRaf !== null) return;
     lastScrollY = window.scrollY || 0;
-    pageTurnRaf = requestAnimationFrame(pageTurnTick);
+    driftRaf = requestAnimationFrame(driftTick);
   }
 
-  function stopPageTurn() {
-    if (pageTurnRaf !== null) {
-      cancelAnimationFrame(pageTurnRaf);
-      pageTurnRaf = null;
+  function stopDrift() {
+    if (driftRaf !== null) {
+      cancelAnimationFrame(driftRaf);
+      driftRaf = null;
     }
-    pageTargetX = 0;
-    pageTargetRot = 0;
-    pageCurrentX = 0;
-    pageCurrentRot = 0;
-    if (pageEl) {
-      pageEl.style.removeProperty("--paper-page-x");
-      pageEl.style.removeProperty("--paper-page-rot");
-    }
+    driftTargetX = 0;
+    driftCurrentX = 0;
+    if (pageEl) pageEl.style.removeProperty("--paper-page-x");
   }
 
   window.addEventListener(
     "scroll",
     () => {
-      if (pageTurnRaf === null) return;
+      if (driftRaf === null) return;
       const y = window.scrollY || 0;
       const delta = y - lastScrollY;
       lastScrollY = y;
-      const norm = Math.max(-1, Math.min(1, delta * PV.SCROLL_NORM_FACTOR));
-      pageTargetX = norm * PV.PAGE_TURN_AMP_PX;
-      pageTargetRot = norm * PV.PAGE_TURN_ROT_DEG;
+      const norm = Math.max(-1, Math.min(1, delta * PV.PAGE_DRIFT_SCROLL_NORM));
+      driftTargetX = norm * PV.PAGE_DRIFT_AMP_PX;
     },
     { passive: true },
   );
@@ -248,11 +231,11 @@ export function initPaper() {
         className: "paper-card",
         tilt: { intensity: 2, scale: 1.005 },
       });
-      startPageTurn();
+      startDrift();
     },
     onDeactivate() {
       if (disableCardPaper) disableCardPaper();
-      stopPageTurn();
+      stopDrift();
     },
   });
 }
