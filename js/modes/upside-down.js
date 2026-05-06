@@ -1,6 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerToggle } from "./registry.js";
+import { createMode } from "./factory.js";
+import { createOverscrollTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
 // This file is for behavior only.
@@ -152,14 +153,14 @@ const VIGNETTE_INNER_STOP = "30%";
 const VIGNETTE_COLOR = [180, 0, 0];
 
 export function initUpsideDown() {
-  let force = 0;
-  let isFlipped = false;
-  let isTransitioning = false;
   let warningVisible = false;
-  let lastForceTime = 0;
   let warningShowTime = 0;
   let lastEdgeWasBottom = true;
   let disableCardUpside = null;
+  // `modeCtx` is filled in by createMode's return value below.  We read
+  // modeCtx.isActive wherever we need to know "is the world currently
+  // flipped?" — no local duplicate state.
+  let modeCtx;
 
   const pageEl = document.querySelector(".page");
   const navEl = document.querySelector("nav");
@@ -168,25 +169,6 @@ export function initUpsideDown() {
   const overlay = document.createElement("div");
   overlay.className = "ud-overlay";
   document.body.appendChild(overlay);
-
-  function updateVisuals() {
-    // Red vignette intensity
-    const intensity = Math.min(1, force / UD_FORCE.WARNING_AT);
-    overlay.style.background =
-      force > UD_VFX.VIGNETTE_THRESHOLD
-        ? `radial-gradient(ellipse at center, transparent ${VIGNETTE_INNER_STOP}, rgba(${VIGNETTE_COLOR},${intensity * UD_VFX.VIGNETTE_MAX_OPACITY}) 100%)`
-        : "none";
-
-    // Screen shake on .page
-    if (force > UD_VFX.SHAKE_THRESHOLD && !isTransitioning) {
-      const shake = force * UD_VFX.SHAKE_INTENSITY;
-      const dx = (Math.random() - 0.5) * shake;
-      const dy = (Math.random() - 0.5) * shake;
-      pageEl.style.translate = `${dx}px ${dy}px`;
-    } else if (!isTransitioning) {
-      pageEl.style.translate = "";
-    }
-  }
 
   function showWarning() {
     if (warningVisible) return;
@@ -199,16 +181,17 @@ export function initUpsideDown() {
     const el = document.createElement("div");
     el.className = "ud-warning";
     el.id = "ud-warning";
-    const title = isFlipped ? "THE RIFT IS REOPENING" : "THE WALL IS CRACKING";
-    const sub = isFlipped
+    const flipped = modeCtx.isActive;
+    const title = flipped ? "THE RIFT IS REOPENING" : "THE WALL IS CRACKING";
+    const sub = flipped
       ? "You are clawing your way back to the surface."
       : "You are approaching the boundary between worlds.";
-    const hint = isFlipped
-      ? "Keep scrolling to break free\u2026"
-      : "Keep scrolling to break through\u2026 or stop while you can.";
+    const hint = flipped
+      ? "Keep scrolling to break free…"
+      : "Keep scrolling to break through… or stop while you can.";
     el.innerHTML = `
       <div class="ud-warning-content">
-        <p class="ud-warning-icon">\u26A0</p>
+        <p class="ud-warning-icon">⚠</p>
         <h2 class="ud-warning-title">${title}</h2>
         <p class="ud-warning-sub">${sub}</p>
         <p class="ud-warning-hint">${hint}</p>
@@ -227,217 +210,148 @@ export function initUpsideDown() {
     setTimeout(() => el.remove(), UD_VFX.WARNING_HIDE_DELAY);
   }
 
-  function triggerFlip() {
-    if (isTransitioning) return;
-    isTransitioning = true;
+  // ── Bespoke sliding wipe ──
+  // Unlike other modes, upside-down's wipe is a translateY slide that covers
+  // the viewport, persists through the state swap, then slides out the other
+  // side.  Direction depends on which scroll edge triggered the flip.
+  function runSlidingWipe({ activating, runMidpoint, payload }) {
     hideWarning();
-    force = 0;
+    const wipeFromBottom =
+      payload && payload.direction
+        ? payload.direction === "bottom"
+        : lastEdgeWasBottom;
 
-    const entering = !isFlipped;
-    // Wipe direction: from bottom if triggered at bottom edge, from top if at top edge
-    const wipeFromBottom = lastEdgeWasBottom;
+    return new Promise((resolve) => {
+      // Dark wipe — sweeps across the screen in the direction of travel
+      const wipe = document.createElement("div");
+      wipe.className = "ud-wipe" + (activating ? "" : " ud-wipe-return");
+      wipe.style.transform = wipeFromBottom
+        ? "translateY(100%)"
+        : "translateY(-100%)";
+      document.body.appendChild(wipe);
+      void wipe.offsetHeight;
 
-    // Dark wipe — sweeps across the screen in the direction of travel
-    const wipe = document.createElement("div");
-    wipe.className = "ud-wipe" + (entering ? "" : " ud-wipe-return");
-    wipe.style.transform = wipeFromBottom
-      ? "translateY(100%)"
-      : "translateY(-100%)";
-    document.body.appendChild(wipe);
-    void wipe.offsetHeight;
+      // Phase 1: Wipe covers the screen
+      wipe.style.transition = `transform ${UD_VFX.WIPE_PHASE_MS / 1000}s ease-in`;
+      wipe.style.transform = "translateY(0)";
 
-    // Phase 1: Wipe covers the screen
-    wipe.style.transition = `transform ${UD_VFX.WIPE_PHASE_MS / 1000}s ease-in`;
-    wipe.style.transform = "translateY(0)";
+      // Phase 2: Swap state while fully covered
+      setTimeout(() => {
+        runMidpoint();
+        pageEl.style.translate = "";
+        overlay.style.background = "none";
 
-    // Phase 2: Swap state while fully covered
-    setTimeout(() => {
-      isFlipped = !isFlipped;
-      document.body.classList.toggle("upside-down", isFlipped);
-      if (isFlipped) document.body.dataset.lastSubmode = "upside-down";
-      window.dispatchEvent(
-        new CustomEvent("achievement", {
-          detail: {
-            type: isFlipped ? "mode-activate" : "mode-deactivate",
-            mode: "upside-down",
-          },
-        }),
-      );
-      pageEl.style.translate = "";
-      overlay.style.background = "none";
+        // runMidpoint flipped modeCtx.isActive; read the post-flip value.
+        if (modeCtx.isActive) {
+          document.body.appendChild(navEl);
+          window.scrollTo(0, 0);
+        } else {
+          pageEl.insertBefore(navEl, pageEl.firstChild);
+          // Bottom edge → land on top (mirror of where we left), top edge → land on bottom
+          window.scrollTo(
+            0,
+            wipeFromBottom ? 0 : document.documentElement.scrollHeight,
+          );
+        }
 
-      if (isFlipped) {
-        disableCardUpside = enableCardEffects({
-          className: "upside-card",
-          tilt: { intensity: 8, scale: 1.02, invertY: true },
+        // Phase 3: Wipe continues through, revealing the new world
+        requestAnimationFrame(() => {
+          wipe.style.transition = `transform ${UD_VFX.WIPE_PHASE_MS / 1000}s ease-out`;
+          wipe.style.transform = wipeFromBottom
+            ? "translateY(-100%)"
+            : "translateY(100%)";
+          setTimeout(() => {
+            wipe.remove();
+            resolve();
+          }, UD_VFX.WIPE_SETTLE_MS);
         });
-        document.body.appendChild(navEl);
-        window.scrollTo(0, 0);
-      } else {
-        if (disableCardUpside) disableCardUpside();
-        pageEl.insertBefore(navEl, pageEl.firstChild);
-        // Bottom edge → land on top (mirror of where we left), top edge → land on bottom
-        window.scrollTo(
-          0,
-          wipeFromBottom ? 0 : document.documentElement.scrollHeight,
-        );
-      }
-
-      // Phase 3: Wipe continues through, revealing the new world
-      requestAnimationFrame(() => {
-        wipe.style.transition = `transform ${UD_VFX.WIPE_PHASE_MS / 1000}s ease-out`;
-        wipe.style.transform = wipeFromBottom
-          ? "translateY(-100%)"
-          : "translateY(100%)";
-
-        setTimeout(() => {
-          wipe.remove();
-          isTransitioning = false;
-        }, UD_VFX.WIPE_SETTLE_MS);
-      });
-    }, UD_VFX.WIPE_SETTLE_MS);
+      }, UD_VFX.WIPE_SETTLE_MS);
+    });
   }
 
-  // Track overscroll at the bottom of the page.
-  // Cooldown ensures a single trackpad swipe (many rapid events) counts as one hit.
-  window.addEventListener(
-    "wheel",
-    (e) => {
-      if (isTransitioning) return;
-
-      const scrollTop = window.scrollY;
-      const maxScroll =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const atBottom =
-        scrollTop >= maxScroll - UD_FORCE.EDGE_TOLERANCE && e.deltaY > 0;
-      const atTop = scrollTop <= UD_FORCE.EDGE_TOLERANCE && e.deltaY < 0;
-      const atEdge = isFlipped ? atBottom || atTop : atBottom;
-
-      if (atEdge) {
-        const now = Date.now();
-        if (now - lastForceTime < UD_FORCE.COOLDOWN) return;
-        lastForceTime = now;
-        lastEdgeWasBottom = atBottom;
-
-        force = Math.min(
-          1,
-          force +
-            (isFlipped
-              ? UD_FORCE.FORCE_PER_HIT * UD_FORCE.FORCE_RETURN_MUL
-              : UD_FORCE.FORCE_PER_HIT),
-        );
-        updateVisuals();
-
-        if (force >= UD_FORCE.WARNING_AT && !warningVisible) {
-          showWarning();
-        }
-        if (
-          force >= 1.0 &&
-          warningVisible &&
-          now - warningShowTime >= UD_FORCE.WARNING_MIN_MS
-        ) {
-          triggerFlip();
-        }
+  const trigger = createOverscrollTrigger({
+    forcePerHit: UD_FORCE.FORCE_PER_HIT,
+    cooldownMs: UD_FORCE.COOLDOWN,
+    edgeTolerance: UD_FORCE.EDGE_TOLERANCE,
+    touchDragThreshold: UD_FORCE.TOUCH_DRAG_THRESHOLD,
+    returnMultiplier: UD_FORCE.FORCE_RETURN_MUL,
+    fpsBaselineMs: UD_VFX.FPS_BASELINE_MS,
+    onHit({ force, direction }) {
+      lastEdgeWasBottom = direction === "bottom";
+      if (force >= UD_FORCE.WARNING_AT && !warningVisible) {
+        showWarning();
       }
     },
-    { passive: true },
-  );
-
-  // Touch support — detect overscroll via touch drag at the scroll boundary.
-  // Only uses bottom-edge detection to avoid conflicting with pull-to-refresh.
-  let touchStartY = 0;
-  let touchAccum = 0;
-
-  window.addEventListener(
-    "touchstart",
-    (e) => {
-      touchStartY = e.touches[0].clientY;
-      touchAccum = 0;
+    canComplete({ force }) {
+      // Only complete once the warning has been up long enough
+      return (
+        warningVisible &&
+        Date.now() - warningShowTime >= UD_FORCE.WARNING_MIN_MS
+      );
     },
-    { passive: true },
-  );
-
-  window.addEventListener(
-    "touchmove",
-    (e) => {
-      if (isTransitioning) return;
-
-      const scrollTop = window.scrollY;
-      const maxScroll =
-        document.documentElement.scrollHeight - window.innerHeight;
-      const atBottom = scrollTop >= maxScroll - UD_FORCE.EDGE_TOLERANCE;
-
-      if (!atBottom) {
-        touchAccum = 0;
-        return;
-      }
-
-      const touchY = e.touches[0].clientY;
-      const delta = touchStartY - touchY; // positive = dragging up = scrolling down
-      if (delta <= 0) {
-        touchAccum = 0;
-        return;
-      }
-
-      // Accumulate drag distance, apply force in chunks matching desktop feel
-      touchAccum += delta;
-      touchStartY = touchY;
-
-      const now = Date.now();
-      if (
-        touchAccum > UD_FORCE.TOUCH_DRAG_THRESHOLD &&
-        now - lastForceTime >= UD_FORCE.COOLDOWN
-      ) {
-        lastForceTime = now;
-        lastEdgeWasBottom = true;
-        touchAccum = 0;
-
-        force = Math.min(
-          1,
-          force +
-            (isFlipped
-              ? UD_FORCE.FORCE_PER_HIT * UD_FORCE.FORCE_RETURN_MUL
-              : UD_FORCE.FORCE_PER_HIT),
-        );
-        updateVisuals();
-
-        if (force >= UD_FORCE.WARNING_AT && !warningVisible) {
-          showWarning();
-        }
-        if (
-          force >= 1.0 &&
-          warningVisible &&
-          now - warningShowTime >= UD_FORCE.WARNING_MIN_MS
-        ) {
-          triggerFlip();
-        }
-      }
-    },
-    { passive: true },
-  );
-
-  // Dynamic drain — fast at low force (early damage clears quickly),
-  // slow at high force (sustained effort is rewarded, warning sticks around).
-  // Time-based so drain rate is consistent regardless of browser FPS.
-  let lastTick = performance.now();
-  function tick() {
-    const now = performance.now();
-    const dt = (now - lastTick) / UD_VFX.FPS_BASELINE_MS; // normalize to 60fps baseline
-    lastTick = now;
-    if (force > 0 && !isTransitioning) {
+    // Dynamic drain — fast at low force (early damage clears quickly),
+    // slow at high force (sustained effort is rewarded, warning sticks around).
+    // The factory's drainFn is time-based (dt is 60fps-normalized), so drain
+    // rate is consistent regardless of browser FPS.
+    drainFn(force, dt, _active) {
       const drain =
         (UD_FORCE.DRAIN_BASE - force * UD_FORCE.DRAIN_FORCE_SCALE) * dt;
-      force = Math.max(0, force - drain);
+      const next = Math.max(0, force - drain);
       if (
-        force < UD_FORCE.WARNING_AT - UD_FORCE.WARNING_HIDE_OFFSET &&
+        next < UD_FORCE.WARNING_AT - UD_FORCE.WARNING_HIDE_OFFSET &&
         warningVisible
-      )
+      ) {
         hideWarning();
-      updateVisuals();
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
+      }
+      return next;
+    },
+  });
 
-  registerToggle("upside-down", () => triggerFlip());
+  modeCtx = createMode({
+    id: "upside-down",
+    trigger,
+    indicators: [
+      // Red vignette intensity
+      {
+        threshold: UD_VFX.VIGNETTE_THRESHOLD,
+        apply(force) {
+          const intensity = Math.min(1, force / UD_FORCE.WARNING_AT);
+          overlay.style.background =
+            force > UD_VFX.VIGNETTE_THRESHOLD
+              ? `radial-gradient(ellipse at center, transparent ${VIGNETTE_INNER_STOP}, rgba(${VIGNETTE_COLOR},${intensity * UD_VFX.VIGNETTE_MAX_OPACITY}) 100%)`
+              : "none";
+        },
+        clear() {
+          overlay.style.background = "none";
+        },
+      },
+      // Screen shake on .page
+      {
+        threshold: UD_VFX.SHAKE_THRESHOLD,
+        apply(force) {
+          if (force > UD_VFX.SHAKE_THRESHOLD) {
+            const shake = force * UD_VFX.SHAKE_INTENSITY;
+            const dx = (Math.random() - 0.5) * shake;
+            const dy = (Math.random() - 0.5) * shake;
+            pageEl.style.translate = `${dx}px ${dy}px`;
+          } else {
+            pageEl.style.translate = "";
+          }
+        },
+        clear() {
+          pageEl.style.translate = "";
+        },
+      },
+    ],
+    wipe: runSlidingWipe,
+    onActivate() {
+      disableCardUpside = enableCardEffects({
+        className: "upside-card",
+        tilt: { intensity: 8, scale: 1.02, invertY: true },
+      });
+    },
+    onDeactivate() {
+      if (disableCardUpside) disableCardUpside();
+    },
+  });
 }

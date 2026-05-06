@@ -1,9 +1,8 @@
 import { defineConstants } from "../dev/registry.js";
-import { bindPointer } from "../pointer.js";
-import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerToggle } from "./registry.js";
+import { createMode } from "./factory.js";
+import { createHoldTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
 // This file is for behavior only.
@@ -45,18 +44,7 @@ const DV = defineConstants(
 );
 
 export function initDeepSea() {
-  let force = 0;
-  let isSubmerged = false;
-  let isTransitioning = false;
-  let isHolding = false;
-  let holdStartTime = 0;
-  let rippleTimer = null;
-  let holdX = 0;
-  let holdY = 0;
-
   const canvasEl = document.getElementById("bg-canvas");
-  const cloudSvg = document.querySelector(".cloud-svg");
-  const logoEl = document.querySelector(".nav-logo");
   const footerEl = document.querySelector("footer");
 
   // ── Water creep overlay ──
@@ -88,10 +76,12 @@ export function initDeepSea() {
     startOpacity: DV.RIPPLE_START_OPACITY,
   };
 
-  function startRipples(x, y) {
-    holdX = x;
-    holdY = y;
-    spawnRipple(x, y, rippleOpts);
+  let holdX = 0;
+  let holdY = 0;
+  let rippleTimer = null;
+
+  function startRipples() {
+    spawnRipple(holdX, holdY, rippleOpts);
     rippleTimer = setInterval(
       () => spawnRipple(holdX, holdY, rippleOpts),
       DV.RIPPLE_INTERVAL_MS,
@@ -105,199 +95,117 @@ export function initDeepSea() {
     }
   }
 
-  // ── 2. Screen-edge water creep ──
-  function updateWaterCreep(progress) {
-    if (progress < DF.WATER_CREEP_AT) {
-      waterOverlay.style.opacity = "0";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - DF.WATER_CREEP_AT) / (1 - DF.WATER_CREEP_AT),
-    );
-    waterOverlay.style.opacity = String(t);
-    const size = DV.WATER_SIZE_MIN + t * DV.WATER_SIZE_RANGE;
-    waterOverlay.style.setProperty("--water-size", size + "%");
-  }
-
-  // ── 3. Color temperature shift (canvas filter) ──
-  function updateColorShift(progress) {
-    if (
-      document.body.classList.contains("upside-down") ||
-      document.body.classList.contains("frozen")
-    ) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    if (progress < DF.COLOR_SHIFT_AT) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - DF.COLOR_SHIFT_AT) / (1 - DF.COLOR_SHIFT_AT),
-    );
-    const hue = 360 - t * DV.HUE_ROTATE;
-    const sat = 1 + t * DV.SAT_BOOST;
-    const bri = 1 - t * DV.BRI_DROP;
-    canvasEl.style.filter = `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
-  }
-
-  // ── 4. Pressure vignette ──
-  function updateVignette(progress) {
-    if (progress < DF.VIGNETTE_AT) {
-      vignetteOverlay.style.opacity = "0";
-      return;
-    }
-    const t = Math.min(1, (progress - DF.VIGNETTE_AT) / (1 - DF.VIGNETTE_AT));
-    vignetteOverlay.style.opacity = String(t * DV.VIGNETTE_MAX_OPACITY);
-  }
-
-  // ── Update all indicators ──
-  function updateVisuals() {
-    updateWaterCreep(force);
-    updateColorShift(force);
-    updateVignette(force);
-  }
-
-  // ── Clear all indicators ──
-  function clearIndicators() {
-    force = 0;
-    waterOverlay.style.opacity = "0";
-    vignetteOverlay.style.opacity = "0";
-    canvasEl.style.filter = "";
-  }
-
   // ── Card caustic interactions ──
   let disableCardCaustics = null;
 
-  function enableCardCaustics() {
-    disableCardCaustics = enableCardEffects({
-      className: "caustic-card",
-      trackingPrefix: "caustic",
-      tilt: {
-        intensity: 10,
-        scale: 1.03,
-        transition: "background 0.4s, transform 0.8s ease",
-        transitionEnter: "background 0.4s, transform 0.6s ease",
+  createMode({
+    id: "deep-sea",
+    trigger: createHoldTrigger({
+      holdActivateMs: DF.HOLD_TO_DIVE_MS,
+      holdDeactivateMs: DF.HOLD_TO_SURFACE_MS,
+      decayRate: DF.DECAY_RATE,
+      shouldAccept: (x, y) => inFooter(x, y),
+      onDown(x, y) {
+        holdX = x;
+        holdY = y;
+        startRipples();
       },
-    });
-  }
-
-  // ── Dive transition ──
-  function triggerDive() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
+      onMove(x, y) {
+        holdX = x;
+        holdY = y;
+      },
+      onUp() {
+        stopRipples();
+      },
+    }),
+    indicators: [
+      // ── 2. Screen-edge water creep ──
+      {
+        threshold: DF.WATER_CREEP_AT,
+        apply(progress) {
+          if (progress < DF.WATER_CREEP_AT) {
+            waterOverlay.style.opacity = "0";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - DF.WATER_CREEP_AT) / (1 - DF.WATER_CREEP_AT),
+          );
+          waterOverlay.style.opacity = String(t);
+          const size = DV.WATER_SIZE_MIN + t * DV.WATER_SIZE_RANGE;
+          waterOverlay.style.setProperty("--water-size", size + "%");
+        },
+        clear() {
+          waterOverlay.style.opacity = "0";
+        },
+      },
+      // ── 3. Color temperature shift (canvas filter) ──
+      {
+        threshold: DF.COLOR_SHIFT_AT,
+        apply(progress) {
+          if (
+            document.body.classList.contains("upside-down") ||
+            document.body.classList.contains("frozen")
+          ) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          if (progress < DF.COLOR_SHIFT_AT) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - DF.COLOR_SHIFT_AT) / (1 - DF.COLOR_SHIFT_AT),
+          );
+          const hue = 360 - t * DV.HUE_ROTATE;
+          const sat = 1 + t * DV.SAT_BOOST;
+          const bri = 1 - t * DV.BRI_DROP;
+          canvasEl.style.filter = `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+        },
+        clear() {
+          canvasEl.style.filter = "";
+        },
+      },
+      // ── 4. Pressure vignette ──
+      {
+        threshold: DF.VIGNETTE_AT,
+        apply(progress) {
+          if (progress < DF.VIGNETTE_AT) {
+            vignetteOverlay.style.opacity = "0";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - DF.VIGNETTE_AT) / (1 - DF.VIGNETTE_AT),
+          );
+          vignetteOverlay.style.opacity = String(t * DV.VIGNETTE_MAX_OPACITY);
+        },
+        clear() {
+          vignetteOverlay.style.opacity = "0";
+        },
+      },
+    ],
+    wipe: {
       className: "deep-sea-wipe",
+      reverseModifier: "resurface",
       coverMs: DF.WIPE_COVER_MS,
       revealMs: DF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isSubmerged = true;
-        document.body.classList.add("deep-sea");
-        document.body.dataset.lastSubmode = "deep-sea";
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-activate", mode: "deep-sea" },
-          }),
-        );
-        clearIndicators();
-        enableCardCaustics();
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Resurface transition ──
-  function triggerResurface() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
-      className: "deep-sea-wipe resurface",
-      coverMs: DF.WIPE_COVER_MS,
-      revealMs: DF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isSubmerged = false;
-        document.body.classList.remove("deep-sea");
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-deactivate", mode: "deep-sea" },
-          }),
-        );
-        clearIndicators();
-        if (disableCardCaustics) disableCardCaustics();
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Hold detection ──
-  function updateHold() {
-    if (!isHolding || isTransitioning) return;
-
-    const elapsed = performance.now() - holdStartTime;
-    const target = isSubmerged ? DF.HOLD_TO_SURFACE_MS : DF.HOLD_TO_DIVE_MS;
-    force = Math.min(1, elapsed / target);
-
-    updateVisuals();
-
-    if (force >= 1.0) {
-      isHolding = false;
-      stopRipples();
-      if (isSubmerged) {
-        triggerResurface();
-      } else {
-        triggerDive();
-      }
-      return;
-    }
-
-    requestAnimationFrame(updateHold);
-  }
-
-  // ── Decay loop — force drains when not holding ──
-  let lastTick = performance.now();
-  function tick() {
-    const now = performance.now();
-    const dt = (now - lastTick) / 1000;
-    lastTick = now;
-
-    if (!isHolding && force > 0 && !isTransitioning) {
-      force = Math.max(0, force - DF.DECAY_RATE * dt);
-      updateVisuals();
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
-
-  // ── Bind events (touch fallback handled by bindPointer) ──
-  bindPointer(document, {
-    onDown(x, y) {
-      if (isTransitioning || !inFooter(x, y)) return false;
-      isHolding = true;
-      holdStartTime = performance.now();
-      holdX = x;
-      holdY = y;
-      startRipples(x, y);
-      updateHold();
     },
-    onMove(x, y) {
-      holdX = x;
-      holdY = y;
+    onActivate() {
+      disableCardCaustics = enableCardEffects({
+        className: "caustic-card",
+        trackingPrefix: "caustic",
+        tilt: {
+          intensity: 10,
+          scale: 1.03,
+          transition: "background 0.4s, transform 0.8s ease",
+          transitionEnter: "background 0.4s, transform 0.6s ease",
+        },
+      });
     },
-    onUp() {
-      isHolding = false;
-      stopRipples();
+    onDeactivate() {
+      if (disableCardCaustics) disableCardCaustics();
     },
   });
-
-  registerToggle("deep-sea", () =>
-    isSubmerged ? triggerResurface() : triggerDive(),
-  );
 }

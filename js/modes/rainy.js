@@ -1,9 +1,9 @@
 import { Z_MODE_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
-import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerToggle } from "./registry.js";
+import { createMode } from "./factory.js";
+import { createClickCountTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
 // This file is for behavior only.
@@ -64,13 +64,6 @@ const RV = defineConstants(
 );
 
 export function initRainy() {
-  let force = 0;
-  let isRainy = false;
-  let isTransitioning = false;
-  let lastClickTime = 0;
-  let rumbleTriggered = false;
-  let downpourTriggered = false;
-
   const heroTagEl = document.querySelector(".hero-tag");
   const canvasEl = document.getElementById("bg-canvas");
   const cloudSvg = document.querySelector(".cloud-svg");
@@ -84,84 +77,10 @@ export function initRainy() {
   stormOverlay.className = "storm-overlay";
   document.body.appendChild(stormOverlay);
 
-  // ── 1. Cloud darkening (canvas filter) ──
-  function updateCloudDarken(progress) {
-    if (document.body.classList.contains("upside-down")) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    if (progress < RF.CLOUD_DARKEN_AT) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
-    );
-    const sat = 1 - t * RV.DARKEN_SAT_RANGE;
-    const bri = 1 - t * RV.DARKEN_BRI_RANGE;
-    canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
-  }
-
-  // ── 2. Hero-tag glow ──
-  function updateTagGlow(progress) {
-    if (progress < RF.CLOUD_DARKEN_AT) {
-      heroTagEl.style.textShadow = "";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
-    );
-    const spread = RV.TAG_GLOW_SPREAD_MIN + t * RV.TAG_GLOW_SPREAD_RANGE;
-    const alpha = RV.TAG_GLOW_ALPHA_MIN + t * RV.TAG_GLOW_ALPHA_RANGE;
-    heroTagEl.style.textShadow = `0 0 ${spread}px rgba(160,180,210,${alpha.toFixed(2)})`;
-  }
-
-  // ── 3. Wind vignette creep ──
-  function updateWindVignette(progress) {
-    if (progress < RF.WIND_PICKUP_AT) {
-      stormOverlay.style.opacity = "0";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
-    );
-    stormOverlay.style.opacity = String(t * 0.8);
-  }
-
-  // ── 4. Hero-tag sway ──
-  function updateTagSway(progress) {
-    if (progress < RF.WIND_PICKUP_AT) {
-      heroTagEl.style.animation = "";
-      return;
-    }
-    heroTagEl.style.animation = "rain-sway 2s ease-in-out infinite";
-    const t = Math.min(
-      1,
-      (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
-    );
-    heroTagEl.style.setProperty(
-      "--sway-deg",
-      (t * RV.SWAY_MAX_DEG).toFixed(1) + "deg",
-    );
-  }
-
-  // ── 5. Cloud logo glow ──
-  function updateLogoGlow(progress) {
-    if (progress < RF.FIRST_DROPS_AT) {
-      cloudSvg.style.filter = "";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - RF.FIRST_DROPS_AT) / (1 - RF.FIRST_DROPS_AT),
-    );
-    const spread = RV.LOGO_GLOW_SPREAD_MIN + t * RV.LOGO_GLOW_SPREAD_RANGE;
-    const alpha = RV.LOGO_GLOW_ALPHA_MIN + t * RV.LOGO_GLOW_ALPHA_RANGE;
-    cloudSvg.style.filter = `drop-shadow(0 0 ${spread}px rgba(120,140,170,${alpha.toFixed(2)}))`;
-  }
+  // Rumble flash is latching — once fired at a threshold, it won't refire
+  // until force drops below that threshold.
+  let rumbleTriggered = false;
+  let downpourTriggered = false;
 
   // ── Spawn rain splash particles from click ──
   function spawnSplash(cx, cy, clearing) {
@@ -198,7 +117,7 @@ export function initRainy() {
     }
   }
 
-  // ── Rumble flash effect at 70% threshold ──
+  // ── Rumble flash effect at 70% / 90% thresholds ──
   function triggerRumbleFlash() {
     const flash = document.createElement("div");
     flash.style.cssText =
@@ -230,51 +149,13 @@ export function initRainy() {
     }
   }
 
-  // ── Update all visual indicators ──
-  function updateVisuals(clearing) {
-    updateCloudDarken(force);
-    updateTagGlow(force);
-    updateWindVignette(force);
-    updateTagSway(force);
-    updateLogoGlow(force);
-
-    // Rumble at 70% (once per buildup)
-    if (!clearing && force >= RF.RUMBLE_AT && !rumbleTriggered) {
-      rumbleTriggered = true;
-      triggerRumbleFlash();
-    }
-    if (force < RF.RUMBLE_AT) rumbleTriggered = false;
-
-    // Second rumble at 90%
-    if (!clearing && force >= RF.DOWNPOUR_AT && !downpourTriggered) {
-      downpourTriggered = true;
-      triggerRumbleFlash();
-    }
-    if (force < RF.DOWNPOUR_AT) downpourTriggered = false;
-  }
-
-  // ── Clear all indicators ──
-  function clearIndicators() {
-    force = 0;
-    heroTagEl.style.textShadow = "";
-    heroTagEl.style.animation = "";
-    heroTagEl.style.removeProperty("--sway-deg");
-    stormOverlay.style.opacity = "0";
-    canvasEl.style.filter = "";
-    cloudSvg.style.filter = "";
-    rumbleTriggered = false;
-    downpourTriggered = false;
-  }
-
   // ── Card rain interactions ──
   let disableCardRain = null;
 
   function cardClick(e) {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    spawnRipple(x, y, {
+    spawnRipple(e.clientX - rect.left, e.clientY - rect.top, {
       className: "rain-ripple",
       parent: card,
       duration: RV.RIPPLE_DURATION_MS,
@@ -283,111 +164,177 @@ export function initRainy() {
     });
   }
 
-  function enableCardRain() {
-    disableCardRain = enableCardEffects({
-      className: "rain-card",
-      trackingPrefix: "rain",
-      onClick: cardClick,
-    });
-  }
-
-  // ── Rain transition (storm front wipe) ──
-  function triggerRain() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
+  createMode({
+    id: "rainy",
+    trigger: createClickCountTrigger({
+      element: heroTagEl,
+      activateCount: RF.CLICKS_TO_RAIN,
+      deactivateCount: RF.CLICKS_TO_CLEAR,
+      timeoutMs: RF.CLICK_TIMEOUT_MS,
+      decayRate: RF.DECAY_RATE,
+      onClick(e, { isActive }) {
+        spawnSplash(e.clientX, e.clientY, isActive);
+      },
+    }),
+    indicators: [
+      // ── 1. Cloud darkening (canvas filter) ──
+      {
+        threshold: RF.CLOUD_DARKEN_AT,
+        apply(progress) {
+          if (document.body.classList.contains("upside-down")) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          if (progress < RF.CLOUD_DARKEN_AT) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
+          );
+          const sat = 1 - t * RV.DARKEN_SAT_RANGE;
+          const bri = 1 - t * RV.DARKEN_BRI_RANGE;
+          canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+        },
+        clear() {
+          canvasEl.style.filter = "";
+        },
+      },
+      // ── 2. Hero-tag glow ──
+      {
+        threshold: RF.CLOUD_DARKEN_AT,
+        apply(progress) {
+          if (progress < RF.CLOUD_DARKEN_AT) {
+            heroTagEl.style.textShadow = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
+          );
+          const spread = RV.TAG_GLOW_SPREAD_MIN + t * RV.TAG_GLOW_SPREAD_RANGE;
+          const alpha = RV.TAG_GLOW_ALPHA_MIN + t * RV.TAG_GLOW_ALPHA_RANGE;
+          heroTagEl.style.textShadow = `0 0 ${spread}px rgba(160,180,210,${alpha.toFixed(2)})`;
+        },
+        clear() {
+          heroTagEl.style.textShadow = "";
+        },
+      },
+      // ── 3. Wind vignette creep ──
+      {
+        threshold: RF.WIND_PICKUP_AT,
+        apply(progress) {
+          if (progress < RF.WIND_PICKUP_AT) {
+            stormOverlay.style.opacity = "0";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
+          );
+          stormOverlay.style.opacity = String(t * 0.8);
+        },
+        clear() {
+          stormOverlay.style.opacity = "0";
+        },
+      },
+      // ── 4. Hero-tag sway ──
+      {
+        threshold: RF.WIND_PICKUP_AT,
+        apply(progress) {
+          if (progress < RF.WIND_PICKUP_AT) {
+            heroTagEl.style.animation = "";
+            heroTagEl.style.removeProperty("--sway-deg");
+            return;
+          }
+          heroTagEl.style.animation = "rain-sway 2s ease-in-out infinite";
+          const t = Math.min(
+            1,
+            (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
+          );
+          heroTagEl.style.setProperty(
+            "--sway-deg",
+            (t * RV.SWAY_MAX_DEG).toFixed(1) + "deg",
+          );
+        },
+        clear() {
+          heroTagEl.style.animation = "";
+          heroTagEl.style.removeProperty("--sway-deg");
+        },
+      },
+      // ── 5. Cloud logo glow ──
+      {
+        threshold: RF.FIRST_DROPS_AT,
+        apply(progress) {
+          if (progress < RF.FIRST_DROPS_AT) {
+            if (cloudSvg) cloudSvg.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - RF.FIRST_DROPS_AT) / (1 - RF.FIRST_DROPS_AT),
+          );
+          const spread =
+            RV.LOGO_GLOW_SPREAD_MIN + t * RV.LOGO_GLOW_SPREAD_RANGE;
+          const alpha = RV.LOGO_GLOW_ALPHA_MIN + t * RV.LOGO_GLOW_ALPHA_RANGE;
+          if (cloudSvg)
+            cloudSvg.style.filter = `drop-shadow(0 0 ${spread}px rgba(120,140,170,${alpha.toFixed(2)}))`;
+        },
+        clear() {
+          if (cloudSvg) cloudSvg.style.filter = "";
+        },
+      },
+      // ── 6. Rumble flash (70%) ──
+      // Latching — fires once per buildup crossing, skipped while clearing.
+      {
+        threshold: RF.RUMBLE_AT,
+        apply(progress, ctx) {
+          if (ctx.isActive) return;
+          if (progress >= RF.RUMBLE_AT && !rumbleTriggered) {
+            rumbleTriggered = true;
+            triggerRumbleFlash();
+          }
+          if (progress < RF.RUMBLE_AT) rumbleTriggered = false;
+        },
+        clear() {
+          rumbleTriggered = false;
+        },
+      },
+      // ── 7. Downpour flash (90%) ──
+      // Second latching rumble, same rules as the 70% one.
+      {
+        threshold: RF.DOWNPOUR_AT,
+        apply(progress, ctx) {
+          if (ctx.isActive) return;
+          if (progress >= RF.DOWNPOUR_AT && !downpourTriggered) {
+            downpourTriggered = true;
+            triggerRumbleFlash();
+          }
+          if (progress < RF.DOWNPOUR_AT) downpourTriggered = false;
+        },
+        clear() {
+          downpourTriggered = false;
+        },
+      },
+    ],
+    wipe: {
       className: "storm-wipe",
+      reverseModifier: "clearing",
       coverMs: RF.WIPE_COVER_MS,
       revealMs: RF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isRainy = true;
-        document.body.classList.add("rainy");
-        document.body.dataset.lastSubmode = "rainy";
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-activate", mode: "rainy" },
-          }),
-        );
-        clearIndicators();
-        enableCardRain();
-        heroTagEl.textContent = activeTagText;
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Clear transition (storm lifting wipe) ──
-  function triggerClear() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
-      className: "storm-wipe clearing",
-      coverMs: RF.WIPE_COVER_MS,
-      revealMs: RF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isRainy = false;
-        document.body.classList.remove("rainy");
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-deactivate", mode: "rainy" },
-          }),
-        );
-        clearIndicators();
-        if (disableCardRain) disableCardRain();
-        heroTagEl.textContent = originalTagText;
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Click handler ──
-  heroTagEl.addEventListener("click", (e) => {
-    if (isTransitioning) return;
-
-    const now = Date.now();
-    lastClickTime = now;
-    const target = isRainy ? RF.CLICKS_TO_CLEAR : RF.CLICKS_TO_RAIN;
-    const clearing = isRainy;
-
-    force = Math.min(1, force + 1 / target);
-
-    spawnSplash(e.clientX, e.clientY, clearing);
-    updateVisuals(clearing);
-
-    if (force >= 1.0) {
-      if (isRainy) {
-        triggerClear();
-      } else {
-        triggerRain();
-      }
-    }
+    },
+    onActivate() {
+      disableCardRain = enableCardEffects({
+        className: "rain-card",
+        trackingPrefix: "rain",
+        onClick: cardClick,
+      });
+      heroTagEl.textContent = activeTagText;
+    },
+    onDeactivate() {
+      if (disableCardRain) disableCardRain();
+      heroTagEl.textContent = originalTagText;
+    },
   });
-
-  // ── Decay loop ──
-  let lastTick = performance.now();
-  function tick() {
-    const now = performance.now();
-    const dt = (now - lastTick) / 1000;
-    lastTick = now;
-
-    if (force > 0 && !isTransitioning) {
-      const timeSinceClick = Date.now() - lastClickTime;
-      if (timeSinceClick > RF.CLICK_TIMEOUT_MS) {
-        const target = isRainy ? RF.CLICKS_TO_CLEAR : RF.CLICKS_TO_RAIN;
-        const decay = (RF.DECAY_RATE / target) * dt;
-        force = Math.max(0, force - decay);
-        updateVisuals(isRainy);
-      }
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
-
-  registerToggle("rainy", () => (isRainy ? triggerClear() : triggerRain()));
 }

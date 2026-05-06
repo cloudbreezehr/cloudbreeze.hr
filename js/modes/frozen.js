@@ -1,8 +1,8 @@
 import { defineConstants } from "../dev/registry.js";
-import { playWipe } from "../effects/wipe.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { registerToggle } from "./registry.js";
+import { createMode } from "./factory.js";
+import { createClickCountTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
 // This file is for behavior only.
@@ -55,11 +55,6 @@ const FV = defineConstants(
 );
 
 export function initFrozen() {
-  let force = 0;
-  let isFrozen = false;
-  let isTransitioning = false;
-  let lastClickTime = 0;
-
   const logoEl = document.querySelector(".nav-logo");
   const cloudSvg = document.querySelector(".cloud-svg");
   const canvasEl = document.getElementById("bg-canvas");
@@ -70,13 +65,10 @@ export function initFrozen() {
   document.body.appendChild(frostOverlay);
 
   // ── 1. Frost breath particles ──
-  let lastClickX = 0,
-    lastClickY = 0;
+  let lastClickX = 0;
+  let lastClickY = 0;
 
   function spawnBreath(warm) {
-    const cx = lastClickX;
-    const cy = lastClickY;
-
     const count =
       FV.BREATH_COUNT_MIN + Math.floor(Math.random() * FV.BREATH_COUNT_RANGE);
     for (let i = 0; i < count; i++) {
@@ -85,8 +77,8 @@ export function initFrozen() {
       const size = FV.BREATH_SIZE_MIN + Math.random() * FV.BREATH_SIZE_RANGE;
       el.style.width = size + "px";
       el.style.height = size + "px";
-      el.style.left = cx + "px";
-      el.style.top = cy + "px";
+      el.style.left = lastClickX + "px";
+      el.style.top = lastClickY + "px";
       document.body.appendChild(el);
 
       const angle = Math.random() * Math.PI * 2;
@@ -109,96 +101,14 @@ export function initFrozen() {
     }
   }
 
-  // ── 2. Logo frost rim ──
-  function updateLogoRim(progress, warm) {
-    if (progress < FF.FROST_RIM_AT) {
-      cloudSvg.style.filter = "";
-      return;
-    }
-    const t = Math.min(1, (progress - FF.FROST_RIM_AT) / (1 - FF.FROST_RIM_AT));
-    const spread = FV.RIM_SPREAD_MIN + t * FV.RIM_SPREAD_RANGE;
-    const alpha = FV.RIM_ALPHA_MIN + t * FV.RIM_ALPHA_RANGE;
-    if (warm) {
-      cloudSvg.style.filter = `drop-shadow(0 0 ${spread}px rgba(255,160,60,${alpha}))`;
-    } else {
-      cloudSvg.style.filter = `drop-shadow(0 0 ${spread}px rgba(0,220,255,${alpha}))`;
-    }
-  }
-
-  // ── 3. Screen-edge frost creep ──
-  function updateFrostCreep(progress) {
-    if (progress < FF.FROST_CREEP_AT) {
-      frostOverlay.style.opacity = "0";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - FF.FROST_CREEP_AT) / (1 - FF.FROST_CREEP_AT),
-    );
-    frostOverlay.style.opacity = String(t);
-    const size = FV.FROST_SIZE_MIN + t * FV.FROST_SIZE_RANGE;
-    frostOverlay.style.setProperty("--frost-size", size + "%");
-  }
-
-  // ── 4. Temperature drop (canvas filter) ──
-  function updateTempDrop(progress) {
-    if (document.body.classList.contains("upside-down")) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    if (progress < FF.TEMP_DROP_AT) {
-      canvasEl.style.filter = "";
-      return;
-    }
-    const t = Math.min(1, (progress - FF.TEMP_DROP_AT) / (1 - FF.TEMP_DROP_AT));
-    const sat = 1 - t * FV.TEMP_SAT_DROP;
-    const bri = 1 + t * FV.TEMP_BRI_BOOST;
-    canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
-  }
-
-  // ── 5. Logo frost-over (desaturate + brighten the whole logo) ──
-  function updateLogoFrost(progress) {
-    if (progress < FF.LOGO_FROST_AT) {
-      logoEl.style.filter = "";
-      return;
-    }
-    const t = Math.min(
-      1,
-      (progress - FF.LOGO_FROST_AT) / (1 - FF.LOGO_FROST_AT),
-    );
-    const sat = 1 - t * FV.LOGO_SAT_DROP;
-    const bri = 1 + t * FV.LOGO_BRI_BOOST;
-    logoEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
-  }
-
-  // ── Update all visual indicators ──
-  function updateVisuals(warm) {
-    updateLogoRim(force, warm);
-    updateFrostCreep(force);
-    updateTempDrop(force);
-    if (!warm) updateLogoFrost(force);
-  }
-
-  // ── Clear all indicators ──
-  function clearIndicators() {
-    force = 0;
-    cloudSvg.style.filter = "";
-    frostOverlay.style.opacity = "0";
-    canvasEl.style.filter = "";
-    logoEl.style.filter = "";
-  }
-
   // ── Card frost interactions ──
   let disableCardFrost = null;
 
   function cardClick(e) {
     const card = e.currentTarget;
     card.classList.toggle("card-frozen");
-
     const rect = card.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    spawnRipple(x, y, {
+    spawnRipple(e.clientX - rect.left, e.clientY - rect.top, {
       className: "frost-ripple",
       parent: card,
       duration: FV.RIPPLE_DURATION_MS,
@@ -207,121 +117,139 @@ export function initFrozen() {
     });
   }
 
-  function enableCardFrost() {
-    disableCardFrost = enableCardEffects({
-      className: "frost-card",
-      trackingPrefix: "frost",
-      onClick: cardClick,
-      tilt: { intensity: 3, scale: 1.01 },
-    });
-  }
-
-  // ── Freeze transition ──
-  function triggerFreeze() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
+  createMode({
+    id: "frozen",
+    trigger: createClickCountTrigger({
+      element: logoEl,
+      activateCount: FF.CLICKS_TO_FREEZE,
+      deactivateCount: FF.CLICKS_TO_THAW,
+      timeoutMs: FF.CLICK_TIMEOUT_MS,
+      decayRate: FF.DECAY_RATE,
+      preClick(e) {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        lastClickX = e.clientX;
+        lastClickY = e.clientY;
+      },
+      onClick(e, { isActive }) {
+        // Always spawn breath — the indicator applies regardless of thaw/freeze direction
+        spawnBreath(isActive);
+        if (isActive)
+          window.dispatchEvent(
+            new CustomEvent("achievement", { detail: { type: "frost-breath" } }),
+          );
+      },
+    }),
+    indicators: [
+      // ── 2. Logo frost rim ──
+      {
+        threshold: FF.FROST_RIM_AT,
+        apply(progress, ctx) {
+          if (progress < FF.FROST_RIM_AT) {
+            cloudSvg.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - FF.FROST_RIM_AT) / (1 - FF.FROST_RIM_AT),
+          );
+          const spread = FV.RIM_SPREAD_MIN + t * FV.RIM_SPREAD_RANGE;
+          const alpha = FV.RIM_ALPHA_MIN + t * FV.RIM_ALPHA_RANGE;
+          // Thaw buildup (active=true) paints warm orange; freeze buildup paints cyan.
+          cloudSvg.style.filter = ctx.isActive
+            ? `drop-shadow(0 0 ${spread}px rgba(255,160,60,${alpha}))`
+            : `drop-shadow(0 0 ${spread}px rgba(0,220,255,${alpha}))`;
+        },
+        clear() {
+          cloudSvg.style.filter = "";
+        },
+      },
+      // ── 3. Screen-edge frost creep ──
+      {
+        threshold: FF.FROST_CREEP_AT,
+        apply(progress) {
+          if (progress < FF.FROST_CREEP_AT) {
+            frostOverlay.style.opacity = "0";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - FF.FROST_CREEP_AT) / (1 - FF.FROST_CREEP_AT),
+          );
+          frostOverlay.style.opacity = String(t);
+          const size = FV.FROST_SIZE_MIN + t * FV.FROST_SIZE_RANGE;
+          frostOverlay.style.setProperty("--frost-size", size + "%");
+        },
+        clear() {
+          frostOverlay.style.opacity = "0";
+        },
+      },
+      // ── 4. Temperature drop (canvas filter) ──
+      {
+        threshold: FF.TEMP_DROP_AT,
+        apply(progress) {
+          if (document.body.classList.contains("upside-down")) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          if (progress < FF.TEMP_DROP_AT) {
+            canvasEl.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - FF.TEMP_DROP_AT) / (1 - FF.TEMP_DROP_AT),
+          );
+          const sat = 1 - t * FV.TEMP_SAT_DROP;
+          const bri = 1 + t * FV.TEMP_BRI_BOOST;
+          canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+        },
+        clear() {
+          canvasEl.style.filter = "";
+        },
+      },
+      // ── 5. Logo frost-over (desaturate + brighten the whole logo) ──
+      // Skipped while thawing — the logo returns to its natural look.
+      {
+        threshold: FF.LOGO_FROST_AT,
+        apply(progress, ctx) {
+          if (ctx.isActive) {
+            logoEl.style.filter = "";
+            return;
+          }
+          if (progress < FF.LOGO_FROST_AT) {
+            logoEl.style.filter = "";
+            return;
+          }
+          const t = Math.min(
+            1,
+            (progress - FF.LOGO_FROST_AT) / (1 - FF.LOGO_FROST_AT),
+          );
+          const sat = 1 - t * FV.LOGO_SAT_DROP;
+          const bri = 1 + t * FV.LOGO_BRI_BOOST;
+          logoEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+        },
+        clear() {
+          logoEl.style.filter = "";
+        },
+      },
+    ],
+    wipe: {
       className: "frost-wipe",
+      reverseModifier: "thaw",
       coverMs: FF.WIPE_COVER_MS,
       revealMs: FF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isFrozen = true;
-        document.body.classList.add("frozen");
-        document.body.dataset.lastSubmode = "frozen";
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-activate", mode: "frozen" },
-          }),
-        );
-        clearIndicators();
-        enableCardFrost();
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Thaw transition ──
-  function triggerThaw() {
-    if (isTransitioning) return;
-    isTransitioning = true;
-
-    playWipe({
-      className: "frost-wipe thaw",
-      coverMs: FF.WIPE_COVER_MS,
-      revealMs: FF.WIPE_REVEAL_MS,
-      onMidpoint() {
-        isFrozen = false;
-        document.body.classList.remove("frozen");
-        window.dispatchEvent(
-          new CustomEvent("achievement", {
-            detail: { type: "mode-deactivate", mode: "frozen" },
-          }),
-        );
-        clearIndicators();
-        if (disableCardFrost) disableCardFrost("card-frozen");
-      },
-      onComplete() {
-        isTransitioning = false;
-      },
-    });
-  }
-
-  // ── Click handler ──
-  logoEl.addEventListener("click", (e) => {
-    e.preventDefault();
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    if (isTransitioning) return;
-
-    lastClickX = e.clientX;
-    lastClickY = e.clientY;
-
-    const now = Date.now();
-    lastClickTime = now;
-    const target = isFrozen ? FF.CLICKS_TO_THAW : FF.CLICKS_TO_FREEZE;
-    const warm = isFrozen;
-
-    force = Math.min(1, force + 1 / target);
-
-    // Always spawn breath
-    spawnBreath(warm);
-    if (isFrozen)
-      window.dispatchEvent(
-        new CustomEvent("achievement", { detail: { type: "frost-breath" } }),
-      );
-
-    updateVisuals(warm);
-
-    if (force >= 1.0) {
-      if (isFrozen) {
-        triggerThaw();
-      } else {
-        triggerFreeze();
-      }
-    }
+    },
+    onActivate() {
+      disableCardFrost = enableCardEffects({
+        className: "frost-card",
+        trackingPrefix: "frost",
+        onClick: cardClick,
+        tilt: { intensity: 3, scale: 1.01 },
+      });
+    },
+    onDeactivate() {
+      if (disableCardFrost) disableCardFrost("card-frozen");
+    },
   });
-
-  // ── Decay loop ──
-  let lastTick = performance.now();
-  function tick() {
-    const now = performance.now();
-    const dt = (now - lastTick) / 1000;
-    lastTick = now;
-
-    if (force > 0 && !isTransitioning) {
-      const timeSinceClick = Date.now() - lastClickTime;
-      if (timeSinceClick > FF.CLICK_TIMEOUT_MS) {
-        const target = isFrozen ? FF.CLICKS_TO_THAW : FF.CLICKS_TO_FREEZE;
-        const decay = (FF.DECAY_RATE / target) * dt;
-        force = Math.max(0, force - decay);
-        updateVisuals(isFrozen);
-      }
-    }
-    requestAnimationFrame(tick);
-  }
-  tick();
-
-  registerToggle("frozen", () => (isFrozen ? triggerThaw() : triggerFreeze()));
 }
