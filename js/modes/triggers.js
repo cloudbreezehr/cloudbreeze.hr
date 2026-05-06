@@ -13,13 +13,22 @@
 import { bindPointer } from "../pointer.js";
 
 // ── Shared decay primitive ──
-// Most strategies share the same "idle decay" shape: after N ms of no input,
-// force drains at R per second relative to an activation target.  The
-// decay loop runs on rAF and self-gates on isActive/isTransitioning.
-function createDecayLoop(getForce, setForce, getTargetSize, getIdleMs, {
+// Most strategies share the same "idle decay" shape: after N ms of idle,
+// force drains at getRatePerSec() per second.  The loop runs on rAF and
+// self-gates on isBlocked (wipe in progress, mid-hold, etc.).
+//
+// Callers that want a target-relative rate (e.g. "drain at 2 clicks/sec
+// against an N-click target") compute that in getRatePerSec; the helper
+// doesn't know about targets.  `onDrain` optionally runs after each drain
+// step so callers can react to force hitting zero.
+function createIdleDecayLoop({
+  getForce,
+  setForce,
+  getIdleMs,
+  getRatePerSec,
   idleThresholdMs,
-  ratePerSec,
   isBlocked,
+  onDrain,
 }) {
   let lastTick = performance.now();
   function tick() {
@@ -28,11 +37,10 @@ function createDecayLoop(getForce, setForce, getTargetSize, getIdleMs, {
     lastTick = now;
     const f = getForce();
     if (f > 0 && !isBlocked()) {
-      const idleMs = getIdleMs();
-      if (idleMs > idleThresholdMs) {
-        const targetSize = Math.max(1, getTargetSize());
-        const decay = (ratePerSec / targetSize) * dt;
-        setForce(Math.max(0, f - decay));
+      if (getIdleMs() > idleThresholdMs) {
+        const next = Math.max(0, f - getRatePerSec() * dt);
+        setForce(next);
+        if (onDrain) onDrain(next);
       }
     }
     requestAnimationFrame(tick);
@@ -76,20 +84,22 @@ export function createClickCountTrigger({
         }
       });
 
-      createDecayLoop(
-        () => force,
-        (f) => {
+      createIdleDecayLoop({
+        getForce: () => force,
+        setForce(f) {
           force = f;
           ctx.setForce(force);
         },
-        () => (ctx.isActive() ? deactivateCount : activateCount),
-        () => Date.now() - lastClickTime,
-        {
-          idleThresholdMs: timeoutMs,
-          ratePerSec: decayRate,
-          isBlocked: () => ctx.isTransitioning(),
+        getIdleMs: () => Date.now() - lastClickTime,
+        // Target-relative: one click is 1/N of the force, so "decayRate
+        // clicks per second" is decayRate/N as a fraction-per-second.
+        getRatePerSec() {
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          return decayRate / Math.max(1, target);
         },
-      );
+        idleThresholdMs: timeoutMs,
+        isBlocked: () => ctx.isTransitioning(),
+      });
     },
   };
 }
@@ -165,19 +175,20 @@ export function createHoldTrigger({
         requestAnimationFrame(holdTick);
       }
 
-      // Release-decay loop — only decays when not holding
-      let lastTick = performance.now();
-      function decayTick() {
-        const now = performance.now();
-        const dt = (now - lastTick) / 1000;
-        lastTick = now;
-        if (!isHolding && force > 0 && !ctx.isTransitioning()) {
-          force = Math.max(0, force - decayRate * dt);
+      // Release-decay loop — only decays when not holding.  "idle" here
+      // means "pointer released," not elapsed time, so isBlocked carries
+      // the gating and idleThresholdMs stays at 0.
+      createIdleDecayLoop({
+        getForce: () => force,
+        setForce(f) {
+          force = f;
           ctx.setForce(force);
-        }
-        requestAnimationFrame(decayTick);
-      }
-      decayTick();
+        },
+        getIdleMs: () => 1,
+        getRatePerSec: () => decayRate,
+        idleThresholdMs: 0,
+        isBlocked: () => isHolding || ctx.isTransitioning(),
+      });
     },
   };
 }
@@ -289,22 +300,22 @@ export function createKeySequenceTrigger({
       }
       window.addEventListener("keydown", onKeydown);
 
-      let lastTick = performance.now();
-      function tick() {
-        const now = performance.now();
-        const dt = (now - lastTick) / 1000;
-        lastTick = now;
-        if (force > 0 && !ctx.isTransitioning()) {
-          const idle = Date.now() - lastAdvanceTime;
-          if (idle > decayTimeoutMs) {
-            force = Math.max(0, force - decayRate * dt);
-            ctx.setForce(force);
-            if (force === 0) accumulator.reset();
-          }
-        }
-        requestAnimationFrame(tick);
-      }
-      tick();
+      createIdleDecayLoop({
+        getForce: () => force,
+        setForce(f) {
+          force = f;
+          ctx.setForce(force);
+        },
+        getIdleMs: () => Date.now() - lastAdvanceTime,
+        getRatePerSec: () => decayRate,
+        idleThresholdMs: decayTimeoutMs,
+        isBlocked: () => ctx.isTransitioning(),
+        onDrain(next) {
+          // Reset the accumulator once the running force fully drains —
+          // otherwise a stale prefix could complete a word after a long idle.
+          if (next === 0) accumulator.reset();
+        },
+      });
     },
   };
 }
