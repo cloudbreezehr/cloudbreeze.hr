@@ -30,6 +30,7 @@ const THOUSAND_POINTS = 1000;
 const PERSISTENT_DAYS = 3;
 const TENACIOUS_DAYS = 7;
 const JELLYFISH_PULSES_TOTAL = 5;
+const PAPER_STROKES_TOTAL = 10;
 
 export const PROGRESS_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
@@ -88,6 +89,10 @@ export const PROGRESS_COUNTS = {
     current: () => storage.getCounter("jellyfishPulses"),
     total: () => JELLYFISH_PULSES_TOTAL,
   },
+  "paper-strokes": {
+    current: () => storage.getCounter("paperStrokes"),
+    total: () => PAPER_STROKES_TOTAL,
+  },
   "deep-sea-set": {
     current: () => countSetUnlocked("deep-sea"),
     total: () => getSetPrereqs("deep-sea").length,
@@ -103,6 +108,10 @@ export const PROGRESS_COUNTS = {
   "rainy-set": {
     current: () => countSetUnlocked("rainy"),
     total: () => getSetPrereqs("rainy").length,
+  },
+  "paper-set": {
+    current: () => countSetUnlocked("paper"),
+    total: () => getSetPrereqs("paper").length,
   },
   "upside-down-set": {
     current: () => countSetUnlocked("upside-down"),

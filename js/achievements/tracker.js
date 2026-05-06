@@ -171,6 +171,7 @@ export function createTracker(onUnlock, onRelock) {
       if (mode === "blocky") tryUnlock("pixel-burst");
       if (mode === "rainy") tryUnlock("puddle-jump");
       if (mode === "upside-down") tryUnlock("rift-walker");
+      if (mode === "paper" && data && data.card) tryUnlock("margin-notes");
     },
 
     "click-burst"() {
@@ -291,6 +292,7 @@ export function createTracker(onUnlock, onRelock) {
       if (mode === "deep-sea") tryUnlock("storm-surge");
       if (mode === "frozen") tryUnlock("frozen-lightning");
       if (mode === "upside-down") tryUnlock("glitch");
+      if (mode === "paper") tryUnlock("ink-splatter");
     },
 
     "fury-aurora"() {
@@ -316,6 +318,7 @@ export function createTracker(onUnlock, onRelock) {
         frozen: "first-frost",
         blocky: "resolution-drop",
         rainy: "first-drop",
+        paper: "first-sketch",
         "upside-down": "the-flip",
       };
       if (modeMap[data.mode]) tryUnlock(modeMap[data.mode]);
@@ -336,6 +339,7 @@ export function createTracker(onUnlock, onRelock) {
         frozen: "thaw",
         blocky: "defrag",
         rainy: "rainbow",
+        paper: "blank-page",
         "upside-down": "restoration",
       };
       if (deactivateMap[data.mode]) tryUnlock(deactivateMap[data.mode]);
@@ -352,6 +356,11 @@ export function createTracker(onUnlock, onRelock) {
     "jellyfish-pulse"() {
       storage.incrementCounter("jellyfishPulses");
       checkProgressiveState("jellyfish-pulses");
+    },
+
+    "paper-stroke"() {
+      storage.incrementCounter("paperStrokes");
+      checkProgressiveState("paper-strokes");
     },
 
     "panel-open"() {

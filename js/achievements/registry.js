@@ -70,6 +70,12 @@ export const SETS = [
     icon: getMode("rainy")?.icon,
   },
   {
+    id: "paper",
+    label: "Paper",
+    color: "#5a4030",
+    icon: getMode("paper")?.icon,
+  },
+  {
     id: "upside-down",
     label: "Upside Down",
     color: "#e04050",
@@ -726,6 +732,64 @@ export const ACHIEVEMENTS = [
     progressKey: "rainy-set",
   },
 
+  // ── Paper ──
+  {
+    id: "first-sketch",
+    title: "First Sketch",
+    description: "The page is yours to draw on.",
+    hint: "Activate paper mode",
+    set: "paper",
+    points: EPIC,
+    hidden: true,
+  },
+  {
+    id: "blank-page",
+    title: "Blank Page",
+    description: "The marks fade, the paper clears.",
+    hint: "Leave paper mode",
+    set: "paper",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "doodler",
+    title: "Doodler",
+    description: "Ten strokes across the page.",
+    hint: "Draw 10 strokes in paper mode",
+    set: "paper",
+    points: UNCOMMON,
+    hidden: true,
+    progressKey: "paper-strokes",
+  },
+  {
+    id: "ink-splatter",
+    title: "Ink Splatter",
+    description: "The nib jumps, ink bleeds across the page.",
+    hint: "Trigger lightning in paper mode",
+    set: "paper",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "margin-notes",
+    title: "Margin Notes",
+    description: "A scribble in the notebook's margin.",
+    hint: "Click a service card in paper mode",
+    set: "paper",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "sketchbook-full",
+    title: "Sketchbook Full",
+    description: "Every page has ink on it.",
+    hint: "Unlock all other paper achievements",
+    set: "paper",
+    points: LEGENDARY,
+    hidden: true,
+    progressKey: "paper-set",
+  },
+
   // ── Upside Down ──
   {
     id: "the-flip",
@@ -920,6 +984,7 @@ export const MODE_SETS = [
   "frozen",
   "blocky",
   "rainy",
+  "paper",
   "upside-down",
 ];
 
@@ -929,6 +994,7 @@ export const SET_MASTERY_MAP = {
   frozen: "glacial-mastery",
   blocky: "voxel-master",
   rainy: "storm-chaser",
+  paper: "sketchbook-full",
   "upside-down": "world-turner",
 };
 
