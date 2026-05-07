@@ -3310,6 +3310,17 @@ body[data-active-theme="paper"] .hero-sub {
   color: rgba(26, 21, 18, 0.75);
 }
 
+/* Hover thickening — every semantic text element gets a shadow scaled by
+   its --paper-ink-proximity var (0..1), set by JS based on cursor distance.
+   Intentionally broad: nav, buttons, footer, any UI visible while paper is
+   active all participate. The site's just playing at being a sketchbook
+   anyway — no reason to carve out chrome. */
+body[data-active-theme="paper"]
+  :is(h1, h2, h3, h4, h5, h6, p, span, a, li, em, strong) {
+  text-shadow: 0 0 calc(3px * var(--paper-ink-proximity, 0))
+    rgba(26, 21, 18, calc(0.55 * var(--paper-ink-proximity, 0)));
+}
+
 /* Buttons — inked */
 body[data-active-theme="paper"] .btn-primary {
   background: var(--ink-color);

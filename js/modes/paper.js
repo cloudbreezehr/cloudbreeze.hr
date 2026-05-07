@@ -44,9 +44,23 @@ const PV = defineConstants(
     SCROLL_NORM_FACTOR: 0.05,
     PAGE_TURN_SETTLE_PX: 0.01,
     PAGE_TURN_SETTLE_DEG: 0.001,
+    // Hover text thickening — cursor within HOVER_RADIUS_PX of a text
+    // element bumps its --paper-ink-proximity toward 1; CSS reads the var
+    // and darkens the text-shadow so the pen feels like it's pressing
+    // harder nearby.
+    HOVER_RADIUS_PX: 80,
+    HOVER_LERP: 0.2,
+    HOVER_SETTLE: 0.005,
   },
   { mode: "paper" },
 );
+
+// Every semantic text element thickens when the cursor is near it —
+// nav, buttons, footer, overlays (Cloudlog, dev console) all
+// participate.  Kept intentionally broad to avoid paper mode having
+// to know about specific other modules' markup.  Matches the selector
+// in main.css.
+const HOVER_TARGETS = "h1, h2, h3, h4, h5, h6, p, span, a, li, em, strong";
 
 // ── Activation words — tracked in parallel until one completes ──
 const ACTIVATION_WORDS = ["SKETCH", "DRAW"];
@@ -135,6 +149,84 @@ export function initPaper() {
     },
     { passive: true },
   );
+
+  // ── Hover text thickening ──
+  // While paper is active, text elements near the cursor get a stronger
+  // text-shadow so the pen feels like it's pressing harder.  A rAF loop
+  // lerps each element's --paper-ink-proximity toward the current target
+  // (0..1 based on distance to cursor).  Disabled on touch-only devices
+  // and under reduced-motion.
+  const touchOnly = matchMedia("(hover: none)").matches;
+  let hoverEls = [];
+  // Per-element state — parallel arrays keyed by index into hoverEls.
+  // Using arrays of primitives instead of a Map keeps the per-frame
+  // inner loop branch-free.
+  let hoverTargets = [];
+  let hoverCurrents = [];
+  let hoverCursorX = -Infinity;
+  let hoverCursorY = -Infinity;
+  let hoverRaf = null;
+
+  function hoverPointer(e) {
+    hoverCursorX = e.clientX;
+    hoverCursorY = e.clientY;
+  }
+
+  function hoverTick() {
+    if (prefersReducedMotion()) {
+      hoverRaf = null;
+      return;
+    }
+    const r = PV.HOVER_RADIUS_PX;
+    for (let i = 0; i < hoverEls.length; i++) {
+      const el = hoverEls[i];
+      const rect = el.getBoundingClientRect();
+      // Closest point on rect to cursor, then distance.
+      const nx = Math.max(rect.left, Math.min(hoverCursorX, rect.right));
+      const ny = Math.max(rect.top, Math.min(hoverCursorY, rect.bottom));
+      const dx = hoverCursorX - nx;
+      const dy = hoverCursorY - ny;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const target = dist >= r ? 0 : 1 - dist / r;
+      hoverTargets[i] = target;
+      const next =
+        hoverCurrents[i] + (target - hoverCurrents[i]) * PV.HOVER_LERP;
+      // Snap close-to-zero back to exactly 0 so we can remove the property.
+      if (Math.abs(next - target) < PV.HOVER_SETTLE && target === 0) {
+        if (hoverCurrents[i] !== 0) {
+          hoverCurrents[i] = 0;
+          el.style.removeProperty("--paper-ink-proximity");
+        }
+      } else {
+        hoverCurrents[i] = next;
+        el.style.setProperty("--paper-ink-proximity", next.toFixed(3));
+      }
+    }
+    hoverRaf = requestAnimationFrame(hoverTick);
+  }
+
+  function startHover() {
+    if (touchOnly || hoverRaf !== null) return;
+    hoverEls = Array.from(document.querySelectorAll(HOVER_TARGETS));
+    hoverTargets = new Array(hoverEls.length).fill(0);
+    hoverCurrents = new Array(hoverEls.length).fill(0);
+    window.addEventListener("pointermove", hoverPointer, { passive: true });
+    hoverRaf = requestAnimationFrame(hoverTick);
+  }
+
+  function stopHover() {
+    if (hoverRaf !== null) {
+      cancelAnimationFrame(hoverRaf);
+      hoverRaf = null;
+    }
+    window.removeEventListener("pointermove", hoverPointer);
+    for (const el of hoverEls) {
+      el.style.removeProperty("--paper-ink-proximity");
+    }
+    hoverEls = [];
+    hoverTargets = [];
+    hoverCurrents = [];
+  }
 
   createMode({
     id: "paper",
@@ -249,10 +341,12 @@ export function initPaper() {
         tilt: { intensity: 2, scale: 1.005 },
       });
       startPageTurn();
+      startHover();
     },
     onDeactivate() {
       if (disableCardPaper) disableCardPaper();
       stopPageTurn();
+      stopHover();
     },
   });
 }
