@@ -264,6 +264,21 @@ export function initCanvas(canvasEl, theme, options) {
   const isUpside = () => document.body.classList.contains("upside-down");
   const canvasY = (y) => (isUpside() ? canvas.height - y : y);
 
+  // Snapshot every sub-mode's activation flag in one pass.  Callers reuse the
+  // result across a frame or an event handler rather than querying classList
+  // six times — one object rather than six DOM reads, and far easier to read.
+  function readModes() {
+    const cl = document.body.classList;
+    return {
+      frozen: cl.contains("frozen"),
+      deepSea: cl.contains("deep-sea"),
+      blocky: cl.contains("blocky"),
+      rainy: cl.contains("rainy"),
+      paper: cl.contains("paper"),
+      upsideDown: cl.contains("upside-down"),
+    };
+  }
+
   let lastFrameTime = performance.now();
   let wasRainy = false;
   let wasPaper = false;
@@ -284,11 +299,14 @@ export function initCanvas(canvasEl, theme, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const isFrozen = document.body.classList.contains("frozen");
-    const isDeepSea = document.body.classList.contains("deep-sea");
-    const isBlocky = document.body.classList.contains("blocky");
-    const isRainy = document.body.classList.contains("rainy");
-    const isPaper = document.body.classList.contains("paper");
+    const modes = readModes();
+    const {
+      frozen: isFrozen,
+      deepSea: isDeepSea,
+      blocky: isBlocky,
+      rainy: isRainy,
+      paper: isPaper,
+    } = modes;
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeModes = getModeIds().filter((m) =>
       document.body.classList.contains(m),
@@ -398,6 +416,7 @@ export function initCanvas(canvasEl, theme, options) {
 
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
+    const modes = readModes();
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
@@ -413,31 +432,17 @@ export function initCanvas(canvasEl, theme, options) {
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
-    if (document.body.classList.contains("deep-sea")) {
-      deepSea.clickBurst(cx, cy);
-    }
-
+    if (modes.deepSea) deepSea.clickBurst(cx, cy);
     // Blocky click burst — block fragments instead of smooth particles
-    if (document.body.classList.contains("blocky")) {
-      blocky.clickBurst(cx, cy);
-    }
-
+    if (modes.blocky) blocky.clickBurst(cx, cy);
     // Rainy click burst — splash droplets radiate from click
-    if (document.body.classList.contains("rainy")) {
-      rain.clickBurst(cx, cy);
-    }
-
+    if (modes.rainy) rain.clickBurst(cx, cy);
     // Paper click — ink splat replaces the normal burst
-    if (document.body.classList.contains("paper")) {
-      paper.clickBurst(cx, cy);
-    }
+    if (modes.paper) paper.clickBurst(cx, cy);
 
     // Normal click burst particles — blocky uses block fragments instead;
     // paper uses ink splats.
-    if (
-      !document.body.classList.contains("blocky") &&
-      !document.body.classList.contains("paper")
-    ) {
+    if (!modes.blocky && !modes.paper) {
       interactions.click(cx, cy, currentPal);
     }
     window.dispatchEvent(
@@ -451,11 +456,10 @@ export function initCanvas(canvasEl, theme, options) {
       if (e.target.closest(UI_OVERLAY)) return false;
       const cx = x,
         cy = canvasY(y);
+      const modes = readModes();
       interactions.startDrag(forces, cx, cy);
       // Paper mode — start an SVG ink stroke that tracks the pointer
-      if (document.body.classList.contains("paper")) {
-        paper.startStroke(x, y);
-      }
+      if (modes.paper) paper.startStroke(x, y);
     },
     onMove(x, y) {
       const cx = x,
@@ -467,25 +471,20 @@ export function initCanvas(canvasEl, theme, options) {
             detail: { type: "drag", x: cx, y: cy },
           }),
         );
+      const modes = readModes();
       // Drag spawns small bubbles in deep-sea mode
-      if (trailAdded && document.body.classList.contains("deep-sea")) {
-        deepSea.dragBubble(cx, cy);
-      }
+      if (trailAdded && modes.deepSea) deepSea.dragBubble(cx, cy);
       // Paper mode — extend the active ink stroke with the new point
-      if (document.body.classList.contains("paper")) {
-        paper.extendStroke(x, y);
-      }
+      if (modes.paper) paper.extendStroke(x, y);
     },
     onUp() {
+      const modes = readModes();
       // Rainy well burst — massive splash on gravity well release
-      if (
-        forces.wellStrength > 0 &&
-        document.body.classList.contains("rainy")
-      ) {
+      if (forces.wellStrength > 0 && modes.rainy) {
         rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
       }
       // Paper mode — finalize the stroke and fire the doodler event
-      if (document.body.classList.contains("paper")) {
+      if (modes.paper) {
         const hadContent = paper.endStroke();
         if (hadContent) {
           window.dispatchEvent(
