@@ -114,6 +114,20 @@ const CLICK = defineConstants("interactions.click", {
     step: 0.1,
     description: "Horizontal sine wave amplitude",
   },
+  GLOW_MID_STOP: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Gradient midpoint stop position",
+  },
+  GLOW_MID_ALPHA: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Gradient midpoint opacity multiplier",
+  },
 });
 
 // ── Orbit Particles ──
@@ -237,6 +251,20 @@ const ORBIT = defineConstants("interactions.orbit", {
     step: 0.001,
     description: "Min opacity to bother drawing",
   },
+  GLOW_MID_STOP: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Orbit gradient midpoint stop position",
+  },
+  GLOW_MID_ALPHA: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Orbit gradient midpoint opacity multiplier",
+  },
 });
 
 // ── Hold & Attract ──
@@ -338,6 +366,55 @@ const HOLD = defineConstants("interactions.hold", {
     max: 1,
     step: 0.05,
     description: "Hold strength at which orbit is considered locked",
+  },
+  WARMUP_THRESHOLD: {
+    value: 0.1,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Hold strength above which orbit particles may spawn",
+  },
+  ORBIT_CONVERT_SPEED_MIN: {
+    value: 0.4,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Minimum blast speed factor when converting orbit to burst",
+  },
+  ORBIT_CONVERT_SPEED_RANGE: {
+    value: 0.6,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Blast speed variation when converting orbit to burst",
+  },
+  ORBIT_CONVERT_OPACITY_BOOST: {
+    value: 0.1,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Opacity added when converting orbit to burst",
+  },
+  ORBIT_CONVERT_LIFE_RANGE: {
+    value: 30,
+    min: 0,
+    max: 200,
+    step: 1,
+    description: "Lifetime variation for orbit-to-burst particles",
+  },
+  EXTRA_BURST_SPEED_MIN: {
+    value: 0.3,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Minimum blast speed factor for extra burst",
+  },
+  EXTRA_BURST_SPEED_RANGE: {
+    value: 0.7,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Blast speed variation for extra burst",
   },
 });
 
@@ -448,6 +525,69 @@ const WELL = defineConstants("interactions.well", {
     step: 0.5,
     description: "Aura pulse animation speed",
   },
+  AURA_PULSE_BASE: {
+    value: 0.8,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Aura pulse baseline (pulse oscillates around this)",
+  },
+  AURA_PULSE_AMP: {
+    value: 0.2,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Aura pulse amplitude",
+  },
+  AURA_MID_STOP: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Aura gradient midpoint stop position",
+  },
+  AURA_MID_ALPHA: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Aura gradient midpoint opacity multiplier",
+  },
+  BURST_OPACITY_MIN: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Minimum opacity for well burst particles",
+  },
+  BURST_OPACITY_RANGE: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Opacity variation for well burst particles",
+  },
+  BURST_RADIUS_RANGE: {
+    value: 3,
+    min: 0,
+    max: 10,
+    step: 0.1,
+    description: "Radius variation for well burst particles",
+  },
+  BURST_SPEED_FACTOR_MIN: {
+    value: 0.5,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Minimum blast speed factor for well burst",
+  },
+  BURST_SPEED_FACTOR_RANGE: {
+    value: 0.8,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Blast speed factor variation for well burst",
+  },
 });
 
 // ── Drag Trail ──
@@ -507,6 +647,34 @@ const TRAIL = defineConstants("interactions.trail", {
     max: 20,
     step: 0.5,
     description: "Control point offset for curve",
+  },
+  SWAY_FREQ_X: {
+    value: 0.06,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Horizontal sway sine frequency per frame",
+  },
+  SWAY_FREQ_Y: {
+    value: 0.05,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Vertical sway sine frequency per frame",
+  },
+  SWAY_AMP_X: {
+    value: 0.4,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Horizontal sway amplitude",
+  },
+  SWAY_AMP_Y: {
+    value: 0.2,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Vertical sway amplitude",
   },
 });
 
@@ -772,7 +940,10 @@ export function createInteractions() {
           p.r * CLICK.GLOW_RADIUS,
         );
         grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${op})`);
-        grad.addColorStop(0.4, `rgba(${c[0]},${c[1]},${c[2]},${op * 0.4})`);
+        grad.addColorStop(
+          CLICK.GLOW_MID_STOP,
+          `rgba(${c[0]},${c[1]},${c[2]},${op * CLICK.GLOW_MID_ALPHA})`,
+        );
         grad.addColorStop(1, "transparent");
         ctx.fillStyle = grad;
         ctx.beginPath();
@@ -781,7 +952,7 @@ export function createInteractions() {
       }
 
       // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
-      if (forces.isDragging && forces.holdStrength > 0.1) {
+      if (forces.isDragging && forces.holdStrength > HOLD.WARMUP_THRESHOLD) {
         // Spawn new orbit particles (boosted during gravity well)
         const spawnMul =
           forces.wellStrength > 0
@@ -843,8 +1014,8 @@ export function createInteractions() {
           );
           grad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity})`);
           grad.addColorStop(
-            0.3,
-            `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity * 0.4})`,
+            ORBIT.GLOW_MID_STOP,
+            `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity * ORBIT.GLOW_MID_ALPHA})`,
           );
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
@@ -858,8 +1029,9 @@ export function createInteractions() {
       if (forces.wellStrength > 0 && forces.isDragging) {
         const auraR = WELL.AURA_RADIUS * (1 + forces.wellStrength);
         const pulse =
-          0.8 +
-          0.2 * Math.sin((performance.now() / 1000) * WELL.AURA_PULSE_SPEED);
+          WELL.AURA_PULSE_BASE +
+          WELL.AURA_PULSE_AMP *
+            Math.sin((performance.now() / 1000) * WELL.AURA_PULSE_SPEED);
         const auraOp = WELL.AURA_OPACITY * forces.wellStrength * pulse;
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
@@ -873,8 +1045,8 @@ export function createInteractions() {
         );
         auraGrad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp})`);
         auraGrad.addColorStop(
-          0.5,
-          `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp * 0.3})`,
+          WELL.AURA_MID_STOP,
+          `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp * WELL.AURA_MID_ALPHA})`,
         );
         auraGrad.addColorStop(1, "transparent");
         ctx.fillStyle = auraGrad;
@@ -892,8 +1064,8 @@ export function createInteractions() {
           trailSegments.splice(i, 1);
           continue;
         }
-        s.x += Math.sin(s.life * 0.06 + s.phase) * 0.4;
-        s.y += Math.cos(s.life * 0.05 + s.phase) * 0.2;
+        s.x += Math.sin(s.life * TRAIL.SWAY_FREQ_X + s.phase) * TRAIL.SWAY_AMP_X;
+        s.y += Math.cos(s.life * TRAIL.SWAY_FREQ_Y + s.phase) * TRAIL.SWAY_AMP_Y;
         const fade = 1 - s.life / s.maxLife;
         const op = s.opacity * fade;
         if (op < CLICK.DRAW_THRESHOLD || !s.prev) continue;
@@ -997,7 +1169,10 @@ export function createInteractions() {
       const heldMs = now - holdStart;
       const prevHold = forces.holdStrength;
       forces.holdStrength = Math.min(heldMs / HOLD.RAMP_MS, 1);
-      if (forces.holdStrength > 0.1 && prevHold <= 0.1) {
+      if (
+        forces.holdStrength > HOLD.WARMUP_THRESHOLD &&
+        prevHold <= HOLD.WARMUP_THRESHOLD
+      ) {
         window.dispatchEvent(
           new CustomEvent("achievement", {
             detail: { type: "hold", duration: heldMs },
@@ -1073,16 +1248,21 @@ export function createInteractions() {
         const dx = p.x - forces.dragPos.x;
         const dy = p.y - forces.dragPos.y;
         const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const speed = blast * (0.4 + Math.random() * 0.6);
+        const speed =
+          blast *
+          (HOLD.ORBIT_CONVERT_SPEED_MIN +
+            Math.random() * HOLD.ORBIT_CONVERT_SPEED_RANGE);
         clickParticles.push({
           x: p.x,
           y: p.y,
           vx: (dx / dist) * speed + p.vx,
           vy: (dy / dist) * speed + p.vy,
           r: p.r,
-          opacity: p.opacity + 0.1,
+          opacity: p.opacity + HOLD.ORBIT_CONVERT_OPACITY_BOOST,
           life: 0,
-          maxLife: HOLD.EXTRA_BURST_LIFE_MIN + Math.random() * 30,
+          maxLife:
+            HOLD.EXTRA_BURST_LIFE_MIN +
+            Math.random() * HOLD.ORBIT_CONVERT_LIFE_RANGE,
           phase: Math.random() * Math.PI * 2,
           color: pal.clickColor,
         });
@@ -1096,13 +1276,16 @@ export function createInteractions() {
       );
       for (let i = 0; i < extraCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const speed = blast * (0.3 + Math.random() * 0.7);
+        const speed =
+          blast *
+          (HOLD.EXTRA_BURST_SPEED_MIN +
+            Math.random() * HOLD.EXTRA_BURST_SPEED_RANGE);
         clickParticles.push({
           x: forces.dragPos.x,
           y: forces.dragPos.y,
           vx: Math.cos(angle) * speed,
           vy: Math.sin(angle) * speed,
-          r: CLICK.RADIUS_MIN + Math.random() * 2.5,
+          r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
           opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
           life: 0,
           maxLife:
@@ -1118,14 +1301,18 @@ export function createInteractions() {
         const wellBurst = Math.floor(forces.wellStrength * WELL.BURST_MAX);
         for (let i = 0; i < wellBurst; i++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = blast * (0.5 + Math.random() * 0.8);
+          const speed =
+            blast *
+            (WELL.BURST_SPEED_FACTOR_MIN +
+              Math.random() * WELL.BURST_SPEED_FACTOR_RANGE);
           clickParticles.push({
             x: forces.dragPos.x,
             y: forces.dragPos.y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
-            r: CLICK.RADIUS_MIN + Math.random() * 3,
-            opacity: 0.4 + Math.random() * 0.4,
+            r: CLICK.RADIUS_MIN + Math.random() * WELL.BURST_RADIUS_RANGE,
+            opacity:
+              WELL.BURST_OPACITY_MIN + Math.random() * WELL.BURST_OPACITY_RANGE,
             life: 0,
             maxLife:
               WELL.BURST_LIFE_MIN + Math.random() * WELL.BURST_LIFE_RANGE,
