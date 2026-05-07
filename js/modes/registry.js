@@ -126,3 +126,19 @@ export function toggleMode(id, opts) {
 export function isModeRegistered(id) {
   return _byId.has(id);
 }
+
+/**
+ * True if any registered mode other than the listed ones has its body class
+ * set.  Modes whose indicators drive a canvas CSS filter use this to back
+ * off when another mode's filter is already active — without each mode file
+ * having to hardcode the list of competitors.
+ *
+ * @param {...string} exceptIds  Ids to ignore (typically the caller's own).
+ */
+export function hasActiveModeExcept(...exceptIds) {
+  for (const m of MODES) {
+    if (exceptIds.includes(m.id)) continue;
+    if (document.body.classList.contains(m.id)) return true;
+  }
+  return false;
+}

@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createMode } from "./factory.js";
+import { hasActiveModeExcept } from "./registry.js";
 import { createClickCountTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
@@ -188,7 +189,8 @@ export function initFrozen() {
       {
         threshold: FF.TEMP_DROP_AT,
         apply(progress) {
-          if (document.body.classList.contains("upside-down")) {
+          // Don't fight other modes' own canvas filters
+          if (hasActiveModeExcept("frozen")) {
             canvasEl.style.filter = "";
             return;
           }

@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
 import { createMode } from "./factory.js";
+import { hasActiveModeExcept } from "./registry.js";
 import { createKeySequenceTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
@@ -264,13 +265,7 @@ export function initPaper() {
         threshold: PF.DESAT_AT,
         apply(progress) {
           // Don't fight other modes' own canvas filters
-          if (
-            document.body.classList.contains("upside-down") ||
-            document.body.classList.contains("frozen") ||
-            document.body.classList.contains("deep-sea") ||
-            document.body.classList.contains("blocky") ||
-            document.body.classList.contains("rainy")
-          ) {
+          if (hasActiveModeExcept("paper")) {
             canvasEl.style.filter = "";
             return;
           }

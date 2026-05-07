@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createMode } from "./factory.js";
+import { hasActiveModeExcept } from "./registry.js";
 import { createHoldTrigger } from "./triggers.js";
 
 // Mode metadata (id, label, color, icon) lives in modes/registry.js.
@@ -143,10 +144,8 @@ export function initDeepSea() {
       {
         threshold: DF.COLOR_SHIFT_AT,
         apply(progress) {
-          if (
-            document.body.classList.contains("upside-down") ||
-            document.body.classList.contains("frozen")
-          ) {
+          // Don't fight other modes' own canvas filters
+          if (hasActiveModeExcept("deep-sea")) {
             canvasEl.style.filter = "";
             return;
           }
