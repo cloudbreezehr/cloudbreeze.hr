@@ -9,6 +9,8 @@
 //      resizeTerrain().
 // ══════════════════════════════════════════════════════════════════════════════
 
+import { scrollFade } from "./canvas-utils.js";
+
 // ── Terrain Geometry ──
 const HEIGHT_RATIO = 0.25; // front terrain occupies bottom 25% of canvas
 const MID_HEIGHT_RATIO = 0.22; // mid hills buffer height ratio
@@ -70,17 +72,6 @@ let needsRegen = true;
 let canvasRef = null; // reference to the main canvas element
 
 // ── Utilities ──
-
-// Compute visibility alpha for a scroll-position-based fade envelope.
-// Returns 0 outside the fade range, ramps linearly in/out, 1 in the middle.
-function scrollFade(sp, inStart, inEnd, outStart, outEnd) {
-  if (sp < inStart) return 0;
-  if (sp < inEnd)
-    return inEnd === inStart ? 1 : (sp - inStart) / (inEnd - inStart);
-  if (sp < outStart) return 1;
-  if (sp < outEnd) return 1 - (sp - outStart) / (outEnd - outStart);
-  return 0;
-}
 
 // Renders a single terrain block with isometric bevel edges:
 // lighter top + left edges (lit faces) + darker right + bottom edges (shadow faces).
