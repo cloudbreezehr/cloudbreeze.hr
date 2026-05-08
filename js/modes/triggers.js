@@ -61,9 +61,18 @@ export function createClickCountTrigger({
   preClick,
   onClick,
 }) {
-  let force = 0;
+  // Clicks is the source of truth for completion — integer math avoids the
+  // floating-point drift that would otherwise require one extra click for
+  // targets whose reciprocal (1/N) isn't exactly representable (N=13, 10,
+  // 15, etc.). Force is derived for display/indicators, where the accumulated
+  // fraction is fine.
+  let clicks = 0;
   let lastClickTime = 0;
   let ctx = null;
+
+  function forceFor(target) {
+    return Math.min(1, clicks / target);
+  }
 
   return {
     start(_ctx) {
@@ -75,20 +84,30 @@ export function createClickCountTrigger({
         if (ctx.isTransitioning()) return;
         lastClickTime = Date.now();
         const target = ctx.isActive() ? deactivateCount : activateCount;
-        force = Math.min(1, force + 1 / target);
+        clicks = Math.min(target, clicks + 1);
+        const force = forceFor(target);
         ctx.setForce(force);
         if (onClick) onClick(e, { force, isActive: ctx.isActive() });
-        if (force >= 1) {
-          force = 0;
+        if (clicks >= target) {
+          clicks = 0;
           ctx.complete();
         }
       });
 
       createIdleDecayLoop({
-        getForce: () => force,
+        getForce() {
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          return forceFor(target);
+        },
         setForce(f) {
-          force = f;
-          ctx.setForce(force);
+          // Decay is continuous; reverse-derive clicks from the decayed force
+          // so the next real click still lands at the right level. Note that
+          // clicks is a float during decay — the integer invariant only
+          // applies on the click path, where Math.min(target, clicks + 1)
+          // restores it.
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          clicks = Math.max(0, Math.min(target, f * target));
+          ctx.setForce(f);
         },
         getIdleMs: () => Date.now() - lastClickTime,
         // Target-relative: one click is 1/N of the force, so "decayRate

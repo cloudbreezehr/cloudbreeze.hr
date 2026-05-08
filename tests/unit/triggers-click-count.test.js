@@ -217,4 +217,25 @@ describe("createClickCountTrigger", () => {
     expect(ctx.complete).toHaveBeenCalledOnce();
     expect(ctx.state.force).toBeCloseTo(0.5);
   });
+
+  it("completes on exactly N clicks for targets whose reciprocal isn't FP-exact", () => {
+    // Targets like 10, 13, 15 produce drift when 1/N is summed N times — the
+    // final sum lands at 0.999... instead of 1.0. The trigger must still
+    // complete at the declared count, not N+1.
+    for (const target of [10, 13, 15]) {
+      const ctx = makeStubCtx();
+      const trigger = createClickCountTrigger({
+        element,
+        activateCount: target,
+        deactivateCount: target,
+      });
+      trigger.start(ctx);
+
+      for (let i = 0; i < target; i++) {
+        element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      }
+
+      expect(ctx.complete).toHaveBeenCalledOnce();
+    }
+  });
 });
