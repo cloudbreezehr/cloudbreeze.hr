@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createClickCountTrigger } from "../../js/modes/triggers.js";
+import { createClickCountTrigger } from "../../../js/modes/triggers.js";
 
 // A stub ctx that mimics what createMode hands to trigger.start(). Tests
 // drive setForce/complete flags manually so the trigger can be exercised

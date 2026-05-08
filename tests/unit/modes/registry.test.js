@@ -7,7 +7,7 @@ import {
   toggleMode,
   isModeRegistered,
   hasActiveModeExcept,
-} from "../../js/modes/registry.js";
+} from "../../../js/modes/registry.js";
 
 describe("modes/registry — metadata", () => {
   it("exposes all six known modes in declaration order", () => {

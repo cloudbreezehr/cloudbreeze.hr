@@ -21,7 +21,7 @@ describe("analytics/core", () => {
       send: (batch) => sent.push(...batch),
       flush: vi.fn(),
     };
-    core = await import("../../js/analytics/core.js");
+    core = await import("../../../js/analytics/core.js");
   });
 
   afterEach(() => {
@@ -70,7 +70,7 @@ describe("analytics/core", () => {
   });
 
   it("opt-out short-circuits track()", async () => {
-    const consent = await import("../../js/analytics/consent.js");
+    const consent = await import("../../../js/analytics/consent.js");
     consent.optOut();
     core.start({ adapter });
     core.track("blocked", {});

@@ -11,8 +11,8 @@ describe("achievements/progress", () => {
   beforeEach(async () => {
     localStorage.clear();
     vi.resetModules();
-    progress = await import("../../js/achievements/progress.js");
-    storage = await import("../../js/achievements/storage.js");
+    progress = await import("../../../js/achievements/progress.js");
+    storage = await import("../../../js/achievements/storage.js");
   });
 
   describe("isCollectionProgress", () => {

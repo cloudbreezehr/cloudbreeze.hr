@@ -11,8 +11,8 @@ import {
   getAllNonMeta,
   isModeSet,
   getProgressiveAchievements,
-} from "../../js/achievements/registry.js";
-import { getModeIds } from "../../js/modes/registry.js";
+} from "../../../js/achievements/registry.js";
+import { getModeIds } from "../../../js/modes/registry.js";
 
 describe("achievements/registry — data shape", () => {
   it("every achievement has the required fields", () => {

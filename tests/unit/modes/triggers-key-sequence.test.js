@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createKeySequenceTrigger } from "../../js/modes/triggers.js";
+import { createKeySequenceTrigger } from "../../../js/modes/triggers.js";
 
 function makeStubCtx(overrides = {}) {
   const state = {

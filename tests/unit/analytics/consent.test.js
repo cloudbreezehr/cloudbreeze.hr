@@ -15,7 +15,7 @@ describe("analytics/consent", () => {
       configurable: true,
       get: () => null,
     });
-    consent = await import("../../js/analytics/consent.js");
+    consent = await import("../../../js/analytics/consent.js");
   });
 
   it("allowed() returns true by default", () => {

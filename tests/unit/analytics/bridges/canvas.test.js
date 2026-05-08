@@ -21,8 +21,8 @@ describe("analytics/bridges/canvas", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    bridge = await import("../../js/analytics/bridges/canvas.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/canvas.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });

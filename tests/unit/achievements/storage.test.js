@@ -10,7 +10,7 @@ describe("achievements/storage", () => {
   beforeEach(async () => {
     localStorage.clear();
     vi.resetModules();
-    storage = await import("../../js/achievements/storage.js");
+    storage = await import("../../../js/achievements/storage.js");
   });
 
   afterEach(() => {

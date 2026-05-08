@@ -20,8 +20,8 @@ describe("analytics/bridges/errors", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    bridge = await import("../../js/analytics/bridges/errors.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/errors.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });

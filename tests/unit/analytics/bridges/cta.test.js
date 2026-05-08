@@ -17,9 +17,9 @@ describe("analytics/bridges/cta", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    session = await import("../../js/analytics/bridges/session.js");
-    bridge = await import("../../js/analytics/bridges/cta.js");
+    core = await import("../../../../js/analytics/core.js");
+    session = await import("../../../../js/analytics/bridges/session.js");
+    bridge = await import("../../../../js/analytics/bridges/cta.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });

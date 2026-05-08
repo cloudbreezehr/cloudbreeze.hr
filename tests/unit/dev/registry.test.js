@@ -10,7 +10,7 @@ import {
   importConfig,
   onSectionActivate,
   notifySectionActivate,
-} from "../../js/dev/registry.js";
+} from "../../../js/dev/registry.js";
 
 // `defineConstants` mutates a module-level Map.  Tests use unique category
 // names so they don't stomp each other.  Vitest runs files in isolation

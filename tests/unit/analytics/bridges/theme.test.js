@@ -16,8 +16,8 @@ describe("analytics/bridges/theme", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    bridge = await import("../../js/analytics/bridges/theme.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/theme.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });

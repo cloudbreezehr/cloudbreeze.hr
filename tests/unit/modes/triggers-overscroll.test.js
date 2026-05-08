@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createOverscrollTrigger } from "../../js/modes/triggers.js";
+import { createOverscrollTrigger } from "../../../js/modes/triggers.js";
 
 function makeStubCtx(overrides = {}) {
   const state = {

@@ -24,10 +24,10 @@ describe("analytics/bridges/achievements", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    bridge = await import("../../js/analytics/bridges/achievements.js");
-    registry = await import("../../js/achievements/registry.js");
-    storage = await import("../../js/achievements/storage.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/achievements.js");
+    registry = await import("../../../../js/achievements/registry.js");
+    storage = await import("../../../../js/achievements/storage.js");
     storage.load();
     const capture = {
       name: "capture",

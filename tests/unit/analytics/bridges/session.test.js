@@ -22,8 +22,8 @@ describe("analytics/bridges/session", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    bridge = await import("../../js/analytics/bridges/session.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/session.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });
@@ -72,8 +72,8 @@ describe("analytics/bridges/session", () => {
       sessionStorage.clear();
       vi.resetModules();
       captured = [];
-      core = await import("../../js/analytics/core.js");
-      bridge = await import("../../js/analytics/bridges/session.js");
+      core = await import("../../../../js/analytics/core.js");
+      bridge = await import("../../../../js/analytics/bridges/session.js");
       core.start({
         adapter: { name: "capture", send: (batch) => captured.push(...batch) },
       });

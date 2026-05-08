@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createHoldTrigger } from "../../js/modes/triggers.js";
+import { createHoldTrigger } from "../../../js/modes/triggers.js";
 
 // Synthesize a pointer event — happy-dom's PointerEvent constructor doesn't
 // accept clientX/Y directly, so use a plain Event and define them manually
-// (mirrors tests/unit/pointer.test.js).
+// (mirrors pointer.test.js).
 function pointerEvent(type, { x = 0, y = 0 } = {}) {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(event, "clientX", { value: x });

@@ -2,13 +2,13 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // playWipe is stubbed so tests can drive cover/reveal timing precisely and
 // avoid leaving wipe <div>s in the DOM between tests.
-vi.mock("../../js/effects/wipe.js", () => ({
+vi.mock("../../../js/effects/wipe.js", () => ({
   playWipe: vi.fn(),
 }));
 
-import { playWipe } from "../../js/effects/wipe.js";
-import { createMode } from "../../js/modes/factory.js";
-import { toggleMode } from "../../js/modes/registry.js";
+import { playWipe } from "../../../js/effects/wipe.js";
+import { createMode } from "../../../js/modes/factory.js";
+import { toggleMode } from "../../../js/modes/registry.js";
 
 // createMode requires an id that exists in the registry; pick one and share it.
 // The id is only used as a body-class and an achievement-event field.

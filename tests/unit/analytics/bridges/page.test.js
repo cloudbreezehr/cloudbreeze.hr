@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 //   - nav_click triggers on internal anchor clicks only
 //
 // IntersectionObserver is a happy-dom stub — swap in a controllable fake
-// (same pattern as tests/unit/reveal.test.js).
+// (same pattern as reveal.test.js).
 
 describe("analytics/bridges/page", () => {
   let core;
@@ -23,9 +23,9 @@ describe("analytics/bridges/page", () => {
     sessionStorage.clear();
     vi.resetModules();
     captured = [];
-    core = await import("../../js/analytics/core.js");
-    session = await import("../../js/analytics/bridges/session.js");
-    bridge = await import("../../js/analytics/bridges/page.js");
+    core = await import("../../../../js/analytics/core.js");
+    session = await import("../../../../js/analytics/bridges/session.js");
+    bridge = await import("../../../../js/analytics/bridges/page.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });

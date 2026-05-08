@@ -15,8 +15,8 @@ const _activeTrackers = [];
 async function startTracker(onUnlock = () => {}, onRelock = () => {}) {
   vi.resetModules();
   localStorage.clear();
-  const storage = await import("../../js/achievements/storage.js");
-  const { createTracker } = await import("../../js/achievements/tracker.js");
+  const storage = await import("../../../js/achievements/storage.js");
+  const { createTracker } = await import("../../../js/achievements/tracker.js");
   storage.activate();
   const tracker = createTracker(onUnlock, onRelock);
   tracker.start();

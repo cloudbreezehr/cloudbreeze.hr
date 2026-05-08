@@ -10,7 +10,7 @@ describe("analytics/identity", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.resetModules();
-    identity = await import("../../js/analytics/identity.js");
+    identity = await import("../../../js/analytics/identity.js");
   });
 
   afterEach(() => {
@@ -28,7 +28,7 @@ describe("analytics/identity", () => {
     it("reads persisted visitor id after module reset", async () => {
       const first = identity.visitorId();
       vi.resetModules();
-      const identity2 = await import("../../js/analytics/identity.js");
+      const identity2 = await import("../../../js/analytics/identity.js");
       expect(identity2.visitorId()).toEqual(first);
     });
   });
@@ -72,7 +72,7 @@ describe("analytics/identity", () => {
       expect(identity.sessionId()).toEqual(a);
       sessionStorage.clear();
       vi.resetModules();
-      const identity2 = await import("../../js/analytics/identity.js");
+      const identity2 = await import("../../../js/analytics/identity.js");
       expect(identity2.sessionId()).not.toEqual(a);
     });
 

@@ -11,7 +11,7 @@ describe("analytics/context", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.resetModules();
-    context = await import("../../js/analytics/context.js");
+    context = await import("../../../js/analytics/context.js");
   });
 
   afterEach(() => {
