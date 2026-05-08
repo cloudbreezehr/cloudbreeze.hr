@@ -526,13 +526,27 @@
       import { onKey } from "./js/keyboard.js";
       import { initAchievements } from "./js/achievements/index.js";
       import { initAnalytics } from "./js/analytics/index.js";
+      import { createPostHogAdapter } from "./js/analytics/adapters/posthog.js";
 
       // Analytics first — bridges attach listeners before other modules
       // start dispatching events, so session_start, early scroll_depth,
       // and the initial mode-buildup all land in the stream.  Wrapped
       // so a broken adapter or context lookup can never break page load.
+      //
+      // Strict production gate: only cloudbreeze.hr sends to PostHog.
+      // Any other hostname (localhost, IP, preview subdomain) falls
+      // through to the default console adapter so stats aren't polluted.
       try {
-        initAnalytics();
+        const isProd = location.hostname === "cloudbreeze.hr";
+        initAnalytics(
+          isProd
+            ? {
+                adapter: createPostHogAdapter({
+                  apiKey: "REPLACE_WITH_POSTHOG_PROJECT_API_KEY",
+                }),
+              }
+            : undefined,
+        );
       } catch (err) {
         console.warn("[analytics] init failed:", err);
       }
