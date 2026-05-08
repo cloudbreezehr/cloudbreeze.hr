@@ -84,6 +84,17 @@ export function createMode(def) {
   let isActive = false;
   let isTransitioning = false;
 
+  // ── Buildup telemetry ──
+  // Analytics wants to know how close a user got to triggering a mode
+  // even when they bail out.  We emit "mode-buildup" on the same
+  // achievement topic when force crosses 0.25 / 0.50 / 0.75 (once per
+  // phase per mode per session), and "mode-abandoned" when a partial
+  // buildup decays back to zero without completing.
+  const BUILDUP_THRESHOLDS = [0.25, 0.5, 0.75];
+  let lastEmittedThreshold = 0;
+  let peakForce = 0;
+  let buildupStartedAt = 0;
+
   // Live ctx.  Getter-backed so callers that capture this object see current
   // values on every read — not a snapshot taken at capture time.
   const ctx = Object.freeze({
@@ -111,8 +122,47 @@ export function createMode(def) {
 
   function setForce(f) {
     if (isTransitioning) return;
+    const prev = force;
     force = Math.max(0, Math.min(1, f));
     applyIndicators();
+
+    const phase = isActive ? "deactivate" : "activate";
+    if (prev === 0 && force > 0) buildupStartedAt = Date.now();
+    if (force > peakForce) peakForce = force;
+
+    for (const t of BUILDUP_THRESHOLDS) {
+      if (prev < t && force >= t && lastEmittedThreshold < t) {
+        lastEmittedThreshold = t;
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: {
+              type: "mode-buildup",
+              mode: id,
+              threshold: t,
+              phase,
+              peakForce,
+            },
+          }),
+        );
+      }
+    }
+
+    if (force === 0 && peakForce >= BUILDUP_THRESHOLDS[0]) {
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: {
+            type: "mode-abandoned",
+            mode: id,
+            peakForce,
+            phase,
+            buildupDurationMs: Date.now() - buildupStartedAt,
+          },
+        }),
+      );
+      peakForce = 0;
+      lastEmittedThreshold = 0;
+      buildupStartedAt = 0;
+    }
   }
 
   function runMidpoint(activating, payload) {
@@ -132,6 +182,12 @@ export function createMode(def) {
       }),
     );
     clearIndicators();
+    // Successful completion: reset the buildup tracker so the next
+    // cycle (e.g. deactivation after activation) can emit thresholds
+    // and abandonment freshly.
+    peakForce = 0;
+    lastEmittedThreshold = 0;
+    buildupStartedAt = 0;
     const hook = activating ? onActivate : onDeactivate;
     if (hook) hook({ payload });
   }

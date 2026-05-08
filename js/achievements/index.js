@@ -36,7 +36,22 @@ export function initAchievements() {
 
   function startTracking() {
     if (tracker) return;
-    tracker = createTracker(onAchievementUnlocked, onAchievementRelocked);
+    // Fan-out: the tracker's onUnlock drives the UI (toast, log, badge)
+    // and also emits an "analytics-unlock" window event so analytics can
+    // observe unlocks without importing the achievement module.
+    function onUnlock(achievement) {
+      onAchievementUnlocked(achievement);
+      window.dispatchEvent(
+        new CustomEvent("analytics-unlock", { detail: { achievement } }),
+      );
+    }
+    function onRelock(achievement) {
+      onAchievementRelocked(achievement);
+      window.dispatchEvent(
+        new CustomEvent("analytics-relock", { detail: { achievement } }),
+      );
+    }
+    tracker = createTracker(onUnlock, onRelock);
     tracker.start();
   }
 

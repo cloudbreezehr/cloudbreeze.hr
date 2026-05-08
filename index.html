@@ -525,6 +525,17 @@
       import { toggleFps } from "./js/dev/fps.js";
       import { onKey } from "./js/keyboard.js";
       import { initAchievements } from "./js/achievements/index.js";
+      import { initAnalytics } from "./js/analytics/index.js";
+
+      // Analytics first — bridges attach listeners before other modules
+      // start dispatching events, so session_start, early scroll_depth,
+      // and the initial mode-buildup all land in the stream.  Wrapped
+      // so a broken adapter or context lookup can never break page load.
+      try {
+        initAnalytics();
+      } catch (err) {
+        console.warn("[analytics] init failed:", err);
+      }
 
       const theme = initTheme(document.querySelector(".theme-toggle"));
       initNav(document.querySelector("nav"), theme);
