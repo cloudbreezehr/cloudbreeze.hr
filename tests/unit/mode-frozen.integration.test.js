@@ -87,7 +87,8 @@ describe("mode-frozen integration", () => {
     expect(document.body.classList.contains("frozen")).toBe(true);
 
     const activateEvents = listener.mock.calls.filter(
-      (c) => c[0].detail.type === "mode-activate" && c[0].detail.mode === "frozen",
+      (c) =>
+        c[0].detail.type === "mode-activate" && c[0].detail.mode === "frozen",
     );
     expect(activateEvents).toHaveLength(1);
     window.removeEventListener("achievement", listener);

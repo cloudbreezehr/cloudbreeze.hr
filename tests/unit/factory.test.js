@@ -564,9 +564,10 @@ describe("createMode — complete with wipe function", () => {
   it("awaits the returned promise before releasing the transition lock", async () => {
     let resolve;
     const wipe = vi.fn(
-      () => new Promise((r) => {
-        resolve = r;
-      }),
+      () =>
+        new Promise((r) => {
+          resolve = r;
+        }),
     );
     const { trigger, capture } = makeManualTrigger();
     createMode({

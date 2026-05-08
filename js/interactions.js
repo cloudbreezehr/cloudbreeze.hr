@@ -1064,8 +1064,10 @@ export function createInteractions() {
           trailSegments.splice(i, 1);
           continue;
         }
-        s.x += Math.sin(s.life * TRAIL.SWAY_FREQ_X + s.phase) * TRAIL.SWAY_AMP_X;
-        s.y += Math.cos(s.life * TRAIL.SWAY_FREQ_Y + s.phase) * TRAIL.SWAY_AMP_Y;
+        s.x +=
+          Math.sin(s.life * TRAIL.SWAY_FREQ_X + s.phase) * TRAIL.SWAY_AMP_X;
+        s.y +=
+          Math.cos(s.life * TRAIL.SWAY_FREQ_Y + s.phase) * TRAIL.SWAY_AMP_Y;
         const fade = 1 - s.life / s.maxLife;
         const op = s.opacity * fade;
         if (op < CLICK.DRAW_THRESHOLD || !s.prev) continue;

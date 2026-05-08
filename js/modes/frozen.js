@@ -137,7 +137,9 @@ export function initFrozen() {
         spawnBreath(isActive);
         if (isActive)
           window.dispatchEvent(
-            new CustomEvent("achievement", { detail: { type: "frost-breath" } }),
+            new CustomEvent("achievement", {
+              detail: { type: "frost-breath" },
+            }),
           );
       },
     }),

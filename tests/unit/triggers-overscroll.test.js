@@ -272,10 +272,12 @@ describe("createOverscrollTrigger", () => {
   it("calls drainFn with (force, dt, isActive) on each frame", async () => {
     // Stub rAF to drive the drain loop deterministically.
     let rafCb = null;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      rafCb = cb;
-      return 1;
-    });
+    const rafSpy = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((cb) => {
+        rafCb = cb;
+        return 1;
+      });
     try {
       const drainFn = vi.fn((force) => force); // no-op drain
       const ctx = makeStubCtx();
@@ -307,10 +309,12 @@ describe("createOverscrollTrigger", () => {
 
   it("clamps drainFn output into [0, 1]", () => {
     let rafCb = null;
-    const rafSpy = vi.spyOn(window, "requestAnimationFrame").mockImplementation((cb) => {
-      rafCb = cb;
-      return 1;
-    });
+    const rafSpy = vi
+      .spyOn(window, "requestAnimationFrame")
+      .mockImplementation((cb) => {
+        rafCb = cb;
+        return 1;
+      });
     try {
       const ctx = makeStubCtx();
       const trigger = createOverscrollTrigger({

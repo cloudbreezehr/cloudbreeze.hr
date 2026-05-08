@@ -133,9 +133,7 @@ describe("export / import round-trip", () => {
   });
 
   it("importConfig silently ignores unknown categories", () => {
-    expect(() =>
-      importConfig({ "unknown-category": { X: 1 } }),
-    ).not.toThrow();
+    expect(() => importConfig({ "unknown-category": { X: 1 } })).not.toThrow();
   });
 });
 

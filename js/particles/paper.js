@@ -620,8 +620,7 @@ export function createPaper(canvasEl, ctxEl) {
         const ny = dx / (dist || 1);
         stroke.sampleCount++;
         const w =
-          Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) *
-          STROKE.WOBBLE_AMP;
+          Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) * STROKE.WOBBLE_AMP;
         wx = x + nx * w;
         wy = y + ny * w;
       }

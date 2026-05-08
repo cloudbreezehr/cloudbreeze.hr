@@ -144,7 +144,10 @@ describe("achievements/storage", () => {
       expect(storage.addProgressItem("themes-used", "dark")).toBe(true);
       expect(storage.addProgressItem("themes-used", "dark")).toBe(false);
       expect(storage.addProgressItem("themes-used", "light")).toBe(true);
-      expect(storage.getProgressItems("themes-used")).toEqual(["dark", "light"]);
+      expect(storage.getProgressItems("themes-used")).toEqual([
+        "dark",
+        "light",
+      ]);
     });
 
     it("pruneProgressItems drops entries not in the valid list", () => {
