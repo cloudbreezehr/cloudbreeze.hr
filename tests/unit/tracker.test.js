@@ -1,0 +1,1041 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// tracker.js collaborates with storage.js (module-level state) and reads
+// registry/progress at runtime. Each test resets modules + localStorage so
+// counters, unlocks, and progress items start fresh. Registry and progress
+// are left real — they're data, not behavior, and mocking them would couple
+// tests to an implementation seam that doesn't exist.
+
+const _activeTrackers = [];
+
+// Reset modules, wire a live tracker on the window, and register it for
+// cleanup. The tracker's setInterval for night-owl would otherwise leak
+// between tests and cause one suite's advanceTimersByTime to trip another's
+// assertions.
+async function startTracker(onUnlock = () => {}, onRelock = () => {}) {
+  vi.resetModules();
+  localStorage.clear();
+  const storage = await import("../../js/achievements/storage.js");
+  const { createTracker } = await import("../../js/achievements/tracker.js");
+  storage.activate();
+  const tracker = createTracker(onUnlock, onRelock);
+  tracker.start();
+  _activeTrackers.push(tracker);
+  return { storage, tracker };
+}
+
+function stopAllTrackers() {
+  while (_activeTrackers.length) {
+    const t = _activeTrackers.pop();
+    try {
+      t.stop();
+    } catch {}
+  }
+}
+
+function dispatchAchievement(type, data = {}) {
+  window.dispatchEvent(
+    new CustomEvent("achievement", { detail: { type, ...data } }),
+  );
+}
+
+function setMode(mode) {
+  if (mode === null) delete document.body.dataset.activeTheme;
+  else document.body.dataset.activeTheme = mode;
+}
+
+describe("tracker — tryUnlock", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("calls onUnlock exactly once per achievement id", async () => {
+    const onUnlock = vi.fn();
+    await startTracker(onUnlock);
+
+    dispatchAchievement("click");
+    dispatchAchievement("click");
+
+    const firstLightCalls = onUnlock.mock.calls.filter(
+      (c) => c[0].id === "first-light",
+    );
+    expect(firstLightCalls).toHaveLength(1);
+  });
+
+  it("passes the full achievement object to onUnlock", async () => {
+    const onUnlock = vi.fn();
+    await startTracker(onUnlock);
+
+    dispatchAchievement("click");
+
+    const firstLight = onUnlock.mock.calls.find(
+      (c) => c[0].id === "first-light",
+    );
+    expect(firstLight[0]).toMatchObject({
+      id: "first-light",
+      title: expect.any(String),
+      points: expect.any(Number),
+    });
+  });
+
+  it("persists unlocks via storage", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("first-light")).toBe(true);
+  });
+});
+
+describe("tracker — click handler", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+    // Deterministic viewport for quadrant / pixel-perfect tests.
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      value: 800,
+    });
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("increments totalClicks and unlocks first-light on first click", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click");
+
+    expect(storage.getCounter("totalClicks")).toBe(1);
+    expect(storage.isUnlocked("first-light")).toBe(true);
+  });
+
+  it("unlocks rapid-fire once 10 clicks land inside a 3-second window", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 10; i++) {
+      dispatchAchievement("click");
+    }
+
+    expect(storage.isUnlocked("rapid-fire")).toBe(true);
+  });
+
+  it("does not unlock rapid-fire when clicks span more than 3 seconds", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 5; i++) {
+      dispatchAchievement("click");
+    }
+    vi.advanceTimersByTime(4000);
+    for (let i = 0; i < 5; i++) {
+      dispatchAchievement("click");
+    }
+
+    expect(storage.isUnlocked("rapid-fire")).toBe(false);
+  });
+
+  it("unlocks vertigo when rapid-fire lands inside upside-down mode", async () => {
+    const { storage } = await startTracker();
+    setMode("upside-down");
+
+    for (let i = 0; i < 10; i++) {
+      dispatchAchievement("click");
+    }
+
+    expect(storage.isUnlocked("vertigo")).toBe(true);
+  });
+
+  it("does not unlock vertigo outside upside-down mode", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 10; i++) {
+      dispatchAchievement("click");
+    }
+
+    expect(storage.isUnlocked("vertigo")).toBe(false);
+  });
+
+  it("records quadrants from click x/y", async () => {
+    const { storage } = await startTracker();
+
+    // 1000×800 viewport → midpoint (500, 400).
+    dispatchAchievement("click", { x: 100, y: 100 }); // top-left
+    dispatchAchievement("click", { x: 900, y: 100 }); // top-right
+    dispatchAchievement("click", { x: 100, y: 700 }); // bottom-left
+    dispatchAchievement("click", { x: 900, y: 700 }); // bottom-right
+
+    expect(storage.getProgressItems("quadrants-clicked").sort()).toEqual([
+      "bl",
+      "br",
+      "tl",
+      "tr",
+    ]);
+  });
+
+  it("unlocks pixel-perfect when the click lands near the viewport center", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click", { x: 510, y: 405 });
+
+    expect(storage.isUnlocked("pixel-perfect")).toBe(true);
+  });
+
+  it("does not unlock pixel-perfect for clicks outside the 30px radius", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click", { x: 600, y: 400 });
+
+    expect(storage.isUnlocked("pixel-perfect")).toBe(false);
+  });
+
+  it("unlocks aftershock on a click shortly after fury-lightning", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("fury-lightning");
+    vi.advanceTimersByTime(500);
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("aftershock")).toBe(true);
+  });
+
+  it("does not unlock aftershock when the click lands outside the 2s window", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("fury-lightning");
+    vi.advanceTimersByTime(3000);
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("aftershock")).toBe(false);
+  });
+
+  it("unlocks bioluminescent on click in deep-sea", async () => {
+    const { storage } = await startTracker();
+    setMode("deep-sea");
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("bioluminescent")).toBe(true);
+  });
+
+  it("unlocks pixel-burst on click in blocky", async () => {
+    const { storage } = await startTracker();
+    setMode("blocky");
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("pixel-burst")).toBe(true);
+  });
+
+  it("unlocks puddle-jump on click in rainy", async () => {
+    const { storage } = await startTracker();
+    setMode("rainy");
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("puddle-jump")).toBe(true);
+  });
+
+  it("unlocks rift-walker on click in upside-down", async () => {
+    const { storage } = await startTracker();
+    setMode("upside-down");
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("rift-walker")).toBe(true);
+  });
+
+  it("unlocks margin-notes only when a card click lands in paper mode", async () => {
+    const { storage } = await startTracker();
+    setMode("paper");
+
+    dispatchAchievement("click", { card: false });
+    expect(storage.isUnlocked("margin-notes")).toBe(false);
+
+    dispatchAchievement("click", { card: true });
+    expect(storage.isUnlocked("margin-notes")).toBe(true);
+  });
+});
+
+describe("tracker — drag handler", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      value: 800,
+    });
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks trail-blazer on the first drag", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("drag", { x: 100, y: 100 });
+
+    expect(storage.isUnlocked("trail-blazer")).toBe(true);
+  });
+
+  it("unlocks the-long-drag when drag distance crosses 40% of the larger viewport side", async () => {
+    const { storage } = await startTracker();
+
+    // Threshold: 0.4 * max(1000, 800) = 400 px.
+    dispatchAchievement("drag", { x: 100, y: 100 });
+    dispatchAchievement("drag", { x: 550, y: 100 }); // dx=450, over threshold
+
+    expect(storage.isUnlocked("the-long-drag")).toBe(true);
+  });
+
+  it("does not unlock the-long-drag when movement stays under the threshold", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("drag", { x: 100, y: 100 });
+    dispatchAchievement("drag", { x: 200, y: 100 });
+
+    expect(storage.isUnlocked("the-long-drag")).toBe(false);
+  });
+
+  it("resets drag tracking on a click so a subsequent drag starts a fresh distance", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("drag", { x: 100, y: 100 });
+    dispatchAchievement("click");
+    dispatchAchievement("drag", { x: 150, y: 100 });
+    dispatchAchievement("drag", { x: 300, y: 100 }); // only 150 from new start
+
+    expect(storage.isUnlocked("the-long-drag")).toBe(false);
+  });
+
+  it("unlocks snowdrift on drag in frozen mode", async () => {
+    const { storage } = await startTracker();
+    setMode("frozen");
+
+    dispatchAchievement("drag", { x: 100, y: 100 });
+
+    expect(storage.isUnlocked("snowdrift")).toBe(true);
+  });
+});
+
+describe("tracker — scroll handler", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks stargazer at 25% scroll", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.3 });
+
+    expect(storage.isUnlocked("stargazer")).toBe(true);
+  });
+
+  it("does not unlock stargazer below 25%", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.2 });
+
+    expect(storage.isUnlocked("stargazer")).toBe(false);
+  });
+
+  it("unlocks down-to-earth at the bottom", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.96 });
+
+    expect(storage.isUnlocked("down-to-earth")).toBe(true);
+  });
+
+  it("unlocks zenith only after reaching the bottom and scrolling back to the top", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.04 });
+    expect(storage.isUnlocked("zenith")).toBe(false);
+
+    dispatchAchievement("scroll", { progress: 0.96 });
+    dispatchAchievement("scroll", { progress: 0.04 });
+    expect(storage.isUnlocked("zenith")).toBe(true);
+  });
+
+  it("unlocks scroll-surge when velocity exceeds 50", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.5, velocity: 80 });
+
+    expect(storage.isUnlocked("scroll-surge")).toBe(true);
+  });
+
+  it("unlocks scroll-surge for large negative velocity too (upward burst)", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("scroll", { progress: 0.5, velocity: -80 });
+
+    expect(storage.isUnlocked("scroll-surge")).toBe(true);
+  });
+
+  it("unlocks disoriented when scrolling to the bottom in upside-down mode", async () => {
+    const { storage } = await startTracker();
+    setMode("upside-down");
+
+    dispatchAchievement("scroll", { progress: 0.96 });
+
+    expect(storage.isUnlocked("disoriented")).toBe(true);
+  });
+});
+
+describe("tracker — theme-change handler", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks nightfall for the dark theme", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-change", { theme: "dark" });
+
+    expect(storage.isUnlocked("nightfall")).toBe(true);
+  });
+
+  it("unlocks daybreak for the light theme", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-change", { theme: "light" });
+
+    expect(storage.isUnlocked("daybreak")).toBe(true);
+  });
+
+  it("records themes-used as a collection", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-change", { theme: "dark" });
+    dispatchAchievement("theme-change", { theme: "light" });
+
+    expect(storage.getProgressItems("themes-used").sort()).toEqual([
+      "dark",
+      "light",
+    ]);
+  });
+
+  it("increments themeToggles counter", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-change", { theme: "dark" });
+    dispatchAchievement("theme-change", { theme: "light" });
+    dispatchAchievement("theme-change", { theme: "auto" });
+
+    expect(storage.getCounter("themeToggles")).toBe(3);
+  });
+
+  it("unlocks the theme-toggles-3 progressive after three toggles", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-change", { theme: "dark" });
+    dispatchAchievement("theme-change", { theme: "light" });
+    dispatchAchievement("theme-change", { theme: "auto" });
+
+    // The progressive achievement with progressKey "theme-toggles-3" is
+    // "dusk-and-dawn" — confirm it unlocked by checking storage.
+    expect(storage.isUnlocked("dusk-and-dawn")).toBe(true);
+  });
+});
+
+describe("tracker — hold / well / fury / misc handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("hold unlocks gathering-storm", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("hold");
+
+    expect(storage.isUnlocked("gathering-storm")).toBe(true);
+  });
+
+  it("hold-full unlocks eye-of-the-storm", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("hold-full");
+
+    expect(storage.isUnlocked("eye-of-the-storm")).toBe(true);
+  });
+
+  it("click-burst unlocks spark", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click-burst");
+
+    expect(storage.isUnlocked("spark")).toBe(true);
+  });
+
+  it("well-activate unlocks event-horizon; 3 activations unlock void-caller", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("well-activate");
+    expect(storage.isUnlocked("event-horizon")).toBe(true);
+    expect(storage.isUnlocked("void-caller")).toBe(false);
+
+    dispatchAchievement("well-activate");
+    dispatchAchievement("well-activate");
+    expect(storage.isUnlocked("void-caller")).toBe(true);
+  });
+
+  it("well-full unlocks singularity", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("well-full");
+
+    expect(storage.isUnlocked("singularity")).toBe(true);
+  });
+
+  it("well-activate unlocks pressure-drop in deep-sea", async () => {
+    const { storage } = await startTracker();
+    setMode("deep-sea");
+
+    dispatchAchievement("well-activate");
+
+    expect(storage.isUnlocked("pressure-drop")).toBe(true);
+  });
+
+  it("well-activate unlocks monsoon in rainy", async () => {
+    const { storage } = await startTracker();
+    setMode("rainy");
+
+    dispatchAchievement("well-activate");
+
+    expect(storage.isUnlocked("monsoon")).toBe(true);
+  });
+
+  it("fury-lightning unlocks fury-unleashed; 5 triggers unlock chain-lightning", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 4; i++) dispatchAchievement("fury-lightning");
+    expect(storage.isUnlocked("fury-unleashed")).toBe(true);
+    expect(storage.isUnlocked("chain-lightning")).toBe(false);
+
+    dispatchAchievement("fury-lightning");
+    expect(storage.isUnlocked("chain-lightning")).toBe(true);
+  });
+
+  it.each([
+    { mode: "blocky", unlock: "8-bit-storm" },
+    { mode: "rainy", unlock: "thunder-roll" },
+    { mode: "deep-sea", unlock: "storm-surge" },
+    { mode: "frozen", unlock: "frozen-lightning" },
+    { mode: "upside-down", unlock: "glitch" },
+    { mode: "paper", unlock: "ink-splatter" },
+  ])("fury-lightning unlocks $unlock in $mode", async ({ mode, unlock }) => {
+    const { storage } = await startTracker();
+    setMode(mode);
+
+    dispatchAchievement("fury-lightning");
+
+    expect(storage.isUnlocked(unlock)).toBe(true);
+  });
+
+  it("fury-aurora unlocks northern-lights", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("fury-aurora");
+
+    expect(storage.isUnlocked("northern-lights")).toBe(true);
+  });
+
+  it("snow-globe unlocks snow-globe; blizzard in frozen; permafrost in deep-sea", async () => {
+    {
+      const { storage } = await startTracker();
+      dispatchAchievement("snow-globe");
+      expect(storage.isUnlocked("snow-globe")).toBe(true);
+      stopAllTrackers();
+    }
+    {
+      const { storage } = await startTracker();
+      setMode("frozen");
+      dispatchAchievement("snow-globe");
+      expect(storage.isUnlocked("blizzard")).toBe(true);
+      stopAllTrackers();
+    }
+    {
+      const { storage } = await startTracker();
+      setMode("deep-sea");
+      dispatchAchievement("snow-globe");
+      expect(storage.isUnlocked("permafrost")).toBe(true);
+    }
+  });
+
+  it("orbit unlocks orbit-lock; deep-orbit inside deep-sea", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("orbit");
+    expect(storage.isUnlocked("orbit-lock")).toBe(true);
+    expect(storage.isUnlocked("deep-orbit")).toBe(false);
+
+    setMode("deep-sea");
+    dispatchAchievement("orbit");
+    expect(storage.isUnlocked("deep-orbit")).toBe(true);
+  });
+
+  it.each([
+    { event: "upside-down-warning", unlock: "boundary-break" },
+    { event: "frost-breath", unlock: "frost-breath" },
+    { event: "contact-click", unlock: "landfall" },
+    { event: "linkedin-click", unlock: "connected" },
+    { event: "dev-console-open", unlock: "reverse-engineer" },
+    { event: "logo-parallax", unlock: "magnetic-letters" },
+    { event: "mode-history-reveal", unlock: "historian" },
+    { event: "cloudlog-activate", unlock: "cloudlog-activated" },
+    { event: "timestamp-toggle", unlock: "time-warp" },
+    { event: "cloudlog-shortcut", unlock: "shortcut-master" },
+    { event: "cursor-idle", unlock: "idle-hands" },
+  ])("$event unlocks $unlock", async ({ event, unlock }) => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement(event);
+
+    expect(storage.isUnlocked(unlock)).toBe(true);
+  });
+
+  it("panel-open unlocks cloud-reader only on the first open", async () => {
+    const onUnlock = vi.fn();
+    const { storage } = await startTracker(onUnlock);
+
+    dispatchAchievement("panel-open");
+    dispatchAchievement("panel-open");
+
+    expect(storage.isUnlocked("cloud-reader")).toBe(true);
+    const matches = onUnlock.mock.calls.filter(
+      (c) => c[0].id === "cloud-reader",
+    );
+    expect(matches).toHaveLength(1);
+  });
+
+  it("cursor-idle records the animation name as progress", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("cursor-idle", { animation: "blink" });
+
+    expect(storage.getProgressItems("idle-animations")).toContain("blink");
+  });
+
+  it("jellyfish-pulse increments the counter (progressive checked elsewhere)", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("jellyfish-pulse");
+    dispatchAchievement("jellyfish-pulse");
+
+    expect(storage.getCounter("jellyfishPulses")).toBe(2);
+  });
+
+  it("paper-stroke increments the counter", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("paper-stroke");
+
+    expect(storage.getCounter("paperStrokes")).toBe(1);
+  });
+
+  it("ignores unknown event types without throwing", async () => {
+    await startTracker();
+
+    expect(() => dispatchAchievement("not-a-real-event")).not.toThrow();
+  });
+});
+
+describe("tracker — mode-activate / mode-deactivate", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it.each([
+    { mode: "deep-sea", unlock: "the-depths" },
+    { mode: "frozen", unlock: "first-frost" },
+    { mode: "blocky", unlock: "resolution-drop" },
+    { mode: "rainy", unlock: "first-drop" },
+    { mode: "paper", unlock: "first-sketch" },
+    { mode: "upside-down", unlock: "the-flip" },
+  ])(
+    "mode-activate unlocks $unlock on first $mode activation",
+    async ({ mode, unlock }) => {
+      const { storage } = await startTracker();
+
+      dispatchAchievement("mode-activate", { mode });
+
+      expect(storage.isUnlocked(unlock)).toBe(true);
+    },
+  );
+
+  it("unlocks mode-hopper after 3 distinct modes activate in a session", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("mode-activate", { mode: "blocky" });
+    expect(storage.isUnlocked("mode-hopper")).toBe(false);
+    dispatchAchievement("mode-activate", { mode: "rainy" });
+    expect(storage.isUnlocked("mode-hopper")).toBe(true);
+  });
+
+  it("records modes-activated across all six for elemental progress", async () => {
+    const { storage } = await startTracker();
+
+    for (const mode of [
+      "deep-sea",
+      "frozen",
+      "blocky",
+      "rainy",
+      "paper",
+      "upside-down",
+    ]) {
+      dispatchAchievement("mode-activate", { mode });
+    }
+
+    expect(storage.getProgressItems("modes-activated").sort()).toEqual([
+      "blocky",
+      "deep-sea",
+      "frozen",
+      "paper",
+      "rainy",
+      "upside-down",
+    ]);
+  });
+
+  it("increments totalModeActivations", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+
+    expect(storage.getCounter("totalModeActivations")).toBe(2);
+  });
+
+  it("ignores mode-activate without a mode field", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", {});
+
+    expect(storage.getCounter("totalModeActivations")).toBe(0);
+  });
+
+  it.each([
+    { mode: "deep-sea", unlock: "resurface" },
+    { mode: "frozen", unlock: "thaw" },
+    { mode: "blocky", unlock: "defrag" },
+    { mode: "rainy", unlock: "rainbow" },
+    { mode: "paper", unlock: "blank-page" },
+    { mode: "upside-down", unlock: "restoration" },
+  ])(
+    "mode-deactivate unlocks $unlock on non-silent $mode exit",
+    async ({ mode, unlock }) => {
+      const { storage } = await startTracker();
+
+      dispatchAchievement("mode-deactivate", { mode });
+
+      expect(storage.isUnlocked(unlock)).toBe(true);
+    },
+  );
+
+  it("skips the deactivation achievement when data.silent is true (HUD toggle)", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-deactivate", { mode: "frozen", silent: true });
+
+    expect(storage.isUnlocked("thaw")).toBe(false);
+  });
+
+  it("ignores mode-deactivate without a mode field", async () => {
+    await startTracker();
+
+    expect(() => dispatchAchievement("mode-deactivate", {})).not.toThrow();
+  });
+});
+
+describe("tracker — progressive re-evaluation", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks the count-based 'curious-mind' (unlocks-5) once five achievements are unlocked", async () => {
+    const { storage } = await startTracker();
+
+    // Drive five distinct one-liner unlocks.
+    dispatchAchievement("click-burst"); // spark
+    dispatchAchievement("hold"); // gathering-storm
+    dispatchAchievement("hold-full"); // eye-of-the-storm
+    dispatchAchievement("fury-aurora"); // northern-lights
+    dispatchAchievement("contact-click"); // landfall
+
+    // curious-mind requires 5 unlocks. After 5, the count-based progressive
+    // should fire — bringing the total to 6.
+    expect(storage.isUnlocked("curious-mind")).toBe(true);
+  });
+
+  it("re-locks a progressive achievement when its count drops below the threshold", async () => {
+    const onRelock = vi.fn();
+    const { storage } = await startTracker(() => {}, onRelock);
+
+    dispatchAchievement("theme-change", { theme: "dark" });
+    dispatchAchievement("theme-change", { theme: "light" });
+    dispatchAchievement("theme-change", { theme: "auto" });
+    expect(storage.isUnlocked("dusk-and-dawn")).toBe(true);
+
+    // Simulate state drift by rolling back the counter. A subsequent event
+    // re-runs the progressive check and should trigger a relock.
+    storage.setCounter("themeToggles", 1);
+    dispatchAchievement("theme-change", { theme: "dark" });
+
+    expect(storage.isUnlocked("dusk-and-dawn")).toBe(false);
+    const ids = onRelock.mock.calls.map((c) => c[0].id);
+    expect(ids).toContain("dusk-and-dawn");
+  });
+});
+
+describe("tracker — catchUp", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("retroactively unlocks session-derived achievements", async () => {
+    const { storage, tracker } = await startTracker();
+
+    dispatchAchievement("click");
+    dispatchAchievement("scroll", { progress: 0.3 });
+    dispatchAchievement("scroll", { progress: 0.96 });
+    dispatchAchievement("drag", { x: 1, y: 1 });
+    dispatchAchievement("fury-lightning");
+    dispatchAchievement("fury-aurora");
+    dispatchAchievement("snow-globe");
+    dispatchAchievement("well-activate");
+    dispatchAchievement("well-full");
+
+    // Relock everything (simulates activation-after-the-fact).
+    const ids = [
+      "first-light",
+      "stargazer",
+      "down-to-earth",
+      "trail-blazer",
+      "fury-unleashed",
+      "northern-lights",
+      "snow-globe",
+      "event-horizon",
+      "singularity",
+    ];
+    for (const id of ids) {
+      storage.relock(id);
+      expect(storage.isUnlocked(id)).toBe(false);
+    }
+
+    tracker.catchUp();
+
+    for (const id of ids) {
+      expect(storage.isUnlocked(id)).toBe(true);
+    }
+  });
+
+  it("retroactively unlocks chain-lightning / void-caller when session counts are high", async () => {
+    const { storage, tracker } = await startTracker();
+
+    for (let i = 0; i < 5; i++) dispatchAchievement("fury-lightning");
+    for (let i = 0; i < 3; i++) dispatchAchievement("well-activate");
+    storage.relock("chain-lightning");
+    storage.relock("void-caller");
+    expect(storage.isUnlocked("chain-lightning")).toBe(false);
+    expect(storage.isUnlocked("void-caller")).toBe(false);
+
+    tracker.catchUp();
+
+    expect(storage.isUnlocked("chain-lightning")).toBe(true);
+    expect(storage.isUnlocked("void-caller")).toBe(true);
+  });
+});
+
+describe("tracker — lifecycle (start / stop)", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("start subscribes to window achievement events", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("first-light")).toBe(true);
+  });
+
+  it("stop unsubscribes from window achievement events", async () => {
+    const { storage, tracker } = await startTracker();
+
+    tracker.stop();
+    dispatchAchievement("click");
+
+    expect(storage.isUnlocked("first-light")).toBe(false);
+  });
+
+  it("records today's session day on start", async () => {
+    const { storage } = await startTracker();
+
+    const days = storage.getState().counters.sessionDays;
+    expect(days).toContain("2026-05-08");
+  });
+
+  it("does not duplicate today's session day across repeated starts", async () => {
+    const { storage, tracker } = await startTracker();
+
+    // Already started once. Stop and start again.
+    tracker.stop();
+    tracker.start();
+
+    const days = storage
+      .getState()
+      .counters.sessionDays.filter((d) => d === "2026-05-08");
+    expect(days).toHaveLength(1);
+  });
+});
+
+describe("tracker — moonlit", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks moonlit when start() runs between midnight and 5am", async () => {
+    vi.setSystemTime(new Date("2026-05-08T02:30:00"));
+    const { storage } = await startTracker();
+
+    expect(storage.isUnlocked("moonlit")).toBe(true);
+  });
+
+  it("does not unlock moonlit during the day", async () => {
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+    const { storage } = await startTracker();
+
+    expect(storage.isUnlocked("moonlit")).toBe(false);
+  });
+});
+
+describe("tracker — night-owl", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: false,
+    });
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks night-owl after 10 cumulative minutes visible", async () => {
+    const { storage } = await startTracker();
+
+    // The night-owl check runs on a 30s setInterval. Advance past 10 min
+    // so the accumulator crosses threshold and the next interval fires.
+    vi.advanceTimersByTime(11 * 60 * 1000);
+
+    expect(storage.isUnlocked("night-owl")).toBe(true);
+  });
+
+  it("does not count time while the page is hidden", async () => {
+    const { storage } = await startTracker();
+
+    vi.advanceTimersByTime(2 * 60 * 1000);
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      value: true,
+    });
+    document.dispatchEvent(new Event("visibilitychange"));
+    vi.advanceTimersByTime(20 * 60 * 1000);
+
+    // Only the 2 visible minutes count — night-owl should not unlock.
+    expect(storage.isUnlocked("night-owl")).toBe(false);
+  });
+});
