@@ -239,4 +239,19 @@ describe("analytics/bridges/page", () => {
       expect(evt.props.shift).toBe(true);
     });
   });
+
+  describe("dev_console_opened", () => {
+    it("fires on dev-console-open achievement dispatches", () => {
+      dispatchAchievement({ type: "dev-console-open" });
+      core.flush();
+      expect(eventsNamed("dev_console_opened").length).toEqual(1);
+    });
+
+    it("re-opens are distinct interactions and each emit", () => {
+      dispatchAchievement({ type: "dev-console-open" });
+      dispatchAchievement({ type: "dev-console-open" });
+      core.flush();
+      expect(eventsNamed("dev_console_opened").length).toEqual(2);
+    });
+  });
 });

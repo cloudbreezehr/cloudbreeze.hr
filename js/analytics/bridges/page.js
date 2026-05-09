@@ -37,6 +37,14 @@ export function initPageBridge() {
       });
       return;
     }
+    if (d.type === "dev-console-open") {
+      // Power-user signal alongside keyboard_shortcut_used.  The dev
+      // console is a hidden feature, so opening it at all is meaningful.
+      // Source dispatches on every open; the bridge doesn't dedupe
+      // because re-opens are genuinely distinct interactions.
+      track("dev_console_opened", {});
+      return;
+    }
     if (d.type !== "scroll") return;
     const pct = asPercent(d.progress);
     if (pct > sessionCounters.scrollMaxDepth) {
