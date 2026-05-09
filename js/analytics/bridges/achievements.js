@@ -43,6 +43,17 @@ export function initAchievementsBridge() {
   const completedSets = new Set();
   let panelOpenCount = 0;
   let cloudlogActivatedFired = false;
+  // Recorded on the first cloudlog activation this session.  Unlocks use
+  // it to report time_since_cloudlog_activated_ms — a discovery vs.
+  // tourist-cohort separator for the achievement funnel.
+  let cloudlogActivatedAt = null;
+
+  function quadrantOf(x, y) {
+    if (x == null || y == null) return null;
+    const qx = x < window.innerWidth / 2 ? "l" : "r";
+    const qy = y < window.innerHeight / 2 ? "t" : "b";
+    return qy + qx;
+  }
 
   window.addEventListener("achievement", (e) => {
     const d = e.detail || {};
@@ -51,10 +62,16 @@ export function initAchievementsBridge() {
       case "cloudlog-shortcut":
         if (!cloudlogActivatedFired) {
           cloudlogActivatedFired = true;
+          cloudlogActivatedAt = Date.now();
           track("cloudlog_activated", {
             method: CLOUDLOG_METHOD_BY_TYPE[d.type] || "unknown",
             time_since_first_visit_ms: Date.now() - firstVisitTs,
             session_elapsed_ms: Date.now() - sessionStartedAt,
+            // trigger coords / quadrant only meaningful for the triple-
+            // click path; shortcut-based activations leave them null.
+            trigger_x: d.x != null ? d.x : null,
+            trigger_y: d.y != null ? d.y : null,
+            trigger_quadrant: quadrantOf(d.x, d.y),
           });
         }
         break;
@@ -83,6 +100,9 @@ export function initAchievementsBridge() {
     const pointsAfter = sumPoints(unlocked);
 
     // active_mode is carried by baseProps — no snapshot needed here.
+    // time_since_cloudlog_activated_ms is null for unlocks fired before
+    // the user has discovered the Cloudlog (possible via persistent
+    // state catch-up or achievements that don't require the Cloudlog).
     track("achievement_unlocked", {
       achievement_id: ach.id,
       set_id: ach.set,
@@ -92,6 +112,8 @@ export function initAchievementsBridge() {
       session_unlock_order: unlockOrder,
       time_since_session_start_ms: Date.now() - sessionStartedAt,
       time_since_first_visit_ms: Date.now() - firstVisitTs,
+      time_since_cloudlog_activated_ms:
+        cloudlogActivatedAt != null ? Date.now() - cloudlogActivatedAt : null,
       unlocks_after: unlocksAfter,
       points_after: pointsAfter,
     });

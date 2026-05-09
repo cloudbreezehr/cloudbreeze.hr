@@ -146,6 +146,58 @@ describe("analytics/bridges/achievements", () => {
     expect(events[0].props.method).toEqual("shortcut");
   });
 
+  it("cloudlog_activated records trigger coords and quadrant", () => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 1000,
+    });
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      value: 800,
+    });
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "cloudlog-activate", x: 800, y: 600 },
+      }),
+    );
+    core.flush();
+    const evt = eventsNamed("cloudlog_activated")[0];
+    expect(evt.props.trigger_x).toEqual(800);
+    expect(evt.props.trigger_y).toEqual(600);
+    expect(evt.props.trigger_quadrant).toEqual("br");
+  });
+
+  it("cloudlog_activated leaves trigger fields null for the shortcut path", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", { detail: { type: "cloudlog-shortcut" } }),
+    );
+    core.flush();
+    const evt = eventsNamed("cloudlog_activated")[0];
+    expect(evt.props.trigger_x).toEqual(null);
+    expect(evt.props.trigger_y).toEqual(null);
+    expect(evt.props.trigger_quadrant).toEqual(null);
+  });
+
+  it("achievement_unlocked reports time_since_cloudlog_activated_ms after activation", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", { detail: { type: "cloudlog-activate" } }),
+    );
+    vi.advanceTimersByTime(1_500);
+    dispatchUnlock("first-light");
+    core.flush();
+    const unlock = eventsNamed("achievement_unlocked")[0];
+    expect(
+      unlock.props.time_since_cloudlog_activated_ms,
+    ).toBeGreaterThanOrEqual(1_500);
+  });
+
+  it("achievement_unlocked time_since_cloudlog_activated_ms is null before activation", () => {
+    dispatchUnlock("first-light");
+    core.flush();
+    const unlock = eventsNamed("achievement_unlocked")[0];
+    expect(unlock.props.time_since_cloudlog_activated_ms).toEqual(null);
+  });
+
   it("set_completed fires once when the mastery achievement for a set unlocks", () => {
     // Unlock every non-mastery achievement in the frozen set, then the
     // mastery achievement itself.  set_completed should fire exactly once,

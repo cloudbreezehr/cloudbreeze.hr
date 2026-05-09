@@ -99,7 +99,7 @@ export function initAchievements() {
     // Unlock the activation achievement and catch up on session state
     window.dispatchEvent(
       new CustomEvent("achievement", {
-        detail: { type: "cloudlog-activate" },
+        detail: { type: "cloudlog-activate", x, y },
       }),
     );
     tracker.catchUp();
