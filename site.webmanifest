@@ -4,7 +4,7 @@
   "description": "Cloudbreeze is a cloud engineering consultancy. Advisory, build, or embedded — we help teams design, run, and ship cloud infrastructure.",
   "start_url": "/",
   "scope": "/",
-  "display": "standalone",
+  "display": "browser",
   "background_color": "#0a1628",
   "theme_color": "#0a1628",
   "icons": [
