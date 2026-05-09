@@ -102,9 +102,9 @@ describe("analytics/bridges/modes", () => {
     it("writes lastModeActivationTs onto sessionCounters for cross-bridge signals", () => {
       expect(session.sessionCounters.lastModeActivationTs).toEqual(null);
       dispatch({ type: "mode-activate", mode: "frozen" });
-      expect(
-        typeof session.sessionCounters.lastModeActivationTs,
-      ).toEqual("number");
+      expect(typeof session.sessionCounters.lastModeActivationTs).toEqual(
+        "number",
+      );
     });
   });
 

@@ -203,8 +203,7 @@ describe.each(MODE_CASES)(
       window.removeEventListener("achievement", listener);
 
       const activateEvents = listener.mock.calls.filter(
-        (c) =>
-          c[0].detail.type === "mode-activate" && c[0].detail.mode === id,
+        (c) => c[0].detail.type === "mode-activate" && c[0].detail.mode === id,
       );
       expect(activateEvents).toHaveLength(1);
     });

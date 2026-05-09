@@ -250,9 +250,9 @@ describe("analytics/bridges/canvas", () => {
     it("gravity_well_opened hold_ms_to_open is null without a prior hold", () => {
       dispatch({ type: "well-activate" });
       core.flush();
-      expect(eventsNamed("gravity_well_opened")[0].props.hold_ms_to_open).toEqual(
-        null,
-      );
+      expect(
+        eventsNamed("gravity_well_opened")[0].props.hold_ms_to_open,
+      ).toEqual(null);
     });
 
     it("fury_lightning increments session_fury_count", () => {
