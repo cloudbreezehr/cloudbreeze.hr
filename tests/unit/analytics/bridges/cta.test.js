@@ -25,6 +25,7 @@ describe("analytics/bridges/cta", () => {
     });
     session.sessionCounters.scrollMaxDepth = 0;
     session.sessionCounters.clickTotalCta = 0;
+    session.sessionCounters.lastModeActivationTs = null;
     bridge.initCtaBridge();
   }
 
@@ -125,6 +126,23 @@ describe("analytics/bridges/cta", () => {
       clickSelector(".hero .btn-primary");
       clickSelector("nav .nav-cta");
       expect(session.sessionCounters.clickTotalCta).toEqual(2);
+    });
+
+    it("since_last_mode_activation_ms is null when no mode was activated", () => {
+      clickSelector(".hero .btn-primary");
+      core.flush();
+      expect(
+        eventsNamed("cta_click")[0].props.since_last_mode_activation_ms,
+      ).toEqual(null);
+    });
+
+    it("since_last_mode_activation_ms reflects the delta from the last activation", () => {
+      session.sessionCounters.lastModeActivationTs = Date.now() - 2_500;
+      clickSelector(".hero .btn-primary");
+      core.flush();
+      expect(
+        eventsNamed("cta_click")[0].props.since_last_mode_activation_ms,
+      ).toBeGreaterThanOrEqual(2_500);
     });
   });
 

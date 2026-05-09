@@ -64,6 +64,7 @@ export function initModesBridge() {
       }
 
       sessionCounters.modesActivatedThisSession.add(d.mode);
+      sessionCounters.lastModeActivationTs = now;
       activeSince.set(d.mode, now);
       currentActive = d.mode;
 

@@ -11,6 +11,12 @@ const HEARTBEAT_MS = 15000;
 
 // Counters other bridges mutate.  Values are snapshotted onto heartbeat
 // and session_end events.  No mutation from outside the bridges.
+//
+// lastModeActivationTs is the epoch-ms timestamp of the most recent
+// mode activation in this session — used by the CTA bridge to decide
+// whether a conversion happened inside an "in-play" session (user
+// discovered a mode) or a "passive" one.  Null until the first
+// mode_activated in the session.
 export const sessionCounters = {
   scrollMaxDepth: 0,
   unlocksThisSession: 0,
@@ -19,6 +25,7 @@ export const sessionCounters = {
   clickTotalCanvas: 0,
   clickTotalCta: 0,
   keyboardUsed: false,
+  lastModeActivationTs: null,
 };
 
 let _startedAt = 0;

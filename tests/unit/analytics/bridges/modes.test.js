@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 describe("analytics/bridges/modes", () => {
   let core;
   let bridge;
+  let session;
   let captured;
 
   async function bootstrap() {
@@ -21,10 +22,13 @@ describe("analytics/bridges/modes", () => {
     vi.resetModules();
     captured = [];
     core = await import("../../../../js/analytics/core.js");
+    session = await import("../../../../js/analytics/bridges/session.js");
     bridge = await import("../../../../js/analytics/bridges/modes.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });
+    session.sessionCounters.modesActivatedThisSession = new Set();
+    session.sessionCounters.lastModeActivationTs = null;
     bridge.initModesBridge();
   }
 
@@ -93,6 +97,14 @@ describe("analytics/bridges/modes", () => {
       core.flush();
       expect(eventsNamed("mode_activated")[0].props.method).toEqual("hud");
       expect(eventsNamed("mode_deactivated")[0].props.method).toEqual("hud");
+    });
+
+    it("writes lastModeActivationTs onto sessionCounters for cross-bridge signals", () => {
+      expect(session.sessionCounters.lastModeActivationTs).toEqual(null);
+      dispatch({ type: "mode-activate", mode: "frozen" });
+      expect(
+        typeof session.sessionCounters.lastModeActivationTs,
+      ).toEqual("number");
     });
   });
 
