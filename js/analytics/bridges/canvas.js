@@ -27,6 +27,13 @@ export function initCanvasBridge() {
   let holdReachedWell = false;
   let holdReachedFull = false;
   let scrollSurgeFired = false;
+  // click_burst_triggered is a once-per-session latch.  The source
+  // dispatches "click-burst" on every canvas click, so an unbounded
+  // bridge would emit hundreds of duplicate events per engaged session
+  // without carrying new information — canvas_click_summary.click_count
+  // already covers volume.  We keep the signal as a boolean cohort
+  // marker: "did this visitor ever trigger the click-burst effect?"
+  let clickBurstFired = false;
 
   function flushSummary() {
     if (sinceLastSummary.clickCount === 0) return;
@@ -108,7 +115,10 @@ export function initCanvasBridge() {
         break;
 
       case "click-burst":
-        track("click_burst_triggered", { active_mode: activeMode() });
+        if (!clickBurstFired) {
+          clickBurstFired = true;
+          track("click_burst_triggered", { active_mode: activeMode() });
+        }
         break;
 
       case "well-activate":

@@ -205,10 +205,24 @@ describe("analytics/bridges/canvas", () => {
       );
     });
 
-    it("click_burst_triggered passes through with active_mode", () => {
+    it("click_burst_triggered fires at most once per session (latch)", () => {
+      // Source fires click-burst on every canvas click; the bridge must
+      // emit only the first one to avoid drowning the stream in
+      // duplicates of a signal canvas_click_summary already carries.
+      dispatch({ type: "click-burst" });
+      dispatch({ type: "click-burst" });
       dispatch({ type: "click-burst" });
       core.flush();
       expect(eventsNamed("click_burst_triggered").length).toEqual(1);
+    });
+
+    it("click_burst_triggered carries active_mode on the one emission", () => {
+      document.body.dataset.activeTheme = "rainy";
+      dispatch({ type: "click-burst" });
+      core.flush();
+      expect(eventsNamed("click_burst_triggered")[0].props.active_mode).toEqual(
+        "rainy",
+      );
     });
   });
 
