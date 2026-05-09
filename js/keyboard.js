@@ -42,6 +42,20 @@ export function onKey(key, callback, opts = {}) {
     }
 
     e.preventDefault();
+    // Fire an observable signal that a registered shortcut just matched.
+    // The keyboard module stays analytics-agnostic; the analytics bridge
+    // listens for this event type to count power-user shortcut adoption.
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: {
+          type: "keyboard-shortcut",
+          key: lowerKey,
+          ctrl: needCtrl,
+          shift: needShift,
+          alt: needAlt,
+        },
+      }),
+    );
     callback(e);
   }
 

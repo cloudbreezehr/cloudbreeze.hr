@@ -9,6 +9,11 @@ import { sessionCounters } from "./session.js";
 const SCROLL_THRESHOLDS = [25, 50, 75, 100];
 const SECTION_VIEW_RATIO = 0.5;
 const SECTION_IDS = ["services", "about", "contact"];
+// back_to_top latches once the user has reached near-bottom and fires
+// a single event when they scroll back near-top.  Hysteresis keeps
+// the two boundaries from racing.
+const BACK_TO_TOP_BOTTOM = 95;
+const BACK_TO_TOP_TOP = 5;
 
 function asPercent(progress) {
   return Math.min(100, Math.max(0, Math.floor(progress * 100)));
@@ -17,10 +22,22 @@ function asPercent(progress) {
 export function initPageBridge() {
   const startedAt = Date.now();
   const firedThresholds = new Set();
+  let reachedBottom = false;
+  let backToTopFired = false;
 
   window.addEventListener("achievement", (e) => {
     const d = e.detail;
-    if (!d || d.type !== "scroll") return;
+    if (!d) return;
+    if (d.type === "keyboard-shortcut") {
+      track("keyboard_shortcut_used", {
+        key: d.key || null,
+        ctrl: !!d.ctrl,
+        shift: !!d.shift,
+        alt: !!d.alt,
+      });
+      return;
+    }
+    if (d.type !== "scroll") return;
     const pct = asPercent(d.progress);
     if (pct > sessionCounters.scrollMaxDepth) {
       sessionCounters.scrollMaxDepth = pct;
@@ -33,6 +50,13 @@ export function initPageBridge() {
           time_from_start_ms: Date.now() - startedAt,
         });
       }
+    }
+    if (pct >= BACK_TO_TOP_BOTTOM) reachedBottom = true;
+    if (reachedBottom && !backToTopFired && pct <= BACK_TO_TOP_TOP) {
+      backToTopFired = true;
+      track("back_to_top", {
+        time_from_start_ms: Date.now() - startedAt,
+      });
     }
   });
 

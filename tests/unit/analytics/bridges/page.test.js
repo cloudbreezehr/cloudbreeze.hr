@@ -181,4 +181,62 @@ describe("analytics/bridges/page", () => {
       expect(session.sessionCounters.keyboardUsed).toBe(true);
     });
   });
+
+  describe("back_to_top", () => {
+    it("fires once after reaching bottom then scrolling near-top", () => {
+      dispatchAchievement({ type: "scroll", progress: 0.3 });
+      dispatchAchievement({ type: "scroll", progress: 0.97 });
+      dispatchAchievement({ type: "scroll", progress: 0.5 });
+      dispatchAchievement({ type: "scroll", progress: 0.03 });
+      core.flush();
+      expect(eventsNamed("back_to_top").length).toEqual(1);
+    });
+
+    it("does not fire if the user never reaches the bottom", () => {
+      dispatchAchievement({ type: "scroll", progress: 0.5 });
+      dispatchAchievement({ type: "scroll", progress: 0.02 });
+      core.flush();
+      expect(eventsNamed("back_to_top").length).toEqual(0);
+    });
+
+    it("fires at most once even with multiple bottom/top oscillations", () => {
+      dispatchAchievement({ type: "scroll", progress: 0.98 });
+      dispatchAchievement({ type: "scroll", progress: 0.0 });
+      dispatchAchievement({ type: "scroll", progress: 0.97 });
+      dispatchAchievement({ type: "scroll", progress: 0.01 });
+      core.flush();
+      expect(eventsNamed("back_to_top").length).toEqual(1);
+    });
+  });
+
+  describe("keyboard_shortcut_used", () => {
+    it("fires when keyboard.js dispatches a keyboard-shortcut event", () => {
+      dispatchAchievement({
+        type: "keyboard-shortcut",
+        key: "l",
+        ctrl: false,
+        shift: false,
+        alt: false,
+      });
+      core.flush();
+      const evt = eventsNamed("keyboard_shortcut_used")[0];
+      expect(evt).toBeTruthy();
+      expect(evt.props.key).toEqual("l");
+      expect(evt.props.ctrl).toBe(false);
+    });
+
+    it("records modifier flags", () => {
+      dispatchAchievement({
+        type: "keyboard-shortcut",
+        key: ".",
+        ctrl: true,
+        shift: true,
+        alt: false,
+      });
+      core.flush();
+      const evt = eventsNamed("keyboard_shortcut_used")[0];
+      expect(evt.props.ctrl).toBe(true);
+      expect(evt.props.shift).toBe(true);
+    });
+  });
 });

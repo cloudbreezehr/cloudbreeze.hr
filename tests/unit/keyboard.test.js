@@ -136,4 +136,37 @@ describe("onKey", () => {
     dispatchKey({ key: "l" });
     expect(cb).not.toHaveBeenCalled();
   });
+
+  it("dispatches a keyboard-shortcut achievement event when matched", () => {
+    const achievementSpy = vi.fn();
+    window.addEventListener("achievement", achievementSpy);
+    const cb = vi.fn();
+    cleanup = onKey("l", cb);
+    dispatchKey({ key: "l" });
+    window.removeEventListener("achievement", achievementSpy);
+
+    const matching = achievementSpy.mock.calls
+      .map(([e]) => e.detail)
+      .filter((d) => d && d.type === "keyboard-shortcut");
+    expect(matching.length).toEqual(1);
+    expect(matching[0].key).toEqual("l");
+    expect(matching[0].ctrl).toBe(false);
+  });
+
+  it("does not dispatch the achievement event when the shortcut is blocked by an input focus", () => {
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    const achievementSpy = vi.fn();
+    window.addEventListener("achievement", achievementSpy);
+    cleanup = onKey("l", vi.fn());
+    dispatchKey({ key: "l" });
+    window.removeEventListener("achievement", achievementSpy);
+
+    const matching = achievementSpy.mock.calls
+      .map(([e]) => e.detail)
+      .filter((d) => d && d.type === "keyboard-shortcut");
+    expect(matching.length).toEqual(0);
+  });
 });
