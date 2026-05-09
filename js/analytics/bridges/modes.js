@@ -155,5 +155,20 @@ export function initModesBridge() {
         modes_known_count: sessionCounters.modesActivatedThisSession.size,
       });
     }
+
+    // Mode-warning overlays — full-viewport confirmations that reveal
+    // as the user accumulates deactivation force.  The warning is itself
+    // a funnel step: we already know whether the user completed the
+    // gesture, but until now we couldn't see how many got to the warning
+    // overlay and bailed.  Keyed by source event type so future modes
+    // that add warnings get tracked without changing the bridge.
+    const warningSourceToMode = {
+      "upside-down-warning": "upside-down",
+    };
+    if (warningSourceToMode[d.type]) {
+      track("mode_warning_shown", {
+        mode_id: warningSourceToMode[d.type],
+      });
+    }
   });
 }

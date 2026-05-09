@@ -235,4 +235,20 @@ describe("analytics/bridges/modes", () => {
       expect(eventsNamed("mode_hud_opened").length).toEqual(1);
     });
   });
+
+  describe("mode_warning_shown", () => {
+    it("emits with mode_id for upside-down-warning", () => {
+      dispatch({ type: "upside-down-warning" });
+      core.flush();
+      const warn = eventsNamed("mode_warning_shown")[0];
+      expect(warn).toBeTruthy();
+      expect(warn.props.mode_id).toEqual("upside-down");
+    });
+
+    it("ignores unmapped source types (regression guard on the map)", () => {
+      dispatch({ type: "some-other-warning" });
+      core.flush();
+      expect(eventsNamed("mode_warning_shown").length).toEqual(0);
+    });
+  });
 });
