@@ -88,7 +88,27 @@ export function initCanvasBridge() {
           holdStart = { t: Date.now() };
           holdReachedWell = false;
           holdReachedFull = false;
+          track("hold_started", { active_mode: activeMode() });
         }
+        break;
+
+      case "hold-full":
+        // Fires when hold strength reaches its max before (or instead of)
+        // opening a well.  Distinct from hold_complete, which only fires
+        // on pointerup — a user can reach max and release without ever
+        // producing a hold_complete if they were already flagged earlier.
+        track("hold_max_reached", {
+          active_mode: activeMode(),
+          time_to_max_ms: holdStart ? Date.now() - holdStart.t : null,
+        });
+        break;
+
+      case "orbit":
+        track("orbit_locked", { active_mode: activeMode() });
+        break;
+
+      case "click-burst":
+        track("click_burst_triggered", { active_mode: activeMode() });
         break;
 
       case "well-activate":
@@ -97,6 +117,10 @@ export function initCanvasBridge() {
         track("gravity_well_opened", {
           session_well_count: sessionWellCount,
           active_mode: activeMode(),
+          // hold_ms_to_open is the mastery curve: as users get better at
+          // this, the time drops.  Null when the well opened outside of
+          // a tracked hold (shouldn't happen, but we don't lie if it does).
+          hold_ms_to_open: holdStart ? Date.now() - holdStart.t : null,
         });
         break;
 

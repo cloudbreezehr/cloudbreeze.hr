@@ -165,6 +165,53 @@ describe("analytics/bridges/canvas", () => {
     });
   });
 
+  describe("discrete force / burst events", () => {
+    it("hold_started fires once per hold gesture with active_mode", () => {
+      document.body.dataset.activeTheme = "frozen";
+      dispatch({ type: "hold" });
+      dispatch({ type: "hold" }); // second fires within same gesture, should no-op
+      window.dispatchEvent(new Event("pointerup"));
+      dispatch({ type: "hold" }); // fresh gesture, should fire
+      core.flush();
+      const starts = eventsNamed("hold_started");
+      expect(starts.length).toEqual(2);
+      expect(starts[0].props.active_mode).toEqual("frozen");
+    });
+
+    it("hold_max_reached carries time_to_max_ms when a hold was tracked", () => {
+      dispatch({ type: "hold" });
+      vi.advanceTimersByTime(450);
+      dispatch({ type: "hold-full" });
+      core.flush();
+      const max = eventsNamed("hold_max_reached")[0];
+      expect(max).toBeTruthy();
+      expect(max.props.time_to_max_ms).toBeGreaterThanOrEqual(450);
+    });
+
+    it("hold_max_reached with no prior hold has null time_to_max_ms", () => {
+      dispatch({ type: "hold-full" });
+      core.flush();
+      expect(eventsNamed("hold_max_reached")[0].props.time_to_max_ms).toEqual(
+        null,
+      );
+    });
+
+    it("orbit_locked passes through with active_mode", () => {
+      document.body.dataset.activeTheme = "deep-sea";
+      dispatch({ type: "orbit" });
+      core.flush();
+      expect(eventsNamed("orbit_locked")[0].props.active_mode).toEqual(
+        "deep-sea",
+      );
+    });
+
+    it("click_burst_triggered passes through with active_mode", () => {
+      dispatch({ type: "click-burst" });
+      core.flush();
+      expect(eventsNamed("click_burst_triggered").length).toEqual(1);
+    });
+  });
+
   describe("gravity well + fury counters", () => {
     it("gravity_well_opened increments session_well_count", () => {
       dispatch({ type: "well-activate" });
@@ -175,6 +222,23 @@ describe("analytics/bridges/canvas", () => {
       const wells = eventsNamed("gravity_well_opened");
       expect(wells.length).toEqual(3);
       expect(wells.map((w) => w.props.session_well_count)).toEqual([1, 2, 3]);
+    });
+
+    it("gravity_well_opened reports hold_ms_to_open when a hold was tracked", () => {
+      dispatch({ type: "hold" });
+      vi.advanceTimersByTime(800);
+      dispatch({ type: "well-activate" });
+      core.flush();
+      const well = eventsNamed("gravity_well_opened")[0];
+      expect(well.props.hold_ms_to_open).toBeGreaterThanOrEqual(800);
+    });
+
+    it("gravity_well_opened hold_ms_to_open is null without a prior hold", () => {
+      dispatch({ type: "well-activate" });
+      core.flush();
+      expect(eventsNamed("gravity_well_opened")[0].props.hold_ms_to_open).toEqual(
+        null,
+      );
     });
 
     it("fury_lightning increments session_fury_count", () => {
