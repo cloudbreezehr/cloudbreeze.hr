@@ -46,11 +46,7 @@ import {
 } from "./ui/cards.js";
 
 // ── Panel Constants ──
-const PANEL_WIDTH_PX = 360;
 const PANEL_SLIDE_MS = 300;
-
-// ── Badge animation ──
-const BADGE_PULSE_MS = 600;
 
 // ── State ──
 let panelEl = null;
