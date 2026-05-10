@@ -4,6 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!--
+      Content Security Policy (see proposals doc).  script-src 'self' is
+      the load-bearing line: no inline scripts, no remote scripts, no
+      eval.  style-src keeps 'unsafe-inline' because dynamic mode/effect
+      code sets element.style.* at runtime; tightening that is a known
+      follow-up (would need nonces or a classList-only refactor).
+      frame-ancestors and report-to aren't expressible via meta — those
+      land when the site moves behind Cloudflare.
+    -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src https://fonts.gstatic.com;
+        img-src 'self' data:;
+        connect-src 'self' https://eu.i.posthog.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+      "
+    />
     <meta name="color-scheme" content="dark light" />
     <meta
       name="theme-color"
@@ -93,16 +116,13 @@
     <link rel="stylesheet" href="css/main.css" />
   </head>
   <body>
-    <script>
-      !(function () {
-        var t = localStorage.getItem("theme"),
-          l =
-            t === "light" ||
-            (t === "auto" &&
-              window.matchMedia("(prefers-color-scheme: light)").matches);
-        if (l) document.body.classList.add("light-mode");
-      })();
-    </script>
+    <!--
+      Classic blocking script (no type="module", no defer/async) so it
+      runs before any body content is parsed or painted.  Prevents a
+      flash of dark-mode colors for users whose preference is light.
+      Must stay at the top of <body> — needs document.body to exist.
+    -->
+    <script src="./js/theme-boot.js"></script>
 
     <div id="cursor"></div>
     <div id="cursor-ring"></div>
@@ -501,137 +521,6 @@
       </footer>
     </div>
 
-    <script type="module">
-      import { initTheme } from "./js/theme.js";
-      import { initNav } from "./js/nav.js";
-      import { initCanvas } from "./js/canvas.js";
-      import { initCursor } from "./js/cursor.js";
-      import { initReveal } from "./js/reveal.js";
-      import { initTilt } from "./js/service-cards.js";
-      import { initButtonRipple } from "./js/effects/button-ripple.js";
-      import { initNavSparkle } from "./js/effects/nav-sparkle.js";
-      import { initLogoBreathing } from "./js/effects/logo-breathing.js";
-      import { initLogoParallax } from "./js/effects/logo-parallax.js";
-      import { initModeHistoryHud } from "./js/effects/mode-history-hud.js";
-      import { initCursorIdle } from "./js/effects/cursor-idle.js";
-      import { initFooterHint } from "./js/effects/footer-hint.js";
-      import { initUpsideDown } from "./js/modes/upside-down.js";
-      import { initFrozen } from "./js/modes/frozen.js";
-      import { initDeepSea } from "./js/modes/deep-sea.js";
-      import { initBlocky } from "./js/modes/blocky.js";
-      import { initRainy } from "./js/modes/rainy.js";
-      import { initPaper } from "./js/modes/paper.js";
-      import { toggleDevConsole, openDevConsole } from "./js/dev/console.js";
-      import { toggleFps } from "./js/dev/fps.js";
-      import { onKey } from "./js/keyboard.js";
-      import { initAchievements } from "./js/achievements/index.js";
-      import { initAnalytics } from "./js/analytics/index.js";
-      import { createPostHogAdapter } from "./js/analytics/adapters/posthog.js";
-
-      // Analytics first — bridges attach listeners before other modules
-      // start dispatching events, so session_start, early scroll_depth,
-      // and the initial mode-buildup all land in the stream.  Wrapped
-      // so a broken adapter or context lookup can never break page load.
-      //
-      // Strict production gate: only cloudbreeze.hr sends to PostHog.
-      // Any other hostname (localhost, IP, preview subdomain) falls
-      // through to the default console adapter so stats aren't polluted.
-      try {
-        const isProd = location.hostname === "cloudbreeze.hr";
-        initAnalytics(
-          isProd
-            ? {
-                adapter: createPostHogAdapter({
-                  apiKey: "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i",
-                }),
-              }
-            : undefined,
-        );
-      } catch (err) {
-        console.warn("[analytics] init failed:", err);
-      }
-
-      const theme = initTheme(document.querySelector(".theme-toggle"));
-      initNav(document.querySelector("nav"), theme);
-      initCanvas(document.getElementById("bg-canvas"), theme);
-      initCursor(
-        document.getElementById("cursor"),
-        document.getElementById("cursor-ring"),
-      );
-      initReveal();
-      initTilt();
-      initButtonRipple();
-      initNavSparkle();
-      initLogoBreathing();
-      initLogoParallax();
-      initCursorIdle(
-        document.getElementById("cursor"),
-        document.getElementById("cursor-ring"),
-      );
-      initFooterHint();
-      initUpsideDown();
-      initFrozen();
-      initDeepSea();
-      initBlocky(document.querySelector(".theme-toggle"));
-      initRainy();
-      initPaper();
-      initModeHistoryHud();
-      initAchievements();
-
-      // Subtle parallax on hero elements — each layer drifts at a different rate.
-      // Uses the CSS `translate` property (not `transform`) so it composes with fadeUp animation.
-      const parallaxEls = [
-        { el: document.querySelector(".hero-tag"), rate: 0.12 },
-        { el: document.querySelector(".hero-title .line-1"), rate: 0.06 },
-        { el: document.querySelector(".hero-title .line-2"), rate: 0.1 },
-        { el: document.querySelector(".hero-sub"), rate: 0.14 },
-        { el: document.querySelector(".hero-actions"), rate: 0.18 },
-      ];
-      window.addEventListener(
-        "scroll",
-        () => {
-          const isFlipped = document.body.classList.contains("upside-down");
-          const maxScroll =
-            document.documentElement.scrollHeight - window.innerHeight;
-          const y = isFlipped ? maxScroll - window.scrollY : window.scrollY;
-          if (y > window.innerHeight) return;
-          for (const p of parallaxEls) {
-            if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
-          }
-        },
-        { passive: true },
-      );
-
-      // Fade out scroll hint once the user starts scrolling
-      const scrollHint = document.querySelector(".scroll-hint");
-      if (scrollHint) {
-        window.addEventListener(
-          "scroll",
-          function hide() {
-            if (window.scrollY > 60) {
-              scrollHint.style.animation = "none";
-              scrollHint.style.opacity = "1";
-              void scrollHint.offsetHeight;
-              scrollHint.style.transition = "opacity 0.6s";
-              scrollHint.style.opacity = "0";
-              window.removeEventListener("scroll", hide);
-            }
-          },
-          { passive: true },
-        );
-      }
-
-      // Dev console — triggered via URL hash #dev or Ctrl+Shift+.
-      if (window.location.hash === "#dev") openDevConsole();
-      window.addEventListener("hashchange", () => {
-        if (window.location.hash === "#dev") openDevConsole();
-      });
-      onKey(".", toggleDevConsole, {
-        ctrl: true,
-        shift: true,
-        allowInInput: true,
-      });
-      onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
-    </script>
+    <script type="module" src="./js/bootstrap.js"></script>
   </body>
 </html>

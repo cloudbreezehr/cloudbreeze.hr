@@ -1,3 +1,9 @@
+// ── Theme ──
+// Paired with js/theme-boot.js: the boot file runs a minimal subset of
+// this logic synchronously before first paint so light-mode users
+// don't flash dark colors.  If the default-preference fallback here
+// ("theme" || "dark") ever changes, update theme-boot.js to match.
+
 export function initTheme(toggleEl) {
   let isDarkMode = !document.body.classList.contains("light-mode");
   const callbacks = [];
