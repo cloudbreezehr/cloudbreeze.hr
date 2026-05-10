@@ -22,6 +22,7 @@ import {
   rocketCountForTier,
 } from "../effects/fireworks.js";
 import { formatTimestamp, toggleTimestampMode } from "./ui/timestamp.js";
+import { showHintTooltip, hideHintTooltip } from "./ui/tooltip.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -44,7 +45,6 @@ const BADGE_PULSE_MS = 600;
 const FIREWORKS_DELAY_MS = TOAST_SLIDE_IN_MS;
 
 // ── Tooltip Constants ──
-const TOOLTIP_OFFSET_Y = 6;
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
 
 // ── Unseen Observer Constants ──
@@ -65,7 +65,6 @@ let revealHints = false;
 let _escHandler = null;
 let _outsideHandler = null;
 let _releaseFocusTrap = null;
-let tooltipEl = null;
 let _seenObserver = null;
 let _seenTimers = new Map();
 
@@ -102,26 +101,6 @@ function hasAnyInSet(setId) {
   return ACHIEVEMENTS.some((a) => a.set === setId && storage.isUnlocked(a.id));
 }
 
-// ── Tooltip ──
-
-function ensureTooltip() {
-  if (tooltipEl) return;
-  tooltipEl = document.createElement("div");
-  tooltipEl.className = "achievement-tooltip";
-  document.body.appendChild(tooltipEl);
-}
-
-function showHintTooltip(anchor, hint, preferAbove) {
-  ensureTooltip();
-  tooltipEl.textContent = hint;
-  tooltipEl.classList.add("visible");
-  positionTooltip(anchor, preferAbove);
-}
-
-function hideHintTooltip() {
-  if (tooltipEl) tooltipEl.classList.remove("visible");
-}
-
 // Returns the tooltip string to show on hover, or null to suppress.
 // Hidden achievements never leak their real hint via Reveal hints —
 // that toggle only affects their title/description. A non-revealing
@@ -134,29 +113,6 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
     return revealHints ? HIDDEN_HINT_PLACEHOLDER : null;
   }
   return revealHints ? ach.hint : null;
-}
-
-function positionTooltip(anchor, preferAbove) {
-  if (!tooltipEl) return;
-  const rect = anchor.getBoundingClientRect();
-  tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
-
-  // Place on preferred side, flip if it overflows
-  const above = () => {
-    tooltipEl.style.top = `${rect.top - TOOLTIP_OFFSET_Y}px`;
-    tooltipEl.style.transform = "translateX(-50%) translateY(-100%)";
-  };
-  const below = () => {
-    tooltipEl.style.top = `${rect.bottom + TOOLTIP_OFFSET_Y}px`;
-    tooltipEl.style.transform = "translateX(-50%) translateY(0)";
-  };
-
-  (preferAbove ? above : below)();
-  const tipRect = tooltipEl.getBoundingClientRect();
-  const overflows = preferAbove
-    ? tipRect.top < 0
-    : tipRect.bottom > window.innerHeight;
-  if (overflows) (preferAbove ? below : above)();
 }
 
 // ── Unseen Observer ──
@@ -1393,13 +1349,12 @@ export function onAchievementRelocked(achievement) {
 
 export function destroy() {
   destroySeenObserver();
+  hideHintTooltip();
   if (navBtn && navBtn.parentNode) navBtn.remove();
   if (panelEl && panelEl.parentNode) panelEl.remove();
   if (toastContainer && toastContainer.parentNode) toastContainer.remove();
-  if (tooltipEl && tooltipEl.parentNode) tooltipEl.remove();
   navBtn = null;
   panelEl = null;
   toastContainer = null;
-  tooltipEl = null;
   panelOpen = false;
 }
