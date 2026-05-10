@@ -43,6 +43,13 @@ import {
   updateMarkReadVisibility,
 } from "./ui/cards.js";
 import { renderActivity } from "./ui/activity.js";
+import {
+  configureTabs,
+  getActiveTab,
+  buildTabButton,
+  setActiveTab,
+  updateTabBadges,
+} from "./ui/tabs.js";
 
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
@@ -75,6 +82,10 @@ configureCards({
   refreshPanel,
 });
 
+// Tabs share the same getPanelEl getter so aria + active-class toggles
+// safely no-op before the panel exists.
+configureTabs({ getPanelEl: () => panelEl });
+
 // ── Helpers ──
 
 function totalPoints() {
@@ -82,11 +93,9 @@ function totalPoints() {
 }
 
 // ── Nav Button ──
-// The button itself lives in ./ui/nav-button.js.  Thin wrappers below
-// bridge the existing external call sites (createNavButton,
-// updateBadge, showNavButton, hideNavButton) while tabs.js remains
-// in this file — once tabs.js is extracted too, callers can import
-// directly from nav-button.js.
+// The button itself lives in ./ui/nav-button.js.  The wrapper below
+// binds its unseen-count signal to tabs.updateTabBadges so a single
+// call to updateBadge refreshes both the nav and the tab badges.
 
 export function createNavButton(onPanelToggle) {
   return _createNavButton(onPanelToggle, { onBadgeChange: updateTabBadges });
@@ -268,7 +277,8 @@ function buildPanel(onHide) {
   );
   // Achievements is the default tab on open — mark it active so the
   // matching CSS display rule takes effect from the first paint.
-  if (activeTab === "achievements") achievementsView.classList.add("active");
+  if (getActiveTab() === "achievements")
+    achievementsView.classList.add("active");
   renderSections(achievementsView);
   body.appendChild(achievementsView);
 
@@ -277,7 +287,7 @@ function buildPanel(onHide) {
   activityView.setAttribute("role", "tabpanel");
   activityView.id = "achievement-panel-activity";
   activityView.setAttribute("aria-labelledby", "achievement-tab-activity");
-  if (activeTab === "activity") activityView.classList.add("active");
+  if (getActiveTab() === "activity") activityView.classList.add("active");
   renderActivity(activityView);
   body.appendChild(activityView);
 
@@ -355,92 +365,6 @@ function refreshPanel() {
   observeUnseenCards();
   updateMarkReadVisibility();
   updateTabBadges();
-}
-
-// ── Tabs ──
-// Panel body holds two views — "achievements" (grouped sets, the original
-// Cloudlog content) and "activity" (flat reverse-chron log of events).
-// Switching tabs toggles which view is shown; activity tab also marks all
-// entries seen on open, clearing its own unseen badge.
-
-let activeTab = "achievements";
-
-function buildTabButton(id, label, unseenSource) {
-  const btn = document.createElement("button");
-  btn.className = "achievement-tab";
-  btn.dataset.tab = id;
-  btn.setAttribute("role", "tab");
-  btn.id = `achievement-tab-${id}`;
-  btn.setAttribute("aria-controls", `achievement-panel-${id}`);
-  const isActive = id === activeTab;
-  btn.setAttribute("aria-selected", isActive ? "true" : "false");
-  btn.tabIndex = isActive ? 0 : -1;
-  if (isActive) btn.classList.add("active");
-
-  const labelEl = document.createElement("span");
-  labelEl.className = "achievement-tab-label";
-  labelEl.textContent = label;
-  btn.appendChild(labelEl);
-
-  // Badge is created even when count is zero so we can show/hide via CSS.
-  const badge = document.createElement("span");
-  badge.className = "achievement-tab-badge";
-  btn.appendChild(badge);
-  btn.dataset.unseenSource = unseenSource || "";
-
-  btn.addEventListener("click", () => setActiveTab(id));
-  // Left/Right arrow navigation between tabs — standard ARIA tab pattern.
-  btn.addEventListener("keydown", (e) => {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    if (!panelEl) return;
-    const all = Array.from(panelEl.querySelectorAll(".achievement-tab"));
-    const i = all.indexOf(btn);
-    if (i === -1) return;
-    const next =
-      e.key === "ArrowRight"
-        ? all[(i + 1) % all.length]
-        : all[(i - 1 + all.length) % all.length];
-    setActiveTab(next.dataset.tab);
-    next.focus();
-    e.preventDefault();
-  });
-  return btn;
-}
-
-function setActiveTab(id) {
-  if (!panelEl) return;
-  activeTab = id;
-  panelEl.querySelectorAll(".achievement-tab").forEach((btn) => {
-    const isActive = btn.dataset.tab === id;
-    btn.classList.toggle("active", isActive);
-    btn.setAttribute("aria-selected", isActive ? "true" : "false");
-    btn.tabIndex = isActive ? 0 : -1;
-  });
-  panelEl
-    .querySelector(".achievement-view-achievements")
-    ?.classList.toggle("active", id === "achievements");
-  panelEl
-    .querySelector(".achievement-view-activity")
-    ?.classList.toggle("active", id === "activity");
-  // Opening the Activity tab marks all its entries as seen — matches how
-  // opening the Cloudlog clears the achievement-unseen badge.
-  if (id === "activity") activityLog.markAllSeen();
-  updateTabBadges();
-}
-
-function updateTabBadges() {
-  if (!panelEl) return;
-  panelEl.querySelectorAll(".achievement-tab").forEach((btn) => {
-    const source = btn.dataset.unseenSource;
-    if (!source) return;
-    const badge = btn.querySelector(".achievement-tab-badge");
-    if (!badge) return;
-    let count = 0;
-    if (source === "activity") count = activityLog.getUnseenCount();
-    else if (source === "achievements") count = storage.getUnseenCount();
-    badge.textContent = String(count);
-    badge.classList.toggle("visible", count > 0);
-  });
 }
 
 // ── Toast re-exports ──
