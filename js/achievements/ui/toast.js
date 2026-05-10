@@ -323,22 +323,22 @@ export function toastContainerContains(node) {
   return !!(toastContainer && toastContainer.contains(node));
 }
 
-// Drop the toast container — called from the panel's destroy() as
-// part of full UI teardown.
+// Drop the container and any queued/active toasts — called from the
+// panel's destroy() so full UI teardown leaves no DOM or timers behind.
 export function destroyToastContainer() {
+  for (const ref of activeToasts) {
+    if (ref.timer) clearTimeout(ref.timer);
+  }
   if (toastContainer && toastContainer.parentNode) toastContainer.remove();
   toastContainer = null;
+  toastQueue = [];
+  activeToasts = [];
+  toastsPaused = false;
 }
 
 // Test hook — full reset including injected callbacks.
 export function _resetForTests() {
-  for (const ref of activeToasts) {
-    if (ref.timer) clearTimeout(ref.timer);
-  }
   destroyToastContainer();
-  toastQueue = [];
-  activeToasts = [];
-  toastsPaused = false;
   _openPanel = null;
   _isPanelOpen = () => false;
   _scrollToCard = null;

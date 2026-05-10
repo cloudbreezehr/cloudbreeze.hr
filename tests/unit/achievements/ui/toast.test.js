@@ -213,18 +213,20 @@ describe("achievements/ui/toast", () => {
   });
 
   describe("destroyToastContainer", () => {
-    it("removes the container DOM", () => {
-      mod.showToast(makeAchievement());
+    it("removes the container, clears timers, and resets queue state", () => {
+      // Fill past the cap so we have both active and queued entries.
+      for (let i = 0; i < 5; i++) {
+        mod.showToast(makeAchievement({ id: `a${i}` }));
+      }
       expect(getContainer()).not.toBeNull();
       mod.destroyToastContainer();
       expect(getContainer()).toBeNull();
-    });
-
-    it("lets a subsequent show re-create the container", () => {
-      mod.showToast(makeAchievement({ id: "a0" }));
-      mod.destroyToastContainer();
+      // After destroy, a subsequent show re-creates the container fresh
+      // — if queue/active state had leaked, the new toast would silently
+      // queue instead of rendering.
       mod.showToast(makeAchievement({ id: "fresh" }));
       expect(getContainer()).not.toBeNull();
+      expect(getContainer().children).toHaveLength(1);
     });
   });
 });
