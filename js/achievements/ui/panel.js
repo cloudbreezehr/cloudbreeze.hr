@@ -63,6 +63,17 @@ configureCards({
 });
 configureTabs({ getPanelEl: () => panelEl });
 
+// Keep the Activity tab + tab badges in sync with the log.  The
+// subscriber reads panelEl via the module-level let binding so it
+// stays correct across destroyPanel → rebuild cycles — no explicit
+// unsubscribe, just one subscription for the module's lifetime.
+activityLog.onChange(() => {
+  if (!panelEl) return;
+  const view = panelEl.querySelector(".achievement-view-activity");
+  if (view) renderActivity(view);
+  updateTabBadges();
+});
+
 // ── Helpers ──
 
 function totalPoints() {
@@ -283,15 +294,6 @@ function buildPanel(onHide) {
   // Hide "Mark all read" when nothing is unseen
   const markBtn = panel.querySelector(".achievement-mark-read");
   if (markBtn && storage.getUnseenCount() === 0) markBtn.style.display = "none";
-
-  // Keep Activity tab + badge in sync with the log.  The panel is a
-  // singleton (built once, reused), so no explicit unsubscribe is needed.
-  activityLog.onChange(() => {
-    if (!panelEl) return;
-    const view = panelEl.querySelector(".achievement-view-activity");
-    if (view) renderActivity(view);
-    updateTabBadges();
-  });
 
   // Initial badge paint reflects any unseen entries from prior sessions.
   updateTabBadges();

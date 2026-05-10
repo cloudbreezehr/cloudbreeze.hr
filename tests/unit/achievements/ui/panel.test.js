@@ -286,5 +286,21 @@ describe("achievements/ui/panel", () => {
         document.querySelectorAll(".achievement-view-activity .activity-row"),
       ).toHaveLength(1);
     });
+
+    it("keeps the subscription alive across destroy → rebuild", () => {
+      // The subscription lives at module-top — not inside buildPanel —
+      // so a destroy+rebuild cycle doesn't need to re-subscribe, and
+      // equally doesn't stack a second subscriber on the log.  This
+      // test pins the "rebuild still wires activity renders" half of
+      // that invariant; the "no stacking" half is enforced by the
+      // subscription's placement (one call at module evaluation).
+      mod.openPanel();
+      mod.destroyPanel();
+      mod.openPanel();
+      activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      expect(
+        document.querySelectorAll(".achievement-view-activity .activity-row"),
+      ).toHaveLength(1);
+    });
   });
 });
