@@ -32,6 +32,11 @@ import {
   getNavBtnEl,
   setActive as setNavActive,
 } from "./ui/nav-button.js";
+import {
+  CLOUD_CHECK_SVG,
+  CLOUD_LOCK_SVG,
+  CLOUD_HIDDEN_SVG,
+} from "./ui/icons.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -74,23 +79,6 @@ let _outsideHandler = null;
 let _releaseFocusTrap = null;
 let _seenObserver = null;
 let _seenTimers = new Map();
-
-// ── Cloud-check SVG icon ──
-const CLOUD_CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M11.5 12H5C3.3 12 2 10.7 2 9c0-1.5 1-2.7 2.4-3C4.7 4.4 6.2 3 8 3c1.3 0 2.4.6 3.1 1.6.3-.1.6-.1.9-.1 1.7 0 3 1.3 3 3 0 1.5-1.1 2.8-2.5 3"/>
-  <path d="M6 10l2 2 3-3.5"/>
-</svg>`;
-
-// ── Locked cloud icon ──
-const CLOUD_LOCK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
-  <path d="M11.5 12H5C3.3 12 2 10.7 2 9c0-1.5 1-2.7 2.4-3C4.7 4.4 6.2 3 8 3c1.3 0 2.4.6 3.1 1.6.3-.1.6-.1.9-.1 1.7 0 3 1.3 3 3 0 1.5-1.1 2.8-2.5 3"/>
-</svg>`;
-
-// ── Hidden cloud icon ──
-const CLOUD_HIDDEN_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.4">
-  <path d="M11.5 12H5C3.3 12 2 10.7 2 9c0-1.5 1-2.7 2.4-3C4.7 4.4 6.2 3 8 3c1.3 0 2.4.6 3.1 1.6.3-.1.6-.1.9-.1 1.7 0 3 1.3 3 3 0 1.5-1.1 2.8-2.5 3"/>
-  <text x="8" y="10" text-anchor="middle" font-size="6" fill="currentColor" stroke="none" font-family="monospace">?</text>
-</svg>`;
 
 // ── Helpers ──
 

@@ -4,13 +4,7 @@
 // to activation state (see js/achievements/index.js).
 
 import * as storage from "../storage.js";
-
-// Matches the SVG used throughout the Cloudlog UI so the nav button,
-// toast icon, and activation pulse share a consistent visual identity.
-const CLOUD_CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M11.5 12H5C3.3 12 2 10.7 2 9c0-1.5 1-2.7 2.4-3C4.7 4.4 6.2 3 8 3c1.3 0 2.4.6 3.1 1.6.3-.1.6-.1.9-.1 1.7 0 3 1.3 3 3 0 1.5-1.1 2.8-2.5 3"/>
-  <path d="M6 10l2 2 3-3.5"/>
-</svg>`;
+import { CLOUD_CHECK_SVG } from "./icons.js";
 
 let navBtn = null;
 let badgeEl = null;
