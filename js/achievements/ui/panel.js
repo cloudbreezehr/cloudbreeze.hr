@@ -334,20 +334,14 @@ export function refreshPanel() {
   updateTabBadges();
 }
 
-// Drop the panel DOM and reset the open flag.  The facade's destroy()
-// calls this alongside each sibling module's own reset so full UI
-// teardown is a chain of module-owned cleanups.
+// Drop panel-owned state — DOM, open flag, and the global handlers
+// (escape, outside-click, focus trap) that openPanel installs.  The
+// facade's destroy() calls this alongside each sibling module's own
+// reset so full UI teardown is a chain of module-owned cleanups.
 export function destroyPanel() {
   if (panelEl && panelEl.parentNode) panelEl.remove();
   panelEl = null;
   panelOpen = false;
-}
-
-// Test hook — drop panel state between runs.  Also releases the
-// global handlers that openPanel installed so repeated test cycles
-// don't stack them on document.
-export function _resetForTests() {
-  destroyPanel();
   if (_releaseFocusTrap) {
     _releaseFocusTrap();
     _releaseFocusTrap = null;
@@ -360,4 +354,9 @@ export function _resetForTests() {
     document.removeEventListener("pointerdown", _outsideHandler);
     _outsideHandler = null;
   }
+}
+
+// Test hook — drop panel state between runs.
+export function _resetForTests() {
+  destroyPanel();
 }
