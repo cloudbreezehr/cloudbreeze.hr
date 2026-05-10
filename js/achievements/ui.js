@@ -15,12 +15,13 @@ import * as storage from "./storage.js";
 import * as activityLog from "./activity-log.js";
 import { announce } from "./announcer.js";
 import { trapFocus } from "./focus-trap.js";
-import { formatRelativeTime, formatAbsoluteTime } from "../time-ago.js";
+import { formatRelativeTime } from "../time-ago.js";
 import {
   burstFireworks,
   launchRocketFireworks,
   rocketCountForTier,
 } from "../effects/fireworks.js";
+import { formatTimestamp, toggleTimestampMode } from "./ui/timestamp.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -86,35 +87,6 @@ const CLOUD_HIDDEN_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentCo
 </svg>`;
 
 // ── Helpers ──
-
-let showAbsoluteTime = false;
-
-function formatTimestamp(ts) {
-  return showAbsoluteTime ? formatAbsoluteTime(ts) : formatRelativeTime(ts);
-}
-
-function toggleTimestampMode() {
-  showAbsoluteTime = !showAbsoluteTime;
-  if (showAbsoluteTime) {
-    window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "timestamp-toggle" },
-      }),
-    );
-  }
-  if (!panelEl) return;
-  panelEl.querySelectorAll(".achievement-card-time").forEach((el) => {
-    const ts = Number(el.dataset.ts);
-    if (!ts) return;
-    // Update only the leading text node to preserve inline progress spans
-    const firstText = el.firstChild;
-    if (firstText && firstText.nodeType === Node.TEXT_NODE) {
-      firstText.textContent = formatTimestamp(ts);
-    } else {
-      el.textContent = formatTimestamp(ts);
-    }
-  });
-}
 
 function totalPoints() {
   return sumPoints(storage.getUnlocked());
@@ -984,7 +956,7 @@ function renderSections(container) {
           timeEl.className = "achievement-card-time";
           timeEl.dataset.ts = String(ts);
           timeEl.textContent = formatTimestamp(ts);
-          timeEl.addEventListener("click", toggleTimestampMode);
+          timeEl.addEventListener("click", () => toggleTimestampMode(panelEl));
 
           // Append inline progress count after timestamp
           if (ach.progressKey) {
@@ -1120,7 +1092,7 @@ export function refreshCard(achievementId) {
       timeEl.className = "achievement-card-time";
       timeEl.dataset.ts = String(ts);
       timeEl.textContent = formatTimestamp(ts);
-      timeEl.addEventListener("click", toggleTimestampMode);
+      timeEl.addEventListener("click", () => toggleTimestampMode(panelEl));
       textEl.appendChild(timeEl);
     }
   }
