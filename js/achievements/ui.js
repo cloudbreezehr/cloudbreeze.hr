@@ -46,13 +46,7 @@ export function createNavButton(onPanelToggle) {
 
 export { updateBadge, showNavButton, hideNavButton };
 
-// ── Panel re-exports ──
-// Panel lifecycle lives in `./ui/panel.js`.
-
 export { openPanel, closePanel, isPanelOpen };
-
-// ── Toast re-exports ──
-// Toast behavior lives in `./ui/toast.js`.
 
 export {
   buildAchievementToast,
@@ -61,9 +55,6 @@ export {
   showActivationToast,
   showActivationPulse,
 };
-
-// ── Card re-exports ──
-// Card rendering lives in `./ui/cards.js`.
 
 export { refreshCard };
 
