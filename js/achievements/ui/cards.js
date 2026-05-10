@@ -185,8 +185,6 @@ export function scrollToCard(achievementId) {
     `.achievement-card[data-id="${achievementId}"]`,
   );
   if (!card) return;
-  const body = panelEl.querySelector(".achievement-body");
-  if (!body) return;
 
   card.scrollIntoView({ behavior: "smooth", block: "center" });
 
