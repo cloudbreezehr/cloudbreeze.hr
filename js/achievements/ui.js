@@ -55,7 +55,6 @@ const BADGE_PULSE_MS = 600;
 // ── State ──
 let panelEl = null;
 let panelOpen = false;
-let isDevMode = false;
 let _escHandler = null;
 let _outsideHandler = null;
 let _releaseFocusTrap = null;
@@ -613,12 +612,6 @@ export {
 // callbacks via configureCards at the top of this file.
 
 export { refreshCard };
-
-// ── Dev mode setter ──
-
-export function setDevMode(enabled) {
-  isDevMode = enabled;
-}
 
 // ── Lifecycle ──
 

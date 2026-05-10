@@ -12,7 +12,6 @@ import {
   openPanel,
   closePanel,
   isPanelOpen,
-  setDevMode,
   showActivationToast,
   showActivationPulse,
   onAchievementUnlocked,
@@ -25,11 +24,6 @@ const TRIPLE_CLICK_MAX_MS = 600;
 const TRIPLE_CLICK_COUNT = 3;
 
 export function initAchievements() {
-  const dev =
-    window.location.hash === "#dev" ||
-    window.location.href.includes("localhost");
-  setDevMode(dev);
-
   // Load persisted state
   storage.load();
   let tracker = null;
