@@ -13,6 +13,7 @@ import {
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 import * as activityLog from "./activity-log.js";
+import { announce } from "./announcer.js";
 import { formatRelativeTime, formatAbsoluteTime } from "../time-ago.js";
 import {
   burstFireworks,
@@ -1345,6 +1346,7 @@ export function showRelockToast(achievement) {
 // ── Activation Toast ──
 
 export function showActivationToast(message) {
+  announce(message);
   const toast = document.createElement("div");
   toast.className = "achievement-activation-toast";
   toast.innerHTML = `
@@ -1387,6 +1389,7 @@ export function setDevMode(enabled) {
 
 export function onAchievementUnlocked(achievement) {
   showToast(achievement);
+  announce(`Achievement unlocked: ${achievement.title}`);
   activityLog.log("achievement-unlocked", { achievementId: achievement.id });
   updateBadge();
   pulseBadge();
@@ -1395,6 +1398,7 @@ export function onAchievementUnlocked(achievement) {
 
 export function onAchievementRelocked(achievement) {
   showRelockToast(achievement);
+  announce(`Achievement re-locked: ${achievement.title}`);
   updateBadge();
   refreshPanel();
 }
