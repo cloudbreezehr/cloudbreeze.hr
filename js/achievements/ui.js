@@ -23,6 +23,15 @@ import {
 } from "../effects/fireworks.js";
 import { formatTimestamp, toggleTimestampMode } from "./ui/timestamp.js";
 import { showHintTooltip, hideHintTooltip } from "./ui/tooltip.js";
+import {
+  createNavButton as _createNavButton,
+  showNavButton,
+  hideNavButton,
+  updateBadge as _updateBadge,
+  pulseBadge,
+  getNavBtnEl,
+  setActive as setNavActive,
+} from "./ui/nav-button.js";
 
 // ── Toast Constants ──
 const TOAST_SLIDE_IN_MS = 400;
@@ -52,8 +61,6 @@ const SEEN_DWELL_MS = 1000;
 const SEEN_INTERSECTION_RATIO = 0.5;
 
 // ── State ──
-let navBtn = null;
-let badgeEl = null;
 let panelEl = null;
 let panelOpen = false;
 let toastContainer = null;
@@ -201,80 +208,28 @@ function updateMarkReadVisibility() {
 }
 
 // ── Nav Button ──
+// The button itself lives in ./ui/nav-button.js.  Thin wrappers below
+// bridge the existing external call sites (createNavButton,
+// updateBadge, showNavButton, hideNavButton) while tabs.js remains
+// in this file — once tabs.js is extracted too, callers can import
+// directly from nav-button.js.
 
 export function createNavButton(onPanelToggle) {
-  const actions = document.querySelector(".nav-actions");
-  if (!actions) return null;
-
-  navBtn = document.createElement("button");
-  navBtn.className = "achievement-btn";
-  navBtn.setAttribute("aria-label", "Achievements");
-  navBtn.setAttribute("data-tooltip", "Cloudlog");
-  navBtn.innerHTML = CLOUD_CHECK_SVG;
-
-  badgeEl = document.createElement("span");
-  badgeEl.className = "achievement-badge";
-  badgeEl.textContent = "0";
-  navBtn.appendChild(badgeEl);
-
-  // Insert before the theme toggle
-  const themeToggle = actions.querySelector(".theme-toggle");
-  if (themeToggle) {
-    actions.insertBefore(navBtn, themeToggle);
-  } else {
-    actions.insertBefore(navBtn, actions.firstChild);
-  }
-
-  navBtn.addEventListener("click", () => {
-    onPanelToggle();
-  });
-
-  updateBadge();
-  return navBtn;
-}
-
-export function showNavButton() {
-  if (navBtn) navBtn.style.display = "";
-}
-
-export function hideNavButton() {
-  if (navBtn) navBtn.style.display = "none";
+  return _createNavButton(onPanelToggle, { onBadgeChange: updateTabBadges });
 }
 
 export function updateBadge() {
-  if (badgeEl) {
-    const count = storage.getUnseenCount();
-    badgeEl.textContent = String(count);
-    if (count > 0) {
-      badgeEl.classList.add("visible");
-    } else {
-      badgeEl.classList.remove("visible");
-    }
-    if (navBtn) {
-      navBtn.setAttribute(
-        "data-tooltip",
-        count > 0 ? `Cloudlog (${count} new)` : "Cloudlog",
-      );
-    }
-  }
-  // Keep the Achievements tab badge in sync with the nav-button badge —
-  // both read the same storage.getUnseenCount().
-  updateTabBadges();
+  _updateBadge();
 }
 
-function pulseBadge() {
-  if (!badgeEl) return;
-  badgeEl.classList.remove("pulse");
-  void badgeEl.offsetHeight;
-  badgeEl.classList.add("pulse");
-}
+export { showNavButton, hideNavButton };
 
 // ── Panel ──
 
 export function openPanel(onHide) {
   if (panelOpen) return;
   panelOpen = true;
-  if (navBtn) navBtn.classList.add("active");
+  setNavActive(true);
 
   // Dispatch panel-open event for tracker
   window.dispatchEvent(
@@ -316,10 +271,11 @@ export function openPanel(onHide) {
   const OUTSIDE_CLICK_DELAY_MS = 50;
   setTimeout(() => {
     _outsideHandler = (e) => {
+      const navEl = getNavBtnEl();
       if (
         panelEl &&
         !panelEl.contains(e.target) &&
-        !(navBtn && navBtn.contains(e.target)) &&
+        !(navEl && navEl.contains(e.target)) &&
         !(toastContainer && toastContainer.contains(e.target))
       ) {
         closePanel();
@@ -332,7 +288,7 @@ export function openPanel(onHide) {
 export function closePanel() {
   if (!panelOpen || !panelEl) return;
   panelOpen = false;
-  if (navBtn) navBtn.classList.remove("active");
+  setNavActive(false);
   panelEl.classList.remove("open");
   hideHintTooltip();
   destroySeenObserver();
@@ -1350,10 +1306,10 @@ export function onAchievementRelocked(achievement) {
 export function destroy() {
   destroySeenObserver();
   hideHintTooltip();
-  if (navBtn && navBtn.parentNode) navBtn.remove();
+  const navEl = getNavBtnEl();
+  if (navEl && navEl.parentNode) navEl.remove();
   if (panelEl && panelEl.parentNode) panelEl.remove();
   if (toastContainer && toastContainer.parentNode) toastContainer.remove();
-  navBtn = null;
   panelEl = null;
   toastContainer = null;
   panelOpen = false;
