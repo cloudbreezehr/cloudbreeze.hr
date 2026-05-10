@@ -14,6 +14,7 @@ import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 import * as activityLog from "./activity-log.js";
 import { announce } from "./announcer.js";
+import { trapFocus } from "./focus-trap.js";
 import { formatRelativeTime, formatAbsoluteTime } from "../time-ago.js";
 import {
   burstFireworks,
@@ -62,6 +63,7 @@ let isDevMode = false;
 let revealHints = false;
 let _escHandler = null;
 let _outsideHandler = null;
+let _releaseFocusTrap = null;
 let tooltipEl = null;
 let _seenObserver = null;
 let _seenTimers = new Map();
@@ -366,6 +368,16 @@ export function openPanel(onHide) {
   createSeenObserver();
   observeUnseenCards();
 
+  // Focus trap — keyboard users shouldn't tab behind the panel into
+  // page content they can't see.  Starts on the next frame so the
+  // panel's slide-in animation has committed and focus styles land
+  // where the user expects.  Release happens in closePanel().
+  requestAnimationFrame(() => {
+    if (panelOpen && panelEl) {
+      _releaseFocusTrap = trapFocus(panelEl);
+    }
+  });
+
   // Close on escape
   _escHandler = (e) => {
     if (e.key === "Escape") closePanel();
@@ -397,6 +409,10 @@ export function closePanel() {
   hideHintTooltip();
   destroySeenObserver();
 
+  if (_releaseFocusTrap) {
+    _releaseFocusTrap();
+    _releaseFocusTrap = null;
+  }
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
     _escHandler = null;
