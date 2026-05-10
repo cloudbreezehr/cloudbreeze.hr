@@ -4,7 +4,6 @@
 
 import {
   ACHIEVEMENTS,
-  POINT_TIERS,
   SETS,
   getAchievement,
   isModeSet,
@@ -16,11 +15,6 @@ import * as activityLog from "./activity-log.js";
 import { announce } from "./announcer.js";
 import { trapFocus } from "./focus-trap.js";
 import { formatRelativeTime } from "../time-ago.js";
-import {
-  burstFireworks,
-  launchRocketFireworks,
-  rocketCountForTier,
-} from "../effects/fireworks.js";
 import { formatTimestamp, toggleTimestampMode } from "./ui/timestamp.js";
 import { showHintTooltip, hideHintTooltip } from "./ui/tooltip.js";
 import {
@@ -37,16 +31,17 @@ import {
   CLOUD_LOCK_SVG,
   CLOUD_HIDDEN_SVG,
 } from "./ui/icons.js";
-
-// ── Toast Constants ──
-const TOAST_SLIDE_IN_MS = 400;
-const TOAST_HOLD_MS = 4000;
-const TOAST_SLIDE_OUT_MS = 300;
-const TOAST_STAGGER_MS = 200;
-const TOAST_MAX_VISIBLE = 3;
-const TOAST_GAP_PX = 8;
-const TOAST_EASING = "cubic-bezier(0.34, 1.56, 0.64, 1)";
-const TOAST_RESUME_DELAY_MS = 800;
+import {
+  configureToasts,
+  buildAchievementToast,
+  wireToastClick,
+  showToast,
+  showRelockToast,
+  showActivationToast,
+  showActivationPulse,
+  toastContainerContains,
+  destroyToastContainer,
+} from "./ui/toast.js";
 
 // ── Panel Constants ──
 const PANEL_WIDTH_PX = 360;
@@ -54,9 +49,6 @@ const PANEL_SLIDE_MS = 300;
 
 // ── Badge animation ──
 const BADGE_PULSE_MS = 600;
-
-// ── Fireworks ──
-const FIREWORKS_DELAY_MS = TOAST_SLIDE_IN_MS;
 
 // ── Tooltip Constants ──
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
@@ -68,10 +60,6 @@ const SEEN_INTERSECTION_RATIO = 0.5;
 // ── State ──
 let panelEl = null;
 let panelOpen = false;
-let toastContainer = null;
-let toastQueue = [];
-let activeToasts = [];
-let toastsPaused = false;
 let isDevMode = false;
 let revealHints = false;
 let _escHandler = null;
@@ -79,6 +67,17 @@ let _outsideHandler = null;
 let _releaseFocusTrap = null;
 let _seenObserver = null;
 let _seenTimers = new Map();
+
+// Hand the toast module its panel-facing callbacks once at import time.
+// The referenced functions are declaration-hoisted so they're all live
+// by the time the first toast fires.
+configureToasts({
+  openPanel,
+  isPanelOpen,
+  scrollToCard,
+  setActiveTab,
+  panelSlideMs: PANEL_SLIDE_MS,
+});
 
 // ── Helpers ──
 
@@ -264,7 +263,7 @@ export function openPanel(onHide) {
         panelEl &&
         !panelEl.contains(e.target) &&
         !(navEl && navEl.contains(e.target)) &&
-        !(toastContainer && toastContainer.contains(e.target))
+        !toastContainerContains(e.target)
       ) {
         closePanel();
       }
@@ -1012,260 +1011,18 @@ export function refreshCard(achievementId) {
   refreshPanel();
 }
 
-// ── Toast Notifications ──
+// ── Toast re-exports ──
+// Toast behavior lives in `./ui/toast.js`; this file still owns the
+// panel and injects the panel-facing callbacks into the toast click
+// handler via configureToasts (see the top of this file).
 
-function ensureToastContainer() {
-  if (toastContainer) return;
-  toastContainer = document.createElement("div");
-  toastContainer.className = "achievement-toast-container";
-  document.body.appendChild(toastContainer);
-
-  toastContainer.addEventListener("mouseenter", pauseToasts);
-  toastContainer.addEventListener("mouseleave", () => {
-    resumeToasts();
-    hideHintTooltip();
-  });
-  toastContainer.addEventListener("mouseover", (e) => {
-    const toast = e.target.closest(".achievement-toast");
-    if (toast && toast.dataset.hint)
-      showHintTooltip(toast, toast.dataset.hint, true);
-  });
-}
-
-function pauseToasts() {
-  toastsPaused = true;
-  for (const ref of activeToasts) {
-    if (ref.timer) {
-      clearTimeout(ref.timer);
-      ref.timer = null;
-      ref.remaining = Math.max(0, ref.dismissAt - Date.now());
-    }
-  }
-}
-
-function resumeToasts() {
-  toastsPaused = false;
-  for (const ref of activeToasts) {
-    if (ref.remaining != null) {
-      const delay = Math.max(ref.remaining, TOAST_RESUME_DELAY_MS);
-      ref.dismissAt = Date.now() + delay;
-      ref.timer = setTimeout(() => dismissToast(ref), delay);
-      ref.remaining = null;
-    }
-  }
-}
-
-// Build the achievement-toast DOM for a given achievement.  Shared between
-// the live toast system and the activity log list so both renderings match.
-// Returns the element without attaching any click handler — callers decide
-// whether the toast is clickable and what clicking does.
-export function buildAchievementToast(achievement) {
-  const set = SETS.find((s) => s.id === achievement.set);
-  const toast = document.createElement("div");
-  toast.className = "achievement-toast";
-  if (set && set.color) {
-    toast.style.setProperty("--toast-accent", set.color);
-  }
-
-  toast.innerHTML = `
-    <div class="achievement-toast-icon">${CLOUD_CHECK_SVG}</div>
-    <div class="achievement-toast-body">
-      <div class="achievement-toast-title">${achievement.title}</div>
-      <div class="achievement-toast-desc">${achievement.description}</div>
-    </div>
-    <div class="achievement-toast-pts">${achievement.points}</div>
-  `;
-
-  if (achievement.hint) toast.dataset.hint = achievement.hint;
-  return toast;
-}
-
-// Click handler shared by live toasts and activity-log entries: pulse the
-// toast, then open the panel and scroll to the achievement's card.
-function wireToastClick(toast, achievement) {
-  toast.addEventListener("click", () => {
-    toast.classList.remove("clicked");
-    void toast.offsetHeight;
-    toast.classList.add("clicked");
-    toast.addEventListener(
-      "animationend",
-      () => toast.classList.remove("clicked"),
-      { once: true },
-    );
-
-    if (!panelOpen) {
-      openPanel();
-      setTimeout(() => {
-        setActiveTab("achievements");
-        scrollToCard(achievement.id);
-      }, PANEL_SLIDE_MS);
-    } else {
-      // Ensure the Achievements tab is active before scrolling to the card.
-      setActiveTab("achievements");
-      scrollToCard(achievement.id);
-    }
-  });
-}
-
-export function showToast(achievement) {
-  ensureToastContainer();
-
-  if (activeToasts.length >= TOAST_MAX_VISIBLE) {
-    toastQueue.push(achievement);
-    return;
-  }
-
-  const set = SETS.find((s) => s.id === achievement.set);
-  const toast = buildAchievementToast(achievement);
-  wireToastClick(toast, achievement);
-
-  toastContainer.appendChild(toast);
-
-  // Slide in
-  void toast.offsetHeight;
-  toast.classList.add("enter");
-
-  // Fireworks burst around the toast after slide-in completes.  Epic+ and
-  // legendary achievements also launch rockets from the bottom of the viewport
-  // — these rise for ~1s and detonate mid-air shortly after the toast burst.
-  const accentColor = (set && set.color) || null;
-  const rarityTier =
-    achievement.points >= POINT_TIERS.LEGENDARY
-      ? "legendary"
-      : achievement.points >= POINT_TIERS.EPIC
-        ? "epic"
-        : null;
-  setTimeout(() => {
-    if (!toast.parentNode) return;
-    const rect = toast.getBoundingClientRect();
-    burstFireworks(rect.left + rect.width / 2, rect.top + rect.height / 2, {
-      color: accentColor,
-    });
-    if (rarityTier) {
-      launchRocketFireworks({
-        count: rocketCountForTier(rarityTier),
-        color: accentColor,
-      });
-    }
-  }, FIREWORKS_DELAY_MS);
-
-  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
-  activeToasts.push(toastRef);
-
-  // Auto dismiss (skip timer if queue is paused — resumeToasts will start it)
-  if (!toastsPaused) {
-    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
-  } else {
-    toastRef.remaining = TOAST_HOLD_MS;
-  }
-}
-
-function dismissToast(toastRef) {
-  if (!toastRef.el) return;
-  toastRef.el.classList.remove("enter");
-  toastRef.el.classList.add("exit");
-
-  setTimeout(() => {
-    if (toastRef.el && toastRef.el.parentNode) {
-      toastRef.el.remove();
-    }
-    const idx = activeToasts.indexOf(toastRef);
-    if (idx !== -1) activeToasts.splice(idx, 1);
-
-    // Process queue
-    if (toastQueue.length > 0 && activeToasts.length < TOAST_MAX_VISIBLE) {
-      const next = toastQueue.shift();
-      setTimeout(() => showToast(next), TOAST_STAGGER_MS);
-    }
-  }, TOAST_SLIDE_OUT_MS);
-}
-
-// ── Re-lock Toast ──
-
-export function showRelockToast(achievement) {
-  ensureToastContainer();
-
-  const set = SETS.find((s) => s.id === achievement.set);
-  const toast = document.createElement("div");
-  toast.className = "achievement-toast achievement-toast-relock";
-  if (set && set.color) {
-    toast.style.setProperty("--toast-accent", set.color);
-  }
-
-  const total = achievement.progressKey
-    ? resolveProgressTotal(achievement.progressKey)
-    : 0;
-  const collected = achievement.progressKey
-    ? Math.min(resolveProgressCurrent(achievement.progressKey), total)
-    : 0;
-  const progressHint = total > 0 ? ` (${collected}/${total})` : "";
-
-  toast.innerHTML = `
-    <div class="achievement-toast-icon achievement-toast-relock-icon">${CLOUD_LOCK_SVG}</div>
-    <div class="achievement-toast-body">
-      <div class="achievement-toast-title">Re-locked: ${achievement.title}</div>
-      <div class="achievement-toast-desc">New content added${progressHint}</div>
-    </div>
-  `;
-
-  toast.addEventListener("click", () => {
-    if (!panelOpen) {
-      openPanel();
-      setTimeout(() => scrollToCard(achievement.id), PANEL_SLIDE_MS);
-    } else {
-      scrollToCard(achievement.id);
-    }
-  });
-
-  toastContainer.appendChild(toast);
-  void toast.offsetHeight;
-  toast.classList.add("enter");
-
-  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
-  activeToasts.push(toastRef);
-
-  if (!toastsPaused) {
-    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
-  } else {
-    toastRef.remaining = TOAST_HOLD_MS;
-  }
-}
-
-// ── Activation Toast ──
-
-export function showActivationToast(message) {
-  announce(message);
-  const toast = document.createElement("div");
-  toast.className = "achievement-activation-toast";
-  toast.innerHTML = `
-    <div class="achievement-activation-icon">${CLOUD_CHECK_SVG}</div>
-    <span>${message}</span>
-  `;
-  document.body.appendChild(toast);
-
-  void toast.offsetHeight;
-  toast.classList.add("visible");
-
-  const ACTIVATION_TOAST_MS = 3000;
-  setTimeout(() => {
-    toast.classList.remove("visible");
-    const ACTIVATION_FADE_MS = 400;
-    setTimeout(() => toast.remove(), ACTIVATION_FADE_MS);
-  }, ACTIVATION_TOAST_MS);
-}
-
-// ── Activation Pulse Ring ──
-
-export function showActivationPulse(x, y) {
-  const ring = document.createElement("div");
-  ring.className = "achievement-pulse-ring";
-  ring.style.left = `${x}px`;
-  ring.style.top = `${y}px`;
-  document.body.appendChild(ring);
-
-  const PULSE_RING_MS = 800;
-  setTimeout(() => ring.remove(), PULSE_RING_MS);
-}
+export {
+  buildAchievementToast,
+  showToast,
+  showRelockToast,
+  showActivationToast,
+  showActivationPulse,
+};
 
 // ── Dev mode setter ──
 
@@ -1297,8 +1054,7 @@ export function destroy() {
   const navEl = getNavBtnEl();
   if (navEl && navEl.parentNode) navEl.remove();
   if (panelEl && panelEl.parentNode) panelEl.remove();
-  if (toastContainer && toastContainer.parentNode) toastContainer.remove();
+  destroyToastContainer();
   panelEl = null;
-  toastContainer = null;
   panelOpen = false;
 }
