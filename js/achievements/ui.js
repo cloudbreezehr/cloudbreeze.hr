@@ -13,7 +13,7 @@ import {
   createNavButton as _createNavButton,
   showNavButton,
   hideNavButton,
-  updateBadge as _updateBadge,
+  updateBadge,
   pulseBadge,
   getNavBtnEl,
 } from "./ui/nav-button.js";
@@ -44,11 +44,7 @@ export function createNavButton(onPanelToggle) {
   return _createNavButton(onPanelToggle, { onBadgeChange: updateTabBadges });
 }
 
-export function updateBadge() {
-  _updateBadge();
-}
-
-export { showNavButton, hideNavButton };
+export { updateBadge, showNavButton, hideNavButton };
 
 // ── Panel re-exports ──
 // Panel lifecycle lives in `./ui/panel.js`.
