@@ -114,33 +114,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/main.css" />
-
-    <!--
-      Module preload hints — flatten the cold-cache waterfall for the
-      canvas critical path.  Without these, the browser discovers each
-      module only after parsing the one that imports it, serializing
-      fetches 3–4 levels deep.  With them, every file below starts
-      fetching the moment this <head> is parsed, in parallel.
-    -->
-    <link rel="modulepreload" href="./js/bootstrap.js" />
-    <link rel="modulepreload" href="./js/theme.js" />
-    <link rel="modulepreload" href="./js/canvas.js" />
-    <link rel="modulepreload" href="./js/colors.js" />
-    <link rel="modulepreload" href="./js/pointer.js" />
-    <link rel="modulepreload" href="./js/sky.js" />
-    <link rel="modulepreload" href="./js/fury.js" />
-    <link rel="modulepreload" href="./js/atmosphere.js" />
-    <link rel="modulepreload" href="./js/interactions.js" />
-    <link rel="modulepreload" href="./js/motion.js" />
-    <link rel="modulepreload" href="./js/canvas-utils.js" />
-    <link rel="modulepreload" href="./js/layers.js" />
-    <link rel="modulepreload" href="./js/dev/registry.js" />
-    <link rel="modulepreload" href="./js/modes/registry.js" />
-    <link rel="modulepreload" href="./js/particles/frozen.js" />
-    <link rel="modulepreload" href="./js/particles/deep-sea.js" />
-    <link rel="modulepreload" href="./js/particles/blocky.js" />
-    <link rel="modulepreload" href="./js/particles/rain.js" />
-    <link rel="modulepreload" href="./js/particles/paper.js" />
   </head>
   <body>
     <!--
