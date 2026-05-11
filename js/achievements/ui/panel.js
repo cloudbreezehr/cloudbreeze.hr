@@ -10,6 +10,7 @@ import { ACHIEVEMENTS, sumPoints } from "../registry.js";
 import * as storage from "../storage.js";
 import * as activityLog from "../activity-log.js";
 import { trapFocus } from "../focus-trap.js";
+import { pushOverlay } from "../../overlay-history.js";
 import { hideHintTooltip } from "./tooltip.js";
 import { getNavBtnEl, setActive as setNavActive } from "./nav-button.js";
 import { configureToasts, toastContainerContains } from "./toast.js";
@@ -44,6 +45,7 @@ let panelOpen = false;
 let _escHandler = null;
 let _outsideHandler = null;
 let _releaseFocusTrap = null;
+let _overlayHandle = null;
 
 // Wire sibling submodules to this module's live panel state.  Done once
 // at module-evaluation time; openPanel/isPanelOpen/refreshPanel are
@@ -83,6 +85,34 @@ function totalPoints() {
 // ── Panel ──
 
 export function openPanel(onHide) {
+  if (panelOpen) return;
+  // Register with the shared overlay-history stack so Back / back-gesture
+  // closes the panel before navigating away, and Forward reopens it after
+  // any close that left a forward entry.  The handle is kept in
+  // _overlayHandle across close/reopen cycles so subsequent UI-closes
+  // after a Forward-reopen still rewind the browser cursor.  pop() is
+  // idempotent on the entry's alive flag, so a second pop in an already-
+  // dead cycle is a silent no-op.  onReopen calls openPanelUI directly
+  // so the DOM setup runs without pushing another overlay entry on top.
+  //
+  // Drop any stale handle before overwriting — invariant is that
+  // _overlayHandle is always null or the currently-tracked overlay.
+  // (A handle can be non-null here if the panel was closed via Back,
+  // leaving the entry dead but still referenced.)
+  if (_overlayHandle) _overlayHandle.dispose();
+  _overlayHandle = pushOverlay(
+    () => closePanel(),
+    () => openPanelUI(onHide),
+  );
+  openPanelUI(onHide);
+}
+
+// UI-only open path.  Runs the DOM/event-handler setup without touching
+// the overlay-history stack — used both by openPanel (on first open)
+// and by the onReopen callback when the user navigates Forward back
+// into a closed overlay entry.  Guarded against double-open so that a
+// stray onReopen for an already-open panel is a no-op.
+function openPanelUI(onHide) {
   if (panelOpen) return;
   panelOpen = true;
   setNavActive(true);
@@ -147,6 +177,14 @@ export function closePanel() {
   panelEl.classList.remove("open");
   hideHintTooltip();
   destroySeenObserver();
+
+  // Pop but keep the handle — a Forward press after this close will
+  // route through onReopen and call openPanelUI again.  The handle is
+  // only released in destroyPanel (full teardown) or when a new
+  // openPanel creates a fresh entry.  pop() is idempotent against the
+  // entry's alive flag, so popstate-initiated closes (where alive was
+  // already flipped by the handler) are safe.
+  if (_overlayHandle) _overlayHandle.pop();
 
   if (_releaseFocusTrap) {
     _releaseFocusTrap();
@@ -344,6 +382,14 @@ export function destroyPanel() {
   if (panelEl && panelEl.parentNode) panelEl.remove();
   panelEl = null;
   panelOpen = false;
+  // Full teardown — dispose() unregisters the overlay entirely so a
+  // later Forward press can't resurrect a destroyed UI.  pop() first
+  // to rewind the browser if this entry is still on top.
+  if (_overlayHandle) {
+    _overlayHandle.pop();
+    _overlayHandle.dispose();
+    _overlayHandle = null;
+  }
   if (_releaseFocusTrap) {
     _releaseFocusTrap();
     _releaseFocusTrap = null;
