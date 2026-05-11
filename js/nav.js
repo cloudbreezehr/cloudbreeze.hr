@@ -75,26 +75,34 @@ export function initNav(navEl, theme) {
     li.style.setProperty("--i", i);
   });
 
+  // Mobile dropdown state — every open/close path routes through the
+  // same three helpers so the burger and nav-links classes can't drift
+  // out of sync.  isMenuOpen() reads the "open" class as the single
+  // source of truth; no parallel boolean to keep aligned.
+  function isMenuOpen() {
+    return navLinksEl.classList.contains("open");
+  }
+
+  function openMenu() {
+    if (isMenuOpen()) return;
+    burger.classList.add("active");
+    navLinksEl.classList.add("open");
+  }
+
+  function closeMenu() {
+    if (!isMenuOpen()) return;
+    burger.classList.remove("active");
+    navLinksEl.classList.remove("open");
+  }
+
   burger.addEventListener("click", () => {
-    burger.classList.toggle("active");
-    navLinksEl.classList.toggle("open");
+    if (isMenuOpen()) closeMenu();
+    else openMenu();
   });
 
   navLinksEl.querySelectorAll("a").forEach((link) => {
-    link.addEventListener("click", () => {
-      burger.classList.remove("active");
-      navLinksEl.classList.remove("open");
-    });
+    link.addEventListener("click", closeMenu);
   });
 
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (navLinksEl.classList.contains("open")) {
-        burger.classList.remove("active");
-        navLinksEl.classList.remove("open");
-      }
-    },
-    { passive: true },
-  );
+  window.addEventListener("scroll", closeMenu, { passive: true });
 }
