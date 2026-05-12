@@ -26,6 +26,13 @@ const SEEN_INTERSECTION_RATIO = 0.5;
 // ── Card animation ──
 const SHINE_DURATION_MS = 800;
 
+// ── Intro card ──
+// Shown at the top of the Achievements view while the user has only
+// unlocked a small handful of achievements, to defuse the "what is
+// this?" reaction from someone who triple-clicked early.  Auto-vanishes
+// once they've engaged enough that the panel's purpose is self-evident.
+const INTRO_CARD_THRESHOLD = 10;
+
 // ── State ──
 let revealHints = false;
 let _seenObserver = null;
@@ -197,10 +204,47 @@ export function scrollToCard(achievementId) {
   });
 }
 
+// ── Intro card ──
+// One-time onboarding card prepended to the Achievements view while the
+// user is still discovering what the Cloudlog is for.  Visual language
+// matches the rest of the panel (same card chrome, set-color accent
+// border) so it reads as part of the list, not a banner overlay.
+function buildIntroCard() {
+  const card = document.createElement("div");
+  card.className = "achievement-card achievement-intro-card";
+
+  const icon = document.createElement("div");
+  icon.className = "achievement-icon achievement-intro-icon";
+  icon.innerHTML = CLOUD_CHECK_SVG;
+
+  const text = document.createElement("div");
+  text.className = "achievement-text";
+
+  const title = document.createElement("div");
+  title.className = "achievement-card-title";
+  title.textContent = "You found the Cloudlog";
+
+  const desc = document.createElement("div");
+  desc.className = "achievement-card-desc";
+  desc.textContent = "Secrets you discover get logged here. Keep exploring.";
+
+  text.appendChild(title);
+  text.appendChild(desc);
+
+  card.appendChild(icon);
+  card.appendChild(text);
+
+  return card;
+}
+
 // ── Section renderer ──
 
 export function renderSections(container) {
   const currentMode = document.body.dataset.activeTheme || null;
+
+  if (storage.getUnlocked().length <= INTRO_CARD_THRESHOLD) {
+    container.appendChild(buildIntroCard());
+  }
 
   for (const set of SETS) {
     // Mode sets: only show if user has at least one unlocked

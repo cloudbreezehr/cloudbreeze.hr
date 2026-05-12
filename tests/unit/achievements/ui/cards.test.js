@@ -103,13 +103,27 @@ describe("achievements/ui/cards", () => {
 
     it("renders each achievement as a card inside its set", () => {
       mod.renderSections(container);
-      const cards = container.querySelectorAll(".achievement-card");
+      // The intro card shares .achievement-card chrome but isn't an
+      // achievement; scope to data-id-bearing cards.
+      const cards = container.querySelectorAll(".achievement-card[data-id]");
       expect(cards.length).toBeGreaterThan(0);
-      // Every card must have its data-id populated so refreshCard can
-      // find it later.
       for (const card of cards) {
         expect(card.dataset.id).toBeTruthy();
       }
+    });
+
+    it("renders the intro card while unlocked count is at or below the threshold", () => {
+      mod.renderSections(container);
+      expect(container.querySelector(".achievement-intro-card")).not.toBeNull();
+    });
+
+    it("hides the intro card once unlocked count exceeds the threshold", async () => {
+      // Threshold is 10; unlock 11 achievements to cross it.
+      const { ACHIEVEMENTS } =
+        await import("../../../../js/achievements/registry.js");
+      for (const ach of ACHIEVEMENTS.slice(0, 11)) storage.unlock(ach.id);
+      mod.renderSections(container);
+      expect(container.querySelector(".achievement-intro-card")).toBeNull();
     });
 
     it("locked hidden achievements show ??? title and hidden-ach class when revealHints is off", () => {

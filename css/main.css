@@ -4316,6 +4316,55 @@ nav.nav-light .achievement-btn::after {
   }
 }
 
+/* ── Intro Card ── */
+
+/* Onboarding card prepended to the Achievements view while the user is
+   still in the discovery phase.  Visually distinct from regular cards
+   (gradient tint, accent left border, soft pulse) so it reads as
+   contextual guidance rather than another locked entry. */
+.achievement-card.achievement-intro-card {
+  opacity: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(55, 138, 221, 0.12) 0%,
+    rgba(55, 138, 221, 0.04) 100%
+  );
+  border-left: 2px solid var(--achievement-default-accent);
+  padding-left: calc(0.5rem - 2px);
+  overflow: hidden;
+}
+.achievement-card.achievement-intro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 24px -8px rgba(125, 191, 232, 0.3),
+    0 0 12px -4px rgba(55, 138, 221, 0.2);
+  pointer-events: none;
+  animation: achievement-intro-pulse 4s ease-in-out infinite;
+}
+@keyframes achievement-intro-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.achievement-intro-icon {
+  color: var(--achievement-default-accent);
+  filter: drop-shadow(0 0 6px rgba(55, 138, 221, 0.6));
+}
+.achievement-card.achievement-intro-card .achievement-card-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+.achievement-card.achievement-intro-card .achievement-card-desc {
+  color: rgba(255, 255, 255, 0.7);
+}
+
 /* ── Re-lock Toast ── */
 
 .achievement-toast-relock {
