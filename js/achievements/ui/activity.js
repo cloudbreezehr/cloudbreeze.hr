@@ -23,6 +23,14 @@ export const INTRO_HINT_THRESHOLD = 10;
 
 let activitySubView = "list"; // "list" | "trash"
 
+// Panel-facing hook injected by the facade — lets scroll-to-entry find
+// the live panel element without this module importing its parent.
+let _getPanelEl = () => null;
+
+export function configureActivity({ getPanelEl } = {}) {
+  if (getPanelEl) _getPanelEl = getPanelEl;
+}
+
 export function renderActivity(container) {
   container.replaceChildren();
 
@@ -123,6 +131,7 @@ function renderActivityEntry(entry, opts = {}) {
   const isTrash = !!opts.trash;
   const row = document.createElement("div");
   row.className = "activity-row" + (isTrash ? " trashed" : "");
+  row.dataset.entryId = entry.id;
   if (!isTrash && !entry.seen) row.classList.add("unseen");
 
   let content = null;
@@ -179,8 +188,48 @@ function renderActivityEntry(entry, opts = {}) {
   return row;
 }
 
+// Find the latest active activity entry for a given achievement id and
+// type, switch the panel into the Activity tab + list sub-view, and
+// scroll the row into view with a brief highlight.  No-op if no
+// matching entry exists or the panel isn't open.
+export function scrollToLatestActivityFor(achievementId, type) {
+  if (!achievementId || !type) return;
+  const matches = activityLog
+    .getActive()
+    .filter(
+      (e) => e.type === type && e.payload?.achievementId === achievementId,
+    )
+    .sort((a, b) => b.timestamp - a.timestamp);
+  if (matches.length === 0) return;
+  const entryId = matches[0].id;
+
+  const panelEl = _getPanelEl();
+  if (!panelEl) return;
+  const view = panelEl.querySelector(".achievement-view-activity");
+  if (!view) return;
+  // If we're in the trash sub-view, swap back to the list and
+  // re-render so the target row exists.  Otherwise the panel's own
+  // onChange path has already kept the active list current.
+  if (activitySubView !== "list") {
+    activitySubView = "list";
+    renderActivity(view);
+  }
+
+  const row = view.querySelector(`.activity-row[data-entry-id="${entryId}"]`);
+  if (!row) return;
+
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  row.classList.remove("shine");
+  void row.offsetHeight;
+  row.classList.add("shine");
+  row.addEventListener("animationend", () => row.classList.remove("shine"), {
+    once: true,
+  });
+}
+
 // Test hook — return to "list" sub-view between runs so no test inherits
 // trash-mode state from a prior one.
 export function _resetForTests() {
   activitySubView = "list";
+  _getPanelEl = () => null;
 }

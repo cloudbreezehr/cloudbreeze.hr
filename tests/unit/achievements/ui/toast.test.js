@@ -166,6 +166,55 @@ describe("achievements/ui/toast", () => {
     });
   });
 
+  describe("wireRelockToastClick", () => {
+    it("opens panel, switches to Activity tab, and scrolls to the entry", () => {
+      const openPanel = vi.fn();
+      const scrollToActivityEntryFor = vi.fn();
+      const setActiveTab = vi.fn();
+      mod.configureToasts({
+        openPanel,
+        isPanelOpen: () => false,
+        scrollToActivityEntryFor,
+        setActiveTab,
+        panelSlideMs: 0,
+      });
+      const ach = makeAchievement();
+      const toast = mod.buildRelockToast(ach);
+      mod.wireRelockToastClick(toast, ach);
+      toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      vi.runAllTimers();
+      expect(openPanel).toHaveBeenCalledOnce();
+      expect(setActiveTab).toHaveBeenCalledWith("activity");
+      expect(scrollToActivityEntryFor).toHaveBeenCalledWith(
+        "sample-id",
+        "achievement-relocked",
+      );
+    });
+
+    it("skips openPanel when panel is already open", () => {
+      const openPanel = vi.fn();
+      const scrollToActivityEntryFor = vi.fn();
+      const setActiveTab = vi.fn();
+      mod.configureToasts({
+        openPanel,
+        isPanelOpen: () => true,
+        scrollToActivityEntryFor,
+        setActiveTab,
+        panelSlideMs: 0,
+      });
+      const ach = makeAchievement();
+      const toast = mod.buildRelockToast(ach);
+      mod.wireRelockToastClick(toast, ach);
+      toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(openPanel).not.toHaveBeenCalled();
+      expect(setActiveTab).toHaveBeenCalledWith("activity");
+      expect(scrollToActivityEntryFor).toHaveBeenCalledWith(
+        "sample-id",
+        "achievement-relocked",
+      );
+    });
+  });
+
   describe("showRelockToast", () => {
     it("renders a re-lock variant with locked icon and re-lock class", () => {
       mod.showRelockToast(makeAchievement({ title: "Ancient" }));

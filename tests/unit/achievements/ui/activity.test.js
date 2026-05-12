@@ -219,4 +219,98 @@ describe("achievements/ui/activity", () => {
       expect(activityLog.getTrashedCount()).toEqual(2);
     });
   });
+
+  describe("data-entry-id", () => {
+    it("stamps each rendered row with its entry id", () => {
+      activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const rows = container.querySelectorAll(".activity-row");
+      expect(rows.length).toEqual(1);
+      const expectedId = activityLog.getActive()[0].id;
+      expect(rows[0].dataset.entryId).toEqual(expectedId);
+    });
+  });
+
+  describe("scrollToLatestActivityFor", () => {
+    let panelEl;
+    let view;
+    let origScrollIntoView;
+
+    beforeEach(() => {
+      origScrollIntoView = Element.prototype.scrollIntoView;
+      Element.prototype.scrollIntoView = vi.fn();
+
+      // Stand in for the real Cloudlog panel: a wrapper containing the
+      // activity view, since scrollToLatestActivityFor queries through it.
+      panelEl = document.createElement("div");
+      panelEl.className = "achievement-panel";
+      view = document.createElement("div");
+      view.className = "achievement-view-activity";
+      panelEl.appendChild(view);
+      document.body.appendChild(panelEl);
+
+      mod.configureActivity({ getPanelEl: () => panelEl });
+    });
+
+    afterEach(() => {
+      if (origScrollIntoView === undefined) {
+        delete Element.prototype.scrollIntoView;
+      } else {
+        Element.prototype.scrollIntoView = origScrollIntoView;
+      }
+    });
+
+    it("scrolls the matching row into view and adds the shine class", () => {
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.renderActivity(view);
+      const expectedId = activityLog.getActive()[0].id;
+
+      mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+
+      const row = view.querySelector(
+        `.activity-row[data-entry-id="${expectedId}"]`,
+      );
+      expect(row).not.toBeNull();
+      expect(row.classList.contains("shine")).toBe(true);
+      expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    });
+
+    it("picks the most recent active entry when multiple match", () => {
+      // Log the older entry first, capture its id, then log the newer.
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      const olderId = activityLog.getActive()[0].id;
+      vi.setSystemTime(new Date("2026-05-12T12:00:00Z"));
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      const newerId = activityLog.getActive().find((e) => e.id !== olderId).id;
+      mod.renderActivity(view);
+
+      mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+
+      const shining = view.querySelector(".activity-row.shine");
+      expect(shining).not.toBeNull();
+      expect(shining.dataset.entryId).toEqual(newerId);
+      expect(shining.dataset.entryId).not.toEqual(olderId);
+    });
+
+    it("ignores entries with the wrong type", () => {
+      // An unlock entry exists for first-light but no relock — call
+      // should be a no-op (no shine row).
+      activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      mod.renderActivity(view);
+
+      mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+
+      expect(view.querySelector(".activity-row.shine")).toBeNull();
+    });
+
+    it("is a no-op when no panel is configured", () => {
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.configureActivity({ getPanelEl: () => null });
+
+      expect(() =>
+        mod.scrollToLatestActivityFor("first-light", "achievement-relocked"),
+      ).not.toThrow();
+      expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
+    });
+  });
 });

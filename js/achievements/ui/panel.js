@@ -26,7 +26,11 @@ import {
   markAllSeen,
   updateMarkReadVisibility,
 } from "./cards.js";
-import { renderActivity } from "./activity.js";
+import {
+  configureActivity,
+  renderActivity,
+  scrollToLatestActivityFor,
+} from "./activity.js";
 import {
   configureTabs,
   getActiveTab,
@@ -58,6 +62,7 @@ configureToasts({
   openPanel,
   isPanelOpen,
   scrollToCard,
+  scrollToActivityEntryFor: scrollToLatestActivityFor,
   setActiveTab,
   panelSlideMs: PANEL_SLIDE_MS,
 });
@@ -67,6 +72,7 @@ configureCards({
   refreshPanel,
 });
 configureTabs({ getPanelEl: () => panelEl });
+configureActivity({ getPanelEl: () => panelEl });
 
 // Keep the Activity tab + tab badges in sync with the log.  The
 // subscriber reads panelEl via the module-level let binding so it

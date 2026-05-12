@@ -47,6 +47,7 @@ let toastsPaused = false;
 let _openPanel = null;
 let _isPanelOpen = () => false;
 let _scrollToCard = null;
+let _scrollToActivityEntryFor = null;
 let _setActiveTab = null;
 let _panelSlideMs = 0;
 
@@ -54,12 +55,15 @@ export function configureToasts({
   openPanel,
   isPanelOpen,
   scrollToCard,
+  scrollToActivityEntryFor,
   setActiveTab,
   panelSlideMs,
 } = {}) {
   if (openPanel) _openPanel = openPanel;
   if (isPanelOpen) _isPanelOpen = isPanelOpen;
   if (scrollToCard) _scrollToCard = scrollToCard;
+  if (scrollToActivityEntryFor)
+    _scrollToActivityEntryFor = scrollToActivityEntryFor;
   if (setActiveTab) _setActiveTab = setActiveTab;
   if (typeof panelSlideMs === "number") _panelSlideMs = panelSlideMs;
 }
@@ -262,17 +266,21 @@ export function buildRelockToast(achievement) {
   return toast;
 }
 
-// Wires the same panel-open + scroll-to-card behavior as live unlock
-// toasts.  Shared so persisted re-lock entries get identical handling.
+// Routes click → Activity tab + scroll to the matching log entry.
+// Re-locks are notification history; the Activity tab is where their
+// context lives (timestamp, dismiss/restore actions).
 export function wireRelockToastClick(toast, achievement) {
   toast.addEventListener("click", () => {
+    function go() {
+      if (_setActiveTab) _setActiveTab("activity");
+      if (_scrollToActivityEntryFor)
+        _scrollToActivityEntryFor(achievement.id, "achievement-relocked");
+    }
     if (!_isPanelOpen()) {
       if (_openPanel) _openPanel();
-      setTimeout(() => {
-        if (_scrollToCard) _scrollToCard(achievement.id);
-      }, _panelSlideMs);
+      setTimeout(go, _panelSlideMs);
     } else {
-      if (_scrollToCard) _scrollToCard(achievement.id);
+      go();
     }
   });
 }
@@ -357,6 +365,7 @@ export function _resetForTests() {
   _openPanel = null;
   _isPanelOpen = () => false;
   _scrollToCard = null;
+  _scrollToActivityEntryFor = null;
   _setActiveTab = null;
   _panelSlideMs = 0;
 }

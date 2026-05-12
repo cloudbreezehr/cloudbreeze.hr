@@ -3817,6 +3817,17 @@ nav.nav-light .achievement-btn::after {
   outline: 1px solid rgba(125, 191, 232, 0.4);
   outline-offset: 1px;
 }
+.activity-list .activity-row.shine .achievement-toast {
+  animation: activity-row-shine 0.8s ease-out;
+}
+@keyframes activity-row-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  100% {
+    background: transparent;
+  }
+}
 .activity-meta {
   display: flex;
   align-items: center;
