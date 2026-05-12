@@ -4649,8 +4649,8 @@ body.light-mode .first-paint-mote {
 }
 
 /* ── Handle pill ── */
-/* Small floating tab at the top of the HUD column.  One of the two
-   chevrons is visible at a time (expand when tucked, tuck otherwise). */
+/* Small floating tab at the top of the HUD column.  A single chevron
+   button rotates with the HUD's tucked/expanded state. */
 .mhh-handle-slot {
   display: flex;
   align-items: center;
@@ -4670,7 +4670,7 @@ body.light-mode .first-paint-mote {
   border-color: rgba(120, 160, 220, 0.22);
 }
 .mhh-handle {
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 32px;
@@ -4690,14 +4690,12 @@ body.light-mode .first-paint-mote {
 .mhh-handle svg {
   width: 12px;
   height: 6px;
+  transition: transform 0.25s ease;
 }
-.mode-history-hud.tucked .mhh-handle-expand {
-  display: flex;
-}
-/* Up-chevron is shown whenever the HUD isn't tucked — gives the user a
-   persistent "tuck me" affordance in compact and expanded states alike. */
-.mode-history-hud:not(.tucked) .mhh-handle-tuck {
-  display: flex;
+/* Chevron points down when tucked (invitation to expand), and flips up
+   when the HUD is open (invitation to tuck). */
+.mode-history-hud:not(.tucked) .mhh-handle svg {
+  transform: rotate(180deg);
 }
 
 /* ── Track pill ── */

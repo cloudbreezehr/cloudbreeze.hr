@@ -40,6 +40,7 @@ const STORAGE_KEY = "cb_mode_history_v1";
 // Map<modeId, firstActivatedTimestampMs>.  Loaded lazily from storage.
 let discovered = loadDiscovered();
 let hudEl = null;
+let handleEl = null;
 let slotsByMode = new Map();
 let collapseTimer = 0;
 
@@ -116,29 +117,25 @@ function ensureHud() {
   hudEl.setAttribute("aria-label", "Mode history");
   hudEl.setAttribute("role", "group");
 
-  // Both chevrons live in the same top-center "handle slot" — they swap
-  // visibility based on tucked/expanded state so the affordance doesn't
-  // dance around when the HUD changes size.
+  // Single disclosure button at the top-center.  Its label and chevron
+  // rotate with state; keeping it as one element means keyboard focus
+  // survives across toggles.
   const handleSlot = document.createElement("div");
   handleSlot.className = "mhh-handle-slot";
   hudEl.appendChild(handleSlot);
 
-  const expandHandle = document.createElement("button");
-  expandHandle.type = "button";
-  expandHandle.className = "mhh-handle mhh-handle-expand";
-  expandHandle.setAttribute("aria-label", "Expand mode history");
-  expandHandle.innerHTML = chevronSvg("down");
-  handleSlot.appendChild(expandHandle);
-
-  const tuckHandle = document.createElement("button");
-  tuckHandle.type = "button";
-  tuckHandle.className = "mhh-handle mhh-handle-tuck";
-  tuckHandle.setAttribute("aria-label", "Tuck mode history");
-  tuckHandle.innerHTML = chevronSvg("up");
-  handleSlot.appendChild(tuckHandle);
+  handleEl = document.createElement("button");
+  handleEl.type = "button";
+  handleEl.className = "mhh-handle";
+  handleEl.setAttribute("aria-expanded", "false");
+  handleEl.setAttribute("aria-controls", "mhh-track");
+  handleEl.innerHTML = chevronSvg();
+  syncHandleLabel();
+  handleSlot.appendChild(handleEl);
 
   const track = document.createElement("div");
   track.className = "mhh-track";
+  track.id = "mhh-track";
   hudEl.appendChild(track);
 
   // Parent to the nav so the HUD sticks to its bottom edge — when the nav
@@ -154,8 +151,10 @@ function ensureHud() {
   hudEl.addEventListener("pointerleave", scheduleTuck);
   hudEl.addEventListener("focusin", onHoverEnter);
   hudEl.addEventListener("focusout", scheduleTuck);
-  expandHandle.addEventListener("click", expandClick);
-  tuckHandle.addEventListener("click", manualTuck);
+  handleEl.addEventListener("click", () => {
+    if (hudEl.classList.contains("tucked")) expandClick();
+    else manualTuck();
+  });
 
   rebuildSlots();
   syncActiveFromBody();
@@ -250,8 +249,8 @@ function pulse(modeId, firstDiscovery) {
 
 // Three user intents, tracked as explicit state (clearer than a pile of
 // booleans).  "auto" means the HUD reacts to hover/mode-changes; "pinned"
-// means the user clicked the down-chevron and wants it open; "tucked" means
-// the user clicked the up-chevron and wants it away.  Reloads reset to auto.
+// means the user explicitly chose to keep the HUD open; "tucked" means
+// the user explicitly chose to hide it.  Reloads reset to auto.
 let userIntent = "auto";
 
 function expandClick() {
@@ -260,6 +259,7 @@ function expandClick() {
   clearTimeout(collapseTimer);
   hudEl.classList.remove("tucked");
   hudEl.classList.add("expanded");
+  syncHandleLabel();
 }
 
 function manualTuck() {
@@ -268,6 +268,7 @@ function manualTuck() {
   clearTimeout(collapseTimer);
   hudEl.classList.remove("expanded");
   hudEl.classList.add("tucked");
+  syncHandleLabel();
 }
 
 // Hover: only reveal labels if the HUD isn't pinned-open and isn't tucked.
@@ -300,12 +301,14 @@ function updateTucked() {
   if (hudEl.classList.contains("expanded")) return;
   if (userIntent === "tucked") {
     hudEl.classList.add("tucked");
+    syncHandleLabel();
     return;
   }
   const anyActive = getModes().some((m) =>
     document.body.classList.contains(m.id),
   );
   hudEl.classList.toggle("tucked", !anyActive);
+  syncHandleLabel();
 }
 
 // ── Persistence ──
@@ -332,11 +335,23 @@ function saveDiscovered() {
 
 // ── Helpers ──
 
-function chevronSvg(direction) {
-  const path = direction === "up" ? "M1 5l5-4 5 4" : "M1 1l5 4 5-4";
+// Single chevron; CSS flips its orientation based on the HUD's tucked state.
+function chevronSvg() {
   return (
     '<svg viewBox="0 0 12 6" aria-hidden="true">' +
-    `<path d="${path}" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>` +
+    '<path d="M1 1l5 4 5-4" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>' +
     "</svg>"
   );
+}
+
+// Reflect the HUD's tucked state onto the disclosure button — aria-label
+// and aria-expanded both stay in sync with whatever the visual state is.
+function syncHandleLabel() {
+  if (!handleEl || !hudEl) return;
+  const tucked = hudEl.classList.contains("tucked");
+  handleEl.setAttribute(
+    "aria-label",
+    tucked ? "Expand mode history" : "Tuck mode history",
+  );
+  handleEl.setAttribute("aria-expanded", tucked ? "false" : "true");
 }
