@@ -108,16 +108,20 @@ describe("analytics/bridges/cta", () => {
     }
 
     it("records scroll depth, session elapsed, and prior-click count", () => {
+      const FIRST_CLICK_DELAY_MS = 3_500;
+      const INTER_CLICK_DELAY_MS = 1_000;
       session.sessionCounters.scrollMaxDepth = 55;
-      vi.advanceTimersByTime(3_500);
+      vi.advanceTimersByTime(FIRST_CLICK_DELAY_MS);
       clickSelector(".hero .btn-primary");
-      vi.advanceTimersByTime(1_000);
+      vi.advanceTimersByTime(INTER_CLICK_DELAY_MS);
       clickSelector("nav .nav-cta");
       core.flush();
 
       const [first, second] = eventsNamed("cta_click");
       expect(first.props.scroll_depth_at_click).toEqual(55);
-      expect(first.props.session_elapsed_ms).toBeGreaterThanOrEqual(3_500);
+      expect(first.props.session_elapsed_ms).toBeGreaterThanOrEqual(
+        FIRST_CLICK_DELAY_MS,
+      );
       expect(first.props.clicks_before_this).toEqual(0);
       expect(second.props.clicks_before_this).toEqual(1);
     });

@@ -46,49 +46,55 @@ describe("createHoldTrigger", () => {
   });
 
   it("ignores pointerdown when shouldAccept returns false", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const HOLD_DEACTIVATE_MS = 500;
     const shouldAccept = vi.fn(() => false);
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_DEACTIVATE_MS,
       shouldAccept,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown", { x: 5, y: 7 }));
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(HOLD_ACTIVATE_MS / 2);
 
     expect(shouldAccept).toHaveBeenCalledWith(5, 7, expect.any(Event));
     expect(ctx.setForce).not.toHaveBeenCalled();
   });
 
   it("ignores pointerdown while isTransitioning is true", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const HOLD_DEACTIVATE_MS = 500;
     const ctx = makeStubCtx({ transitioning: true });
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_DEACTIVATE_MS,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(HOLD_ACTIVATE_MS / 2);
 
     expect(ctx.setForce).not.toHaveBeenCalled();
   });
 
   it("grows force linearly toward 1 over holdActivateMs", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const HOLD_DEACTIVATE_MS = 500;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_DEACTIVATE_MS,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(HOLD_ACTIVATE_MS / 2);
 
     // At half the activate duration, force should be ~0.5.
     expect(ctx.state.force).toBeGreaterThan(0.4);
@@ -96,16 +102,18 @@ describe("createHoldTrigger", () => {
   });
 
   it("uses holdDeactivateMs as the target when ctx.isActive() is true", () => {
+    const HOLD_ACTIVATE_MS = 5000;
+    const HOLD_DEACTIVATE_MS = 500;
     const ctx = makeStubCtx({ active: true });
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 5000,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_DEACTIVATE_MS,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(250);
+    vi.advanceTimersByTime(HOLD_DEACTIVATE_MS / 2);
 
     // At half the deactivate duration, force should be ~0.5.
     expect(ctx.state.force).toBeGreaterThan(0.4);
@@ -113,16 +121,18 @@ describe("createHoldTrigger", () => {
   });
 
   it("calls complete() exactly once when the hold reaches 1", () => {
+    const HOLD_ACTIVATE_MS = 500;
+    const SLACK_MS = 100;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 500,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(600);
+    vi.advanceTimersByTime(HOLD_ACTIVATE_MS + SLACK_MS);
 
     expect(ctx.complete).toHaveBeenCalledOnce();
   });
@@ -161,36 +171,41 @@ describe("createHoldTrigger", () => {
   });
 
   it("fires onUp exactly once per hold (completion + pointerup do not double-fire)", () => {
+    const HOLD_ACTIVATE_MS = 500;
+    const SLACK_MS = 100;
     const onUp = vi.fn();
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 500,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       onUp,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(600); // completion path fires onUp once
+    // Past the activate duration — completion path fires onUp once.
+    vi.advanceTimersByTime(HOLD_ACTIVATE_MS + SLACK_MS);
     target.dispatchEvent(pointerEvent("pointerup")); // physical release
 
     expect(onUp).toHaveBeenCalledOnce();
   });
 
   it("fires onUp on a plain release (no completion)", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const SHORT_HOLD_MS = HOLD_ACTIVATE_MS / 5;
     const onUp = vi.fn();
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 1000,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       onUp,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(200);
+    vi.advanceTimersByTime(SHORT_HOLD_MS);
     target.dispatchEvent(pointerEvent("pointerup"));
 
     expect(onUp).toHaveBeenCalledOnce();
@@ -216,41 +231,49 @@ describe("createHoldTrigger", () => {
   });
 
   it("decays force at decayRate per second once the pointer is released", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const BUILD_DURATION_MS = HOLD_ACTIVATE_MS * 0.6;
+    const DECAY_DURATION_MS = 400;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 1000,
-      decayRate: 0.5, // 0.5 force/sec
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
+      decayRate: 0.5,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(600); // build force to ~0.6
+    vi.advanceTimersByTime(BUILD_DURATION_MS);
     const forceAtRelease = ctx.state.force;
     target.dispatchEvent(pointerEvent("pointerup"));
 
-    vi.advanceTimersByTime(400); // 0.2 force drained at 0.5/sec
+    vi.advanceTimersByTime(DECAY_DURATION_MS);
 
     expect(ctx.state.force).toBeLessThan(forceAtRelease);
     expect(ctx.state.force).toBeGreaterThan(0);
   });
 
   it("stops decaying and drains to 0 eventually", () => {
+    const HOLD_ACTIVATE_MS = 1000;
+    const HALF_HOLD_MS = HOLD_ACTIVATE_MS / 2;
+    // 2 force/sec decay; choose a wait that's an order of magnitude
+    // longer than the hold so the drain to zero is unambiguous.
+    const FULL_DRAIN_MS = HOLD_ACTIVATE_MS * 2;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 1000,
-      holdDeactivateMs: 1000,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       decayRate: 2,
     });
     trigger.start(ctx);
 
     target.dispatchEvent(pointerEvent("pointerdown"));
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(HALF_HOLD_MS);
     target.dispatchEvent(pointerEvent("pointerup"));
 
-    vi.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(FULL_DRAIN_MS);
 
     expect(ctx.state.force).toBe(0);
   });

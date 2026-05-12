@@ -11,8 +11,13 @@
 import { track } from "../core.js";
 import { sessionCounters } from "./session.js";
 
-const SUMMARY_INTERVAL_MS = 60000;
+export const SUMMARY_INTERVAL_MS = 60000;
 const SCROLL_SURGE_VEL = 50;
+
+// Pointerup-completion thresholds.  Filters out incidental taps and
+// micro-drags that aren't intentional gestures.
+export const DRAG_MIN_PX = 20;
+export const HOLD_MIN_MS = 200;
 
 export function initCanvasBridge() {
   let sinceLastSummary = {
@@ -176,11 +181,6 @@ export function initCanvasBridge() {
         break;
     }
   });
-
-  // pointerup completes drag / hold reporting.  Thresholds filter out
-  // incidental taps.
-  const DRAG_MIN_PX = 20;
-  const HOLD_MIN_MS = 200;
 
   window.addEventListener(
     "pointerup",

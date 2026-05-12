@@ -82,13 +82,16 @@ describe("analytics/bridges/modes", () => {
     });
 
     it("emits mode_deactivated with organic method when silent is falsy", () => {
+      const ACTIVE_DURATION_MS = 5000;
       dispatch({ type: "mode-activate", mode: "frozen" });
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(ACTIVE_DURATION_MS);
       dispatch({ type: "mode-deactivate", mode: "frozen" });
       core.flush();
       const d = eventsNamed("mode_deactivated")[0];
       expect(d.props.method).toEqual("organic");
-      expect(d.props.active_duration_ms).toBeGreaterThanOrEqual(5000);
+      expect(d.props.active_duration_ms).toBeGreaterThanOrEqual(
+        ACTIVE_DURATION_MS,
+      );
     });
 
     it("labels method as 'hud' when silent is true", () => {
@@ -110,8 +113,9 @@ describe("analytics/bridges/modes", () => {
 
   describe("mode_switched", () => {
     it("fires when a new mode activates without deactivating the first", () => {
+      const TIME_BEFORE_SWITCH_MS = 3000;
       dispatch({ type: "mode-activate", mode: "frozen" });
-      vi.advanceTimersByTime(3000);
+      vi.advanceTimersByTime(TIME_BEFORE_SWITCH_MS);
       dispatch({ type: "mode-activate", mode: "deep-sea" });
       core.flush();
 
@@ -120,7 +124,7 @@ describe("analytics/bridges/modes", () => {
       expect(switches[0].props.from_mode).toEqual("frozen");
       expect(switches[0].props.to_mode).toEqual("deep-sea");
       expect(switches[0].props.active_ms_before_switch).toBeGreaterThanOrEqual(
-        3000,
+        TIME_BEFORE_SWITCH_MS,
       );
 
       const activates = eventsNamed("mode_activated");
@@ -199,7 +203,8 @@ describe("analytics/bridges/modes", () => {
         phase: "activate",
         peakForce: 0.4,
       });
-      vi.advanceTimersByTime(1500);
+      const BUILDUP_DURATION_MS = 1500;
+      vi.advanceTimersByTime(BUILDUP_DURATION_MS);
       dispatch({ type: "mode-abandoned", mode: "frozen" });
       core.flush();
 
@@ -207,7 +212,9 @@ describe("analytics/bridges/modes", () => {
       expect(ab.props.mode_id).toEqual("frozen");
       expect(ab.props.peak_force).toEqual(0.4);
       expect(ab.props.phase).toEqual("activate");
-      expect(ab.props.buildup_duration_ms).toBeGreaterThanOrEqual(1500);
+      expect(ab.props.buildup_duration_ms).toBeGreaterThanOrEqual(
+        BUILDUP_DURATION_MS,
+      );
     });
 
     it("does not emit when no buildup was tracked (guard preserved)", () => {

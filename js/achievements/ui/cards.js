@@ -20,18 +20,19 @@ import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
 
 // ── Unseen Observer Constants ──
-const SEEN_DWELL_MS = 1000;
+// Dwell threshold so a card briefly scrolling past doesn't count as
+// "seen".
+export const SEEN_DWELL_MS = 1000;
 const SEEN_INTERSECTION_RATIO = 0.5;
 
 // ── Card animation ──
 const SHINE_DURATION_MS = 800;
 
 // ── Intro card ──
-// Shown at the top of the Achievements view while the user has only
-// unlocked a small handful of achievements, to defuse the "what is
-// this?" reaction from someone who triple-clicked early.  Auto-vanishes
-// once they've engaged enough that the panel's purpose is self-evident.
-const INTRO_CARD_THRESHOLD = 10;
+// Onboarding card shown at the top of the Achievements view while the
+// user is still discovering the panel's purpose.  Auto-vanishes once
+// they've engaged enough that the message is no longer needed.
+export const INTRO_CARD_THRESHOLD = 10;
 
 // ── State ──
 let revealHints = false;

@@ -19,8 +19,8 @@ import { consoleAdapter } from "./adapters/console.js";
 import { noopAdapter } from "./adapters/noop.js";
 
 // ── Tunables ──
-const FLUSH_INTERVAL_MS = 10000;
-const MAX_BATCH_SIZE = 20;
+export const FLUSH_INTERVAL_MS = 10000;
+export const MAX_BATCH_SIZE = 20;
 const MAX_QUEUE = 200;
 
 let _adapter = noopAdapter;

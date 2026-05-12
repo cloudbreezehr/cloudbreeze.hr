@@ -1,10 +1,28 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  RAPID_FIRE_WINDOW_MS,
+  RAPID_FIRE_CLICKS,
+  NIGHT_OWL_MS,
+  NIGHT_OWL_CHECK_INTERVAL,
+  AFTERSHOCK_WINDOW_MS,
+} from "../../../js/achievements/tracker.js";
 
 // tracker.js collaborates with storage.js (module-level state) and reads
 // registry/progress at runtime. Each test resets modules + localStorage so
 // counters, unlocks, and progress items start fresh. Registry and progress
 // are left real — they're data, not behavior, and mocking them would couple
 // tests to an implementation seam that doesn't exist.
+
+const SLACK_MS = 1000;
+const PAST_RAPID_FIRE_WINDOW_MS = RAPID_FIRE_WINDOW_MS + SLACK_MS;
+const WITHIN_AFTERSHOCK_MS = Math.floor(AFTERSHOCK_WINDOW_MS / 4);
+const PAST_AFTERSHOCK_WINDOW_MS = AFTERSHOCK_WINDOW_MS + SLACK_MS;
+// Push past NIGHT_OWL_MS by a full check-interval plus slack so the
+// next interval tick is guaranteed to land after the threshold.
+const PAST_NIGHT_OWL_MS = NIGHT_OWL_MS + NIGHT_OWL_CHECK_INTERVAL + SLACK_MS;
+// Comfortably below NIGHT_OWL_MS for the "still hidden" branch.
+const SHORT_VISIBLE_MS = Math.floor(NIGHT_OWL_MS / 5);
+const LONG_HIDDEN_MS = 2 * NIGHT_OWL_MS;
 
 const _activeTrackers = [];
 
@@ -126,24 +144,25 @@ describe("tracker — click handler", () => {
     expect(storage.isUnlocked("first-light")).toBe(true);
   });
 
-  it("unlocks rapid-fire once 10 clicks land inside a 3-second window", async () => {
+  it("unlocks rapid-fire once the click target lands inside the window", async () => {
     const { storage } = await startTracker();
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < RAPID_FIRE_CLICKS; i++) {
       dispatchAchievement("click");
     }
 
     expect(storage.isUnlocked("rapid-fire")).toBe(true);
   });
 
-  it("does not unlock rapid-fire when clicks span more than 3 seconds", async () => {
+  it("does not unlock rapid-fire when clicks span past the window", async () => {
     const { storage } = await startTracker();
 
-    for (let i = 0; i < 5; i++) {
+    const half = Math.ceil(RAPID_FIRE_CLICKS / 2);
+    for (let i = 0; i < half; i++) {
       dispatchAchievement("click");
     }
-    vi.advanceTimersByTime(4000);
-    for (let i = 0; i < 5; i++) {
+    vi.advanceTimersByTime(PAST_RAPID_FIRE_WINDOW_MS);
+    for (let i = 0; i < RAPID_FIRE_CLICKS - half; i++) {
       dispatchAchievement("click");
     }
 
@@ -154,7 +173,7 @@ describe("tracker — click handler", () => {
     const { storage } = await startTracker();
     setMode("upside-down");
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < RAPID_FIRE_CLICKS; i++) {
       dispatchAchievement("click");
     }
 
@@ -164,7 +183,7 @@ describe("tracker — click handler", () => {
   it("does not unlock vertigo outside upside-down mode", async () => {
     const { storage } = await startTracker();
 
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < RAPID_FIRE_CLICKS; i++) {
       dispatchAchievement("click");
     }
 
@@ -208,17 +227,17 @@ describe("tracker — click handler", () => {
     const { storage } = await startTracker();
 
     dispatchAchievement("fury-lightning");
-    vi.advanceTimersByTime(500);
+    vi.advanceTimersByTime(WITHIN_AFTERSHOCK_MS);
     dispatchAchievement("click");
 
     expect(storage.isUnlocked("aftershock")).toBe(true);
   });
 
-  it("does not unlock aftershock when the click lands outside the 2s window", async () => {
+  it("does not unlock aftershock when the click lands outside the window", async () => {
     const { storage } = await startTracker();
 
     dispatchAchievement("fury-lightning");
-    vi.advanceTimersByTime(3000);
+    vi.advanceTimersByTime(PAST_AFTERSHOCK_WINDOW_MS);
     dispatchAchievement("click");
 
     expect(storage.isUnlocked("aftershock")).toBe(false);
@@ -1014,12 +1033,10 @@ describe("tracker — night-owl", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks night-owl after 10 cumulative minutes visible", async () => {
+  it("unlocks night-owl after the cumulative-visible threshold", async () => {
     const { storage } = await startTracker();
 
-    // The night-owl check runs on a 30s setInterval. Advance past 10 min
-    // so the accumulator crosses threshold and the next interval fires.
-    vi.advanceTimersByTime(11 * 60 * 1000);
+    vi.advanceTimersByTime(PAST_NIGHT_OWL_MS);
 
     expect(storage.isUnlocked("night-owl")).toBe(true);
   });
@@ -1027,15 +1044,15 @@ describe("tracker — night-owl", () => {
   it("does not count time while the page is hidden", async () => {
     const { storage } = await startTracker();
 
-    vi.advanceTimersByTime(2 * 60 * 1000);
+    vi.advanceTimersByTime(SHORT_VISIBLE_MS);
     Object.defineProperty(document, "hidden", {
       configurable: true,
       value: true,
     });
     document.dispatchEvent(new Event("visibilitychange"));
-    vi.advanceTimersByTime(20 * 60 * 1000);
+    vi.advanceTimersByTime(LONG_HIDDEN_MS);
 
-    // Only the 2 visible minutes count — night-owl should not unlock.
+    // Only the visible portion accumulated — well below the threshold.
     expect(storage.isUnlocked("night-owl")).toBe(false);
   });
 });

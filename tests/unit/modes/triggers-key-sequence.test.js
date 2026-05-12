@@ -164,12 +164,14 @@ describe("createKeySequenceTrigger", () => {
     });
     trigger.start(ctx);
 
+    // Long enough that decayRate=10 against a 4-letter target fully
+    // drains the force and the accumulator resets.
+    const FULL_DRAIN_MS = 5000;
     typeKey("D");
     typeKey("R");
     typeKey("A");
-    // Let the decay loop run until force hits 0 and the accumulator resets.
-    vi.setSystemTime(new Date(5000));
-    vi.advanceTimersByTime(5000);
+    vi.setSystemTime(new Date(FULL_DRAIN_MS));
+    vi.advanceTimersByTime(FULL_DRAIN_MS);
     expect(ctx.state.force).toBe(0);
 
     // A lone "W" should not complete — the prefix was reset to 0 on drain,

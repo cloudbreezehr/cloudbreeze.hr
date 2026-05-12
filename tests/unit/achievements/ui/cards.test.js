@@ -1,10 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  SEEN_DWELL_MS,
+  INTRO_CARD_THRESHOLD,
+} from "../../../../js/achievements/ui/cards.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected
 // callbacks so tests stub those cheaply rather than booting the full
 // panel.  IntersectionObserver is missing from happy-dom, so we stub
 // the constructor to capture the callback for direct invocation.
+
+const SLACK_MS = 100;
+const PAST_DWELL_MS = SEEN_DWELL_MS + SLACK_MS;
+const HALF_DWELL_MS = Math.floor(SEEN_DWELL_MS / 2);
+const PAST_INTRO_THRESHOLD_COUNT = INTRO_CARD_THRESHOLD + 1;
 
 describe("achievements/ui/cards", () => {
   let mod;
@@ -118,10 +127,10 @@ describe("achievements/ui/cards", () => {
     });
 
     it("hides the intro card once unlocked count exceeds the threshold", async () => {
-      // Threshold is 10; unlock 11 achievements to cross it.
       const { ACHIEVEMENTS } =
         await import("../../../../js/achievements/registry.js");
-      for (const ach of ACHIEVEMENTS.slice(0, 11)) storage.unlock(ach.id);
+      for (const ach of ACHIEVEMENTS.slice(0, PAST_INTRO_THRESHOLD_COUNT))
+        storage.unlock(ach.id);
       mod.renderSections(container);
       expect(container.querySelector(".achievement-intro-card")).toBeNull();
     });
@@ -236,7 +245,7 @@ describe("achievements/ui/cards", () => {
       expect(observerInstances).toHaveLength(1);
     });
 
-    it("marks a card seen after SEEN_DWELL_MS of continuous intersection", () => {
+    it("marks a card seen after the dwell threshold of continuous intersection", () => {
       storage.unlock("first-light");
       mod.createSeenObserver();
       mod.renderSections(container);
@@ -248,7 +257,7 @@ describe("achievements/ui/cards", () => {
       expect(observer.observed.has(card)).toBe(true);
 
       observer.cb([{ target: card, intersectionRatio: 1 }]);
-      vi.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(PAST_DWELL_MS);
 
       expect(card.classList.contains("unseen")).toBe(false);
       expect(card.classList.contains("seen-fade")).toBe(true);
@@ -266,9 +275,9 @@ describe("achievements/ui/cards", () => {
       );
 
       observer.cb([{ target: card, intersectionRatio: 1 }]);
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(HALF_DWELL_MS);
       observer.cb([{ target: card, intersectionRatio: 0 }]);
-      vi.advanceTimersByTime(1000);
+      vi.advanceTimersByTime(PAST_DWELL_MS);
 
       expect(card.classList.contains("unseen")).toBe(true);
       expect(storage.isSeen("first-light")).toBe(false);
@@ -286,7 +295,7 @@ describe("achievements/ui/cards", () => {
       observer.cb([{ target: card, intersectionRatio: 1 }]);
 
       mod.destroySeenObserver();
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(PAST_DWELL_MS);
       // The dwell timer was cancelled, so the card is still unseen.
       expect(storage.isSeen("first-light")).toBe(false);
     });

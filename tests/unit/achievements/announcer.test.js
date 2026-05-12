@@ -1,7 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { ANNOUNCE_CLEAR_DELAY_MS } from "../../../js/achievements/announcer.js";
 
 // announcer.js owns a module-level live region element and a clear
 // timer.  Reset modules per test so the element and timer start fresh.
+
+const SLACK_MS = 40;
+const PAST_CLEAR_DELAY_MS = ANNOUNCE_CLEAR_DELAY_MS + SLACK_MS;
 
 describe("achievements/announcer", () => {
   let announcer;
@@ -31,7 +35,7 @@ describe("achievements/announcer", () => {
   it("reuses the same live region across announces", () => {
     announcer.announce("one");
     const first = getLiveEl();
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
     announcer.announce("two");
     expect(getLiveEl()).toBe(first);
   });
@@ -40,19 +44,19 @@ describe("achievements/announcer", () => {
     announcer.announce("achievement unlocked");
     // Before the clear delay elapses, the region is empty.
     expect(getLiveEl().textContent).toEqual("");
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
     expect(getLiveEl().textContent).toEqual("achievement unlocked");
   });
 
   it("clears between messages so repeated identical text still triggers a read", () => {
     announcer.announce("same");
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
     expect(getLiveEl().textContent).toEqual("same");
 
     announcer.announce("same");
     // A fresh announce must clear first, so mid-flight the text is empty.
     expect(getLiveEl().textContent).toEqual("");
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
     expect(getLiveEl().textContent).toEqual("same");
   });
 
@@ -65,7 +69,7 @@ describe("achievements/announcer", () => {
 
   it("coerces non-string values to strings", () => {
     announcer.announce(42);
-    vi.advanceTimersByTime(100);
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
     expect(getLiveEl().textContent).toEqual("42");
   });
 

@@ -18,9 +18,9 @@ import * as storage from "./storage.js";
 const SESSION_FLAG_KEY = "cloudlog-welcome-back-shown";
 const LAST_GREETED_KEY = "cloudlog-last-greeted";
 
-// Minimum gap between greetings on the same device.  Exported so tests
-// derive their timings from the source of truth instead of restating
-// the value.
+// Minimum gap between greetings on the same device.  Tuned short
+// because the toast is small and fleeting — multi-tab churn is rare,
+// so erring toward "show it" beats erring toward "hide it".
 export const THROTTLE_MS = 30 * 60 * 1000;
 
 // Brief settle delay so the toast slides in after the page's initial

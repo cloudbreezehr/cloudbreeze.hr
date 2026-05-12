@@ -17,11 +17,11 @@ import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG } from "./icons.js";
 
 // ── Toast Constants ──
-const TOAST_SLIDE_IN_MS = 400;
-const TOAST_HOLD_MS = 4000;
-const TOAST_SLIDE_OUT_MS = 300;
-const TOAST_STAGGER_MS = 200;
-const TOAST_MAX_VISIBLE = 3;
+export const TOAST_SLIDE_IN_MS = 400;
+export const TOAST_HOLD_MS = 4000;
+export const TOAST_SLIDE_OUT_MS = 300;
+export const TOAST_STAGGER_MS = 200;
+export const TOAST_MAX_VISIBLE = 3;
 const TOAST_RESUME_DELAY_MS = 800;
 
 // ── Fireworks ──

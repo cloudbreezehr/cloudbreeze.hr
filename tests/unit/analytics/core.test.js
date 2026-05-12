@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  FLUSH_INTERVAL_MS,
+  MAX_BATCH_SIZE,
+} from "../../../js/analytics/core.js";
 
 // core.js holds module-level queue + adapter + flush timer state.
 // Each test resets modules so state doesn't leak between cases.
+
+const SLACK_MS = 100;
+const PAST_FLUSH_INTERVAL_MS = FLUSH_INTERVAL_MS + SLACK_MS;
 
 describe("analytics/core", () => {
   let core;
@@ -56,16 +63,15 @@ describe("analytics/core", () => {
 
   it("flushes automatically when batch size is reached", () => {
     core.start({ adapter });
-    for (let i = 0; i < 20; i++) core.track(`e${i}`, {});
-    // Batch of 20 triggers immediate flush.
-    expect(sent.length).toEqual(20);
+    for (let i = 0; i < MAX_BATCH_SIZE; i++) core.track(`e${i}`, {});
+    expect(sent.length).toEqual(MAX_BATCH_SIZE);
   });
 
   it("flushes on scheduled interval", () => {
     core.start({ adapter });
     core.track("scheduled", {});
     expect(sent.length).toEqual(0);
-    vi.advanceTimersByTime(10000);
+    vi.advanceTimersByTime(PAST_FLUSH_INTERVAL_MS);
     expect(sent.length).toEqual(1);
   });
 

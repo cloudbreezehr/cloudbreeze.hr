@@ -37,7 +37,10 @@ import {
 
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
-const OUTSIDE_CLICK_DELAY_MS = 50;
+// Delay before the outside-click handler arms after openPanel — long
+// enough that the click that triggered the open doesn't immediately
+// close it.
+export const OUTSIDE_CLICK_DELAY_MS = 50;
 
 // ── State ──
 let panelEl = null;

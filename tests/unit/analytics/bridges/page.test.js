@@ -145,17 +145,18 @@ describe("analytics/bridges/page", () => {
     });
 
     it("fires section_dwell on exit with accumulated ms", () => {
+      const DWELL_MS = 4_000;
       const obs = observerInstances[0];
       const el = document.getElementById("services");
       obs.fireIntersecting(el);
-      vi.advanceTimersByTime(4_000);
+      vi.advanceTimersByTime(DWELL_MS);
       obs.fireNotIntersecting(el);
       core.flush();
 
       const dwells = eventsNamed("section_dwell");
       expect(dwells.length).toEqual(1);
       expect(dwells[0].props.section_id).toEqual("services");
-      expect(dwells[0].props.dwell_ms).toBeGreaterThanOrEqual(4_000);
+      expect(dwells[0].props.dwell_ms).toBeGreaterThanOrEqual(DWELL_MS);
     });
   });
 

@@ -142,11 +142,12 @@ describe("createClickCountTrigger", () => {
 
   it("does not decay before timeoutMs has elapsed", () => {
     const ctx = makeStubCtx();
+    const TIMEOUT_MS = 1000;
     const trigger = createClickCountTrigger({
       element,
       activateCount: 4,
       deactivateCount: 2,
-      timeoutMs: 1000,
+      timeoutMs: TIMEOUT_MS,
       decayRate: 4,
     });
     trigger.start(ctx);
@@ -154,49 +155,60 @@ describe("createClickCountTrigger", () => {
     const forceAfterClick = ctx.state.force;
     ctx.setForce.mockClear();
 
-    vi.advanceTimersByTime(500);
+    // Wait below timeoutMs — force must not have been updated.
+    vi.advanceTimersByTime(TIMEOUT_MS / 2);
 
-    // 500ms is below timeoutMs; force must not have been updated
     expect(ctx.state.force).toBe(forceAfterClick);
   });
 
   it("drains force after timeoutMs of idle", () => {
+    const TIMEOUT_MS = 500;
+    const FULL_DRAIN_MS = TIMEOUT_MS * 4;
     const ctx = makeStubCtx();
     const trigger = createClickCountTrigger({
       element,
       activateCount: 4,
       deactivateCount: 2,
-      timeoutMs: 500,
+      timeoutMs: TIMEOUT_MS,
       decayRate: 4, // 4 clicks/sec → 1.0 force/sec against a 4-click target
     });
     trigger.start(ctx);
     element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
     const forceAfterClick = ctx.state.force;
 
-    // Advance past timeoutMs plus a full decay span
-    vi.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(FULL_DRAIN_MS);
 
     expect(ctx.state.force).toBeLessThan(forceAfterClick);
     expect(ctx.state.force).toBe(0);
   });
 
   it("uses a target-relative decay rate so deactivate and activate drain proportionally", () => {
+    const TIMEOUT_MS = 100;
+    const DECAY_RATE = 2;
+    const DEACTIVATE_COUNT = 4;
+    // decayRate is clicks/sec; against the 4-click deactivate target this
+    // is 0.5 force/sec.
+    const FORCE_PER_SEC = DECAY_RATE / DEACTIVATE_COUNT;
+    const DECAY_DURATION_MS = TIMEOUT_MS + 200;
+    const STARTING_FORCE = 1 / DEACTIVATE_COUNT;
+    // Only the portion past TIMEOUT_MS counts as idle decay time.
+    const IDLE_SECONDS = (DECAY_DURATION_MS - TIMEOUT_MS) / 1000;
+    const EXPECTED_DRAINED = STARTING_FORCE - FORCE_PER_SEC * IDLE_SECONDS;
     const ctx = makeStubCtx({ active: true });
     const trigger = createClickCountTrigger({
       element,
       activateCount: 20,
-      deactivateCount: 4,
-      timeoutMs: 100,
-      decayRate: 2, // 2 clicks/sec → 0.5 force/sec against a 4-click target
+      deactivateCount: DEACTIVATE_COUNT,
+      timeoutMs: TIMEOUT_MS,
+      decayRate: DECAY_RATE,
     });
     trigger.start(ctx);
     element.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(ctx.state.force).toBeCloseTo(0.25);
+    expect(ctx.state.force).toBeCloseTo(STARTING_FORCE);
 
-    vi.advanceTimersByTime(300);
+    vi.advanceTimersByTime(DECAY_DURATION_MS);
 
-    // ~200ms of decay at 0.5/sec ≈ 0.1 drop. Assert it is noticeably below 0.25.
-    expect(ctx.state.force).toBeLessThan(0.2);
+    expect(ctx.state.force).toBeLessThan(EXPECTED_DRAINED + 0.05);
     expect(ctx.state.force).toBeGreaterThan(0);
   });
 

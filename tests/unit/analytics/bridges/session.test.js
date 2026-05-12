@@ -1,15 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { HEARTBEAT_MS } from "../../../../js/analytics/bridges/session.js";
 
 // Session-bridge test.  Focus areas:
 //   - session_start fires exactly once on init and carries the expected
 //     one-off fields (first-visit flag, visit count, entry path)
-//   - heartbeats emit every 15 s while the page is visible, and stop
-//     when hidden
+//   - heartbeats emit every HEARTBEAT_MS while the page is visible, and
+//     stop when hidden
 //   - session_pause / session_resume track visibility transitions
 //   - session_end rolls up sessionCounters on pagehide
 //
 // sessionCounters is exported and mutated across bridges.  Tests reset
 // modules so counter state doesn't leak between cases.
+
+const HEARTBEATS_TO_RUN = 3;
+const PAUSED_HIDDEN_MS = HEARTBEAT_MS * 3;
+const HIDDEN_DURATION_MS = 7_000;
+const SESSION_END_LEAD_MS = HEARTBEAT_MS * 2;
 
 describe("analytics/bridges/session", () => {
   let core;
@@ -86,17 +92,19 @@ describe("analytics/bridges/session", () => {
   });
 
   describe("heartbeat", () => {
-    it("emits session_heartbeat every 15 s while visible", () => {
-      vi.advanceTimersByTime(15_000);
-      vi.advanceTimersByTime(15_000);
-      vi.advanceTimersByTime(15_000);
+    it("emits one session_heartbeat per interval while visible", () => {
+      for (let i = 0; i < HEARTBEATS_TO_RUN; i++) {
+        vi.advanceTimersByTime(HEARTBEAT_MS);
+      }
       core.flush();
-      expect(eventsNamed("session_heartbeat").length).toEqual(3);
+      expect(eventsNamed("session_heartbeat").length).toEqual(
+        HEARTBEATS_TO_RUN,
+      );
     });
 
     it("skips heartbeats while the page is hidden", () => {
       setHidden(true);
-      vi.advanceTimersByTime(45_000);
+      vi.advanceTimersByTime(PAUSED_HIDDEN_MS);
       core.flush();
       // The pause event fires on visibility change, but no heartbeats.
       expect(eventsNamed("session_heartbeat").length).toEqual(0);
@@ -105,12 +113,12 @@ describe("analytics/bridges/session", () => {
     it("heartbeat carries accumulated visible_ms and counter snapshot", () => {
       bridge.sessionCounters.scrollMaxDepth = 42;
       bridge.sessionCounters.unlocksThisSession = 3;
-      vi.advanceTimersByTime(15_000);
+      vi.advanceTimersByTime(HEARTBEAT_MS);
       core.flush();
       const hb = eventsNamed("session_heartbeat")[0];
       expect(hb.props.scroll_max_depth).toEqual(42);
       expect(hb.props.unlocks_this_session).toEqual(3);
-      expect(hb.props.visible_ms_so_far).toBeGreaterThanOrEqual(15_000);
+      expect(hb.props.visible_ms_so_far).toBeGreaterThanOrEqual(HEARTBEAT_MS);
     });
   });
 
@@ -123,12 +131,12 @@ describe("analytics/bridges/session", () => {
 
     it("session_resume reports hidden_ms since the last pause", () => {
       setHidden(true);
-      vi.advanceTimersByTime(7_000);
+      vi.advanceTimersByTime(HIDDEN_DURATION_MS);
       setHidden(false);
       core.flush();
       const resume = eventsNamed("session_resume")[0];
       expect(resume).toBeTruthy();
-      expect(resume.props.hidden_ms).toBeGreaterThanOrEqual(7_000);
+      expect(resume.props.hidden_ms).toBeGreaterThanOrEqual(HIDDEN_DURATION_MS);
     });
   });
 
@@ -143,7 +151,7 @@ describe("analytics/bridges/session", () => {
       bridge.sessionCounters.modesActivatedThisSession.add("frozen");
       bridge.sessionCounters.modesActivatedThisSession.add("deep-sea");
 
-      vi.advanceTimersByTime(30_000);
+      vi.advanceTimersByTime(SESSION_END_LEAD_MS);
       window.dispatchEvent(new Event("pagehide"));
       core.flush();
 

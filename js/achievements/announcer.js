@@ -13,7 +13,10 @@
 //     regions must not be display:none or visibility:hidden — those
 //     remove the element from the accessibility tree.
 
-const ANNOUNCE_CLEAR_DELAY_MS = 60;
+// Delay between clearing the live region and writing the new message.
+// Needed for screen readers to pick up the diff — see the aria-live
+// spec "Triggering screen readers" notes.
+export const ANNOUNCE_CLEAR_DELAY_MS = 60;
 
 let _liveEl = null;
 let _clearTimer = null;
@@ -37,9 +40,6 @@ function ensureLiveEl() {
 export function announce(text) {
   if (!text) return;
   const el = ensureLiveEl();
-  // Clear first so repeated identical messages still trigger a read.
-  // A short delay is needed on some screen readers to pick up the
-  // diff — see the aria-live spec "Triggering screen readers" notes.
   if (_clearTimer) clearTimeout(_clearTimer);
   el.textContent = "";
   _clearTimer = setTimeout(() => {

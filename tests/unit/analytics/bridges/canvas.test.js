@@ -1,4 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  SUMMARY_INTERVAL_MS,
+  HOLD_MIN_MS,
+  DRAG_MIN_PX,
+} from "../../../../js/analytics/bridges/canvas.js";
 
 // Canvas-bridge test.  Focus areas:
 //   - summary aggregation (click_count, quadrant set, by-mode map)
@@ -10,6 +15,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 //     cursor idle) emit with counters and active_mode
 //
 // Follows the bootstrap pattern from analytics-bridge-achievements.test.js.
+
+const SLACK_MS = 100;
+const PAST_SUMMARY_INTERVAL_MS = SUMMARY_INTERVAL_MS + SLACK_MS;
+const PAST_HOLD_MIN_MS = HOLD_MIN_MS + SLACK_MS;
 
 describe("analytics/bridges/canvas", () => {
   let core;
@@ -63,7 +72,7 @@ describe("analytics/bridges/canvas", () => {
       dispatch({ type: "click", x: 100, y: 100 }); // tl
       dispatch({ type: "click", x: 900, y: 100 }); // tr
       dispatch({ type: "click", x: 100, y: 700 }); // bl
-      vi.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(PAST_SUMMARY_INTERVAL_MS);
       core.flush();
 
       const summaries = eventsNamed("canvas_click_summary");
@@ -78,7 +87,7 @@ describe("analytics/bridges/canvas", () => {
       document.body.dataset.activeTheme = "frozen";
       dispatch({ type: "click", x: 10, y: 10 });
       dispatch({ type: "click", x: 10, y: 10 });
-      vi.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(PAST_SUMMARY_INTERVAL_MS);
       core.flush();
 
       const summary = eventsNamed("canvas_click_summary")[0];
@@ -86,16 +95,16 @@ describe("analytics/bridges/canvas", () => {
     });
 
     it("does not emit a summary when click count is zero", () => {
-      vi.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(PAST_SUMMARY_INTERVAL_MS);
       core.flush();
       expect(eventsNamed("canvas_click_summary").length).toEqual(0);
     });
 
     it("resets counters after each flush", () => {
       dispatch({ type: "click", x: 10, y: 10 });
-      vi.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(PAST_SUMMARY_INTERVAL_MS);
       dispatch({ type: "click", x: 10, y: 10 });
-      vi.advanceTimersByTime(60_000);
+      vi.advanceTimersByTime(PAST_SUMMARY_INTERVAL_MS);
       core.flush();
 
       const summaries = eventsNamed("canvas_click_summary");
@@ -114,11 +123,11 @@ describe("analytics/bridges/canvas", () => {
 
       const drags = eventsNamed("drag_complete");
       expect(drags.length).toEqual(1);
-      expect(drags[0].props.distance_px).toBeGreaterThanOrEqual(20);
+      expect(drags[0].props.distance_px).toBeGreaterThanOrEqual(DRAG_MIN_PX);
       expect(drags[0].props.duration_ms).toBeGreaterThanOrEqual(0);
     });
 
-    it("does not emit when the drag stays below DRAG_MIN_PX (20)", () => {
+    it("does not emit when the drag stays below the threshold", () => {
       dispatch({ type: "click", x: 100, y: 100 });
       dispatch({ type: "drag", x: 105, y: 105 });
       window.dispatchEvent(new Event("pointerup"));
@@ -132,21 +141,21 @@ describe("analytics/bridges/canvas", () => {
       // Regression guard: without a source "hold" event, a long click
       // followed by pointerup must not produce hold_complete.
       dispatch({ type: "click", x: 10, y: 10 });
-      vi.advanceTimersByTime(500);
+      vi.advanceTimersByTime(PAST_HOLD_MIN_MS);
       window.dispatchEvent(new Event("pointerup"));
       core.flush();
       expect(eventsNamed("hold_complete").length).toEqual(0);
     });
 
-    it("emits when 'hold' was dispatched and pointerup lands after HOLD_MIN_MS", () => {
+    it("emits when 'hold' was dispatched and pointerup lands past the min", () => {
       dispatch({ type: "hold" });
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(PAST_HOLD_MIN_MS);
       window.dispatchEvent(new Event("pointerup"));
       core.flush();
 
       const holds = eventsNamed("hold_complete");
       expect(holds.length).toEqual(1);
-      expect(holds[0].props.hold_ms).toBeGreaterThanOrEqual(200);
+      expect(holds[0].props.hold_ms).toBeGreaterThanOrEqual(HOLD_MIN_MS);
       expect(holds[0].props.reached_well).toBe(false);
       expect(holds[0].props.reached_full).toBe(false);
     });
@@ -155,7 +164,7 @@ describe("analytics/bridges/canvas", () => {
       dispatch({ type: "hold" });
       dispatch({ type: "well-activate" });
       dispatch({ type: "well-full" });
-      vi.advanceTimersByTime(300);
+      vi.advanceTimersByTime(PAST_HOLD_MIN_MS);
       window.dispatchEvent(new Event("pointerup"));
       core.flush();
 
@@ -179,13 +188,14 @@ describe("analytics/bridges/canvas", () => {
     });
 
     it("hold_max_reached carries time_to_max_ms when a hold was tracked", () => {
+      const HOLD_DURATION_MS = 450;
       dispatch({ type: "hold" });
-      vi.advanceTimersByTime(450);
+      vi.advanceTimersByTime(HOLD_DURATION_MS);
       dispatch({ type: "hold-full" });
       core.flush();
       const max = eventsNamed("hold_max_reached")[0];
       expect(max).toBeTruthy();
-      expect(max.props.time_to_max_ms).toBeGreaterThanOrEqual(450);
+      expect(max.props.time_to_max_ms).toBeGreaterThanOrEqual(HOLD_DURATION_MS);
     });
 
     it("hold_max_reached with no prior hold has null time_to_max_ms", () => {
@@ -239,12 +249,15 @@ describe("analytics/bridges/canvas", () => {
     });
 
     it("gravity_well_opened reports hold_ms_to_open when a hold was tracked", () => {
+      const HOLD_DURATION_MS = 800;
       dispatch({ type: "hold" });
-      vi.advanceTimersByTime(800);
+      vi.advanceTimersByTime(HOLD_DURATION_MS);
       dispatch({ type: "well-activate" });
       core.flush();
       const well = eventsNamed("gravity_well_opened")[0];
-      expect(well.props.hold_ms_to_open).toBeGreaterThanOrEqual(800);
+      expect(well.props.hold_ms_to_open).toBeGreaterThanOrEqual(
+        HOLD_DURATION_MS,
+      );
     });
 
     it("gravity_well_opened hold_ms_to_open is null without a prior hold", () => {

@@ -1,4 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import {
+  TOAST_HOLD_MS,
+  TOAST_SLIDE_OUT_MS,
+  TOAST_STAGGER_MS,
+  TOAST_MAX_VISIBLE,
+} from "../../../../js/achievements/ui/toast.js";
 
 // toast.js owns the toast queue, the shared container DOM, the pause/
 // resume machinery, and the activation callout/pulse ring.  Each test
@@ -12,6 +18,12 @@ vi.mock("../../../../js/effects/fireworks.js", () => ({
   launchRocketFireworks: vi.fn(),
   rocketCountForTier: vi.fn(() => 1),
 }));
+
+// One past the cap so we have an active set plus a queued entry.
+const QUEUE_OVERFLOW_COUNT = TOAST_MAX_VISIBLE + 1;
+// Past-cap fill for destroy tests — confirms both active + queued
+// state get cleaned up.
+const PAST_CAP_FILL = TOAST_MAX_VISIBLE + 2;
 
 describe("achievements/ui/toast", () => {
   let mod;
@@ -81,24 +93,22 @@ describe("achievements/ui/toast", () => {
       expect(getContainer().children).toHaveLength(1);
     });
 
-    it("queues toasts past TOAST_MAX_VISIBLE (3) and drains them on dismiss", () => {
-      // Four unlocks — first three show, fourth waits in the queue.
-      for (let i = 0; i < 4; i++) {
+    it("queues toasts past the visibility cap and drains them on dismiss", () => {
+      for (let i = 0; i < QUEUE_OVERFLOW_COUNT; i++) {
         mod.showToast(makeAchievement({ id: `a${i}`, title: `T${i}` }));
       }
-      expect(getContainer().children).toHaveLength(3);
+      expect(getContainer().children).toHaveLength(TOAST_MAX_VISIBLE);
 
-      // Auto-dismiss (TOAST_HOLD_MS = 4000) triggers the exit animation
-      // (TOAST_SLIDE_OUT_MS = 300), which on completion schedules the
-      // queued toast with a stagger (TOAST_STAGGER_MS = 200).  Advance
-      // step-by-step so we don't run into the next auto-dismiss cycle.
-      vi.advanceTimersByTime(4000); // dismiss #1 fires
-      vi.advanceTimersByTime(300); // slide-out completes, stagger scheduled
-      vi.advanceTimersByTime(200); // stagger fires, showToast(T3) runs
+      // Walk the dismiss → slide-out → stagger pipeline one stage at a
+      // time so the next auto-dismiss cycle doesn't intrude before the
+      // queued toast actually mounts.
+      vi.advanceTimersByTime(TOAST_HOLD_MS);
+      vi.advanceTimersByTime(TOAST_SLIDE_OUT_MS);
+      vi.advanceTimersByTime(TOAST_STAGGER_MS);
       const titles = [
         ...getContainer().querySelectorAll(".achievement-toast-title"),
       ].map((el) => el.textContent);
-      expect(titles).toContain("T3");
+      expect(titles).toContain(`T${QUEUE_OVERFLOW_COUNT - 1}`);
     });
 
     it("applies the set's accent color as a CSS custom property when present", () => {
@@ -214,8 +224,7 @@ describe("achievements/ui/toast", () => {
 
   describe("destroyToastContainer", () => {
     it("removes the container, clears timers, and resets queue state", () => {
-      // Fill past the cap so we have both active and queued entries.
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < PAST_CAP_FILL; i++) {
         mod.showToast(makeAchievement({ id: `a${i}` }));
       }
       expect(getContainer()).not.toBeNull();

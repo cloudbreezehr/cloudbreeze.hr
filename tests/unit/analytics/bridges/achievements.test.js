@@ -179,16 +179,17 @@ describe("analytics/bridges/achievements", () => {
   });
 
   it("achievement_unlocked reports time_since_cloudlog_activated_ms after activation", () => {
+    const TIME_BETWEEN_ACTIVATE_AND_UNLOCK_MS = 1_500;
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "cloudlog-activate" } }),
     );
-    vi.advanceTimersByTime(1_500);
+    vi.advanceTimersByTime(TIME_BETWEEN_ACTIVATE_AND_UNLOCK_MS);
     dispatchUnlock("first-light");
     core.flush();
     const unlock = eventsNamed("achievement_unlocked")[0];
     expect(
       unlock.props.time_since_cloudlog_activated_ms,
-    ).toBeGreaterThanOrEqual(1_500);
+    ).toBeGreaterThanOrEqual(TIME_BETWEEN_ACTIVATE_AND_UNLOCK_MS);
   });
 
   it("achievement_unlocked time_since_cloudlog_activated_ms is null before activation", () => {

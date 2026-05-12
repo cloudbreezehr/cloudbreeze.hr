@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { INTRO_HINT_THRESHOLD } from "../../../../js/achievements/ui/activity.js";
 
 // activity.js owns the Activity tab renderer — both the main list and
 // the trash sub-view.  Its only module state is the current sub-view,
@@ -12,6 +13,11 @@ vi.mock("../../../../js/effects/fireworks.js", () => ({
   launchRocketFireworks: vi.fn(),
   rocketCountForTier: vi.fn(() => 1),
 }));
+
+// Two real unlocks are seeded by an inner beforeEach; pad the rest of
+// the way past the threshold so the hint must hide.
+const SEED_UNLOCKS = 2;
+const PAD_TO_PAST_THRESHOLD = INTRO_HINT_THRESHOLD - SEED_UNLOCKS + 1;
 
 describe("achievements/ui/activity", () => {
   let mod;
@@ -109,8 +115,7 @@ describe("achievements/ui/activity", () => {
     });
 
     it("hides the intro hint once the threshold is exceeded", () => {
-      // Threshold is 10; pad with additional unlocks to cross it.
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < PAD_TO_PAST_THRESHOLD; i++) {
         activityLog.log("achievement-unlocked", {
           achievementId: "first-light",
         });

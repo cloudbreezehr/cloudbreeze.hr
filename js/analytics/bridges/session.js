@@ -7,7 +7,7 @@
 import { track } from "../core.js";
 import * as identity from "../identity.js";
 
-const HEARTBEAT_MS = 15000;
+export const HEARTBEAT_MS = 15000;
 
 // Counters other bridges mutate.  Values are snapshotted onto heartbeat
 // and session_end events.  No mutation from outside the bridges.

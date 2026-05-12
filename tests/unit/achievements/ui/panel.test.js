@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { OUTSIDE_CLICK_DELAY_MS } from "../../../../js/achievements/ui/panel.js";
 
 // panel.js is the biggest extracted module — it builds the Cloudlog
 // panel DOM, wires escape/outside-click/focus-trap handlers, and owns
@@ -12,6 +13,9 @@ vi.mock("../../../../js/effects/fireworks.js", () => ({
   launchRocketFireworks: vi.fn(),
   rocketCountForTier: vi.fn(() => 1),
 }));
+
+const SLACK_MS = 10;
+const PAST_OUTSIDE_CLICK_DELAY_MS = OUTSIDE_CLICK_DELAY_MS + SLACK_MS;
 
 describe("achievements/ui/panel", () => {
   let mod;
@@ -175,9 +179,9 @@ describe("achievements/ui/panel", () => {
 
     it("outside pointer click closes the panel", () => {
       mod.openPanel();
-      // Outside-click handler is installed after a 50ms delay so the
-      // opening click doesn't catch it — advance past that window.
-      vi.advanceTimersByTime(50);
+      // The outside-click handler arms after a delay so the opening
+      // click doesn't catch it — step past that window.
+      vi.advanceTimersByTime(PAST_OUTSIDE_CLICK_DELAY_MS);
       const orphan = document.createElement("div");
       document.body.appendChild(orphan);
       orphan.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
@@ -186,7 +190,7 @@ describe("achievements/ui/panel", () => {
 
     it("pointer click inside the panel does NOT close it", () => {
       mod.openPanel();
-      vi.advanceTimersByTime(50);
+      vi.advanceTimersByTime(PAST_OUTSIDE_CLICK_DELAY_MS);
       const panel = getPanel();
       panel.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
       expect(mod.isPanelOpen()).toBe(true);

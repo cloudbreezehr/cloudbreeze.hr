@@ -13,17 +13,24 @@ import {
 import * as storage from "./storage.js";
 
 // ── Timing Constants ──
-const RAPID_FIRE_WINDOW_MS = 3000;
-const RAPID_FIRE_CLICKS = 10;
-const NIGHT_OWL_MS = 600000; // 10 minutes
-const NIGHT_OWL_CHECK_INTERVAL = 30000;
+// Window for the rapid-fire achievement — N clicks must land inside
+// this gap.
+export const RAPID_FIRE_WINDOW_MS = 3000;
+export const RAPID_FIRE_CLICKS = 10;
+// Cumulative visible time for night-owl.  Counted via a setInterval
+// poll so we accumulate per-tick rather than wall-clock — closing
+// the tab pauses progress.
+export const NIGHT_OWL_MS = 600000;
+export const NIGHT_OWL_CHECK_INTERVAL = 30000;
 const SCROLL_STARGAZER = 0.25;
 const SCROLL_BOTTOM = 0.95;
 const SCROLL_TOP = 0.05;
 const SCROLL_SURGE_VELOCITY = 50;
 const LONG_DRAG_SCREEN_FRACTION = 0.4;
 const PIXEL_PERFECT_RADIUS = 30;
-const AFTERSHOCK_WINDOW_MS = 2000;
+// Maximum gap between a fury-lightning trigger and the click that
+// counts as the aftershock.
+export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
 const MODE_HOPPER_COUNT = 3;
