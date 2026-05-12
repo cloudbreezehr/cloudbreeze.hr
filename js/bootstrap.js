@@ -21,6 +21,7 @@ import { initLogoParallax } from "./effects/logo-parallax.js";
 import { initModeHistoryHud } from "./effects/mode-history-hud.js";
 import { initCursorIdle } from "./effects/cursor-idle.js";
 import { initFooterHint } from "./effects/footer-hint.js";
+import { initFirstPaintMote } from "./effects/first-paint-mote.js";
 import { initUpsideDown } from "./modes/upside-down.js";
 import { initFrozen } from "./modes/frozen.js";
 import { initDeepSea } from "./modes/deep-sea.js";
@@ -83,6 +84,7 @@ initCursorIdle(
   document.getElementById("cursor-ring"),
 );
 initFooterHint();
+initFirstPaintMote();
 initUpsideDown();
 initFrozen();
 initDeepSea();

@@ -4586,6 +4586,40 @@ body.light-mode .achievement-tooltip {
   }
 }
 
+/* ── First-Paint Mote ── */
+
+/* One-time onboarding mote spawned at the visitor's first cursor
+   movement.  Absolute size and motion come from JS; this rule only
+   carries the visual style. */
+.first-paint-mote {
+  position: fixed;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at center,
+    var(--sky-3, #7dbfe8) 0%,
+    rgba(125, 191, 232, 0.6) 40%,
+    transparent 75%
+  );
+  box-shadow:
+    0 0 8px var(--sky-3, #7dbfe8),
+    0 0 16px rgba(125, 191, 232, 0.4);
+  pointer-events: none;
+  z-index: 500;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+body.light-mode .first-paint-mote {
+  background: radial-gradient(
+    circle at center,
+    rgba(55, 138, 221, 0.9) 0%,
+    rgba(55, 138, 221, 0.4) 40%,
+    transparent 75%
+  );
+  box-shadow:
+    0 0 8px rgba(55, 138, 221, 0.7),
+    0 0 16px rgba(55, 138, 221, 0.3);
+}
+
 /* ── Mode History HUD ── */
 /* Two stacked pills: a small handle tab on top (with a chevron), and a
    wider track pill below (with mode icons).  The handle tab looks
