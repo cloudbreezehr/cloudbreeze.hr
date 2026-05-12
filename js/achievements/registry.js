@@ -1,6 +1,6 @@
 // ── Achievement Registry ──
-// All achievement definitions as pure data. No logic, no conditions.
-// Conditions live in tracker.js where they have access to event state.
+// All achievement definitions as pure data. No logic, no conditions —
+// detection lives elsewhere where event state is available.
 
 import { getMode } from "../modes/registry.js";
 
@@ -967,7 +967,6 @@ export function getAchievement(id) {
 
 /**
  * Sum point values for a list of unlocked entries [{id, ts}, ...].
- * Lives here so both tracker and UI can use it without duplication.
  */
 export function sumPoints(unlockedList) {
   let pts = 0;

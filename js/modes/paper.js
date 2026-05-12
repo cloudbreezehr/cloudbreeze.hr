@@ -56,11 +56,9 @@ const PV = defineConstants(
   { mode: "paper" },
 );
 
-// Every semantic text element thickens when the cursor is near it —
-// nav, buttons, footer, overlays (Cloudlog, dev console) all
-// participate.  Kept intentionally broad to avoid paper mode having
-// to know about specific other modules' markup.  Matches the selector
-// in main.css.
+// Every semantic text element thickens when the cursor is near it.
+// Kept intentionally broad so paper mode doesn't have to know about
+// specific other modules' markup.
 const HOVER_TARGETS = "h1, h2, h3, h4, h5, h6, p, span, a, li, em, strong";
 
 // ── Activation words — tracked in parallel until one completes ──

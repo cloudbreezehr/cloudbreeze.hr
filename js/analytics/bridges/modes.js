@@ -2,14 +2,12 @@
 // Translates mode-lifecycle CustomEvents into analytics events, and adds
 // the buildup funnel view that the site doesn't currently capture.
 //
-// The source modules already dispatch `mode-activate` and `mode-deactivate`
-// via the factory.  For buildup (0.25 / 0.50 / 0.75 thresholds), we need
-// a small instrumentation hook — the factory exposes setForce() which is
-// where we tap in.  See factory.js integration for details.
+// Listens for `mode-activate`, `mode-deactivate`, and per-mode buildup
+// thresholds (0.25 / 0.50 / 0.75).
 //
 // mode_switched fires when a new mode activates while another is already
-// active — the HUD allows this, and it's worth knowing how often it
-// happens so we can tune the priority rules.
+// active — worth knowing how often it happens so we can tune the
+// priority rules.
 
 import { track } from "../core.js";
 import { sessionCounters } from "./session.js";
@@ -117,10 +115,10 @@ export function initModesBridge() {
     if (d.type === "mode-abandoned" && d.mode) {
       const info = abandonedPeaks.get(d.mode);
       abandonedPeaks.delete(d.mode);
-      // The factory already guards on peak >= 0.25 before firing
-      // mode-abandoned.  Re-asserting here keeps the bridge's output
-      // contract self-contained: if the factory threshold ever
-      // changes, analytics semantics don't silently drift with it.
+      // Re-assert the 0.25 threshold here so the bridge's output
+      // contract stays self-contained — if upstream changes its
+      // pre-firing threshold, the analytics semantics don't silently
+      // drift with it.
       if (info && info.peak >= 0.25) {
         track("mode_abandoned", {
           mode_id: d.mode,
@@ -146,8 +144,8 @@ export function initModesBridge() {
       });
     }
 
-    // Secret-reveal events — logo parallax and mode history HUD aren't
-    // modes themselves but sit in the "discovery" taxonomy alongside.
+    // Secret-reveal events — not modes themselves, but they sit in
+    // the "discovery" taxonomy alongside.
     if (d.type === "logo-parallax") {
       track("logo_parallax_engaged", {});
     }

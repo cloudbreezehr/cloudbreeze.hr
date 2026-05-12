@@ -1,8 +1,7 @@
 // ── Page Bootstrap ──
-// Wires every module up in a specific order.  Extracted from an inline
-// <script type="module"> block so index.html can ship with a strict
-// script-src 'self' CSP — inline scripts would force 'unsafe-inline'
-// and undo most of the policy's value.
+// Wires every module up in a specific order.  External module so the
+// page can ship with a strict script-src 'self' CSP — inline scripts
+// would force 'unsafe-inline' and undo most of the policy's value.
 //
 // Order matters in a few places and is called out where it does.
 // Otherwise the initializers are independent and could run in any

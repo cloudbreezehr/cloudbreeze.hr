@@ -6,7 +6,7 @@
 //     Computed on demand from storage state; nothing stored per-key.
 //
 // Both expose the same read API (resolveProgressCurrent / resolveProgressTotal)
-// so the UI and tracker can treat them uniformly.
+// so callers can treat them uniformly.
 
 import * as storage from "./storage.js";
 import {

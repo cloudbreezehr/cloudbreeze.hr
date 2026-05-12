@@ -40,10 +40,10 @@ let _seenObserver = null;
 let _seenTimers = new Map();
 
 // Panel-facing hooks injected by the facade.  getPanelEl lets us read
-// the live panel element without this module importing ui.js (which
-// would circular-import), isPanelOpen lets refreshCard skip work when
-// the panel isn't visible, and refreshPanel lets a card change request
-// a whole-panel re-render when section counts need updating.
+// the live panel element without importing the parent (which would
+// circular-import), isPanelOpen lets refreshCard skip work when the
+// panel isn't visible, and refreshPanel lets a card change request a
+// whole-panel re-render when section counts need updating.
 let _getPanelEl = () => null;
 let _isPanelOpen = () => false;
 let _refreshPanel = () => {};

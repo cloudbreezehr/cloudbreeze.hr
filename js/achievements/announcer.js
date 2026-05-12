@@ -1,7 +1,7 @@
 // ── Screen Reader Announcer ──
-// Minimal aria-live region for screen-reader users.  The toast system
-// is purely visual; without this, users relying on a screen reader
-// never learn an achievement unlocked.
+// Minimal aria-live region for screen-reader users.  Achievement
+// notifications are otherwise purely visual; without this, screen
+// reader users never learn an achievement unlocked.
 //
 // Contract:
 //   - `announce(text)` is the only entry point.  Idempotent — the first

@@ -1,12 +1,9 @@
 // ── Hint Tooltip ──
-// Lightweight tooltip overlay used by achievement cards and locked
-// toasts to reveal the per-achievement hint on hover.  A single
-// element is reused across the page — showHintTooltip repositions it
-// and swaps the text; hideHintTooltip fades it out.
-//
-// The module owns the tooltip DOM node and nothing else — deciding
-// whether a tooltip should be shown for a given achievement is
-// cards.js's job (see resolveHintText there).
+// Lightweight tooltip overlay for revealing per-achievement hints on
+// hover.  A single element is reused across the page —
+// showHintTooltip repositions it and swaps the text; hideHintTooltip
+// fades it out.  The module owns only the tooltip DOM node; callers
+// decide when a tooltip should be shown.
 
 const TOOLTIP_OFFSET_Y = 6;
 

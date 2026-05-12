@@ -2,8 +2,8 @@
 // Slide-in notifications for unlock/re-lock, plus the activation
 // ribbon and pulse ring shown when the Cloudlog is first enabled.
 // Shares one container and a small queue so overlapping unlocks
-// stagger cleanly.  buildAchievementToast is also reused by the
-// Activity view so live toasts and log entries stay identical.
+// stagger cleanly.  buildAchievementToast is exported as the canonical
+// toast renderer so persisted entries render identically to live ones.
 
 import { POINT_TIERS, SETS } from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
@@ -41,8 +41,8 @@ let activeToasts = [];
 let toastsPaused = false;
 
 // Panel-facing callbacks injected by the facade.  Kept behind a
-// configure function so this module doesn't import ui.js and risk
-// a circular dependency.  `isPanelOpen` defaults to a no-op so
+// configure function so this module doesn't import its parent and
+// risk a circular dependency.  `isPanelOpen` defaults to a no-op so
 // early toasts (before configureToasts runs) still open the panel.
 let _openPanel = null;
 let _isPanelOpen = () => false;
@@ -105,10 +105,11 @@ function resumeToasts() {
   }
 }
 
-// Build the achievement-toast DOM for a given achievement.  Shared between
-// the live toast system and the activity log list so both renderings match.
-// Returns the element without attaching any click handler — callers decide
-// whether the toast is clickable and what clicking does.
+// Build the achievement-toast DOM for a given achievement.  Canonical
+// toast renderer — persisted entries use this so they render identically
+// to the originating live toast.  Returns the element without attaching
+// any click handler — callers decide whether the toast is clickable and
+// what clicking does.
 export function buildAchievementToast(achievement) {
   const set = SETS.find((s) => s.id === achievement.set);
   const toast = document.createElement("div");
@@ -130,8 +131,8 @@ export function buildAchievementToast(achievement) {
   return toast;
 }
 
-// Click handler shared by live toasts and activity-log entries: pulse the
-// toast, then open the panel and scroll to the achievement's card.
+// Standard click handler for any rendered toast: pulse the toast, then
+// open the panel and scroll to the achievement's card.
 export function wireToastClick(toast, achievement) {
   toast.addEventListener("click", () => {
     toast.classList.remove("clicked");
@@ -317,14 +318,15 @@ export function showActivationPulse(x, y) {
 }
 
 // Whether the given event target is inside the live toast container.
-// Used by the panel's outside-click handler so clicking a toast doesn't
-// close the panel that the toast just opened.
+// Lets outside-click handlers exempt toast clicks from "click outside"
+// dismissal — without this, clicking a toast would close the very
+// panel the toast just opened.
 export function toastContainerContains(node) {
   return !!(toastContainer && toastContainer.contains(node));
 }
 
-// Drop the container and any queued/active toasts — called from the
-// panel's destroy() so full UI teardown leaves no DOM or timers behind.
+// Drop the container and any queued/active toasts.  Use during full UI
+// teardown so no DOM or pending timers are left behind.
 export function destroyToastContainer() {
   for (const ref of activeToasts) {
     if (ref.timer) clearTimeout(ref.timer);

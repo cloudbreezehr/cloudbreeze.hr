@@ -1,8 +1,6 @@
 // ── Cloudlog SVG icons ──
-// Shared across the nav button, achievement cards, toasts, and the
-// activation pulse so the UI keeps a consistent visual identity when
-// an icon changes (stroke width, proportions, etc.) it changes in
-// exactly one place.
+// Single source of truth for the icons reused across the achievement
+// UI, so a stroke-width or proportion change lands in one place.
 
 // Unlocked achievement — the default cloud-check mark.
 export const CLOUD_CHECK_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round">

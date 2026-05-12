@@ -12,10 +12,9 @@
 //   3. Set completion + progress milestones — derived from counting the
 //      unlocked set against each set's prereq list.
 //
-// The bridge does NOT re-implement condition logic.  It observes what the
-// tracker already fired by hooking into the same achievement-custom-event
-// stream AND by wrapping the tracker's onUnlock callback through a thin
-// bus in index.js.
+// The bridge does NOT re-implement condition logic.  It observes what
+// the tracker already fired by hooking into the same achievement-custom-
+// event stream and by listening to the unlock-fanout bus.
 
 import { track } from "../core.js";
 import { sessionCounters } from "./session.js";
@@ -85,9 +84,8 @@ export function initAchievementsBridge() {
     }
   });
 
-  // Achievement-unlock callback pathway.  Bridged through a custom window
-  // event ("analytics-unlock") dispatched from the shim we install in
-  // js/achievements/index.js — see initAchievements() integration.
+  // Achievement-unlock callback pathway — listens for the
+  // "analytics-unlock" window event.
   window.addEventListener("analytics-unlock", (e) => {
     const ach = e.detail && e.detail.achievement;
     if (!ach) return;

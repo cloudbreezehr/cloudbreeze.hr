@@ -1,7 +1,6 @@
 // ── Achievement System Entry Point ──
 // Public API for the achievement system. Handles activation (triple-click),
-// wires tracker + UI + storage together. Called from index.html after all
-// other modules initialize.
+// wires tracker + UI + storage together.
 
 import * as storage from "./storage.js";
 import { createTracker } from "./tracker.js";
@@ -32,8 +31,8 @@ export function initAchievements() {
   function startTracking() {
     if (tracker) return;
     // Fan-out: the tracker's onUnlock drives the UI (toast, log, badge)
-    // and also emits an "analytics-unlock" window event so analytics can
-    // observe unlocks without importing the achievement module.
+    // and also emits an "analytics-unlock" window event so observers
+    // can react to unlocks without importing the achievement module.
     function onUnlock(achievement) {
       onAchievementUnlocked(achievement);
       window.dispatchEvent(

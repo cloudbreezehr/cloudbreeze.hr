@@ -1,9 +1,9 @@
 // ── Analytics Storage ──
-// Namespaced localStorage / sessionStorage wrappers.  Keeps keys in one
-// place so identity.js, consent.js, and context.js don't collide with the
-// site's other localStorage keys (theme, achievements).  Every read is
-// defensive — localStorage can throw in private-mode Safari, disabled
-// storage policies, etc., and analytics must never break the page.
+// Namespaced localStorage / sessionStorage wrappers.  Centralizes the
+// key prefix so analytics keys don't collide with the site's other
+// storage namespaces.  Every read is defensive — localStorage can
+// throw in private-mode Safari, disabled storage policies, etc., and
+// analytics must never break the page.
 
 const PREFIX = "cb_analytics_";
 

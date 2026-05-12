@@ -53,7 +53,7 @@ const FW = defineConstants("effects.fireworks", {
   ROCKET_TARGET_Y_RANGE: 0.35,
   // Sideways jitter added as the rocket rises (px per frame, pre-easing).
   ROCKET_DRIFT: 0.2,
-  // Count tiers per rarity, tuned by ui.js via opts.count.
+  // Default rocket counts per rarity tier; callers override via opts.count.
   ROCKET_COUNT_EPIC: { value: 3, min: 0, max: 30, step: 1 },
   ROCKET_COUNT_LEGENDARY: { value: 10, min: 0, max: 100, step: 1 },
   // Stagger between rockets in a multi-rocket launch (frames).

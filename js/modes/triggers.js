@@ -5,10 +5,10 @@
 // wipes, body classes, or achievements — they only report force.
 //
 // Strategies:
-//   createClickCountTrigger — N clicks on an element (frozen, rainy, blocky).
-//   createHoldTrigger       — hold pointer down inside a region for N ms (deep-sea).
-//   createKeySequenceTrigger— type a word within per-letter gap (paper).
-//   createOverscrollTrigger — N overscroll events at the scroll edge (upside-down).
+//   createClickCountTrigger — N clicks on an element.
+//   createHoldTrigger       — hold pointer down inside a region for N ms.
+//   createKeySequenceTrigger— type a word within per-letter gap.
+//   createOverscrollTrigger — N overscroll events at the scroll edge.
 
 import { bindPointer } from "../pointer.js";
 
@@ -49,7 +49,6 @@ function createIdleDecayLoop({
 }
 
 // ── Click-count trigger ──
-// Used by frozen (logo, 25/13), rainy (hero-tag, 15/8), blocky (toggle, 20/10).
 // Each click is 1/N of the force.  After idle > timeoutMs, decay resumes at
 // decayRate clicks/sec equivalent.
 export function createClickCountTrigger({
@@ -124,9 +123,9 @@ export function createClickCountTrigger({
 }
 
 // ── Hold trigger ──
-// Used by deep-sea (hold inside footer, 10s/5s).  While holding, force grows
-// linearly to 1 over the target ms.  On release, force decays at a slow
-// constant rate (not target-relative — once you let go, the system forgets).
+// While holding, force grows linearly to 1 over the target ms.  On release,
+// force decays at a slow constant rate (not target-relative — once you let
+// go, the system forgets).
 export function createHoldTrigger({
   target = document,
   holdActivateMs,
@@ -213,9 +212,9 @@ export function createHoldTrigger({
 }
 
 // ── Key-sequence trigger ──
-// Used by paper (SKETCH/DRAW → ERASE).  Tracks parallel word prefixes; a wrong
-// letter resets all prefixes (but the running force lingers until decay).
-// Force is max(currentPrefix/wordLength) across all tracked words.
+// Tracks parallel word prefixes; a wrong letter resets all prefixes (but the
+// running force lingers until decay).  Force is max(currentPrefix/wordLength)
+// across all tracked words.
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 function createSequenceAccumulator(words, maxGapMs) {
@@ -340,11 +339,11 @@ export function createKeySequenceTrigger({
 }
 
 // ── Overscroll trigger ──
-// Used by upside-down: wheel or touch-drag past the scroll boundary accumulates
-// force. Cooldown ensures one trackpad swipe counts as one hit, not dozens.
-// Accepts predicates for edge detection and force-per-hit (upside-down's
-// deactivation path uses a 2x multiplier).  Calls `onHit` on each accepted
-// hit so the mode can trigger warnings / track direction.
+// Wheel or touch-drag past the scroll boundary accumulates force.
+// Cooldown ensures one trackpad swipe counts as one hit, not dozens.
+// Accepts predicates for edge detection and force-per-hit (callers can
+// e.g. apply a multiplier to one direction).  Calls `onHit` on each
+// accepted hit so the mode can trigger warnings / track direction.
 export function createOverscrollTrigger({
   forcePerHit,
   cooldownMs,
@@ -378,8 +377,8 @@ export function createOverscrollTrigger({
     start(_ctx) {
       ctx = _ctx;
 
-      // Optional drain loop — used by upside-down for its dynamic drain
-      // shape (fast at low force, slow at high force).
+      // Optional drain loop — callers supply drainFn for non-linear
+      // drain shapes (e.g. fast at low force, slow at high force).
       if (drainFn) {
         let lastTick = performance.now();
         function drainTick() {

@@ -53,7 +53,7 @@ let _overlayHandle = null;
 // Wire sibling submodules to this module's live panel state.  Done once
 // at module-evaluation time; openPanel/isPanelOpen/refreshPanel are
 // function-declaration-hoisted so the references captured here are
-// already valid when toasts, cards, and tabs are later exercised.
+// already valid when the submodules are later exercised.
 configureToasts({
   openPanel,
   isPanelOpen,
@@ -120,7 +120,6 @@ function openPanelUI(onHide) {
   panelOpen = true;
   setNavActive(true);
 
-  // Dispatch panel-open event for tracker
   window.dispatchEvent(
     new CustomEvent("achievement", { detail: { type: "panel-open" } }),
   );

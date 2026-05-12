@@ -1,7 +1,7 @@
 // ── Cloudlog Nav Button ──
 // The navbar entry point that opens the Cloudlog panel.  Owns the
 // button DOM and its unseen-count badge.  Shown/hidden in response
-// to activation state (see js/achievements/index.js).
+// to Cloudlog activation state.
 
 import * as storage from "../storage.js";
 import { CLOUD_CHECK_SVG } from "./icons.js";

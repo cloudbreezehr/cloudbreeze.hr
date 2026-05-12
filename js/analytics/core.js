@@ -44,8 +44,8 @@ export function track(name, props) {
   try {
     merged = { ...context.baseProps(), ...(props || {}) };
   } catch (err) {
-    // Context building can throw in edge environments (tests without a
-    // full DOM).  Don't let that break the caller.
+    // Context building can throw in edge environments (e.g. minimal
+    // DOM).  Don't let that break the caller.
     console.warn("[analytics] baseProps failed:", err);
     return;
   }

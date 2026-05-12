@@ -1,6 +1,6 @@
 // ── Activity Log ──
-// Persistent log of user-facing events: toasts the user might have missed,
-// rendered in a dedicated tab inside the Cloudlog panel.
+// Persistent log of user-facing events — primarily toasts the user
+// might have missed, surfaced later for review.
 //
 // Entry shape is generic so additional event types can be added later
 // without schema changes:

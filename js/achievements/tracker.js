@@ -341,8 +341,9 @@ export function createTracker(onUnlock, onRelock) {
 
     "mode-deactivate"(data) {
       if (!data || !data.mode) return;
-      // HUD-driven deactivations are silent — the exit achievement is
-      // reserved for users who discover the original exit gesture.
+      // Programmatic deactivations carry silent=true — the exit
+      // achievement is reserved for users who discover the original
+      // exit gesture.
       if (data.silent) return;
       const deactivateMap = {
         "deep-sea": "resurface",

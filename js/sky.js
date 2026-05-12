@@ -303,7 +303,8 @@ const SHOOTING = defineConstants("sky.shooting", {
   },
 });
 
-// Shared with fury.js for meteor spawning
+// Spawn parameters reused by fury.js for meteors so they share the same
+// visual rules as stars (fade window, position spread, launch angle).
 export const SKY_SHARED = defineConstants("sky.shared", {
   FADE_END: {
     value: 0.5,

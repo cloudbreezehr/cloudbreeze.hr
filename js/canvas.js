@@ -420,8 +420,8 @@ export function initCanvas(canvasEl, theme, options) {
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
-    // Forward the nearest service card so achievement handlers (e.g.
-    // paper's margin-notes) can evaluate hit-test without duplicating it.
+    // Forward the nearest service card so achievement handlers can
+    // evaluate hit-test without duplicating it.
     const card = e.target.closest(".service-card") || null;
     window.dispatchEvent(
       new CustomEvent("achievement", {
@@ -516,7 +516,8 @@ export function initCanvas(canvasEl, theme, options) {
     { passive: true },
   );
 
-  // Dock snap / undock release — dev console notifies via custom events
+  // Dock snap / undock release — the dev console is the sole publisher
+  // of these custom events; canvas just visualizes the snap/release.
   function handleDockEvent(e, type) {
     const { side, top, height } = e.detail;
     const edgeX = side === "left" ? 0 : canvas.width;

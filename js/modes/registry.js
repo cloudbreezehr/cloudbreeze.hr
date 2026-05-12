@@ -3,8 +3,8 @@
 //
 //   1. Metadata (id, label, color, icon) — declared as static data in the
 //      MODES array below.  Available unconditionally at import time, no
-//      side effects.  Consumers like the achievement panel and HUD can
-//      read it regardless of whether any mode's init has run.
+//      side effects, so any consumer can read it regardless of whether
+//      any mode's init has run.
 //
 //   2. Runtime toggle handler — bound during each mode's `initXxx()` via
 //      `registerToggle`.  Genuinely can't exist earlier because it closes
@@ -114,9 +114,9 @@ export function getMode(id) {
  *
  * @param {string} id
  * @param {{silent?: boolean}} [opts]
- *   `silent: true` marks the toggle as programmatic (e.g. triggered from
- *   the HUD), so deactivation doesn't award the exit achievement — that
- *   reward is reserved for users who discover the original exit gesture.
+ *   `silent: true` marks the toggle as programmatic, so deactivation
+ *   doesn't award the exit achievement — that reward is reserved for
+ *   users who discover the original exit gesture.
  */
 export function toggleMode(id, opts) {
   const fn = _toggles.get(id);

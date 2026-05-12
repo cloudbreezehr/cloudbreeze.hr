@@ -5,8 +5,8 @@
 //
 // The module owns the boolean and the mode-change achievement event
 // dispatch.  The caller owns the DOM it wants refreshed — pass the
-// scope (usually the Cloudlog panel element) to `toggleTimestampMode`
-// so the module doesn't need to know where timestamps live.
+// scope element to `toggleTimestampMode` so the module doesn't need
+// to know where timestamps live.
 
 import { formatRelativeTime, formatAbsoluteTime } from "../../time-ago.js";
 

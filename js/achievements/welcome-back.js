@@ -7,9 +7,9 @@
 //
 // Contract: maybeShowWelcomeBack() shows the toast on init when both
 // gates pass, after a brief settle delay so it lands after layout.
-// markGreeted() stamps the throttle timestamp; the activation flow
-// calls it whenever it shows its own greeting toast so activating /
-// restoring Cloudlog also resets the throttle window.
+// markGreeted() is the public hook for stamping the throttle from
+// other code paths that show their own greeting toast — keeping every
+// greeting under the same throttle.
 
 import { ACHIEVEMENTS } from "./registry.js";
 import * as storage from "./storage.js";
@@ -38,9 +38,8 @@ function readLastGreeted() {
   }
 }
 
-// Stamp the device-wide throttle.  Called when any greeting fires —
-// the welcome-back toast itself, plus the activation/restore toasts
-// that double as greetings.
+// Stamp the device-wide throttle.  Call from any greeting code path
+// to keep every greeting under the same throttle.
 export function markGreeted() {
   try {
     window.localStorage.setItem(LAST_GREETED_KEY, String(Date.now()));

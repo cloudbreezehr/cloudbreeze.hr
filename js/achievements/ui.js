@@ -1,10 +1,9 @@
 // ── Achievement UI ──
 // Facade that binds the extracted submodules together.  All DOM and
-// behavior live in ./ui/*.js; this file exports the public API that
-// index.js and the tracker consume, and the two lifecycle callbacks
-// (onAchievementUnlocked, onAchievementRelocked) that fan an unlock
-// out to the toast, announcer, activity log, nav badge, and card.
-// No canvas interaction.
+// behavior live in ./ui/*.js; this file exports the public API plus
+// the two lifecycle callbacks (onAchievementUnlocked,
+// onAchievementRelocked) that fan an unlock out to the toast,
+// announcer, activity log, nav badge, and card.  No canvas interaction.
 
 import * as activityLog from "./activity-log.js";
 import { announce } from "./announcer.js";

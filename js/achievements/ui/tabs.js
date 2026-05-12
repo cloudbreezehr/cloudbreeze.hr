@@ -12,7 +12,7 @@ let activeTab = "achievements";
 
 // Panel is owned by the facade; tabs reads it via an injected getter
 // so it can cope with null (before buildPanel runs) without importing
-// ui.js and risking a circular dependency.
+// its parent and risking a circular dependency.
 let _getPanelEl = () => null;
 
 export function configureTabs({ getPanelEl } = {}) {

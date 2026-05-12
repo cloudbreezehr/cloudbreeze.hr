@@ -2,8 +2,8 @@
 // Re-chronological stack of achievement toasts.  Two sub-views: "list"
 // (active entries, default) and "trash" (soft-deleted entries, recoverable
 // until TTL elapses).  A toggle button at the bottom swaps between them.
-// Reuses buildAchievementToast so live toasts and log entries stay
-// visually identical.
+// Reuses buildAchievementToast so log entries render identically to the
+// originating toast.
 
 import * as activityLog from "../activity-log.js";
 import { getAchievement } from "../registry.js";

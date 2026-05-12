@@ -14,7 +14,7 @@ import { KEYS, localGet, localSet, sessionGet, sessionSet } from "./storage.js";
 
 // ── UUIDv4 ──
 // Uses crypto.randomUUID when available (all evergreen browsers do),
-// with a non-crypto fallback so tests in minimal environments still work.
+// with a non-crypto fallback for environments where crypto is absent.
 export function uuid() {
   if (
     typeof crypto !== "undefined" &&
