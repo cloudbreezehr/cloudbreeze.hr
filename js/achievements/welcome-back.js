@@ -1,9 +1,9 @@
 // ── Welcome Back ──
 // One-shot greeting for returning users with progress.  Two gates:
-//   1. sessionStorage flag — at most one greeting per browser tab
-//      (refresh = same session, new tab = fresh).
+//   1. sessionStorage flag — at most one greeting per browser tab.
+//      Refresh = same session; new tab = fresh.
 //   2. localStorage timestamp — at most one greeting per THROTTLE_MS
-//      window across all tabs (so a workday doesn't get peppered).
+//      window across all tabs.
 //
 // Contract: maybeShowWelcomeBack() shows the toast on init when both
 // gates pass, after a brief settle delay so it lands after layout.
@@ -18,12 +18,14 @@ import * as storage from "./storage.js";
 const SESSION_FLAG_KEY = "cloudlog-welcome-back-shown";
 const LAST_GREETED_KEY = "cloudlog-last-greeted";
 
-// Minimum gap between greetings on the same device.
-const THROTTLE_MS = 30 * 60 * 1000;
+// Minimum gap between greetings on the same device.  Exported so tests
+// derive their timings from the source of truth instead of restating
+// the value.
+export const THROTTLE_MS = 30 * 60 * 1000;
 
 // Brief settle delay so the toast slides in after the page's initial
 // layout/paint pass rather than fighting it.
-const SETTLE_DELAY_MS = 600;
+export const SETTLE_DELAY_MS = 600;
 
 function readLastGreeted() {
   try {
