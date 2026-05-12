@@ -18,7 +18,7 @@ import {
   onAchievementRelocked,
 } from "./ui.js";
 import { onKey } from "../keyboard.js";
-import { maybeShowWelcomeBack } from "./welcome-back.js";
+import { maybeShowWelcomeBack, markGreeted } from "./welcome-back.js";
 
 // ── Triple-click detection ──
 const TRIPLE_CLICK_MAX_MS = 600;
@@ -76,6 +76,7 @@ export function initAchievements() {
         showNavButton();
         showActivationToast("Cloudlog restored");
         showActivationPulse(x, y);
+        markGreeted();
       }
       return;
     }
@@ -84,6 +85,7 @@ export function initAchievements() {
     storage.activate();
     showActivationPulse(x, y);
     showActivationToast("Cloudlog activated");
+    markGreeted();
     showUI();
     startTracking();
 

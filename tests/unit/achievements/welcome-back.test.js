@@ -14,6 +14,7 @@ describe("achievements/welcome-back", () => {
     localStorage.clear();
     sessionStorage.clear();
     vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-13T12:00:00Z"));
     vi.resetModules();
 
     mod = await import("../../../js/achievements/welcome-back.js");
@@ -78,6 +79,58 @@ describe("achievements/welcome-back", () => {
     mod.maybeShowWelcomeBack(showActivationToast);
     vi.advanceTimersByTime(1000);
     expect(showActivationToast.mock.calls[0][0]).toMatch(/\b1 secret\b/);
+  });
+
+  it("skips when markGreeted was called within the throttle window", async () => {
+    const { ACHIEVEMENTS } =
+      await import("../../../js/achievements/registry.js");
+    storage.activate();
+    storage.unlock(ACHIEVEMENTS[0].id);
+
+    // Simulate a recent greeting on another tab.
+    mod.markGreeted();
+    // Fresh session (clear the per-tab flag) so only the throttle gate applies.
+    sessionStorage.clear();
+    // Advance 10 minutes — still within the throttle window.
+    vi.advanceTimersByTime(10 * 60 * 1000);
+
+    mod.maybeShowWelcomeBack(showActivationToast);
+    vi.advanceTimersByTime(1000);
+    expect(showActivationToast).not.toHaveBeenCalled();
+  });
+
+  it("fires once the throttle window has elapsed", async () => {
+    const { ACHIEVEMENTS } =
+      await import("../../../js/achievements/registry.js");
+    storage.activate();
+    storage.unlock(ACHIEVEMENTS[0].id);
+
+    mod.markGreeted();
+    sessionStorage.clear();
+    // Past the throttle window.
+    vi.advanceTimersByTime(30 * 60 * 1000 + 1000);
+
+    mod.maybeShowWelcomeBack(showActivationToast);
+    vi.advanceTimersByTime(1000);
+    expect(showActivationToast).toHaveBeenCalledTimes(1);
+  });
+
+  it("firing the welcome-back toast itself stamps the throttle", async () => {
+    const { ACHIEVEMENTS } =
+      await import("../../../js/achievements/registry.js");
+    storage.activate();
+    storage.unlock(ACHIEVEMENTS[0].id);
+
+    mod.maybeShowWelcomeBack(showActivationToast);
+    vi.advanceTimersByTime(1000);
+    expect(showActivationToast).toHaveBeenCalledTimes(1);
+
+    // Now in a fresh tab moments later — should be throttled.
+    sessionStorage.clear();
+    showActivationToast.mockClear();
+    mod.maybeShowWelcomeBack(showActivationToast);
+    vi.advanceTimersByTime(1000);
+    expect(showActivationToast).not.toHaveBeenCalled();
   });
 
   it("does not re-fire on a subsequent maybeShowWelcomeBack call within the same session", async () => {
