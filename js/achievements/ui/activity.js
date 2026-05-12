@@ -2,13 +2,18 @@
 // Re-chronological stack of achievement toasts.  Two sub-views: "list"
 // (active entries, default) and "trash" (soft-deleted entries, recoverable
 // until TTL elapses).  A toggle button at the bottom swaps between them.
-// Reuses buildAchievementToast so log entries render identically to the
-// originating toast.
+// Reuses the canonical toast renderers so log entries render identically
+// to the originating toast.
 
 import * as activityLog from "../activity-log.js";
 import { getAchievement } from "../registry.js";
 import { formatRelativeTime } from "../../time-ago.js";
-import { buildAchievementToast, wireToastClick } from "./toast.js";
+import {
+  buildAchievementToast,
+  wireToastClick,
+  buildRelockToast,
+  wireRelockToastClick,
+} from "./toast.js";
 
 // ── Intro hint ──
 // Slim tip prepended to the active list while the user is still in the
@@ -126,6 +131,11 @@ function renderActivityEntry(entry, opts = {}) {
     if (!achievement) return null;
     content = buildAchievementToast(achievement);
     wireToastClick(content, achievement);
+  } else if (entry.type === "achievement-relocked") {
+    const achievement = getAchievement(entry.payload?.achievementId);
+    if (!achievement) return null;
+    content = buildRelockToast(achievement);
+    wireRelockToastClick(content, achievement);
   }
   if (!content) return null;
 

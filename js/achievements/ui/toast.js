@@ -233,9 +233,9 @@ function dismissToast(toastRef) {
 
 // ── Re-lock Toast ──
 
-export function showRelockToast(achievement) {
-  ensureToastContainer();
-
+// Canonical re-lock-toast renderer.  Persisted entries use this so they
+// render identically to the originating live toast.
+export function buildRelockToast(achievement) {
   const set = SETS.find((s) => s.id === achievement.set);
   const toast = document.createElement("div");
   toast.className = "achievement-toast achievement-toast-relock";
@@ -259,6 +259,12 @@ export function showRelockToast(achievement) {
     </div>
   `;
 
+  return toast;
+}
+
+// Wires the same panel-open + scroll-to-card behavior as live unlock
+// toasts.  Shared so persisted re-lock entries get identical handling.
+export function wireRelockToastClick(toast, achievement) {
   toast.addEventListener("click", () => {
     if (!_isPanelOpen()) {
       if (_openPanel) _openPanel();
@@ -269,6 +275,13 @@ export function showRelockToast(achievement) {
       if (_scrollToCard) _scrollToCard(achievement.id);
     }
   });
+}
+
+export function showRelockToast(achievement) {
+  ensureToastContainer();
+
+  const toast = buildRelockToast(achievement);
+  wireRelockToastClick(toast, achievement);
 
   toastContainer.appendChild(toast);
   void toast.offsetHeight;

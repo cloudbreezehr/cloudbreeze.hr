@@ -101,6 +101,27 @@ describe("achievements/ui/activity", () => {
       expect(container.querySelectorAll(".activity-row").length).toEqual(2);
     });
 
+    it("renders re-locked entries with the relock toast variant", () => {
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const relockRows = container.querySelectorAll(
+        ".activity-row .achievement-toast-relock",
+      );
+      expect(relockRows.length).toEqual(1);
+      expect(
+        relockRows[0].querySelector(".achievement-toast-title").textContent,
+      ).toContain("Re-locked");
+    });
+
+    it("skips relock entries whose achievement was removed from the registry", () => {
+      activityLog.log("achievement-relocked", { achievementId: "ghost-ach" });
+      mod.renderActivity(container);
+      const relockRows = container.querySelectorAll(
+        ".activity-row .achievement-toast-relock",
+      );
+      expect(relockRows.length).toEqual(0);
+    });
+
     it("dismiss button trashes the entry", () => {
       mod.renderActivity(container);
       const dismiss = container.querySelector(".activity-dismiss");

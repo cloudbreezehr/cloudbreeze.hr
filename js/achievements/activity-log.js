@@ -7,9 +7,8 @@
 //
 //   { id, type, timestamp, seen, trashedAt, payload }
 //
-// Today only "achievement-unlocked" entries exist (payload carries the
-// achievement id).  Future types like "mode-discovered" drop in by pushing
-// new { type, payload } pairs and teaching the renderer how to draw them.
+// New types drop in by pushing { type, payload } pairs and teaching the
+// renderer how to draw them.
 //
 // Soft delete: dismissing an entry sets `trashedAt` to a timestamp rather
 // than removing it.  Trashed entries are invisible in the main list but

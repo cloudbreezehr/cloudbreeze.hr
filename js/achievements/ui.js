@@ -73,6 +73,7 @@ export function onAchievementUnlocked(achievement) {
 export function onAchievementRelocked(achievement) {
   showRelockToast(achievement);
   announce(`Achievement re-locked: ${achievement.title}`);
+  activityLog.log("achievement-relocked", { achievementId: achievement.id });
   updateBadge();
   refreshPanel();
 }
