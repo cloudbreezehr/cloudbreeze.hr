@@ -18,6 +18,7 @@ import {
   onAchievementRelocked,
 } from "./ui.js";
 import { onKey } from "../keyboard.js";
+import { maybeShowWelcomeBack } from "./welcome-back.js";
 
 // ── Triple-click detection ──
 const TRIPLE_CLICK_MAX_MS = 600;
@@ -103,6 +104,7 @@ export function initAchievements() {
   if (storage.isActive()) {
     showUI();
     startTracking();
+    maybeShowWelcomeBack(showActivationToast);
   }
 
   // Contact link click events — dispatch achievement events for page-level links
