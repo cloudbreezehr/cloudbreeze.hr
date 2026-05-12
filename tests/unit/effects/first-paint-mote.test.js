@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// first-paint-mote arms a one-shot pointermove listener on init for
-// brand-new visitors and spawns a single drifting mote on the first
-// qualifying movement.  Gated by localStorage and prefers-reduced-
-// motion.  Tests stub matchMedia to control the reduced-motion gate.
+// first-paint-mote arms a one-shot pointermove listener on init and
+// spawns a single drifting mote on the first qualifying movement.
+// Gated by sessionStorage and prefers-reduced-motion.  Tests stub
+// matchMedia to control the reduced-motion gate.
 
 describe("effects/first-paint-mote", () => {
   let mod;
@@ -11,7 +11,7 @@ describe("effects/first-paint-mote", () => {
   let reducedMotion;
 
   beforeEach(async () => {
-    localStorage.clear();
+    sessionStorage.clear();
     document.body.innerHTML = "";
     vi.useFakeTimers();
     vi.resetModules();
@@ -86,8 +86,8 @@ describe("effects/first-paint-mote", () => {
     expect(getMote()).toBeNull();
   });
 
-  it("does not spawn a mote when the seen flag is already set", () => {
-    localStorage.setItem("first-paint-mote-seen", "1");
+  it("does not spawn a mote when the session flag is already set", () => {
+    sessionStorage.setItem("first-paint-mote-shown", "1");
     mod.initFirstPaintMote();
     vi.advanceTimersByTime(1000);
     dispatchPointerMove(100, 100);
@@ -111,7 +111,7 @@ describe("effects/first-paint-mote", () => {
     expect(getMote()).toBeNull();
   });
 
-  it("fires only once even across multiple init cycles in the same browser", async () => {
+  it("fires only once across multiple init cycles in the same tab", async () => {
     mod.initFirstPaintMote();
     vi.advanceTimersByTime(1000);
     dispatchPointerMove(100, 100);
@@ -121,8 +121,8 @@ describe("effects/first-paint-mote", () => {
     // Drain the cleanup microtask before re-init.
     await vi.runAllTimersAsync();
 
-    // Simulate a new page load — module-level state resets via
-    // resetModules, but the localStorage flag persists.
+    // Simulate a refresh in the same tab — module-level state resets
+    // via resetModules, but the sessionStorage flag persists.
     vi.resetModules();
     mod = await import("../../../js/effects/first-paint-mote.js");
     mod.initFirstPaintMote();

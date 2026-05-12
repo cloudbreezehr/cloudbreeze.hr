@@ -4588,9 +4588,9 @@ body.light-mode .achievement-tooltip {
 
 /* ── First-Paint Mote ── */
 
-/* One-time onboarding mote spawned at the visitor's first cursor
-   movement.  Absolute size and motion come from JS; this rule only
-   carries the visual style. */
+/* Onboarding mote spawned at the visitor's first cursor movement.
+   Size and motion are JS-driven; this rule only carries the visual
+   style. */
 .first-paint-mote {
   position: fixed;
   border-radius: 50%;

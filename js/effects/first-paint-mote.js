@@ -1,15 +1,15 @@
 // ── First-Paint Mote ──
-// One-time affordance for brand-new visitors: on the first cursor
-// movement, summon a single drifting glow at the cursor that fades
-// over a short lifetime.  The visitor learns "the canvas responds to
-// me" without giving away any of the discovery arc — just a tiny
-// "oh, neat" moment.  Skipped for users with prefers-reduced-motion
-// and gated by localStorage so each device sees it at most once.
+// Per-tab affordance: on the first cursor movement of a fresh tab,
+// summon a single drifting glow at the cursor that fades over a short
+// lifetime.  The visitor learns "the canvas responds to me" without
+// giving away any of the discovery arc — just a tiny "oh, neat"
+// moment.  Skipped for users with prefers-reduced-motion and gated by
+// sessionStorage so refresh = silent, new tab = fresh mote.
 
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
-const SEEN_KEY = "first-paint-mote-seen";
+const SESSION_FLAG_KEY = "first-paint-mote-shown";
 
 const MOTE = defineConstants("onboarding.firstPaintMote", {
   SIZE_PX: { value: 8, min: 2, max: 32, step: 1 },
@@ -22,13 +22,13 @@ const MOTE = defineConstants("onboarding.firstPaintMote", {
 export function initFirstPaintMote() {
   if (prefersReducedMotion()) return;
 
-  let seen = false;
+  let shown = false;
   try {
-    seen = !!window.localStorage.getItem(SEEN_KEY);
+    shown = !!window.sessionStorage.getItem(SESSION_FLAG_KEY);
   } catch {
     return;
   }
-  if (seen) return;
+  if (shown) return;
 
   // Defer arming briefly so the affordance doesn't fire on whatever
   // pointer position the page happens to inherit at load time.
@@ -59,10 +59,10 @@ export function initFirstPaintMote() {
   function fire(x, y) {
     window.removeEventListener("pointermove", onPointerMove);
     try {
-      window.localStorage.setItem(SEEN_KEY, "1");
+      window.sessionStorage.setItem(SESSION_FLAG_KEY, "1");
     } catch {
       // Cosmetic fallback — proceed without the gate; worst case, the
-      // affordance shows again next visit.
+      // affordance shows again on the next interaction this tab.
     }
     spawnMote(x, y);
   }
@@ -108,11 +108,11 @@ function spawnMote(x, y) {
   anim.onfinish = () => el.remove();
 }
 
-// Test hook — clear the seen flag so a follow-up init arms again.
+// Test hook — clear the session flag so a follow-up init arms again.
 export function _resetForTests() {
   try {
-    window.localStorage.removeItem(SEEN_KEY);
+    window.sessionStorage.removeItem(SESSION_FLAG_KEY);
   } catch {
-    // ignore — localStorage may be unavailable
+    // ignore — sessionStorage may be unavailable
   }
 }
