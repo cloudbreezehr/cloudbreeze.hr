@@ -3776,6 +3776,25 @@ nav.nav-light .achievement-btn::after {
   gap: 0.5rem;
 }
 
+/* Onboarding hint shown above the activity list while the user is still
+   in the discovery phase.  Slimmer than the Achievements-tab intro card
+   so it reads as a tip, not a peer of the entries below it. */
+.activity-intro-hint {
+  padding: 0.5rem 0.65rem;
+  background: linear-gradient(
+    135deg,
+    rgba(55, 138, 221, 0.1) 0%,
+    rgba(55, 138, 221, 0.03) 100%
+  );
+  border-left: 2px solid var(--achievement-default-accent);
+  border-radius: 0 6px 6px 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
 .activity-row {
   position: relative;
   display: flex;

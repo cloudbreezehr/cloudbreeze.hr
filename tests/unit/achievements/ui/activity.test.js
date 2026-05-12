@@ -102,6 +102,22 @@ describe("achievements/ui/activity", () => {
       expect(activityLog.getActive().length).toEqual(1);
       expect(activityLog.getTrashedCount()).toEqual(1);
     });
+
+    it("renders the intro hint while at or below the threshold", () => {
+      mod.renderActivity(container);
+      expect(container.querySelector(".activity-intro-hint")).not.toBeNull();
+    });
+
+    it("hides the intro hint once the threshold is exceeded", () => {
+      // Threshold is 10; pad with additional unlocks to cross it.
+      for (let i = 0; i < 9; i++) {
+        activityLog.log("achievement-unlocked", {
+          achievementId: "first-light",
+        });
+      }
+      mod.renderActivity(container);
+      expect(container.querySelector(".activity-intro-hint")).toBeNull();
+    });
   });
 
   describe("trash sub-view", () => {
@@ -110,6 +126,14 @@ describe("achievements/ui/activity", () => {
       // Dismiss one so there's a trashed entry to toggle to.
       const entries = activityLog.getActive();
       activityLog.trash(entries[0].id);
+    });
+
+    it("does not render the intro hint inside the trash view", () => {
+      mod.renderActivity(container);
+      container
+        .querySelector(".activity-trash-toggle")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(container.querySelector(".activity-intro-hint")).toBeNull();
     });
 
     it("toggle button opens the trash view", () => {

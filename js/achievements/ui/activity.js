@@ -10,6 +10,12 @@ import { getAchievement } from "../registry.js";
 import { formatRelativeTime } from "../../time-ago.js";
 import { buildAchievementToast, wireToastClick } from "./toast.js";
 
+// ── Intro hint ──
+// Slim tip prepended to the active list while the user is still in the
+// discovery phase, matching the threshold used by the Achievements tab
+// so onboarding cues across both tabs vanish at the same milestone.
+const INTRO_HINT_THRESHOLD = 10;
+
 let activitySubView = "list"; // "list" | "trash"
 
 export function renderActivity(container) {
@@ -62,6 +68,9 @@ export function renderActivity(container) {
   } else {
     const list = document.createElement("div");
     list.className = "activity-list";
+    if (!isTrash && entries.length <= INTRO_HINT_THRESHOLD) {
+      list.appendChild(buildIntroHint());
+    }
     for (const entry of entries) {
       const row = renderActivityEntry(entry, { trash: isTrash });
       if (row) list.appendChild(row);
@@ -87,6 +96,17 @@ export function renderActivity(container) {
     footer.appendChild(toggle);
     container.appendChild(footer);
   }
+}
+
+// Onboarding hint prepended to the active list while the user is still
+// discovering what the Activity tab represents.  Visual language echoes
+// the Achievements-tab intro card (accent border, gradient tint) so the
+// two tabs feel like part of the same onboarding language.
+function buildIntroHint() {
+  const hint = document.createElement("div");
+  hint.className = "activity-intro-hint";
+  hint.textContent = "Your discoveries appear here in order, newest first.";
+  return hint;
 }
 
 // Build a single activity-log row.  `opts.trash` selects between the
