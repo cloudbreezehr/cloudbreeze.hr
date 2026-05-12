@@ -61,7 +61,9 @@ export { refreshCard };
 
 export function onAchievementUnlocked(achievement) {
   showToast(achievement);
-  announce(`Achievement unlocked: ${achievement.title}`);
+  const pts = achievement.points || 0;
+  const noun = pts === 1 ? "point" : "points";
+  announce(`Achievement unlocked: ${achievement.title}. ${pts} ${noun}.`);
   activityLog.log("achievement-unlocked", { achievementId: achievement.id });
   updateBadge();
   pulseBadge();
