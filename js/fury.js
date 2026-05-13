@@ -267,6 +267,59 @@ const LN = defineConstants("fury.lightning", {
     step: 0.1,
     description: "Frame-to-frame position jitter",
   },
+  FADE_EXPONENT: {
+    value: 2.5,
+    min: 1,
+    max: 5,
+    step: 0.1,
+    description: "Bolt fade curve exponent (higher = faster late-life fade)",
+  },
+  BRANCH_SCALE: {
+    value: 0.45,
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    description: "Per-branch alpha/width scaler relative to the trunk",
+  },
+  // Per-life and per-segment phase scalars feeding the micro-jitter sin/cos.
+  // The pair are kept distinct so x and y jitter trace different curves and
+  // avoid a moiré pattern.
+  JITTER_LIFE_FREQ: {
+    value: 7.13,
+    min: 0,
+    max: 30,
+    step: 0.01,
+    description: "Phase advance per frame for micro-jitter seed",
+  },
+  JITTER_SEG_FREQ_X: {
+    value: 3.7,
+    min: 0,
+    max: 30,
+    step: 0.01,
+    description: "Phase advance per segment for x-jitter sin",
+  },
+  JITTER_SEG_FREQ_Y: {
+    value: 2.3,
+    min: 0,
+    max: 30,
+    step: 0.01,
+    description: "Phase advance per segment for y-jitter cos",
+  },
+  FLICKER_OFFSET_MIN: {
+    value: 2,
+    min: 0,
+    max: 20,
+    step: 1,
+    description:
+      "Earliest frame after spawn at which a flicker can fire (avoids spawn-frame double-flash)",
+  },
+  FLICKER_LIFE_FRAC: {
+    value: 0.6,
+    min: 0.05,
+    max: 1,
+    step: 0.05,
+    description: "Fraction of bolt lifetime within which flickers may occur",
+  },
 });
 
 // ── Aurora (Tier 2) ──
@@ -432,6 +485,59 @@ const AURORA = defineConstants("fury.aurora", {
     step: 1,
     description: "Gradient edge hue shift",
   },
+  // Vertical band gradient stops. The edge stops are mirrored around the
+  // mid stop (top/bottom share the same color), so the band reads as a
+  // single ribbon brightest at its midline.
+  GRAD_EDGE_STOP: {
+    value: 0.3,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description:
+      "Gradient stop position for the upper edge (lower mirrored at 1 - this)",
+  },
+  GRAD_EDGE_SAT: {
+    value: 80,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "HSL saturation at the band edges",
+  },
+  GRAD_EDGE_LIGHT: {
+    value: 60,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "HSL lightness at the band edges",
+  },
+  GRAD_EDGE_ALPHA: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Alpha at the band edges",
+  },
+  GRAD_MID_SAT: {
+    value: 70,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "HSL saturation at the band midline",
+  },
+  GRAD_MID_LIGHT: {
+    value: 50,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "HSL lightness at the band midline",
+  },
+  GRAD_MID_ALPHA: {
+    value: 0.8,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Alpha at the band midline (peak)",
+  },
 });
 
 // ── Meteors (Tier 3) ──
@@ -527,6 +633,35 @@ const METEOR = defineConstants("fury.meteors", {
     step: 0.1,
     description: "Trail stroke width in pixels",
   },
+  FADE_IN_FRAC: {
+    value: 0.08,
+    min: 0.01,
+    max: 0.5,
+    step: 0.01,
+    description: "Fraction of lifetime spent fading in (rest fades out)",
+  },
+  TAIL_GROW_RATE: {
+    value: 3,
+    min: 1,
+    max: 10,
+    step: 0.5,
+    description: "How quickly the tail extends to full length, in 1/lifetime",
+  },
+  ANGLE_RANGE: {
+    value: 0.25,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description:
+      "Launch angle variation above SKY_SHARED.ANGLE_MIN, in radians/pi",
+  },
+  Y_SPAWN_FRAC: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Vertical spawn band as fraction of canvas height",
+  },
 });
 
 // ── Shared bolt helpers ──
@@ -567,30 +702,37 @@ export function spawnBolt(targetArray, x1, y1, x2, y2, depth) {
   const flickerCount =
     LN.FLICKER_COUNT_MIN + Math.floor(Math.random() * LN.FLICKER_COUNT_RANGE);
   const flickerFrames = [];
+  const flickerWindow = maxLife * LN.FLICKER_LIFE_FRAC;
   for (let f = 0; f < flickerCount; f++) {
-    flickerFrames.push(2 + Math.floor(Math.random() * (maxLife * 0.6)));
+    flickerFrames.push(
+      LN.FLICKER_OFFSET_MIN + Math.floor(Math.random() * flickerWindow),
+    );
   }
   targetArray.push({ points, depth, life: 0, maxLife, flickerFrames });
 }
 
 export function renderBolt(ctx, bolt, pal) {
   const t = bolt.life / bolt.maxLife;
-  let fade = Math.pow(1 - t, 2.5);
+  let fade = Math.pow(1 - t, LN.FADE_EXPONENT);
   const isFlicker = bolt.flickerFrames.indexOf(bolt.life) !== -1;
   if (isFlicker) fade = Math.max(fade, LN.FLICKER_ALPHA);
 
   const col = pal.lightningColor;
   const sc = pal.lightningShadow;
-  const branchScale = bolt.depth === 0 ? 1 : 0.45;
-  const jitterSeed = bolt.life * 7.13;
+  const branchScale = bolt.depth === 0 ? 1 : LN.BRANCH_SCALE;
+  const jitterSeed = bolt.life * LN.JITTER_LIFE_FREQ;
 
   const tracePath = (jitter) => {
     const pts = bolt.points;
     ctx.beginPath();
     ctx.moveTo(pts[0].x, pts[0].y);
     for (let p = 1; p < pts.length; p++) {
-      const jx = jitter ? Math.sin(jitterSeed + p * 3.7) * LN.MICRO_JITTER : 0;
-      const jy = jitter ? Math.cos(jitterSeed + p * 2.3) * LN.MICRO_JITTER : 0;
+      const jx = jitter
+        ? Math.sin(jitterSeed + p * LN.JITTER_SEG_FREQ_X) * LN.MICRO_JITTER
+        : 0;
+      const jy = jitter
+        ? Math.cos(jitterSeed + p * LN.JITTER_SEG_FREQ_Y) * LN.MICRO_JITTER
+        : 0;
       if (p < pts.length - 1) {
         const mx = (pts[p].x + jx + pts[p + 1].x) * 0.5;
         const my = (pts[p].y + jy + pts[p + 1].y) * 0.5;
@@ -773,15 +915,19 @@ export function createFury() {
             0,
             w.y + w.width,
           );
+          // Edge stops share saturation/lightness/alpha and only differ in hue
+          // shift, so the band reads as one ribbon brightest at its midline.
+          const edgeStyle = (hueShift) =>
+            `hsla(${w.hue + hueShift}, ${AURORA.GRAD_EDGE_SAT}%, ${AURORA.GRAD_EDGE_LIGHT}%, ${AURORA.GRAD_EDGE_ALPHA})`;
           grad.addColorStop(0, "transparent");
-          grad.addColorStop(0.3, `hsla(${w.hue}, 80%, 60%, 0.6)`);
+          grad.addColorStop(AURORA.GRAD_EDGE_STOP, edgeStyle(0));
           grad.addColorStop(
             0.5,
-            `hsla(${w.hue + AURORA.HUE_SHIFT_MID}, 70%, 50%, 0.8)`,
+            `hsla(${w.hue + AURORA.HUE_SHIFT_MID}, ${AURORA.GRAD_MID_SAT}%, ${AURORA.GRAD_MID_LIGHT}%, ${AURORA.GRAD_MID_ALPHA})`,
           );
           grad.addColorStop(
-            0.7,
-            `hsla(${w.hue + AURORA.HUE_SHIFT_EDGE}, 80%, 60%, 0.6)`,
+            1 - AURORA.GRAD_EDGE_STOP,
+            edgeStyle(AURORA.HUE_SHIFT_EDGE),
           );
           grad.addColorStop(1, "transparent");
           ctx.fillStyle = grad;
@@ -818,10 +964,14 @@ export function createFury() {
         const p = m.life / m.maxLife;
         m.x += Math.cos(m.angle) * m.speed;
         m.y += Math.sin(m.angle) * m.speed;
-        const fade = p < 0.08 ? p / 0.08 : (1 - p) / 0.92;
+        const fade =
+          p < METEOR.FADE_IN_FRAC
+            ? p / METEOR.FADE_IN_FRAC
+            : (1 - p) / (1 - METEOR.FADE_IN_FRAC);
         const op = m.opacity * fade;
-        const tailX = m.x - Math.cos(m.angle) * m.len * Math.min(1, p * 3);
-        const tailY = m.y - Math.sin(m.angle) * m.len * Math.min(1, p * 3);
+        const tailLen = m.len * Math.min(1, p * METEOR.TAIL_GROW_RATE);
+        const tailX = m.x - Math.cos(m.angle) * tailLen;
+        const tailY = m.y - Math.sin(m.angle) * tailLen;
         drawTrail(
           ctx,
           m.x,
@@ -857,9 +1007,10 @@ export function createFury() {
           m.x =
             Math.random() * canvas.width * SKY_SHARED.X_SPREAD +
             canvas.width * SKY_SHARED.X_OFFSET;
-          m.y = Math.random() * canvas.height * 0.3;
+          m.y = Math.random() * canvas.height * METEOR.Y_SPAWN_FRAC;
           m.angle =
-            Math.PI * SKY_SHARED.ANGLE_MIN + Math.random() * Math.PI * 0.25;
+            Math.PI * SKY_SHARED.ANGLE_MIN +
+            Math.random() * Math.PI * METEOR.ANGLE_RANGE;
           m.speed = METEOR.SPEED_MIN + Math.random() * METEOR.SPEED_RANGE;
           m.len = METEOR.LEN_MIN + Math.random() * METEOR.LEN_RANGE;
           m.opacity = METEOR.OPACITY_MIN + Math.random() * METEOR.OPACITY_RANGE;
