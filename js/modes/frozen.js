@@ -9,7 +9,7 @@ import { createClickCountTrigger } from "./triggers.js";
 // This file is for behavior only.
 
 // ── Force & Activation ──
-const FF = defineConstants(
+export const FF = defineConstants(
   "modes.frozenForce",
   {
     CLICKS_TO_FREEZE: 25,

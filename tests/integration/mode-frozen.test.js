@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { FF } from "../../js/modes/frozen.js";
 
 // Integration test: exercises initFrozen() end-to-end through the real
 // factory, real click-count trigger, and real playWipe — no module mocks.
@@ -6,15 +7,17 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 // no layout engine, so we assert on observable DOM outcomes (classes,
 // attached elements, style properties) rather than rendered appearance.
 
-// ── Constants mirrored from frozen.js ──
-// Pulling these verbatim keeps the test readable without importing the
-// module's internals. If they change in the source, the test fails loudly
-// and the numbers get updated here.
-const CLICKS_TO_FREEZE = 25;
-const CLICKS_TO_THAW = 13;
-const FROST_CREEP_AT = 0.32;
-const WIPE_COVER_MS = 400;
-const WIPE_REVEAL_MS = 600;
+const {
+  CLICKS_TO_FREEZE,
+  CLICKS_TO_THAW,
+  FROST_CREEP_AT,
+  WIPE_COVER_MS,
+  WIPE_REVEAL_MS,
+} = FF;
+
+// Strict-less-than threshold checks (e.g. progress < FROST_CREEP_AT) need
+// one extra click to land just past the boundary.
+const SLACK_CLICKS = 1;
 
 // Helpers
 
@@ -37,11 +40,15 @@ function clickLogo(times = 1) {
   }
 }
 
+// Small epsilon so vi.advanceTimersByTime lands just past the wipe boundary
+// rather than on it (timer order at exact boundaries is implementation-defined).
+const SLACK_MS = 50;
+
 // playWipe uses setTimeout for cover + requestAnimationFrame + setTimeout for
 // reveal. Driving the timers past cover+reveal runs the full cycle under
 // fake timers.
 function flushWipe() {
-  vi.advanceTimersByTime(WIPE_COVER_MS + WIPE_REVEAL_MS + 50);
+  vi.advanceTimersByTime(WIPE_COVER_MS + WIPE_REVEAL_MS + SLACK_MS);
 }
 
 async function setupFrozen() {
@@ -60,7 +67,8 @@ describe("mode-frozen integration", () => {
     // Web Animations API shim: happy-dom has no Element.animate. The frost
     // breath particles and frost ripples use it; stub it so the self-clean
     // onfinish path still fires (particles are removed from the DOM when
-    // animation ends).
+    // animation ends). Cleared in afterEach so the shim doesn't bleed into
+    // unrelated suites running in the same process.
     if (!Element.prototype.animate) {
       Element.prototype.animate = function () {
         const handle = { onfinish: null };
@@ -74,6 +82,7 @@ describe("mode-frozen integration", () => {
     vi.useRealTimers();
     document.body.innerHTML = "";
     delete window.scrollTo;
+    delete Element.prototype.animate;
   });
 
   it("activates after CLICKS_TO_FREEZE logo clicks and applies the body class + mode-activate event", async () => {
@@ -133,10 +142,11 @@ describe("mode-frozen integration", () => {
     clickLogo(7);
     expect(parseFloat(overlay.style.opacity) || 0).toBe(0);
 
-    // Cross the threshold: 9 clicks → force 0.36.
-    // The +1 is because the indicator uses progress < FROST_CREEP_AT (strict
-    // less-than), so force exactly at the threshold doesn't cross.
-    const clicksToCross = Math.ceil(FROST_CREEP_AT * CLICKS_TO_FREEZE) + 1;
+    // The indicator uses progress < FROST_CREEP_AT (strict less-than), so
+    // force exactly at the threshold doesn't cross. SLACK_CLICKS lands one
+    // click past the boundary.
+    const clicksToCross =
+      Math.ceil(FROST_CREEP_AT * CLICKS_TO_FREEZE) + SLACK_CLICKS;
     clickLogo(clicksToCross - 7);
     expect(parseFloat(overlay.style.opacity)).toBeGreaterThan(0);
   });
