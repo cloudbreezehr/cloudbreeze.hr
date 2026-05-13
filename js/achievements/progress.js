@@ -19,6 +19,7 @@ import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 
 export const THEMES = ["dark", "light", "auto"];
 export const QUADRANTS = ["tl", "tr", "bl", "br"];
+export const PANEL_TABS = ["achievements", "activity"];
 
 // ── Thresholds for count-based achievements ──
 const THEME_TOGGLES_TOTAL = 3;
@@ -37,6 +38,7 @@ export const PROGRESS_ITEMS = {
   "modes-activated": () => MODE_SETS,
   "themes-used": () => THEMES,
   "almanac-themes": () => THEMES,
+  "panel-tabs-visited": () => PANEL_TABS,
   "quadrants-clicked": () => QUADRANTS,
 };
 

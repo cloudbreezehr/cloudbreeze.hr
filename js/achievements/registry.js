@@ -305,6 +305,18 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
 
+  // ── Mastery: Cloudlog Navigation ──
+  {
+    id: "tab-tourist",
+    title: "Tab Tourist",
+    description: "Both halves of the logbook, browsed.",
+    hint: "Switch between the Achievements and Activity tabs",
+    set: "mastery",
+    points: UNCOMMON,
+    hidden: true,
+    progressKey: "panel-tabs-visited",
+  },
+
   // ── Mastery: Hold / Gravity Progression ──
   {
     id: "gathering-storm",

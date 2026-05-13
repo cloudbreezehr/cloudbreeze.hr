@@ -383,6 +383,16 @@ export function createTracker(onUnlock, onRelock) {
       // panel opens; collected across (auto, light, dark) over any number
       // of sessions.
       if (data && data.theme) tryProgressItem("almanac-themes", data.theme);
+      // Tab Tourist credits the initial tab on open so the user only
+      // needs to click the other tab to complete the pair. Default tab
+      // is reported by the dispatcher so this stays UI-agnostic.
+      if (data && data.tab) tryProgressItem("panel-tabs-visited", data.tab);
+    },
+
+    "panel-tab-switch"(data) {
+      // Tab Tourist — collected across (achievements, activity) over any
+      // number of sessions.
+      if (data && data.tab) tryProgressItem("panel-tabs-visited", data.tab);
     },
 
     "contact-click"() {

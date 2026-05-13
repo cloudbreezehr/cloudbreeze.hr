@@ -127,9 +127,11 @@ function openPanelUI(onHide) {
   // Theme preference (auto/light/dark) — feeds the cartographers-almanac
   // achievement which collects each theme the panel is opened under.
   const themePref = localStorage.getItem("theme") || "dark";
+  // Initial tab — credits Tab Tourist for the default view so the user
+  // only needs to click the other tab to complete the pair.
   window.dispatchEvent(
     new CustomEvent("achievement", {
-      detail: { type: "panel-open", theme: themePref },
+      detail: { type: "panel-open", theme: themePref, tab: getActiveTab() },
     }),
   );
 

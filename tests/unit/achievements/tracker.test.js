@@ -1057,6 +1057,61 @@ describe("tracker — night-owl", () => {
   });
 });
 
+describe("tracker — tab-tourist", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks after panel-open credits one tab and panel-tab-switch credits the other", async () => {
+    const { storage } = await startTracker();
+
+    // Initial open lands on the Achievements tab.
+    dispatchAchievement("panel-open", { tab: "achievements" });
+    expect(storage.isUnlocked("tab-tourist")).toBe(false);
+
+    // User switches to the Activity tab — completes the pair.
+    dispatchAchievement("panel-tab-switch", { tab: "activity" });
+    expect(storage.isUnlocked("tab-tourist")).toBe(true);
+  });
+
+  it("unlocks via two switch events alone (no initial panel-open credit)", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("panel-tab-switch", { tab: "achievements" });
+    dispatchAchievement("panel-tab-switch", { tab: "activity" });
+
+    expect(storage.isUnlocked("tab-tourist")).toBe(true);
+  });
+
+  it("ignores panel-open without a tab field", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("panel-open", {});
+    dispatchAchievement("panel-tab-switch", { tab: "activity" });
+
+    // Only one tab credited; not enough to unlock yet.
+    expect(storage.isUnlocked("tab-tourist")).toBe(false);
+  });
+
+  it("repeating the same tab does not advance progress", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 5; i++) {
+      dispatchAchievement("panel-tab-switch", { tab: "achievements" });
+    }
+
+    expect(storage.isUnlocked("tab-tourist")).toBe(false);
+  });
+});
+
 describe("tracker — cartographers-almanac", () => {
   beforeEach(() => {
     document.body.className = "";

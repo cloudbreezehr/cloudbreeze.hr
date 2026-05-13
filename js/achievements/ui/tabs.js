@@ -90,6 +90,11 @@ export function setActiveTab(id) {
   // opening the Cloudlog clears the achievement-unseen badge.
   if (id === "activity") activityLog.markAllSeen();
   updateTabBadges();
+  window.dispatchEvent(
+    new CustomEvent("achievement", {
+      detail: { type: "panel-tab-switch", tab: id },
+    }),
+  );
 }
 
 export function updateTabBadges() {
