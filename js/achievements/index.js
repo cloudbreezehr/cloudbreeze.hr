@@ -20,8 +20,36 @@ import { onKey } from "../keyboard.js";
 import { maybeShowWelcomeBack, markGreeted } from "./welcome-back.js";
 
 // ── Triple-click detection ──
-const TRIPLE_CLICK_MAX_MS = 600;
-const TRIPLE_CLICK_COUNT = 3;
+// Window during which a click counts toward the same triple. Each click
+// pushes its timestamp; older entries fall off when they age past this
+// window, so a slow-then-fast sequence (click ... pause ... click click
+// click) still triggers cleanly.
+export const TRIPLE_CLICK_MAX_MS = 600;
+export const TRIPLE_CLICK_COUNT = 3;
+
+/**
+ * Watch an event target for triple-clicks within TRIPLE_CLICK_MAX_MS.
+ * Calls `onTriple(event)` with the third click's event when the burst
+ * completes, then resets state.
+ *
+ * Returns a stop() function that detaches the listener.
+ */
+export function createTripleClickDetector(target, onTriple) {
+  let clickTimes = [];
+  function onClick(e) {
+    const now = Date.now();
+    clickTimes.push(now);
+    while (clickTimes.length > 0 && now - clickTimes[0] > TRIPLE_CLICK_MAX_MS) {
+      clickTimes.shift();
+    }
+    if (clickTimes.length >= TRIPLE_CLICK_COUNT) {
+      clickTimes = [];
+      onTriple(e);
+    }
+  }
+  target.addEventListener("click", onClick);
+  return () => target.removeEventListener("click", onClick);
+}
 
 export function initAchievements() {
   // Load persisted state
@@ -142,20 +170,5 @@ export function initAchievements() {
     }
   });
 
-  // Triple-click detection
-  let clickTimes = [];
-  document.addEventListener("click", (e) => {
-    const now = Date.now();
-    clickTimes.push(now);
-
-    // Keep only recent clicks
-    while (clickTimes.length > 0 && now - clickTimes[0] > TRIPLE_CLICK_MAX_MS) {
-      clickTimes.shift();
-    }
-
-    if (clickTimes.length >= TRIPLE_CLICK_COUNT) {
-      clickTimes = [];
-      activate(e.clientX, e.clientY);
-    }
-  });
+  createTripleClickDetector(document, (e) => activate(e.clientX, e.clientY));
 }
