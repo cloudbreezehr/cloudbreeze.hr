@@ -11,7 +11,7 @@ import { prefersReducedMotion } from "../motion.js";
 
 const SESSION_FLAG_KEY = "first-paint-mote-shown";
 
-const MOTE = defineConstants("onboarding.firstPaintMote", {
+export const MOTE = defineConstants("onboarding.firstPaintMote", {
   SIZE_PX: { value: 8, min: 2, max: 32, step: 1 },
   DRIFT_PX: { value: 28, min: 0, max: 120, step: 1 },
   FADE_MS: { value: 4000, min: 200, max: 20000, step: 100 },

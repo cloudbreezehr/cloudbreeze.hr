@@ -1,9 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { MOTE } from "../../../js/effects/first-paint-mote.js";
 
 // first-paint-mote arms a one-shot pointermove listener on init and
 // spawns a single drifting mote on the first qualifying movement.
 // Gated by sessionStorage and prefers-reduced-motion.  Tests stub
 // matchMedia to control the reduced-motion gate.
+
+// Small epsilon so vi.advanceTimersByTime lands just past the arming
+// boundary rather than on it.
+const SLACK_MS = 5;
+const PAST_ARMING_MS = MOTE.ARM_DELAY_MS + SLACK_MS;
+
+// Pointer travel that comfortably clears the dead zone (squared distance
+// well above POINTER_DEAD_ZONE_PX²). Computed as a multiple of the dead
+// zone so tuning the source automatically retunes the test.
+const PAST_DEAD_ZONE_PX = MOTE.POINTER_DEAD_ZONE_PX * 4;
+
+// Tiny travel that stays inside the dead zone.
+const WITHIN_DEAD_ZONE_PX = Math.floor(MOTE.POINTER_DEAD_ZONE_PX / 4);
+
+const SEED_X = 100;
+const SEED_Y = 100;
 
 describe("effects/first-paint-mote", () => {
   let mod;
@@ -63,11 +80,10 @@ describe("effects/first-paint-mote", () => {
 
   it("spawns one mote on the first qualifying pointer movement", async () => {
     mod.initFirstPaintMote();
-    // Past the arming delay.
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(PAST_ARMING_MS);
 
-    dispatchPointerMove(100, 100); // seeds reference point
-    dispatchPointerMove(200, 200); // travels well past the dead zone
+    dispatchPointerMove(SEED_X, SEED_Y); // seeds reference point
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
 
     expect(getMote()).not.toBeNull();
   });
@@ -80,42 +96,45 @@ describe("effects/first-paint-mote", () => {
     mod = await import("../../../js/effects/first-paint-mote.js");
 
     mod.initFirstPaintMote();
-    vi.advanceTimersByTime(1000);
-    dispatchPointerMove(100, 100);
-    dispatchPointerMove(500, 500);
+    vi.advanceTimersByTime(PAST_ARMING_MS);
+    dispatchPointerMove(SEED_X, SEED_Y);
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
     expect(getMote()).toBeNull();
   });
 
   it("does not spawn a mote when the session flag is already set", () => {
     sessionStorage.setItem("first-paint-mote-shown", "1");
     mod.initFirstPaintMote();
-    vi.advanceTimersByTime(1000);
-    dispatchPointerMove(100, 100);
-    dispatchPointerMove(500, 500);
+    vi.advanceTimersByTime(PAST_ARMING_MS);
+    dispatchPointerMove(SEED_X, SEED_Y);
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
     expect(getMote()).toBeNull();
   });
 
   it("ignores pointer movement before the arming delay", () => {
     mod.initFirstPaintMote();
     // Don't advance — fire immediately.
-    dispatchPointerMove(100, 100);
-    dispatchPointerMove(500, 500);
+    dispatchPointerMove(SEED_X, SEED_Y);
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
     expect(getMote()).toBeNull();
   });
 
   it("ignores tiny pointer travel within the dead zone", () => {
     mod.initFirstPaintMote();
-    vi.advanceTimersByTime(1000);
-    dispatchPointerMove(100, 100); // seed
-    dispatchPointerMove(105, 102); // tiny nudge — within dead zone
+    vi.advanceTimersByTime(PAST_ARMING_MS);
+    dispatchPointerMove(SEED_X, SEED_Y); // seed
+    dispatchPointerMove(
+      SEED_X + WITHIN_DEAD_ZONE_PX,
+      SEED_Y + WITHIN_DEAD_ZONE_PX,
+    );
     expect(getMote()).toBeNull();
   });
 
   it("fires only once across multiple init cycles in the same tab", async () => {
     mod.initFirstPaintMote();
-    vi.advanceTimersByTime(1000);
-    dispatchPointerMove(100, 100);
-    dispatchPointerMove(500, 500);
+    vi.advanceTimersByTime(PAST_ARMING_MS);
+    dispatchPointerMove(SEED_X, SEED_Y);
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
     expect(getMote()).not.toBeNull();
 
     // Drain the cleanup microtask before re-init.
@@ -126,9 +145,9 @@ describe("effects/first-paint-mote", () => {
     vi.resetModules();
     mod = await import("../../../js/effects/first-paint-mote.js");
     mod.initFirstPaintMote();
-    vi.advanceTimersByTime(1000);
-    dispatchPointerMove(100, 100);
-    dispatchPointerMove(500, 500);
+    vi.advanceTimersByTime(PAST_ARMING_MS);
+    dispatchPointerMove(SEED_X, SEED_Y);
+    dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
     // No new mote on this fresh init — the gate held.
     expect(document.querySelectorAll(".first-paint-mote").length).toEqual(0);
   });
