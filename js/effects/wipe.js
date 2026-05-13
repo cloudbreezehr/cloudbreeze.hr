@@ -1,7 +1,7 @@
 // ── Wipe Transition Effect ──
-// Full-screen opacity wipe used by mode transitions. Covers the viewport,
-// runs a midpoint callback while obscured, then reveals the new state.
-// CSS classes control the visual appearance (gradient, color) per mode.
+// Full-screen opacity wipe: covers the viewport, runs a midpoint callback
+// while obscured, then reveals the new state. The CSS class supplied by
+// the caller controls the visual appearance (gradient, color).
 
 /**
  * Play a full-screen opacity wipe transition.

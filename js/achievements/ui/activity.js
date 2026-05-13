@@ -17,8 +17,8 @@ import {
 
 // ── Intro hint ──
 // Slim tip prepended to the active list while the user is still in the
-// discovery phase, matching the threshold used by the Achievements tab
-// so onboarding cues across both tabs vanish at the same milestone.
+// discovery phase. Kept in step with INTRO_CARD_THRESHOLD so onboarding
+// cues across the panel vanish at the same milestone.
 export const INTRO_HINT_THRESHOLD = 10;
 
 let activitySubView = "list"; // "list" | "trash"

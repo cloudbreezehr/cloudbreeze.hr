@@ -516,8 +516,8 @@ export function initCanvas(canvasEl, theme, options) {
     { passive: true },
   );
 
-  // Dock snap / undock release — the dev console is the sole publisher
-  // of these custom events; canvas just visualizes the snap/release.
+  // Visualize dock-snap / dock-release events with an edge burst at the
+  // reported side (each event has exactly one publisher in the codebase).
   function handleDockEvent(e, type) {
     const { side, top, height } = e.detail;
     const edgeX = side === "left" ? 0 : canvas.width;

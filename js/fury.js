@@ -529,7 +529,7 @@ const METEOR = defineConstants("fury.meteors", {
   },
 });
 
-// ── Shared bolt helpers (used by fury + ambient lightning in rain) ──
+// ── Shared bolt helpers ──
 
 export function spawnBolt(targetArray, x1, y1, x2, y2, depth) {
   const isBranch = depth > 0;

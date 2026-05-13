@@ -11,10 +11,10 @@ import { defineConstants } from "../dev/registry.js";
 
 const FW = defineConstants("effects.fireworks", {
   // ── Pool ──
-  // Pool sizes are read once at module load — changing them in the dev
-  // console takes effect on reload, not live.  Values chosen to cover the
-  // default LEGENDARY launch (10 rockets × ~40 primaries × burst overlap)
-  // with headroom for cranked values.
+  // Caps are sampled at module load and applied to fixed-size object pools, so
+  // raising them takes effect on reload only. Defaults sized for the loudest
+  // built-in launch (~rocket count × primary spawn × burst overlap) with
+  // headroom for tuned-up values.
   MAX_PARTICLES: { value: 400, min: 50, max: 2000, step: 10 },
   MAX_BURSTS: 5,
   MAX_ROCKETS: { value: 16, min: 1, max: 100, step: 1 },
@@ -42,7 +42,8 @@ const FW = defineConstants("effects.fireworks", {
   SECONDARY_TRIGGER_FADE: 0.5,
 
   // ── Rocket ──
-  // Frames to rise (at 60fps, 60 = 1 second).
+  // Lifespan of the rising trail before it bursts. Lower values feel snappier
+  // but skip the anticipatory arc; longer makes the trail more readable.
   ROCKET_LIFE_FRAMES: 60,
   ROCKET_RADIUS: 2,
   // Random horizontal target band, as fractions of viewport width.
