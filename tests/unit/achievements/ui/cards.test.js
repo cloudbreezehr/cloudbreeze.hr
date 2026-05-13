@@ -216,6 +216,42 @@ describe("achievements/ui/cards", () => {
       expect(refreshPanelStub).toHaveBeenCalled();
     });
 
+    it("renders the timestamp + inline progress identically to a fresh paint", async () => {
+      // Pick an achievement with a progressKey so the inline count
+      // path is exercised, and seed enough state that the count is
+      // non-zero.
+      const ach = "curious-mind"; // progressKey: unlocks-5
+      // unlock 3 unrelated achievements to populate countUnlocks
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      storage.unlock("a-stillness");
+      mod.renderSections(container);
+
+      // Reference DOM from a fresh render, after unlocking the target.
+      storage.unlock(ach);
+      container.replaceChildren();
+      mod.renderSections(container);
+      const referenceTime = container
+        .querySelector(`.achievement-card[data-id="${ach}"]`)
+        .querySelector(".achievement-card-time").outerHTML;
+
+      // Now simulate the in-place refresh path: re-render in the locked
+      // state, then unlock and call refreshCard.
+      storage.reset();
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      storage.unlock("a-stillness");
+      container.replaceChildren();
+      mod.renderSections(container);
+      storage.unlock(ach);
+      mod.refreshCard(ach);
+
+      const refreshedTime = container
+        .querySelector(`.achievement-card[data-id="${ach}"]`)
+        .querySelector(".achievement-card-time").outerHTML;
+      expect(refreshedTime).toEqual(referenceTime);
+    });
+
     it("falls back to full panel refresh when the card isn't in the DOM", () => {
       // Don't renderSections — card won't exist.  refreshCard should
       // trigger refreshPanel and exit.

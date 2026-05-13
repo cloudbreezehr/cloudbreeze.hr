@@ -241,6 +241,40 @@ function buildIntroCard() {
   return card;
 }
 
+// Build the timestamp + inline progress block for an unlocked card.
+// Returns null when the achievement has no recorded unlock time.
+// Single source of truth for this row — every call site must use it
+// instead of inlining construction so all render paths produce
+// identical DOM.
+function buildCardTimeBlock(ach) {
+  const ts = storage.getUnlockTime(ach.id);
+  if (!ts) return null;
+
+  const timeEl = document.createElement("div");
+  timeEl.className = "achievement-card-time";
+  timeEl.dataset.ts = String(ts);
+  timeEl.textContent = formatTimestamp(ts);
+  timeEl.addEventListener("click", () => toggleTimestampMode(_getPanelEl()));
+
+  if (ach.progressKey) {
+    const total = resolveProgressTotal(ach.progressKey);
+    const collected = Math.min(resolveProgressCurrent(ach.progressKey), total);
+    if (total > 0) {
+      const sep = document.createTextNode(" · ");
+      const progressSpan = document.createElement("span");
+      progressSpan.className = "achievement-card-progress-text";
+      progressSpan.textContent =
+        collected >= total
+          ? `${collected}/${total} ✓`
+          : `${collected}/${total}`;
+      timeEl.appendChild(sep);
+      timeEl.appendChild(progressSpan);
+    }
+  }
+
+  return timeEl;
+}
+
 // ── Section renderer ──
 
 export function renderSections(container) {
@@ -371,40 +405,9 @@ export function renderSections(container) {
       text.appendChild(cardTitle);
       text.appendChild(cardDesc);
 
-      // Timestamp + inline progress for unlocked achievements
       if (isUnlocked) {
-        const ts = storage.getUnlockTime(ach.id);
-        if (ts) {
-          const timeEl = document.createElement("div");
-          timeEl.className = "achievement-card-time";
-          timeEl.dataset.ts = String(ts);
-          timeEl.textContent = formatTimestamp(ts);
-          timeEl.addEventListener("click", () =>
-            toggleTimestampMode(_getPanelEl()),
-          );
-
-          // Append inline progress count after timestamp
-          if (ach.progressKey) {
-            const total = resolveProgressTotal(ach.progressKey);
-            const collected = Math.min(
-              resolveProgressCurrent(ach.progressKey),
-              total,
-            );
-            if (total > 0) {
-              const sep = document.createTextNode(" \u00B7 ");
-              const progressSpan = document.createElement("span");
-              progressSpan.className = "achievement-card-progress-text";
-              progressSpan.textContent =
-                collected >= total
-                  ? `${collected}/${total} \u2713`
-                  : `${collected}/${total}`;
-              timeEl.appendChild(sep);
-              timeEl.appendChild(progressSpan);
-            }
-          }
-
-          text.appendChild(timeEl);
-        }
+        const timeEl = buildCardTimeBlock(ach);
+        if (timeEl) text.appendChild(timeEl);
       } else if (ach.progressKey) {
         // Locked/relocked: show progress on its own line (where timestamp would be)
         const total = resolveProgressTotal(ach.progressKey);
@@ -509,18 +512,13 @@ export function refreshCard(achievementId) {
   const desc = card.querySelector(".achievement-card-desc");
   if (desc) desc.textContent = ach.description;
 
-  // Add timestamp
+  // Replace any prior time-row (the locked-state progress line) so the
+  // unlocked-state timestamp + inline progress lands cleanly.
   const textEl = card.querySelector(".achievement-text");
-  if (textEl && !card.querySelector(".achievement-card-time")) {
-    const ts = storage.getUnlockTime(achievementId);
-    if (ts) {
-      const timeEl = document.createElement("div");
-      timeEl.className = "achievement-card-time";
-      timeEl.dataset.ts = String(ts);
-      timeEl.textContent = formatTimestamp(ts);
-      timeEl.addEventListener("click", () => toggleTimestampMode(panelEl));
-      textEl.appendChild(timeEl);
-    }
+  if (textEl) {
+    card.querySelector(".achievement-card-time")?.remove();
+    const timeEl = buildCardTimeBlock(ach);
+    if (timeEl) textEl.appendChild(timeEl);
   }
 
   // Click pop for newly unlocked card
