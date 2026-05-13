@@ -3,6 +3,7 @@ import {
   SEEN_DWELL_MS,
   INTRO_CARD_THRESHOLD,
 } from "../../../../js/achievements/ui/cards.js";
+import { POST_SETTLE_DELAY_MS } from "../../../../js/achievements/ui/scroll-highlight.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected
@@ -14,6 +15,7 @@ const SLACK_MS = 100;
 const PAST_DWELL_MS = SEEN_DWELL_MS + SLACK_MS;
 const HALF_DWELL_MS = Math.floor(SEEN_DWELL_MS / 2);
 const PAST_INTRO_THRESHOLD_COUNT = INTRO_CARD_THRESHOLD + 1;
+const PAST_HIGHLIGHT_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 
 describe("achievements/ui/cards", () => {
   let mod;
@@ -228,6 +230,7 @@ describe("achievements/ui/cards", () => {
       const card = container.querySelector(
         '.achievement-card[data-id="first-light"]',
       );
+      vi.advanceTimersByTime(PAST_HIGHLIGHT_DELAY_MS);
       expect(card.classList.contains("shine")).toBe(true);
     });
 

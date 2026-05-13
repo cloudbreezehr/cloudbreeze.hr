@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { INTRO_HINT_THRESHOLD } from "../../../../js/achievements/ui/activity.js";
 import { getAchievement } from "../../../../js/achievements/registry.js";
+import { POST_SETTLE_DELAY_MS } from "../../../../js/achievements/ui/scroll-highlight.js";
+
+// Symbolic landmark — tests want to land just past the post-settle delay
+// so the deferred highlight has fired.  Tuning the source constant
+// retunes the tests automatically.
+const SLACK_MS = 1;
+const AFTER_HIGHLIGHT_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 
 // activity.js owns the Activity tab renderer — both the main list and
 // the trash sub-view.  Its only module state is the current sub-view,
@@ -329,6 +336,7 @@ describe("achievements/ui/activity", () => {
       const expectedId = activityLog.getActive()[0].id;
 
       mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+      vi.advanceTimersByTime(AFTER_HIGHLIGHT_DELAY_MS);
 
       const row = view.querySelector(
         `.activity-row[data-entry-id="${expectedId}"]`,
@@ -348,6 +356,7 @@ describe("achievements/ui/activity", () => {
       mod.renderActivity(view);
 
       mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+      vi.advanceTimersByTime(AFTER_HIGHLIGHT_DELAY_MS);
 
       const shining = view.querySelector(".activity-row.shine");
       expect(shining).not.toBeNull();

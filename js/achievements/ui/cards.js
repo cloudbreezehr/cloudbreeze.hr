@@ -15,6 +15,7 @@ import { formatTimestamp, toggleTimestampMode } from "./timestamp.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
+import { scrollAndHighlight } from "./scroll-highlight.js";
 
 // ── Tooltip Constants ──
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
@@ -194,15 +195,7 @@ export function scrollToCard(achievementId) {
   );
   if (!card) return;
 
-  card.scrollIntoView({ behavior: "smooth", block: "center" });
-
-  // Highlight with the shine animation
-  card.classList.remove("shine");
-  void card.offsetHeight;
-  card.classList.add("shine");
-  card.addEventListener("animationend", () => card.classList.remove("shine"), {
-    once: true,
-  });
+  scrollAndHighlight(card);
 }
 
 // ── Intro card ──

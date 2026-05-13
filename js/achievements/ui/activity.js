@@ -15,6 +15,7 @@ import {
 } from "./toast.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
+import { scrollAndHighlight } from "./scroll-highlight.js";
 
 // ── Intro hint ──
 // Onboarding tip prepended to the active list during the discovery phase.
@@ -225,13 +226,7 @@ export function scrollToLatestActivityFor(achievementId, type) {
   const row = view.querySelector(`.activity-row[data-entry-id="${entryId}"]`);
   if (!row) return;
 
-  row.scrollIntoView({ behavior: "smooth", block: "center" });
-  row.classList.remove("shine");
-  void row.offsetHeight;
-  row.classList.add("shine");
-  row.addEventListener("animationend", () => row.classList.remove("shine"), {
-    once: true,
-  });
+  scrollAndHighlight(row);
 }
 
 // Test hook — return to "list" sub-view between runs so no test inherits
