@@ -16,9 +16,9 @@
 
 import { defineConstants } from "../dev/registry.js";
 
-const STORAGE_KEY = "cb_activity_log_v1";
+export const STORAGE_KEY = "cb_activity_log_v1";
 
-const AL = defineConstants("achievements.activityLog", {
+export const AL = defineConstants("achievements.activityLog", {
   // Maximum entries kept in the log (across active + trashed).  When
   // exceeded, the oldest entry is evicted — trashed entries are evicted
   // first since they're already out of sight.
