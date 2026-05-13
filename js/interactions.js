@@ -1,3 +1,4 @@
+import { drawHaloParticle, rgbaStr } from "./canvas-utils.js";
 import { defineConstants, notifySectionActivate } from "./dev/registry.js";
 
 // ── Click Particles ──
@@ -951,25 +952,10 @@ export function createInteractions() {
         const fade = 1 - p.life / p.maxLife;
         const op = p.opacity * fade;
         if (op < CLICK.DRAW_THRESHOLD) continue;
-        const c = p.color;
-        const grad = ctx.createRadialGradient(
-          p.x,
-          p.y,
-          0,
-          p.x,
-          p.y,
-          p.r * CLICK.GLOW_RADIUS,
-        );
-        grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${op})`);
-        grad.addColorStop(
-          CLICK.GLOW_MID_STOP,
-          `rgba(${c[0]},${c[1]},${c[2]},${op * CLICK.GLOW_MID_ALPHA})`,
-        );
-        grad.addColorStop(1, "transparent");
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r * CLICK.GLOW_RADIUS, 0, Math.PI * 2);
-        ctx.fill();
+        drawHaloParticle(ctx, p.x, p.y, p.r * CLICK.GLOW_RADIUS, op, p.color, {
+          midStop: CLICK.GLOW_MID_STOP,
+          midAlpha: CLICK.GLOW_MID_ALPHA,
+        });
       }
 
       // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
@@ -1025,24 +1011,15 @@ export function createInteractions() {
         p.opacity += (p.targetOpacity - p.opacity) * ORBIT.OPACITY_EASE;
         // Draw with glow
         if (p.opacity > ORBIT.DRAW_THRESHOLD) {
-          const grad = ctx.createRadialGradient(
-            p.x,
-            p.y,
-            0,
+          drawHaloParticle(
+            ctx,
             p.x,
             p.y,
             p.r * ORBIT.GLOW_RADIUS,
+            p.opacity,
+            oc,
+            { midStop: ORBIT.GLOW_MID_STOP, midAlpha: ORBIT.GLOW_MID_ALPHA },
           );
-          grad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity})`);
-          grad.addColorStop(
-            ORBIT.GLOW_MID_STOP,
-            `rgba(${oc[0]},${oc[1]},${oc[2]},${p.opacity * ORBIT.GLOW_MID_ALPHA})`,
-          );
-          grad.addColorStop(1, "transparent");
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, p.r * ORBIT.GLOW_RADIUS, 0, Math.PI * 2);
-          ctx.fill();
         }
       }
 
@@ -1056,24 +1033,15 @@ export function createInteractions() {
         const auraOp = WELL.AURA_OPACITY * forces.wellStrength * pulse;
         ctx.save();
         ctx.globalCompositeOperation = "lighter";
-        const auraGrad = ctx.createRadialGradient(
-          forces.dragPos.x,
-          forces.dragPos.y,
-          0,
+        drawHaloParticle(
+          ctx,
           forces.dragPos.x,
           forces.dragPos.y,
           auraR,
+          auraOp,
+          oc,
+          { midStop: WELL.AURA_MID_STOP, midAlpha: WELL.AURA_MID_ALPHA },
         );
-        auraGrad.addColorStop(0, `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp})`);
-        auraGrad.addColorStop(
-          WELL.AURA_MID_STOP,
-          `rgba(${oc[0]},${oc[1]},${oc[2]},${auraOp * WELL.AURA_MID_ALPHA})`,
-        );
-        auraGrad.addColorStop(1, "transparent");
-        ctx.fillStyle = auraGrad;
-        ctx.beginPath();
-        ctx.arc(forces.dragPos.x, forces.dragPos.y, auraR, 0, Math.PI * 2);
-        ctx.fill();
         ctx.restore();
       }
 
@@ -1095,7 +1063,7 @@ export function createInteractions() {
         const c = pal.trailColor;
         ctx.save();
         ctx.globalAlpha = op;
-        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},1)`;
+        ctx.strokeStyle = rgbaStr(c, 1);
         ctx.lineWidth = s.width * fade;
         ctx.lineCap = "round";
         ctx.beginPath();

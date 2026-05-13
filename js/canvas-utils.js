@@ -1,3 +1,10 @@
+// Format an [r,g,b] tuple plus alpha as a `rgba(...)` string. Centralizes
+// the c[0]/c[1]/c[2] template literal so consumers don't reimplement (and
+// occasionally typo) the same destructure inline.
+export function rgbaStr(c, a) {
+  return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
+}
+
 // Trapezoidal scroll-visibility fade: 0 → fade in → 1 → fade out → 0.
 // For fade-out-only (e.g. stars), pass inStart = inEnd = 0.
 export function scrollFade(sp, inStart, inEnd, outStart, outEnd) {
@@ -34,4 +41,35 @@ export function drawTrail(
   ctx.lineTo(headX, headY);
   ctx.stroke();
   ctx.restore();
+}
+
+// Filled radial-gradient halo at (x, y) with radius `r`, where
+// the gradient runs `color` (alpha = `opacity`) → midColor (alpha =
+// `opacity * midAlpha`) at `midStop` → transparent at the rim.
+//
+// Two-stop mode: omit `midStop`/`midAlpha`, the gradient becomes a simple
+// `color` → transparent fade. Two-color mode: pass `midColor` distinct
+// from `color`.
+//
+// Caller is responsible for `ctx.save`/`globalCompositeOperation` setup
+// when needed (e.g. additive blending) — the helper only paints the disc.
+export function drawHaloParticle(
+  ctx,
+  x,
+  y,
+  r,
+  opacity,
+  color,
+  { midStop, midAlpha, midColor } = {},
+) {
+  const grad = ctx.createRadialGradient(x, y, 0, x, y, r);
+  grad.addColorStop(0, rgbaStr(color, opacity));
+  if (midStop !== undefined) {
+    grad.addColorStop(midStop, rgbaStr(midColor || color, opacity * midAlpha));
+  }
+  grad.addColorStop(1, "transparent");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fill();
 }
