@@ -128,6 +128,14 @@ const CLICK = defineConstants("interactions.click", {
     step: 0.01,
     description: "Gradient midpoint opacity multiplier",
   },
+  MAX: {
+    value: 240,
+    min: 30,
+    max: 600,
+    step: 10,
+    description:
+      "Cap on live click particles. Sized for a maxed gravity-well release (orbit-convert + extra burst + well burst) plus headroom for in-flight bursts.",
+  },
 });
 
 // ── Orbit Particles ──
@@ -676,6 +684,14 @@ const TRAIL = defineConstants("interactions.trail", {
     step: 0.1,
     description: "Vertical sway amplitude",
   },
+  MAX: {
+    value: 120,
+    min: 20,
+    max: 400,
+    step: 10,
+    description:
+      "Cap on live trail segments. Sized for a fast continuous drag across the viewport at SPACING granularity.",
+  },
 });
 
 // ── Edge Burst (dock snap / undock release) ──
@@ -903,6 +919,12 @@ export function createInteractions() {
   let lastTrail = { x: 0, y: 0 };
   let trailDist = 0;
 
+  // Drop oldest entries until below cap so bursts spawned mid-frame still land.
+  function pushCapped(arr, item, max) {
+    if (arr.length >= max) arr.splice(0, arr.length - max + 1);
+    arr.push(item);
+  }
+
   const cursorDot = document.getElementById("cursor");
   const cursorRing = document.getElementById("cursor-ring");
 
@@ -1096,18 +1118,22 @@ export function createInteractions() {
       for (let i = 0; i < count; i++) {
         const angle = Math.random() * Math.PI * 2;
         const speed = CLICK.SPEED_MIN + Math.random() * CLICK.SPEED_RANGE;
-        clickParticles.push({
-          x,
-          y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
-          opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
-          life: 0,
-          maxLife: CLICK.LIFE_MIN + Math.random() * CLICK.LIFE_RANGE,
-          phase: Math.random() * Math.PI * 2,
-          color: pal.clickColor,
-        });
+        pushCapped(
+          clickParticles,
+          {
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
+            opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
+            life: 0,
+            maxLife: CLICK.LIFE_MIN + Math.random() * CLICK.LIFE_RANGE,
+            phase: Math.random() * Math.PI * 2,
+            color: pal.clickColor,
+          },
+          CLICK.MAX,
+        );
       }
     },
 
@@ -1133,18 +1159,22 @@ export function createInteractions() {
         const y = top + t * height;
         const angle = inwardAngle + (Math.random() - 0.5) * cone * 2;
         const speed = speedMin + Math.random() * speedRange;
-        clickParticles.push({
-          x: edgeX,
-          y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r: rMin + Math.random() * rRange,
-          opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
-          life: 0,
-          maxLife: lifeMin + Math.random() * lifeRange,
-          phase: Math.random() * Math.PI * 2,
-          color: pal.clickColor,
-        });
+        pushCapped(
+          clickParticles,
+          {
+            x: edgeX,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            r: rMin + Math.random() * rRange,
+            opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
+            life: 0,
+            maxLife: lifeMin + Math.random() * lifeRange,
+            phase: Math.random() * Math.PI * 2,
+            color: pal.clickColor,
+          },
+          CLICK.MAX,
+        );
       }
     },
 
@@ -1253,20 +1283,24 @@ export function createInteractions() {
           blast *
           (HOLD.ORBIT_CONVERT_SPEED_MIN +
             Math.random() * HOLD.ORBIT_CONVERT_SPEED_RANGE);
-        clickParticles.push({
-          x: p.x,
-          y: p.y,
-          vx: (dx / dist) * speed + p.vx,
-          vy: (dy / dist) * speed + p.vy,
-          r: p.r,
-          opacity: p.opacity + HOLD.ORBIT_CONVERT_OPACITY_BOOST,
-          life: 0,
-          maxLife:
-            HOLD.EXTRA_BURST_LIFE_MIN +
-            Math.random() * HOLD.ORBIT_CONVERT_LIFE_RANGE,
-          phase: Math.random() * Math.PI * 2,
-          color: pal.clickColor,
-        });
+        pushCapped(
+          clickParticles,
+          {
+            x: p.x,
+            y: p.y,
+            vx: (dx / dist) * speed + p.vx,
+            vy: (dy / dist) * speed + p.vy,
+            r: p.r,
+            opacity: p.opacity + HOLD.ORBIT_CONVERT_OPACITY_BOOST,
+            life: 0,
+            maxLife:
+              HOLD.EXTRA_BURST_LIFE_MIN +
+              Math.random() * HOLD.ORBIT_CONVERT_LIFE_RANGE,
+            phase: Math.random() * Math.PI * 2,
+            color: pal.clickColor,
+          },
+          CLICK.MAX,
+        );
       });
       orbitParticles.length = 0;
 
@@ -1281,20 +1315,24 @@ export function createInteractions() {
           blast *
           (HOLD.EXTRA_BURST_SPEED_MIN +
             Math.random() * HOLD.EXTRA_BURST_SPEED_RANGE);
-        clickParticles.push({
-          x: forces.dragPos.x,
-          y: forces.dragPos.y,
-          vx: Math.cos(angle) * speed,
-          vy: Math.sin(angle) * speed,
-          r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
-          opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
-          life: 0,
-          maxLife:
-            HOLD.EXTRA_BURST_LIFE_MIN +
-            Math.random() * HOLD.EXTRA_BURST_LIFE_RANGE,
-          phase: Math.random() * Math.PI * 2,
-          color: pal.clickColor,
-        });
+        pushCapped(
+          clickParticles,
+          {
+            x: forces.dragPos.x,
+            y: forces.dragPos.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
+            opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
+            life: 0,
+            maxLife:
+              HOLD.EXTRA_BURST_LIFE_MIN +
+              Math.random() * HOLD.EXTRA_BURST_LIFE_RANGE,
+            phase: Math.random() * Math.PI * 2,
+            color: pal.clickColor,
+          },
+          CLICK.MAX,
+        );
       }
 
       // Gravity well burst — massive particle explosion on release
@@ -1306,20 +1344,25 @@ export function createInteractions() {
             blast *
             (WELL.BURST_SPEED_FACTOR_MIN +
               Math.random() * WELL.BURST_SPEED_FACTOR_RANGE);
-          clickParticles.push({
-            x: forces.dragPos.x,
-            y: forces.dragPos.y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            r: CLICK.RADIUS_MIN + Math.random() * WELL.BURST_RADIUS_RANGE,
-            opacity:
-              WELL.BURST_OPACITY_MIN + Math.random() * WELL.BURST_OPACITY_RANGE,
-            life: 0,
-            maxLife:
-              WELL.BURST_LIFE_MIN + Math.random() * WELL.BURST_LIFE_RANGE,
-            phase: Math.random() * Math.PI * 2,
-            color: pal.clickColor,
-          });
+          pushCapped(
+            clickParticles,
+            {
+              x: forces.dragPos.x,
+              y: forces.dragPos.y,
+              vx: Math.cos(angle) * speed,
+              vy: Math.sin(angle) * speed,
+              r: CLICK.RADIUS_MIN + Math.random() * WELL.BURST_RADIUS_RANGE,
+              opacity:
+                WELL.BURST_OPACITY_MIN +
+                Math.random() * WELL.BURST_OPACITY_RANGE,
+              life: 0,
+              maxLife:
+                WELL.BURST_LIFE_MIN + Math.random() * WELL.BURST_LIFE_RANGE,
+              phase: Math.random() * Math.PI * 2,
+              color: pal.clickColor,
+            },
+            CLICK.MAX,
+          );
         }
         cursorDot?.classList.remove("gravity-well");
         cursorRing?.classList.remove("gravity-well");
@@ -1350,16 +1393,20 @@ export function createInteractions() {
       const dy = y - lastTrail.y;
       trailDist += Math.sqrt(dx * dx + dy * dy);
       if (trailDist > TRAIL.SPACING) {
-        trailSegments.push({
-          x,
-          y,
-          prev: { x: lastTrail.x, y: lastTrail.y },
-          width: TRAIL.WIDTH_MIN + Math.random() * TRAIL.WIDTH_RANGE,
-          opacity: TRAIL.OPACITY_MIN + Math.random() * TRAIL.OPACITY_RANGE,
-          life: 0,
-          maxLife: TRAIL.LIFE_MIN + Math.random() * TRAIL.LIFE_RANGE,
-          phase: Math.random() * Math.PI * 2,
-        });
+        pushCapped(
+          trailSegments,
+          {
+            x,
+            y,
+            prev: { x: lastTrail.x, y: lastTrail.y },
+            width: TRAIL.WIDTH_MIN + Math.random() * TRAIL.WIDTH_RANGE,
+            opacity: TRAIL.OPACITY_MIN + Math.random() * TRAIL.OPACITY_RANGE,
+            life: 0,
+            maxLife: TRAIL.LIFE_MIN + Math.random() * TRAIL.LIFE_RANGE,
+            phase: Math.random() * Math.PI * 2,
+          },
+          TRAIL.MAX,
+        );
         lastTrail = { x, y };
         trailDist = 0;
         return true;
