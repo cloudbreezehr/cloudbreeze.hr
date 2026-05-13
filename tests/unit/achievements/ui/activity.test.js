@@ -186,6 +186,29 @@ describe("achievements/ui/activity", () => {
     });
   });
 
+  describe("re-lock row click navigation", () => {
+    it("opens the achievement card just like an unlock row does", async () => {
+      const toastMod = await import("../../../../js/achievements/ui/toast.js");
+      const setActiveTab = vi.fn();
+      const scrollToCard = vi.fn();
+      toastMod.configureToasts({
+        isPanelOpen: () => true,
+        setActiveTab,
+        scrollToCard,
+      });
+
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const toast = container.querySelector(
+        ".activity-row .achievement-toast-relock",
+      );
+      toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+      expect(setActiveTab).toHaveBeenCalledWith("achievements");
+      expect(scrollToCard).toHaveBeenCalledWith("first-light");
+    });
+  });
+
   describe("trash sub-view", () => {
     beforeEach(() => {
       activityLog.log("achievement-unlocked", { achievementId: "first-light" });

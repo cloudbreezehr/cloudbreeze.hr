@@ -12,7 +12,6 @@ import {
   buildAchievementToast,
   wireToastClick,
   buildRelockToast,
-  wireRelockToastClick,
 } from "./toast.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
@@ -145,7 +144,7 @@ function renderActivityEntry(entry, opts = {}) {
     wireToastClick(content, achievement);
   } else if (entry.type === "achievement-relocked") {
     content = buildRelockToast(achievement);
-    wireRelockToastClick(content, achievement);
+    wireToastClick(content, achievement);
   }
   if (!content) return null;
 
