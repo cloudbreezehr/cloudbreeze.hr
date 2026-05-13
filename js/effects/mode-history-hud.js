@@ -25,7 +25,7 @@ const UNDISCOVERED_ICON =
   '<circle cx="8" cy="12" r="0.5" fill="currentColor"/>' +
   "</svg>";
 
-const HUD = defineConstants("effects.modeHistoryHud", {
+export const HUD = defineConstants("effects.modeHistoryHud", {
   // ms before the expanded HUD collapses after pointer leave
   COLLAPSE_DELAY_MS: 800,
   // ms a slot pulses after the mode is activated
@@ -34,7 +34,7 @@ const HUD = defineConstants("effects.modeHistoryHud", {
   NEW_DISCOVERY_HIGHLIGHT_MS: 10000,
 });
 
-const STORAGE_KEY = "cb_mode_history_v1";
+export const STORAGE_KEY = "cb_mode_history_v1";
 
 // ── State ──
 // Map<modeId, firstActivatedTimestampMs>.  Loaded lazily from storage.
