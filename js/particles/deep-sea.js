@@ -3,6 +3,7 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
+import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 
 // ── Bubbles ──
@@ -682,19 +683,19 @@ class Bubble {
     _ctx.globalAlpha = this.opacity;
 
     // Thin ring outline
-    _ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${BUB.RING_ALPHA})`;
+    _ctx.strokeStyle = rgbaStr(rim, BUB.RING_ALPHA);
     _ctx.lineWidth = BUB.RING_WIDTH;
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     _ctx.stroke();
 
     // Very faint fill
-    _ctx.fillStyle = `rgba(${fill[0]},${fill[1]},${fill[2]},${BUB.FILL_ALPHA})`;
+    _ctx.fillStyle = rgbaStr(fill, BUB.FILL_ALPHA);
     _ctx.fill();
 
     // Specular highlight — small arc near top-left
     if (this.r >= BUB.SPECULAR_THRESHOLD) {
-      _ctx.strokeStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_PRIMARY_ALPHA})`;
+      _ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_PRIMARY_ALPHA);
       _ctx.lineWidth = BUB.HIGHLIGHT_PRIMARY_WIDTH;
       _ctx.beginPath();
       _ctx.arc(
@@ -707,7 +708,7 @@ class Bubble {
       _ctx.stroke();
     } else {
       // Small bubbles — just a dot highlight
-      _ctx.fillStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_DOT_ALPHA})`;
+      _ctx.fillStyle = rgbaStr(spec, BUB.HIGHLIGHT_DOT_ALPHA);
       _ctx.beginPath();
       _ctx.arc(
         this.x - this.r * BUB.DOT_OFFSET_FRAC,
@@ -721,7 +722,7 @@ class Bubble {
 
     // Large bubbles get a secondary smaller highlight
     if (this.r >= BUB.LARGE_THRESHOLD) {
-      _ctx.strokeStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_SECONDARY_ALPHA})`;
+      _ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_SECONDARY_ALPHA);
       _ctx.lineWidth = BUB.HIGHLIGHT_SECONDARY_WIDTH;
       _ctx.beginPath();
       _ctx.arc(
@@ -823,21 +824,14 @@ class Jellyfish {
     _ctx.save();
 
     // Bioluminescent glow — radial gradient around the bell
-    const haloR = this.bellR * JELLY.GLOW_HALO_RADIUS_RATIO;
-    const grad = _ctx.createRadialGradient(
+    drawHaloParticle(
+      _ctx,
       this.x,
       this.y,
-      0,
-      this.x,
-      this.y,
-      haloR,
+      this.bellR * JELLY.GLOW_HALO_RADIUS_RATIO,
+      glowAlpha,
+      c,
     );
-    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha})`);
-    grad.addColorStop(1, "transparent");
-    _ctx.fillStyle = grad;
-    _ctx.beginPath();
-    _ctx.arc(this.x, this.y, haloR, 0, Math.PI * 2);
-    _ctx.fill();
 
     // Bell dome — parabolic arc using quadraticCurveTo
     const bellW = this.bellR;
@@ -853,10 +847,7 @@ class Jellyfish {
       this.y,
       this.bellR,
     );
-    bellGrad.addColorStop(
-      0,
-      `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha * JELLY.BELL_FILL_ALPHA_MUL})`,
-    );
+    bellGrad.addColorStop(0, rgbaStr(c, glowAlpha * JELLY.BELL_FILL_ALPHA_MUL));
     bellGrad.addColorStop(1, "transparent");
     _ctx.fillStyle = bellGrad;
     _ctx.beginPath();
@@ -877,7 +868,7 @@ class Jellyfish {
     _ctx.fill();
 
     // Bell stroke
-    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${JELLY.BELL_STROKE_ALPHA_BASE + glowAlpha})`;
+    _ctx.strokeStyle = rgbaStr(c, JELLY.BELL_STROKE_ALPHA_BASE + glowAlpha);
     _ctx.lineWidth = JELLY.BELL_STROKE_WIDTH;
     _ctx.beginPath();
     _ctx.moveTo(this.x - bellW, this.y);
@@ -904,10 +895,11 @@ class Jellyfish {
     const segs = JELLY.TENTACLE_SEGMENTS;
     const halfStep = 0.5 / segs;
 
-    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${
+    _ctx.strokeStyle = rgbaStr(
+      c,
       JELLY.TENTACLE_STROKE_ALPHA_BASE +
-      glowAlpha * JELLY.TENTACLE_STROKE_ALPHA_SCALE
-    })`;
+        glowAlpha * JELLY.TENTACLE_STROKE_ALPHA_SCALE,
+    );
     _ctx.lineWidth = JELLY.TENTACLE_STROKE_WIDTH;
     for (let i = 0; i < this.tentacles; i++) {
       const baseX = this.x - bellW + spacing * (i + 1);
