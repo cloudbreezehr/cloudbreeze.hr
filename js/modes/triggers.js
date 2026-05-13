@@ -417,6 +417,10 @@ export function createOverscrollTrigger({
       // (avoids conflicting with pull-to-refresh at the top).
       let touchStartY = 0;
       let touchAccum = 0;
+      function resetTouch() {
+        touchStartY = 0;
+        touchAccum = 0;
+      }
       window.addEventListener(
         "touchstart",
         (e) => {
@@ -452,6 +456,11 @@ export function createOverscrollTrigger({
         },
         { passive: true },
       );
+      // Drop in-flight accumulation on lift or interruption — otherwise a
+      // half-finished swipe carries its progress into the next gesture and
+      // can fire the trigger from a single subsequent move.
+      window.addEventListener("touchend", resetTouch, { passive: true });
+      window.addEventListener("touchcancel", resetTouch, { passive: true });
     },
   };
 }

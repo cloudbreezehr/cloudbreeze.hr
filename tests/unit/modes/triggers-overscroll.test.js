@@ -395,4 +395,63 @@ describe("createOverscrollTrigger", () => {
 
     expect(ctx.setForce).not.toHaveBeenCalled();
   });
+
+  it("touchcancel discards in-flight accumulation so an unstarted touchmove can't complete a stale burst", () => {
+    // Multi-touch and browser-takeover scenarios can deliver a touchmove
+    // without a preceding touchstart for that finger. Without resetting
+    // on touchcancel, stale touchStartY + touchAccum from the last gesture
+    // would feed the next move and fire spuriously.
+    const ctx = makeStubCtx();
+    const trigger = createOverscrollTrigger({
+      forcePerHit: 0.3,
+      cooldownMs: 0,
+      edgeTolerance: 10,
+      touchDragThreshold: 100,
+    });
+    trigger.start(ctx);
+
+    // Build up partial accumulation under threshold.
+    window.dispatchEvent(
+      touchEvent("touchstart", [{ clientX: 0, clientY: 200 }]),
+    );
+    window.dispatchEvent(
+      touchEvent("touchmove", [{ clientX: 0, clientY: 140 }]),
+    );
+    expect(ctx.setForce).not.toHaveBeenCalled();
+
+    // Browser interrupts the gesture.
+    window.dispatchEvent(touchEvent("touchcancel", []));
+
+    // Subsequent touchmove (no touchstart resetting the anchor first) —
+    // with stale touchStartY=140 in the buggy version, this 50-pixel move
+    // would push touchAccum from 60 to 60 + (140-90) = 110 and fire.
+    window.dispatchEvent(
+      touchEvent("touchmove", [{ clientX: 0, clientY: 90 }]),
+    );
+    expect(ctx.setForce).not.toHaveBeenCalled();
+  });
+
+  it("touchend discards in-flight accumulation symmetrically with touchcancel", () => {
+    const ctx = makeStubCtx();
+    const trigger = createOverscrollTrigger({
+      forcePerHit: 0.3,
+      cooldownMs: 0,
+      edgeTolerance: 10,
+      touchDragThreshold: 100,
+    });
+    trigger.start(ctx);
+
+    window.dispatchEvent(
+      touchEvent("touchstart", [{ clientX: 0, clientY: 200 }]),
+    );
+    window.dispatchEvent(
+      touchEvent("touchmove", [{ clientX: 0, clientY: 140 }]),
+    );
+    window.dispatchEvent(touchEvent("touchend", []));
+
+    window.dispatchEvent(
+      touchEvent("touchmove", [{ clientX: 0, clientY: 90 }]),
+    );
+    expect(ctx.setForce).not.toHaveBeenCalled();
+  });
 });
