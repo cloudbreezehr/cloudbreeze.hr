@@ -13,6 +13,7 @@ import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import * as storage from "../storage.js";
 import { formatTimestamp, toggleTimestampMode } from "./timestamp.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
+import { setActiveTab } from "./tabs.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
 import { scrollAndHighlight } from "./scroll-highlight.js";
@@ -197,6 +198,12 @@ export function scrollToCard(achievementId) {
     `.achievement-card[data-id="${achievementId}"]`,
   );
   if (!card) return;
+
+  // The card lives in the Achievements view — switch tabs first so
+  // the scroll lands inside a `display: flex` container.  Otherwise
+  // scrollIntoView no-ops against a hidden view and the highlight
+  // never reaches the user.
+  setActiveTab("achievements");
 
   scrollAndHighlight(card);
 }

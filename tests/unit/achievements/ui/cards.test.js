@@ -236,6 +236,40 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("shine")).toBe(true);
     });
 
+    it("switches to the Achievements tab so the scroll target is visible", async () => {
+      const tabsMod = await import("../../../../js/achievements/ui/tabs.js");
+      tabsMod.configureTabs({ getPanelEl: () => panelEl });
+
+      // Build the two tab buttons + matching view containers so
+      // setActiveTab has DOM to toggle.
+      const tabsEl = document.createElement("div");
+      tabsEl.className = "achievement-tabs";
+      panelEl.appendChild(tabsEl);
+      tabsEl.appendChild(
+        tabsMod.buildTabButton("achievements", "Achievements", "achievements"),
+      );
+      tabsEl.appendChild(
+        tabsMod.buildTabButton("activity", "Activity", "activity"),
+      );
+
+      // Activity view starts active, achievements view does not.
+      const achievementsView = container; // already class .achievement-view-achievements
+      const activityView = document.createElement("div");
+      activityView.className =
+        "achievement-view achievement-view-activity active";
+      panelEl.querySelector(".achievement-body").appendChild(activityView);
+
+      // Flip the active tab to activity so we can observe scrollToCard switching back.
+      tabsMod.setActiveTab("activity");
+      expect(achievementsView.classList.contains("active")).toBe(false);
+
+      mod.renderSections(achievementsView);
+      mod.scrollToCard("first-light");
+
+      expect(tabsMod.getActiveTab()).toEqual("achievements");
+      expect(achievementsView.classList.contains("active")).toBe(true);
+    });
+
     it("no-ops when no matching card exists", () => {
       mod.renderSections(container);
       expect(() => mod.scrollToCard("nonexistent-id")).not.toThrow();

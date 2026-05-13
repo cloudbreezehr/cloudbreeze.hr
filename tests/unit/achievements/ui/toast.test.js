@@ -130,12 +130,10 @@ describe("achievements/ui/toast", () => {
     it("invokes openPanel + scrollToCard when panel is closed", () => {
       const openPanel = vi.fn();
       const scrollToCard = vi.fn();
-      const setActiveTab = vi.fn();
       mod.configureToasts({
         openPanel,
         isPanelOpen: () => false,
         scrollToCard,
-        setActiveTab,
         panelSlideMs: 0,
       });
       const toast = mod.buildAchievementToast(makeAchievement());
@@ -143,19 +141,16 @@ describe("achievements/ui/toast", () => {
       toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       vi.runAllTimers();
       expect(openPanel).toHaveBeenCalledOnce();
-      expect(setActiveTab).toHaveBeenCalledWith("achievements");
       expect(scrollToCard).toHaveBeenCalledWith("sample-id");
     });
 
     it("skips openPanel when panel is already open", () => {
       const openPanel = vi.fn();
       const scrollToCard = vi.fn();
-      const setActiveTab = vi.fn();
       mod.configureToasts({
         openPanel,
         isPanelOpen: () => true,
         scrollToCard,
-        setActiveTab,
         panelSlideMs: 0,
       });
       const toast = mod.buildAchievementToast(makeAchievement());

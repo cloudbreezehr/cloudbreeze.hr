@@ -151,13 +151,10 @@ export function wireToastClick(toast, achievement) {
     if (!_isPanelOpen()) {
       if (_openPanel) _openPanel();
       setTimeout(() => {
-        if (_setActiveTab) _setActiveTab("achievements");
         if (_scrollToCard) _scrollToCard(achievement.id);
       }, _panelSlideMs);
-    } else {
-      // Ensure the Achievements tab is active before scrolling to the card.
-      if (_setActiveTab) _setActiveTab("achievements");
-      if (_scrollToCard) _scrollToCard(achievement.id);
+    } else if (_scrollToCard) {
+      _scrollToCard(achievement.id);
     }
   });
 }
