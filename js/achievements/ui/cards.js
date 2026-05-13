@@ -16,7 +16,7 @@ import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { setActiveTab } from "./tabs.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
-import { scrollAndHighlight } from "./scroll-highlight.js";
+import { scrollAndHighlight } from "../../scroll-highlight.js";
 
 // ── Tooltip Constants ──
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";

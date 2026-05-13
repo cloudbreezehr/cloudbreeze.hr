@@ -15,7 +15,7 @@ import {
 } from "./toast.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
-import { scrollAndHighlight } from "./scroll-highlight.js";
+import { scrollAndHighlight } from "../../scroll-highlight.js";
 
 // ── Intro hint ──
 // Onboarding tip prepended to the active list during the discovery phase.

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { INTRO_HINT_THRESHOLD } from "../../../../js/achievements/ui/activity.js";
 import { getAchievement } from "../../../../js/achievements/registry.js";
-import { POST_SETTLE_DELAY_MS } from "../../../../js/achievements/ui/scroll-highlight.js";
+import { POST_SETTLE_DELAY_MS } from "../../../../js/scroll-highlight.js";
 
 // Symbolic landmark — tests want to land just past the post-settle delay
 // so the deferred highlight has fired.  Tuning the source constant

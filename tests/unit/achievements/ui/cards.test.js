@@ -3,7 +3,7 @@ import {
   SEEN_DWELL_MS,
   INTRO_CARD_THRESHOLD,
 } from "../../../../js/achievements/ui/cards.js";
-import { POST_SETTLE_DELAY_MS } from "../../../../js/achievements/ui/scroll-highlight.js";
+import { POST_SETTLE_DELAY_MS } from "../../../../js/scroll-highlight.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected

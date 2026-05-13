@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   scrollAndHighlight,
   POST_SETTLE_DELAY_MS,
-} from "../../../../js/achievements/ui/scroll-highlight.js";
+} from "../../js/scroll-highlight.js";
 
 // scroll-highlight defers the highlight until the smooth scroll
 // genuinely settles.  The settle detector polls scrollTop every rAF
@@ -12,7 +12,7 @@ import {
 const SLACK_MS = 1;
 const AFTER_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 
-describe("achievements/ui/scroll-highlight", () => {
+describe("scroll-highlight", () => {
   let target;
   let rafQueue;
   let rafSpy;
