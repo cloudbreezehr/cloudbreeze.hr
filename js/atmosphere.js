@@ -702,6 +702,50 @@ const GUST = defineConstants("atmosphere.gusts", {
     step: 1,
     description: "Lifetime variation",
   },
+  HORIZONTAL_BIAS: {
+    value: 0.7,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description:
+      "Share of gusts spawned from left/right edges (split evenly). Remainder is split evenly between top and bottom.",
+  },
+  EDGE_BAND_HORIZONTAL: {
+    value: 50,
+    min: 5,
+    max: 200,
+    step: 5,
+    description: "Width of the spawn band along left/right edges (px)",
+  },
+  EDGE_BAND_VERTICAL: {
+    value: 30,
+    min: 5,
+    max: 200,
+    step: 5,
+    description: "Width of the spawn band along top/bottom edges (px)",
+  },
+  ANGLE_JITTER: {
+    value: 0.7,
+    min: 0,
+    max: Math.PI,
+    step: 0.05,
+    description:
+      "Total spread of the random angle deviation from the vertical scroll-driven direction (radians)",
+  },
+  FADE_IN_FRAC: {
+    value: 0.2,
+    min: 0.05,
+    max: 0.5,
+    step: 0.05,
+    description: "Fraction of lifetime spent fading in (rest fades out)",
+  },
+  PROGRESS_START: {
+    value: 0.4,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Initial fraction of length drawn at spawn (grows to 1)",
+  },
 });
 
 // ── Mote Impulse ──
@@ -773,11 +817,20 @@ const MOTE_HOVER = defineConstants("atmosphere.moteHover", {
 let _canvas, _ctx;
 
 // ── Streak scroll parameters ──
+// Bands map scroll progress (0 = top, 1 = bottom) to opacity/speed multipliers
+// in ascending order. The last entry is the fall-through for scroll progress
+// at or beyond its upperBound.
+const STREAK_BANDS = [
+  { upperBound: 0.2, opMul: 1.0, speedMul: 1.0 }, // settled near-space
+  { upperBound: 0.5, opMul: 1.3, speedMul: 1.2 }, // descent energizes streaks
+  { upperBound: 0.75, opMul: 0.8, speedMul: 1.5 }, // entering atmosphere — fade
+  { upperBound: 1.0, opMul: 0.3, speedMul: 0.5 }, // ground level — almost gone
+];
 function getStreakParams(sp) {
-  if (sp < 0.2) return { opMul: 1.0, speedMul: 1.0 };
-  if (sp < 0.5) return { opMul: 1.3, speedMul: 1.2 };
-  if (sp < 0.75) return { opMul: 0.8, speedMul: 1.5 };
-  return { opMul: 0.3, speedMul: 0.5 };
+  for (const band of STREAK_BANDS) {
+    if (sp < band.upperBound) return band;
+  }
+  return STREAK_BANDS[STREAK_BANDS.length - 1];
 }
 
 // ── Particle Classes ──
@@ -1141,25 +1194,28 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             GUST.SPAWN_MAX,
             Math.floor(absSv / GUST.SPAWN_DIVISOR),
           );
+          const leftMax = GUST.HORIZONTAL_BIAS / 2;
+          const rightMax = GUST.HORIZONTAL_BIAS;
+          const topMax = GUST.HORIZONTAL_BIAS + (1 - GUST.HORIZONTAL_BIAS) / 2;
           for (let i = 0; i < spawnCount; i++) {
             const g = gusts.find((g) => !g.active);
             if (!g) break;
             const side = Math.random();
-            if (side < 0.35) {
-              g.x = Math.random() * 50;
+            if (side < leftMax) {
+              g.x = Math.random() * GUST.EDGE_BAND_HORIZONTAL;
               g.y = Math.random() * _canvas.height;
-            } else if (side < 0.7) {
-              g.x = _canvas.width - Math.random() * 50;
+            } else if (side < rightMax) {
+              g.x = _canvas.width - Math.random() * GUST.EDGE_BAND_HORIZONTAL;
               g.y = Math.random() * _canvas.height;
-            } else if (side < 0.85) {
+            } else if (side < topMax) {
               g.x = Math.random() * _canvas.width;
-              g.y = Math.random() * 30;
+              g.y = Math.random() * GUST.EDGE_BAND_VERTICAL;
             } else {
               g.x = Math.random() * _canvas.width;
-              g.y = _canvas.height - Math.random() * 30;
+              g.y = _canvas.height - Math.random() * GUST.EDGE_BAND_VERTICAL;
             }
             const dir = scrollVelocity > 0 ? -Math.PI / 2 : Math.PI / 2;
-            g.angle = dir + (Math.random() - 0.5) * 0.7;
+            g.angle = dir + (Math.random() - 0.5) * GUST.ANGLE_JITTER;
             g.len = GUST.LEN_MIN + Math.random() * GUST.LEN_RANGE;
             g.opacity = GUST.OPACITY_MIN + Math.random() * GUST.OPACITY_RANGE;
             g.width = GUST.WIDTH_MIN + Math.random() * GUST.WIDTH_RANGE;
@@ -1177,8 +1233,12 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             return;
           }
           const p = g.life / g.maxLife;
-          const op = g.opacity * (p < 0.2 ? p / 0.2 : (1 - p) / 0.8);
-          const progress = 0.4 + p * 0.6;
+          const op =
+            g.opacity *
+            (p < GUST.FADE_IN_FRAC
+              ? p / GUST.FADE_IN_FRAC
+              : (1 - p) / (1 - GUST.FADE_IN_FRAC));
+          const progress = GUST.PROGRESS_START + p * (1 - GUST.PROGRESS_START);
           _ctx.save();
           _ctx.globalAlpha = op;
           _ctx.strokeStyle = `rgba(${gc},1)`;
