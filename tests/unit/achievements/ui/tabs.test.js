@@ -120,6 +120,31 @@ describe("achievements/ui/tabs", () => {
       mod.setActiveTab("activity");
       expect(activityLog.getUnseenCount()).toEqual(0);
     });
+
+    it("hides any visible hint tooltip so it doesn't strand over the new tab", async () => {
+      buildPanelDom();
+      const tooltipMod =
+        await import("../../../../js/achievements/ui/tooltip.js");
+      const anchor = document.createElement("button");
+      anchor.getBoundingClientRect = () => ({
+        top: 100,
+        bottom: 120,
+        left: 50,
+        right: 80,
+        width: 30,
+        height: 20,
+        x: 50,
+        y: 100,
+        toJSON: () => ({}),
+      });
+      document.body.appendChild(anchor);
+      tooltipMod.showHintTooltip(anchor, "hint", false);
+      const tip = document.querySelector(".achievement-tooltip");
+      expect(tip.classList.contains("visible")).toBe(true);
+
+      mod.setActiveTab("activity");
+      expect(tip.classList.contains("visible")).toBe(false);
+    });
   });
 
   describe("updateTabBadges", () => {

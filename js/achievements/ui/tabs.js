@@ -6,6 +6,7 @@
 
 import * as storage from "../storage.js";
 import * as activityLog from "../activity-log.js";
+import { hideHintTooltip } from "./tooltip.js";
 
 // ── State ──
 let activeTab = "achievements";
@@ -69,6 +70,9 @@ export function buildTabButton(id, label, unseenSource) {
 export function setActiveTab(id) {
   const panelEl = _getPanelEl();
   if (!panelEl) return;
+  // A tooltip stranded over the previous tab would float over content
+  // it no longer describes — dismiss it before swapping.
+  hideHintTooltip();
   activeTab = id;
   panelEl.querySelectorAll(".achievement-tab").forEach((btn) => {
     const isActive = btn.dataset.tab === id;
