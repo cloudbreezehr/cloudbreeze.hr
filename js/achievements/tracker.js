@@ -34,6 +34,11 @@ export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
 const MODE_HOPPER_COUNT = 3;
+// Storm Forecaster — distinct sub-modes the user must trigger lightning
+// under within a single session. Doesn't count the default (no-mode)
+// canvas, so the achievement specifically rewards weather across active
+// sub-modes.
+export const STORM_FORECASTER_MODE_COUNT = 3;
 const MOONLIT_START_HOUR = 0;
 const MOONLIT_END_HOUR = 5;
 
@@ -56,6 +61,7 @@ export function createTracker(onUnlock, onRelock) {
     visibleMs: 0,
     lastVisibleTime: document.hidden ? 0 : Date.now(),
     lightningCount: 0,
+    lightningModes: new Set(),
     wellCount: 0,
     dragStartX: null,
     dragStartY: null,
@@ -300,6 +306,15 @@ export function createTracker(onUnlock, onRelock) {
       if (mode === "frozen") tryUnlock("frozen-lightning");
       if (mode === "upside-down") tryUnlock("glitch");
       if (mode === "paper") tryUnlock("ink-splatter");
+
+      // Storm Forecaster — distinct sub-modes count toward this within a
+      // single session. The default (no-mode) canvas is excluded.
+      if (mode) {
+        session.lightningModes.add(mode);
+        if (session.lightningModes.size >= STORM_FORECASTER_MODE_COUNT) {
+          tryUnlock("storm-forecaster");
+        }
+      }
     },
 
     "fury-aurora"() {
@@ -529,6 +544,8 @@ export function createTracker(onUnlock, onRelock) {
     if (session.wellFull) tryUnlock("singularity");
     if (session.lightningCount >= CHAIN_LIGHTNING_COUNT)
       tryUnlock("chain-lightning");
+    if (session.lightningModes.size >= STORM_FORECASTER_MODE_COUNT)
+      tryUnlock("storm-forecaster");
     if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
     checkProgressiveState();
   }

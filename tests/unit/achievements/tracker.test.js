@@ -5,6 +5,7 @@ import {
   NIGHT_OWL_MS,
   NIGHT_OWL_CHECK_INTERVAL,
   AFTERSHOCK_WINDOW_MS,
+  STORM_FORECASTER_MODE_COUNT,
 } from "../../../js/achievements/tracker.js";
 
 // tracker.js collaborates with storage.js (module-level state) and reads
@@ -1054,6 +1055,85 @@ describe("tracker — night-owl", () => {
 
     // Only the visible portion accumulated — well below the threshold.
     expect(storage.isUnlocked("night-owl")).toBe(false);
+  });
+});
+
+describe("tracker — storm-forecaster", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks after STORM_FORECASTER_MODE_COUNT distinct sub-modes see lightning", async () => {
+    const { storage } = await startTracker();
+    const modes = ["frozen", "deep-sea", "rainy"];
+    expect(modes).toHaveLength(STORM_FORECASTER_MODE_COUNT);
+
+    for (let i = 0; i < modes.length - 1; i++) {
+      setMode(modes[i]);
+      dispatchAchievement("fury-lightning");
+      expect(storage.isUnlocked("storm-forecaster")).toBe(false);
+    }
+
+    setMode(modes[modes.length - 1]);
+    dispatchAchievement("fury-lightning");
+    expect(storage.isUnlocked("storm-forecaster")).toBe(true);
+  });
+
+  it("does not count repeated triggers in the same mode", async () => {
+    const { storage } = await startTracker();
+    setMode("frozen");
+
+    for (let i = 0; i < STORM_FORECASTER_MODE_COUNT + 2; i++) {
+      dispatchAchievement("fury-lightning");
+    }
+
+    expect(storage.isUnlocked("storm-forecaster")).toBe(false);
+  });
+
+  it("excludes the no-mode (default canvas) state from the set", async () => {
+    const { storage } = await startTracker();
+
+    // No mode active — should not contribute.
+    setMode(null);
+    dispatchAchievement("fury-lightning");
+    setMode(null);
+    dispatchAchievement("fury-lightning");
+    setMode(null);
+    dispatchAchievement("fury-lightning");
+    expect(storage.isUnlocked("storm-forecaster")).toBe(false);
+
+    // Adding genuine sub-modes after — the no-mode triggers are still
+    // ignored, so we need STORM_FORECASTER_MODE_COUNT real ones.
+    const modes = ["frozen", "deep-sea", "rainy"];
+    for (const mode of modes) {
+      setMode(mode);
+      dispatchAchievement("fury-lightning");
+    }
+    expect(storage.isUnlocked("storm-forecaster")).toBe(true);
+  });
+
+  it("catchUp retroactively unlocks when the threshold is already met", async () => {
+    const { storage, tracker } = await startTracker();
+
+    const modes = ["frozen", "deep-sea", "rainy"];
+    for (const mode of modes) {
+      setMode(mode);
+      dispatchAchievement("fury-lightning");
+    }
+    storage.relock("storm-forecaster");
+    expect(storage.isUnlocked("storm-forecaster")).toBe(false);
+
+    tracker.catchUp();
+
+    expect(storage.isUnlocked("storm-forecaster")).toBe(true);
   });
 });
 

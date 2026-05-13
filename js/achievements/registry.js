@@ -928,6 +928,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "storm-forecaster",
+    title: "Storm Forecaster",
+    description: "Lightning answers in every weather.",
+    hint: "Trigger lightning under 3 different sub-modes in one session",
+    set: "meta",
+    points: RARE,
+    hidden: true,
+  },
+  {
     id: "hundred-club",
     title: "Hundred Club",
     description: "Triple digits.",
