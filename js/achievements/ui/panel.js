@@ -35,7 +35,6 @@ import {
   configureTabs,
   getActiveTab,
   buildTabButton,
-  setActiveTab,
   updateTabBadges,
 } from "./tabs.js";
 
@@ -63,7 +62,6 @@ configureToasts({
   isPanelOpen,
   scrollToCard,
   scrollToActivityEntryFor: scrollToLatestActivityFor,
-  setActiveTab,
   panelSlideMs: PANEL_SLIDE_MS,
 });
 configureCards({

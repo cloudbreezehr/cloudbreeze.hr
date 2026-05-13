@@ -15,6 +15,7 @@ import {
 } from "./toast.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
+import { setActiveTab } from "./tabs.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
 
 // ── Intro hint ──
@@ -197,9 +198,10 @@ function renderActivityEntry(entry, opts = {}) {
 }
 
 // Find the latest active activity entry for a given achievement id and
-// type, switch the panel into the Activity tab + list sub-view, and
-// scroll the row into view with a brief highlight.  No-op if no
-// matching entry exists or the panel isn't open.
+// type, switch the panel into the Activity tab and list sub-view, and
+// scroll the row into view with a brief highlight.  Owns both the tab
+// switch and the sub-view switch so callers don't have to reach into
+// either.  No-op if no matching entry exists or the panel isn't open.
 export function scrollToLatestActivityFor(achievementId, type) {
   if (!achievementId || !type) return;
   const matches = activityLog
@@ -215,6 +217,13 @@ export function scrollToLatestActivityFor(achievementId, type) {
   if (!panelEl) return;
   const view = panelEl.querySelector(".achievement-view-activity");
   if (!view) return;
+
+  // The row lives in the Activity view — switch tabs first so the
+  // scroll lands inside a `display: flex` container.  Otherwise
+  // scrollIntoView no-ops against a hidden view and the highlight
+  // never reaches the user.
+  setActiveTab("activity");
+
   // If we're in the trash sub-view, swap back to the list and
   // re-render so the target row exists.  Otherwise the panel's own
   // onChange path has already kept the active list current.

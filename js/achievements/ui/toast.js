@@ -48,7 +48,6 @@ let _openPanel = null;
 let _isPanelOpen = () => false;
 let _scrollToCard = null;
 let _scrollToActivityEntryFor = null;
-let _setActiveTab = null;
 let _panelSlideMs = 0;
 
 export function configureToasts({
@@ -56,7 +55,6 @@ export function configureToasts({
   isPanelOpen,
   scrollToCard,
   scrollToActivityEntryFor,
-  setActiveTab,
   panelSlideMs,
 } = {}) {
   if (openPanel) _openPanel = openPanel;
@@ -64,7 +62,6 @@ export function configureToasts({
   if (scrollToCard) _scrollToCard = scrollToCard;
   if (scrollToActivityEntryFor)
     _scrollToActivityEntryFor = scrollToActivityEntryFor;
-  if (setActiveTab) _setActiveTab = setActiveTab;
   if (typeof panelSlideMs === "number") _panelSlideMs = panelSlideMs;
 }
 
@@ -263,13 +260,13 @@ export function buildRelockToast(achievement) {
   return toast;
 }
 
-// Routes click → Activity tab + scroll to the matching log entry.
-// Re-locks are notification history; the Activity tab is where their
-// context lives (timestamp, dismiss/restore actions).
+// Routes click → matching Activity-log entry.  Re-locks are
+// notification history; the Activity tab is where their context lives
+// (timestamp, dismiss/restore actions).  The activity-scroll target
+// owns the tab switch itself, so this only has to delegate.
 export function wireRelockToastClick(toast, achievement) {
   toast.addEventListener("click", () => {
     function go() {
-      if (_setActiveTab) _setActiveTab("activity");
       if (_scrollToActivityEntryFor)
         _scrollToActivityEntryFor(achievement.id, "achievement-relocked");
     }
@@ -363,6 +360,5 @@ export function _resetForTests() {
   _isPanelOpen = () => false;
   _scrollToCard = null;
   _scrollToActivityEntryFor = null;
-  _setActiveTab = null;
   _panelSlideMs = 0;
 }

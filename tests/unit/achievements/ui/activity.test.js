@@ -381,5 +381,34 @@ describe("achievements/ui/activity", () => {
       ).not.toThrow();
       expect(Element.prototype.scrollIntoView).not.toHaveBeenCalled();
     });
+
+    it("switches to the Activity tab so the scroll target is visible", async () => {
+      const tabsMod = await import("../../../../js/achievements/ui/tabs.js");
+      // Add the achievements view sibling + tab buttons so setActiveTab
+      // has DOM to toggle.
+      const achView = document.createElement("div");
+      achView.className =
+        "achievement-view achievement-view-achievements active";
+      panelEl.appendChild(achView);
+      const tabsEl = document.createElement("div");
+      tabsEl.className = "achievement-tabs";
+      panelEl.appendChild(tabsEl);
+      tabsEl.appendChild(
+        tabsMod.buildTabButton("achievements", "Achievements", "achievements"),
+      );
+      tabsEl.appendChild(
+        tabsMod.buildTabButton("activity", "Activity", "activity"),
+      );
+      tabsMod.configureTabs({ getPanelEl: () => panelEl });
+
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.renderActivity(view);
+
+      mod.scrollToLatestActivityFor("first-light", "achievement-relocked");
+
+      expect(tabsMod.getActiveTab()).toEqual("activity");
+      expect(view.classList.contains("active")).toBe(true);
+      expect(achView.classList.contains("active")).toBe(false);
+    });
   });
 });

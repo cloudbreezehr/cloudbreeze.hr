@@ -162,15 +162,13 @@ describe("achievements/ui/toast", () => {
   });
 
   describe("wireRelockToastClick", () => {
-    it("opens panel, switches to Activity tab, and scrolls to the entry", () => {
+    it("opens panel and delegates to the activity-scroll target", () => {
       const openPanel = vi.fn();
       const scrollToActivityEntryFor = vi.fn();
-      const setActiveTab = vi.fn();
       mod.configureToasts({
         openPanel,
         isPanelOpen: () => false,
         scrollToActivityEntryFor,
-        setActiveTab,
         panelSlideMs: 0,
       });
       const ach = makeAchievement();
@@ -179,7 +177,6 @@ describe("achievements/ui/toast", () => {
       toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       vi.runAllTimers();
       expect(openPanel).toHaveBeenCalledOnce();
-      expect(setActiveTab).toHaveBeenCalledWith("activity");
       expect(scrollToActivityEntryFor).toHaveBeenCalledWith(
         "sample-id",
         "achievement-relocked",
@@ -189,12 +186,10 @@ describe("achievements/ui/toast", () => {
     it("skips openPanel when panel is already open", () => {
       const openPanel = vi.fn();
       const scrollToActivityEntryFor = vi.fn();
-      const setActiveTab = vi.fn();
       mod.configureToasts({
         openPanel,
         isPanelOpen: () => true,
         scrollToActivityEntryFor,
-        setActiveTab,
         panelSlideMs: 0,
       });
       const ach = makeAchievement();
@@ -202,7 +197,6 @@ describe("achievements/ui/toast", () => {
       mod.wireRelockToastClick(toast, ach);
       toast.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(openPanel).not.toHaveBeenCalled();
-      expect(setActiveTab).toHaveBeenCalledWith("activity");
       expect(scrollToActivityEntryFor).toHaveBeenCalledWith(
         "sample-id",
         "achievement-relocked",
