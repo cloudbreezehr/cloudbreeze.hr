@@ -1056,3 +1056,51 @@ describe("tracker — night-owl", () => {
     expect(storage.isUnlocked("night-owl")).toBe(false);
   });
 });
+
+describe("tracker — cartographers-almanac", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks after panel-open under each of the three theme preferences", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("panel-open", { theme: "dark" });
+    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+
+    dispatchAchievement("panel-open", { theme: "light" });
+    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+
+    dispatchAchievement("panel-open", { theme: "auto" });
+    expect(storage.isUnlocked("cartographers-almanac")).toBe(true);
+  });
+
+  it("repeating the same theme does not advance progress", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 5; i++) {
+      dispatchAchievement("panel-open", { theme: "dark" });
+    }
+
+    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+  });
+
+  it("ignores panel-open without a theme field", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("panel-open", {});
+    dispatchAchievement("panel-open", { theme: "light" });
+    dispatchAchievement("panel-open", { theme: "auto" });
+
+    // Only two themes credited.
+    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+  });
+});

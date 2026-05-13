@@ -124,8 +124,13 @@ function openPanelUI(onHide) {
   panelOpen = true;
   setNavActive(true);
 
+  // Theme preference (auto/light/dark) — feeds the cartographers-almanac
+  // achievement which collects each theme the panel is opened under.
+  const themePref = localStorage.getItem("theme") || "dark";
   window.dispatchEvent(
-    new CustomEvent("achievement", { detail: { type: "panel-open" } }),
+    new CustomEvent("achievement", {
+      detail: { type: "panel-open", theme: themePref },
+    }),
   );
 
   if (!panelEl) {

@@ -36,6 +36,7 @@ export const PROGRESS_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
   "modes-activated": () => MODE_SETS,
   "themes-used": () => THEMES,
+  "almanac-themes": () => THEMES,
   "quadrants-clicked": () => QUADRANTS,
 };
 

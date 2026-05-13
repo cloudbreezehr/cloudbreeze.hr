@@ -255,6 +255,16 @@ export const ACHIEVEMENTS = [
     hidden: false,
     progressKey: "themes-used",
   },
+  {
+    id: "cartographers-almanac",
+    title: "Cartographer's Almanac",
+    description: "The same logbook, every shade of sky.",
+    hint: "Open the Cloudlog panel under each theme",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+    progressKey: "almanac-themes",
+  },
   // ── Exploration: Social ──
   {
     id: "landfall",

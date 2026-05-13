@@ -374,11 +374,15 @@ export function createTracker(onUnlock, onRelock) {
       checkProgressiveState("paper-strokes");
     },
 
-    "panel-open"() {
+    "panel-open"(data) {
       if (!session.panelOpened) {
         session.panelOpened = true;
         tryUnlock("cloud-reader");
       }
+      // Cartographer's Almanac — record the active theme each time the
+      // panel opens; collected across (auto, light, dark) over any number
+      // of sessions.
+      if (data && data.theme) tryProgressItem("almanac-themes", data.theme);
     },
 
     "contact-click"() {
