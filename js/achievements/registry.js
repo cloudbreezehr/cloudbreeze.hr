@@ -478,6 +478,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "the-long-watch",
+    title: "The Long Watch",
+    description: "Five minutes under one sky, unbroken.",
+    hint: "Stay in a single sub-mode for 5 minutes without switching",
+    set: "mastery",
+    points: EPIC,
+    hidden: true,
+  },
+  {
     id: "persistent-explorer",
     title: "Persistent Explorer",
     description: "You keep coming back.",

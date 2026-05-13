@@ -39,6 +39,11 @@ const MODE_HOPPER_COUNT = 3;
 // canvas, so the achievement specifically rewards weather across active
 // sub-modes.
 export const STORM_FORECASTER_MODE_COUNT = 3;
+// The Long Watch — uninterrupted ms in a single sub-mode required to
+// unlock. Restarts on each mode-activate (any switch resets the watch);
+// cleared on mode-deactivate regardless of whether the deactivation was
+// user-driven or programmatic.
+export const LONG_WATCH_MS = 300000;
 const MOONLIT_START_HOUR = 0;
 const MOONLIT_END_HOUR = 5;
 
@@ -66,6 +71,7 @@ export function createTracker(onUnlock, onRelock) {
     dragStartX: null,
     dragStartY: null,
     lastFuryTime: 0,
+    longWatchTimer: null,
   };
 
   // ── Unlock ──
@@ -125,6 +131,26 @@ export function createTracker(onUnlock, onRelock) {
 
   function activeMode() {
     return document.body.dataset.activeTheme || null;
+  }
+
+  // ── The Long Watch ──
+  // Single timer is shared across all modes — starting a watch for one
+  // mode replaces any prior watch, which is the right behavior since the
+  // achievement requires a single uninterrupted span in any mode.
+
+  function restartLongWatch() {
+    if (session.longWatchTimer != null) clearTimeout(session.longWatchTimer);
+    session.longWatchTimer = setTimeout(() => {
+      session.longWatchTimer = null;
+      tryUnlock("the-long-watch");
+    }, LONG_WATCH_MS);
+  }
+
+  function clearLongWatch() {
+    if (session.longWatchTimer != null) {
+      clearTimeout(session.longWatchTimer);
+      session.longWatchTimer = null;
+    }
   }
 
   // ── Event type → handler map ──
@@ -352,10 +378,18 @@ export function createTracker(onUnlock, onRelock) {
 
       // Elemental — every mode activated at least once (persistent)
       tryProgressItem("modes-activated", data.mode);
+
+      // The Long Watch — start a fresh countdown for the new mode. Any
+      // switch (activate of another mode while one is running) resets
+      // the timer because mode-deactivate fires first.
+      restartLongWatch();
     },
 
     "mode-deactivate"(data) {
       if (!data || !data.mode) return;
+      // Long Watch must clear regardless of silent — leaving the mode
+      // breaks the watch whether or not the exit was user-driven.
+      clearLongWatch();
       // Programmatic deactivations carry silent=true — the exit
       // achievement is reserved for users who discover the original
       // exit gesture.
@@ -525,6 +559,7 @@ export function createTracker(onUnlock, onRelock) {
   function stop() {
     window.removeEventListener("achievement", handleEvent);
     document.removeEventListener("visibilitychange", onVisibilityChange);
+    clearLongWatch();
   }
 
   /**
@@ -547,6 +582,12 @@ export function createTracker(onUnlock, onRelock) {
     if (session.lightningModes.size >= STORM_FORECASTER_MODE_COUNT)
       tryUnlock("storm-forecaster");
     if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
+    // If a mode is already active when Cloudlog activates, the
+    // mode-activate event has already been dispatched and missed —
+    // start the watch now from the catch-up moment. The achievement
+    // measures uninterrupted time from this point forward, which is
+    // strictly conservative (the user gets less credit, never more).
+    if (activeMode() && session.longWatchTimer == null) restartLongWatch();
     checkProgressiveState();
   }
 

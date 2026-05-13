@@ -6,6 +6,7 @@ import {
   NIGHT_OWL_CHECK_INTERVAL,
   AFTERSHOCK_WINDOW_MS,
   STORM_FORECASTER_MODE_COUNT,
+  LONG_WATCH_MS,
 } from "../../../js/achievements/tracker.js";
 
 // tracker.js collaborates with storage.js (module-level state) and reads
@@ -24,6 +25,9 @@ const PAST_NIGHT_OWL_MS = NIGHT_OWL_MS + NIGHT_OWL_CHECK_INTERVAL + SLACK_MS;
 // Comfortably below NIGHT_OWL_MS for the "still hidden" branch.
 const SHORT_VISIBLE_MS = Math.floor(NIGHT_OWL_MS / 5);
 const LONG_HIDDEN_MS = 2 * NIGHT_OWL_MS;
+// The Long Watch — half-window for "still building," past-window for "fired."
+const HALF_LONG_WATCH_MS = LONG_WATCH_MS / 2;
+const PAST_LONG_WATCH_MS = LONG_WATCH_MS + SLACK_MS;
 
 const _activeTrackers = [];
 
@@ -1055,6 +1059,118 @@ describe("tracker — night-owl", () => {
 
     // Only the visible portion accumulated — well below the threshold.
     expect(storage.isUnlocked("night-owl")).toBe(false);
+  });
+});
+
+describe("tracker — the-long-watch", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks after LONG_WATCH_MS uninterrupted in a single mode", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(true);
+  });
+
+  it("does not unlock when the user deactivates before the threshold", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    dispatchAchievement("mode-deactivate", { mode: "frozen" });
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(false);
+  });
+
+  it("resets the watch when the user switches to a different mode", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    // mode-factory dispatches deactivate of the prior mode before
+    // activating the new one; mirror that here.
+    dispatchAchievement("mode-deactivate", { mode: "frozen" });
+    dispatchAchievement("mode-activate", { mode: "deep-sea" });
+    // The remaining half of the original window plus slack — together
+    // less than a fresh PAST_LONG_WATCH_MS, so the watch should not fire.
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS + SLACK_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(false);
+
+    // Continuing in deep-sea past the full window from the switch
+    // moment does fire — the timer was restarted, not destroyed.
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    expect(storage.isUnlocked("the-long-watch")).toBe(true);
+  });
+
+  it("clears the timer on silent deactivations too", async () => {
+    // Programmatic deactivations (e.g. HUD toggle) carry silent=true and
+    // skip exit achievements, but the user's mode experience still ended,
+    // so the watch must clear regardless of silent.
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    dispatchAchievement("mode-deactivate", { mode: "frozen", silent: true });
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(false);
+  });
+
+  it("ignores mode-deactivate without a mode field (no spurious clear)", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    dispatchAchievement("mode-deactivate", {});
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS + SLACK_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(true);
+  });
+
+  it("catchUp starts the watch when a mode is already active", async () => {
+    // Simulates Cloudlog-after-the-fact: the user entered a mode, then
+    // triple-clicked to activate the achievement system.
+    const { storage, tracker } = await startTracker();
+
+    setMode("frozen");
+    tracker.catchUp();
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(true);
+  });
+
+  it("catchUp does not start the watch when no mode is active", async () => {
+    const { storage, tracker } = await startTracker();
+
+    tracker.catchUp();
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(false);
+  });
+
+  it("stop() clears the timer so a pending watch does not fire later", async () => {
+    const { storage, tracker } = await startTracker();
+
+    dispatchAchievement("mode-activate", { mode: "frozen" });
+    vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
+    tracker.stop();
+    vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
+
+    expect(storage.isUnlocked("the-long-watch")).toBe(false);
   });
 });
 
