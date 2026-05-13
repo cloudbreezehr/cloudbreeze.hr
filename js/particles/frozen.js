@@ -3,7 +3,14 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
+import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
+
+// Snowflake colors — frozen mode is the only place snow renders, so the
+// palette has no dedicated entries. Kept as named tuples so the helper
+// callers don't carry [r,g,b] literals inline.
+const SNOW_GLOW_RGB = [200, 230, 255];
+const SNOW_DOT_RGB = [220, 240, 255];
 
 // ── Snowflakes ──
 const SNOW = defineConstants(
@@ -278,23 +285,17 @@ class Snowflake {
       }
       _ctx.stroke();
       // Subtle glow for larger crystalline flakes
-      const grad = _ctx.createRadialGradient(
-        0,
-        0,
-        0,
+      drawHaloParticle(
+        _ctx,
         0,
         0,
         this.r * SNOW.GLOW_RADIUS,
+        SNOW.GLOW_OPACITY,
+        SNOW_GLOW_RGB,
       );
-      grad.addColorStop(0, `rgba(200,230,255,${SNOW.GLOW_OPACITY})`);
-      grad.addColorStop(1, "transparent");
-      _ctx.fillStyle = grad;
-      _ctx.beginPath();
-      _ctx.arc(0, 0, this.r * SNOW.GLOW_RADIUS, 0, Math.PI * 2);
-      _ctx.fill();
     } else {
       // Small flakes — simple glowing dots
-      _ctx.fillStyle = "rgba(220,240,255,1)";
+      _ctx.fillStyle = rgbaStr(SNOW_DOT_RGB, 1);
       _ctx.beginPath();
       _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
       _ctx.fill();

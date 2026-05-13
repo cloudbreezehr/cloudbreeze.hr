@@ -5,6 +5,7 @@
 //   createFireworksRenderer()          — shared-canvas mode for render loops
 
 import { Z_FIREWORKS } from "../layers.js";
+import { drawHaloParticle } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 
 // ── Constants ──
@@ -307,26 +308,20 @@ class FireworkParticle {
 
     // Draw particle with glow
     if (this.stage === "primary") {
-      const glowR = this.r * FW.GLOW_RADIUS_MULT;
-      const grad = ctx.createRadialGradient(
-        this.x,
-        this.y,
-        0,
-        this.x,
-        this.y,
-        glowR,
-      );
-      grad.addColorStop(0, `rgba(${bc[0]},${bc[1]},${bc[2]},${op})`);
-      grad.addColorStop(
-        FW.GLOW_MID_STOP,
-        `rgba(${c[0]},${c[1]},${c[2]},${op * FW.GLOW_MID_OPACITY})`,
-      );
-      grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
       ctx.globalAlpha = 1;
-      ctx.fillStyle = grad;
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
-      ctx.fill();
+      drawHaloParticle(
+        ctx,
+        this.x,
+        this.y,
+        this.r * FW.GLOW_RADIUS_MULT,
+        op,
+        bc,
+        {
+          midStop: FW.GLOW_MID_STOP,
+          midAlpha: FW.GLOW_MID_OPACITY,
+          midColor: c,
+        },
+      );
     } else {
       // Secondary: simple filled circle (skip gradient for perf)
       ctx.globalAlpha = op;
@@ -442,26 +437,16 @@ class Rocket {
     }
 
     // Rocket head — bright glowing dot
-    const headR = FW.ROCKET_RADIUS * FW.GLOW_RADIUS_MULT;
-    const grad = ctx.createRadialGradient(
-      this.x,
-      this.y,
-      0,
-      this.x,
-      this.y,
-      headR,
-    );
-    grad.addColorStop(0, `rgba(${bc[0]},${bc[1]},${bc[2]},1)`);
-    grad.addColorStop(
-      FW.GLOW_MID_STOP,
-      `rgba(${c[0]},${c[1]},${c[2]},${FW.GLOW_MID_OPACITY})`,
-    );
-    grad.addColorStop(1, `rgba(${c[0]},${c[1]},${c[2]},0)`);
     ctx.globalAlpha = 1;
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, headR, 0, Math.PI * 2);
-    ctx.fill();
+    drawHaloParticle(
+      ctx,
+      this.x,
+      this.y,
+      FW.ROCKET_RADIUS * FW.GLOW_RADIUS_MULT,
+      1,
+      bc,
+      { midStop: FW.GLOW_MID_STOP, midAlpha: FW.GLOW_MID_OPACITY, midColor: c },
+    );
   }
 }
 

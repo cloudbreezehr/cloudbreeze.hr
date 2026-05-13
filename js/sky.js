@@ -1,4 +1,9 @@
-import { scrollFade, drawTrail } from "./canvas-utils.js";
+import {
+  drawHaloParticle,
+  drawTrail,
+  rgbaStr,
+  scrollFade,
+} from "./canvas-utils.js";
 import { defineConstants } from "./dev/registry.js";
 
 // ── Stars ──
@@ -414,20 +419,12 @@ export function createSky(starCount) {
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {
-          const gr = s.r * STARS.GLOW_RADIUS;
-          const grad = ctx.createRadialGradient(sx, py, 0, sx, py, gr);
-          grad.addColorStop(0, `rgba(${sc},${op})`);
-          grad.addColorStop(
-            STARS.GLOW_MID,
-            `rgba(${sc},${op * STARS.GLOW_MID_ALPHA})`,
-          );
-          grad.addColorStop(1, `rgba(${sc},0)`);
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(sx, py, gr, 0, Math.PI * 2);
-          ctx.fill();
+          drawHaloParticle(ctx, sx, py, s.r * STARS.GLOW_RADIUS, op, sc, {
+            midStop: STARS.GLOW_MID,
+            midAlpha: STARS.GLOW_MID_ALPHA,
+          });
         } else {
-          ctx.fillStyle = `rgba(${sc},${op})`;
+          ctx.fillStyle = rgbaStr(sc, op);
           ctx.beginPath();
           ctx.arc(sx, py, s.r, 0, Math.PI * 2);
           ctx.fill();
