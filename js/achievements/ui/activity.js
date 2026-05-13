@@ -14,6 +14,7 @@ import {
   buildRelockToast,
   wireRelockToastClick,
 } from "./toast.js";
+import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
 
 // ── Intro hint ──
@@ -141,6 +142,12 @@ function renderActivityEntry(entry, opts = {}) {
     if (!achievement) return null;
     content = buildAchievementToast(achievement);
     wireToastClick(content, achievement);
+    if (achievement.hint) {
+      content.addEventListener("mouseenter", () =>
+        showHintTooltip(content, achievement.hint),
+      );
+      content.addEventListener("mouseleave", hideHintTooltip);
+    }
   } else if (entry.type === "achievement-relocked") {
     const achievement = getAchievement(entry.payload?.achievementId);
     if (!achievement) return null;

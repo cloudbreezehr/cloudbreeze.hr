@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { INTRO_HINT_THRESHOLD } from "../../../../js/achievements/ui/activity.js";
+import { getAchievement } from "../../../../js/achievements/registry.js";
 
 // activity.js owns the Activity tab renderer — both the main list and
 // the trash sub-view.  Its only module state is the current sub-view,
@@ -143,6 +144,32 @@ describe("achievements/ui/activity", () => {
       }
       mod.renderActivity(container);
       expect(container.querySelector(".activity-intro-hint")).toBeNull();
+    });
+  });
+
+  describe("hint tooltip on activity rows", () => {
+    function getTooltip() {
+      return document.querySelector(".achievement-tooltip");
+    }
+
+    it("shows the achievement hint when hovering an unlock row", () => {
+      activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const toast = container.querySelector(".activity-row .achievement-toast");
+      toast.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      const tip = getTooltip();
+      expect(tip).not.toBeNull();
+      expect(tip.classList.contains("visible")).toBe(true);
+      expect(tip.textContent).toEqual(getAchievement("first-light").hint);
+    });
+
+    it("hides the tooltip on mouseleave from an unlock row", () => {
+      activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const toast = container.querySelector(".activity-row .achievement-toast");
+      toast.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      toast.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
+      expect(getTooltip().classList.contains("visible")).toBe(false);
     });
   });
 
