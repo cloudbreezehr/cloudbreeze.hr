@@ -486,6 +486,124 @@ const JELLY = defineConstants(
       step: 0.005,
       description: "Tentacle wave animation speed",
     },
+    TENTACLE_PHASE_PER_INDEX: {
+      value: 0.005,
+      min: 0,
+      max: 0.05,
+      step: 0.001,
+      description:
+        "Per-tentacle wave-speed offset so adjacent tentacles drift out of phase",
+    },
+    TENTACLE_PHASE_PER_SEGMENT: {
+      value: 1.2,
+      min: 0,
+      max: 5,
+      step: 0.1,
+      description: "Phase advance applied per segment along a tentacle",
+    },
+    // Bell geometry (radii expressed as multiples of bellR).
+    BELL_HEIGHT_RATIO: {
+      value: 0.8,
+      min: 0.3,
+      max: 2,
+      step: 0.05,
+      description: "Bell height as fraction of bell width (bellR)",
+    },
+    BELL_CONTROL_LIFT: {
+      value: 2,
+      min: 0.5,
+      max: 4,
+      step: 0.1,
+      description: "Side control-point lift above bell, in units of bellH",
+    },
+    BELL_APEX_LIFT: {
+      value: 1.5,
+      min: 0.5,
+      max: 4,
+      step: 0.1,
+      description: "Bell apex height above center, in units of bellH",
+    },
+    BELL_GLOW_OFFSET: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Inner glow seed offset above bell center, in units of bellH",
+    },
+    // Glow halo and bell-fill alpha multipliers, layered relative to glowAlpha.
+    GLOW_HALO_RADIUS_RATIO: {
+      value: 2.5,
+      min: 1,
+      max: 5,
+      step: 0.1,
+      description: "Outer glow halo radius as multiple of bellR",
+    },
+    BELL_FILL_ALPHA_MUL: {
+      value: 1.5,
+      min: 0,
+      max: 4,
+      step: 0.1,
+      description: "Bell fill alpha relative to glowAlpha",
+    },
+    BELL_STROKE_ALPHA_BASE: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Floor for bell stroke alpha (added to glowAlpha)",
+    },
+    BELL_STROKE_WIDTH: {
+      value: 0.8,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Bell stroke width",
+    },
+    TENTACLE_STROKE_ALPHA_BASE: {
+      value: 0.15,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Floor for tentacle stroke alpha",
+    },
+    TENTACLE_STROKE_ALPHA_SCALE: {
+      value: 0.5,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "How much glowAlpha contributes to tentacle stroke alpha",
+    },
+    TENTACLE_STROKE_WIDTH: {
+      value: 0.5,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Tentacle stroke width",
+    },
+    // Velocity-based trailing — anchors lag behind by a multiple of velocity.
+    TRAIL_VX_MUL: {
+      value: 8,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: "Tentacle anchor lag per unit horizontal velocity",
+    },
+    TRAIL_VY_MUL: {
+      value: 4,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: "Tentacle anchor lag per unit vertical velocity",
+    },
+    TRAIL_BASE_FRAC: {
+      value: 0.5,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Initial trail anchor offset for a tentacle base, as fraction of TRAIL_VX_MUL",
+    },
   },
   { mode: "deep-sea" },
 );
@@ -690,41 +808,46 @@ class Jellyfish {
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
-      this.tentaclePhases[i] += JELLY.TENTACLE_WAVE_SPEED + i * 0.005;
+      this.tentaclePhases[i] +=
+        JELLY.TENTACLE_WAVE_SPEED + i * JELLY.TENTACLE_PHASE_PER_INDEX;
     }
   }
   draw() {
     const c = this.color;
+    // sin spans [-1, 1], so half the range becomes the oscillation amplitude
+    // around the midpoint (MIN + RANGE/2).
+    const halfRange = JELLY.GLOW_ALPHA_RANGE / 2;
     const glowAlpha =
-      JELLY.GLOW_ALPHA_MIN +
-      Math.sin(this.glowPhase) * 0.5 * JELLY.GLOW_ALPHA_RANGE +
-      JELLY.GLOW_ALPHA_RANGE * 0.5;
+      JELLY.GLOW_ALPHA_MIN + halfRange + Math.sin(this.glowPhase) * halfRange;
 
     _ctx.save();
 
     // Bioluminescent glow — radial gradient around the bell
+    const haloR = this.bellR * JELLY.GLOW_HALO_RADIUS_RATIO;
     const grad = _ctx.createRadialGradient(
       this.x,
       this.y,
       0,
       this.x,
       this.y,
-      this.bellR * 2.5,
+      haloR,
     );
     grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha})`);
     grad.addColorStop(1, "transparent");
     _ctx.fillStyle = grad;
     _ctx.beginPath();
-    _ctx.arc(this.x, this.y, this.bellR * 2.5, 0, Math.PI * 2);
+    _ctx.arc(this.x, this.y, haloR, 0, Math.PI * 2);
     _ctx.fill();
 
     // Bell dome — parabolic arc using quadraticCurveTo
     const bellW = this.bellR;
-    const bellH = this.bellR * 0.8;
+    const bellH = this.bellR * JELLY.BELL_HEIGHT_RATIO;
+    const controlLift = bellH * JELLY.BELL_CONTROL_LIFT;
+    const apexLift = bellH * JELLY.BELL_APEX_LIFT;
     // Faint fill
     const bellGrad = _ctx.createRadialGradient(
       this.x,
-      this.y - bellH * 0.3,
+      this.y - bellH * JELLY.BELL_GLOW_OFFSET,
       0,
       this.x,
       this.y,
@@ -732,7 +855,7 @@ class Jellyfish {
     );
     bellGrad.addColorStop(
       0,
-      `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha * 1.5})`,
+      `rgba(${c[0]},${c[1]},${c[2]},${glowAlpha * JELLY.BELL_FILL_ALPHA_MUL})`,
     );
     bellGrad.addColorStop(1, "transparent");
     _ctx.fillStyle = bellGrad;
@@ -740,13 +863,13 @@ class Jellyfish {
     _ctx.moveTo(this.x - bellW, this.y);
     _ctx.quadraticCurveTo(
       this.x - bellW,
-      this.y - bellH * 2,
+      this.y - controlLift,
       this.x,
-      this.y - bellH * 1.5,
+      this.y - apexLift,
     );
     _ctx.quadraticCurveTo(
       this.x + bellW,
-      this.y - bellH * 2,
+      this.y - controlLift,
       this.x + bellW,
       this.y,
     );
@@ -754,19 +877,19 @@ class Jellyfish {
     _ctx.fill();
 
     // Bell stroke
-    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.3 + glowAlpha})`;
-    _ctx.lineWidth = 0.8;
+    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${JELLY.BELL_STROKE_ALPHA_BASE + glowAlpha})`;
+    _ctx.lineWidth = JELLY.BELL_STROKE_WIDTH;
     _ctx.beginPath();
     _ctx.moveTo(this.x - bellW, this.y);
     _ctx.quadraticCurveTo(
       this.x - bellW,
-      this.y - bellH * 2,
+      this.y - controlLift,
       this.x,
-      this.y - bellH * 1.5,
+      this.y - apexLift,
     );
     _ctx.quadraticCurveTo(
       this.x + bellW,
-      this.y - bellH * 2,
+      this.y - controlLift,
       this.x + bellW,
       this.y,
     );
@@ -776,35 +899,43 @@ class Jellyfish {
     const tentLen = this.bellR * JELLY.TENTACLE_SEG_LEN_RATIO;
     const spacing = (bellW * 2) / (this.tentacles + 1);
     // Velocity-based trailing — offset tentacle anchors by opposite of velocity
-    const trailX = -this.vx * 8;
-    const trailY = -this.vy * 4;
+    const trailX = -this.vx * JELLY.TRAIL_VX_MUL;
+    const trailY = -this.vy * JELLY.TRAIL_VY_MUL;
+    const segs = JELLY.TENTACLE_SEGMENTS;
+    const halfStep = 0.5 / segs;
 
-    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${0.15 + glowAlpha * 0.5})`;
-    _ctx.lineWidth = 0.5;
+    _ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${
+      JELLY.TENTACLE_STROKE_ALPHA_BASE +
+      glowAlpha * JELLY.TENTACLE_STROKE_ALPHA_SCALE
+    })`;
+    _ctx.lineWidth = JELLY.TENTACLE_STROKE_WIDTH;
     for (let i = 0; i < this.tentacles; i++) {
       const baseX = this.x - bellW + spacing * (i + 1);
       _ctx.beginPath();
       _ctx.moveTo(baseX, this.y);
-      let tx = baseX + trailX * 0.5;
+      let tx = baseX + trailX * JELLY.TRAIL_BASE_FRAC;
       let ty = this.y;
-      for (let s = 1; s <= JELLY.TENTACLE_SEGMENTS; s++) {
-        const t = s / JELLY.TENTACLE_SEGMENTS;
+      for (let s = 1; s <= segs; s++) {
+        const t = s / segs;
         const wave =
-          Math.sin(this.tentaclePhases[i] + s * 1.2) *
+          Math.sin(
+            this.tentaclePhases[i] + s * JELLY.TENTACLE_PHASE_PER_SEGMENT,
+          ) *
           JELLY.TENTACLE_WAVE_AMP *
           this.bellR;
         tx = baseX + wave + trailX * t;
         ty = this.y + tentLen * t + trailY * t;
+        const cpt = t - halfStep;
         const cpx =
           baseX +
-          Math.sin(this.tentaclePhases[i] + (s - 0.5) * 1.2) *
+          Math.sin(
+            this.tentaclePhases[i] +
+              (s - 0.5) * JELLY.TENTACLE_PHASE_PER_SEGMENT,
+          ) *
             JELLY.TENTACLE_WAVE_AMP *
             this.bellR +
-          trailX * (t - 0.5 / JELLY.TENTACLE_SEGMENTS);
-        const cpy =
-          this.y +
-          tentLen * (t - 0.5 / JELLY.TENTACLE_SEGMENTS) +
-          trailY * (t - 0.5 / JELLY.TENTACLE_SEGMENTS);
+          trailX * cpt;
+        const cpy = this.y + tentLen * cpt + trailY * cpt;
         _ctx.quadraticCurveTo(cpx, cpy, tx, ty);
       }
       _ctx.stroke();
