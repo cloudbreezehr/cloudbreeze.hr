@@ -281,7 +281,8 @@ function buildPanel(onHide) {
   tabs.appendChild(buildTabButton("activity", "Activity", "activity"));
   panel.appendChild(tabs);
 
-  // Body (scrollable) — holds both tab views.  Only one is visible at a time.
+  // Body — wrapper around both tab views.  Each view is its own scroll
+  // container; only one is visible at a time.
   const body = document.createElement("div");
   body.className = "achievement-body";
 
@@ -309,8 +310,12 @@ function buildPanel(onHide) {
   renderActivity(activityView);
   body.appendChild(activityView);
 
-  // Dismiss tooltip when scrolling the panel
-  body.addEventListener("scroll", hideHintTooltip, { passive: true });
+  // Each view is its own scroll container, so the tooltip-dismiss
+  // listener has to attach to whichever one is doing the scrolling.
+  achievementsView.addEventListener("scroll", hideHintTooltip, {
+    passive: true,
+  });
+  activityView.addEventListener("scroll", hideHintTooltip, { passive: true });
 
   panel.appendChild(body);
 

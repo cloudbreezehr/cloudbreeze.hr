@@ -101,8 +101,11 @@ function hasAnyInSet(setId) {
 export function createSeenObserver() {
   if (_seenObserver) return;
   const panelEl = _getPanelEl();
-  const body = panelEl && panelEl.querySelector(".achievement-body");
-  if (!body) return;
+  // The achievements view is the scroll container, so intersections
+  // are computed against the viewport the user is actually scrolling.
+  const root =
+    panelEl && panelEl.querySelector(".achievement-view-achievements");
+  if (!root) return;
 
   _seenObserver = new IntersectionObserver(
     (entries) => {
@@ -132,7 +135,7 @@ export function createSeenObserver() {
         }
       }
     },
-    { root: body, threshold: SEEN_INTERSECTION_RATIO },
+    { root, threshold: SEEN_INTERSECTION_RATIO },
   );
 }
 

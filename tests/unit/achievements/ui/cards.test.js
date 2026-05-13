@@ -61,14 +61,16 @@ describe("achievements/ui/cards", () => {
       }
     };
 
-    // Panel stand-in — a div with the .achievement-body region that the
-    // observer uses as its intersection root and the card container.
+    // Panel stand-in.  The achievements-view is the scroll container the
+    // seen-observer uses as its intersection root, so renderSections
+    // paints directly into it.
     panelEl = document.createElement("div");
     panelEl.className = "achievement-panel";
     const body = document.createElement("div");
     body.className = "achievement-body";
     panelEl.appendChild(body);
     container = document.createElement("div");
+    container.className = "achievement-view achievement-view-achievements";
     body.appendChild(container);
     document.body.appendChild(panelEl);
 

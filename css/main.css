@@ -3718,13 +3718,33 @@ nav.nav-light .achievement-btn::after {
 
 /* Tab views — only the active one is rendered.  The default (Achievements)
    is marked .active at build time in buildPanel. */
+/* Each tab view owns its own scroll position so switching tabs returns
+   the user to where they were, not to a shared scrollTop carried over
+   from the other tab.  Padding lives on the view, not the body, so the
+   hover-halo and click-pop pseudo-elements have horizontal breathing
+   room before hitting the scroll-container clip box (overflow-y: auto
+   clips on both axes per spec — there is no scroll-vertical-only mode). */
 .achievement-view {
   display: none;
   flex-direction: column;
   gap: 0.8rem;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0.8rem;
 }
 .achievement-view.active {
   display: flex;
+}
+.achievement-view::-webkit-scrollbar {
+  width: 4px;
+}
+.achievement-view::-webkit-scrollbar-track {
+  background: transparent;
+}
+.achievement-view::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
 }
 
 /* ── Activity view ── */
@@ -3907,21 +3927,9 @@ nav.nav-light .achievement-btn::after {
 
 .achievement-body {
   flex: 1;
-  overflow-y: auto;
-  padding: 0.8rem;
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-}
-.achievement-body::-webkit-scrollbar {
-  width: 4px;
-}
-.achievement-body::-webkit-scrollbar-track {
-  background: transparent;
-}
-.achievement-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
+  min-height: 0;
 }
 
 /* ── Panel Footer ── */
@@ -4898,7 +4906,7 @@ body.upside-down .achievement-toast-container {
    produced low-contrast greys across several elements, so we stay dark
    for consistency.  The nav button and its badge still adopt light-mode
    styling; those sit on the site chrome, not inside the panel. */
-body.light-mode .achievement-body::-webkit-scrollbar-thumb {
+body.light-mode .achievement-view::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
 
