@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createHoldTrigger } from "../../../js/modes/triggers.js";
 
+// Hold durations used across tests. The factory takes these as parameters,
+// so the values are defined here (not in the source) — naming them keeps
+// every test consistent and readable. Symbolic math (HOLD_ACTIVATE_MS / 2,
+// HOLD_ACTIVATE_MS + SLACK_MS) survives any tuning of these constants.
+const HOLD_ACTIVATE_MS = 1000;
+const HOLD_DEACTIVATE_MS = 500;
+const SLACK_MS = 100;
+
 // Synthesize a pointer event — happy-dom's PointerEvent constructor doesn't
 // accept clientX/Y directly, so use a plain Event and define them manually
 // (mirrors pointer.test.js).
@@ -46,8 +54,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("ignores pointerdown when shouldAccept returns false", () => {
-    const HOLD_ACTIVATE_MS = 1000;
-    const HOLD_DEACTIVATE_MS = 500;
     const shouldAccept = vi.fn(() => false);
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
@@ -66,8 +72,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("ignores pointerdown while isTransitioning is true", () => {
-    const HOLD_ACTIVATE_MS = 1000;
-    const HOLD_DEACTIVATE_MS = 500;
     const ctx = makeStubCtx({ transitioning: true });
     const trigger = createHoldTrigger({
       target,
@@ -83,8 +87,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("grows force linearly toward 1 over holdActivateMs", () => {
-    const HOLD_ACTIVATE_MS = 1000;
-    const HOLD_DEACTIVATE_MS = 500;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
@@ -102,8 +104,8 @@ describe("createHoldTrigger", () => {
   });
 
   it("uses holdDeactivateMs as the target when ctx.isActive() is true", () => {
-    const HOLD_ACTIVATE_MS = 5000;
-    const HOLD_DEACTIVATE_MS = 500;
+    // Activate and deactivate are deliberately different so the test fails
+    // loudly if the trigger uses the wrong duration once active.
     const ctx = makeStubCtx({ active: true });
     const trigger = createHoldTrigger({
       target,
@@ -121,8 +123,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("calls complete() exactly once when the hold reaches 1", () => {
-    const HOLD_ACTIVATE_MS = 500;
-    const SLACK_MS = 100;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
@@ -142,8 +142,8 @@ describe("createHoldTrigger", () => {
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 100,
-      holdDeactivateMs: 100,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       onDown,
     });
     trigger.start(ctx);
@@ -158,8 +158,8 @@ describe("createHoldTrigger", () => {
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 100,
-      holdDeactivateMs: 100,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       onMove,
     });
     trigger.start(ctx);
@@ -171,8 +171,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("fires onUp exactly once per hold (completion + pointerup do not double-fire)", () => {
-    const HOLD_ACTIVATE_MS = 500;
-    const SLACK_MS = 100;
     const onUp = vi.fn();
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
@@ -192,7 +190,6 @@ describe("createHoldTrigger", () => {
   });
 
   it("fires onUp on a plain release (no completion)", () => {
-    const HOLD_ACTIVATE_MS = 1000;
     const SHORT_HOLD_MS = HOLD_ACTIVATE_MS / 5;
     const onUp = vi.fn();
     const ctx = makeStubCtx();
@@ -216,8 +213,8 @@ describe("createHoldTrigger", () => {
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
-      holdActivateMs: 500,
-      holdDeactivateMs: 500,
+      holdActivateMs: HOLD_ACTIVATE_MS,
+      holdDeactivateMs: HOLD_ACTIVATE_MS,
       onUp,
     });
     trigger.start(ctx);
@@ -231,9 +228,8 @@ describe("createHoldTrigger", () => {
   });
 
   it("decays force at decayRate per second once the pointer is released", () => {
-    const HOLD_ACTIVATE_MS = 1000;
     const BUILD_DURATION_MS = HOLD_ACTIVATE_MS * 0.6;
-    const DECAY_DURATION_MS = 400;
+    const DECAY_DURATION_MS = HOLD_ACTIVATE_MS * 0.4;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
       target,
@@ -255,10 +251,9 @@ describe("createHoldTrigger", () => {
   });
 
   it("stops decaying and drains to 0 eventually", () => {
-    const HOLD_ACTIVATE_MS = 1000;
     const HALF_HOLD_MS = HOLD_ACTIVATE_MS / 2;
-    // 2 force/sec decay; choose a wait that's an order of magnitude
-    // longer than the hold so the drain to zero is unambiguous.
+    // Decay rate is 2/sec; FULL_DRAIN_MS is well past the time required to
+    // drain a full hold so the result is unambiguous regardless of tuning.
     const FULL_DRAIN_MS = HOLD_ACTIVATE_MS * 2;
     const ctx = makeStubCtx();
     const trigger = createHoldTrigger({
