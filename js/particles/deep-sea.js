@@ -191,6 +191,118 @@ const BUB = defineConstants(
       step: 1,
       description: "Animation frames for pop effect",
     },
+    // Alpha scalars are applied on top of `this.opacity` to layer ring,
+    // fill, and highlights. Keeping them named makes the visual hierarchy
+    // (rim brighter than fill, primary highlight brighter than secondary)
+    // explicit instead of buried as literals next to colors.
+    RING_ALPHA: {
+      value: 0.5,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Outline ring alpha multiplier",
+    },
+    FILL_ALPHA: {
+      value: 0.04,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Faint inner fill alpha multiplier",
+    },
+    HIGHLIGHT_PRIMARY_ALPHA: {
+      value: 0.6,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Specular arc/dot highlight alpha multiplier",
+    },
+    HIGHLIGHT_SECONDARY_ALPHA: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Larger-bubble secondary highlight alpha multiplier",
+    },
+    HIGHLIGHT_DOT_ALPHA: {
+      value: 0.5,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Small-bubble dot highlight alpha multiplier",
+    },
+    RING_WIDTH: {
+      value: 0.6,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Outline ring stroke width",
+    },
+    HIGHLIGHT_PRIMARY_WIDTH: {
+      value: 0.8,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Specular arc stroke width",
+    },
+    HIGHLIGHT_SECONDARY_WIDTH: {
+      value: 0.5,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Secondary highlight arc stroke width",
+    },
+    // Ratios of `r` for highlight geometry — keep as constants so the
+    // bubble's optical "shape" can be tuned without rewriting render code.
+    HIGHLIGHT_OFFSET_FRAC: {
+      value: 0.25,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Specular offset toward top-left as fraction of radius",
+    },
+    HIGHLIGHT_SIZE_FRAC: {
+      value: 0.6,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Specular arc radius as fraction of bubble radius",
+    },
+    DOT_OFFSET_FRAC: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Small-bubble dot offset as fraction of radius",
+    },
+    DOT_SIZE_FRAC: {
+      value: 0.2,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Small-bubble dot radius as fraction of bubble radius",
+    },
+    SECONDARY_OFFSET_X_FRAC: {
+      value: 0.15,
+      min: -1,
+      max: 1,
+      step: 0.05,
+      description: "Secondary highlight x offset as fraction of radius",
+    },
+    SECONDARY_OFFSET_Y_FRAC: {
+      value: 0.2,
+      min: -1,
+      max: 1,
+      step: 0.05,
+      description: "Secondary highlight y offset as fraction of radius",
+    },
+    SECONDARY_SIZE_FRAC: {
+      value: 0.25,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Secondary highlight arc radius as fraction of bubble radius",
+    },
   },
   { mode: "deep-sea" },
 );
@@ -443,43 +555,46 @@ class Bubble {
     if (this.x < -20) this.x += _canvas.width + 40;
     if (this.x > _canvas.width + 20) this.x -= _canvas.width + 40;
   }
-  draw() {
+  draw(pal) {
     if (!this.active) return;
+    const rim = pal.bubbleRim;
+    const fill = pal.bubbleFill;
+    const spec = pal.bubbleSpecular;
     _ctx.save();
     _ctx.globalAlpha = this.opacity;
 
     // Thin ring outline
-    _ctx.strokeStyle = "rgba(180,255,230,0.5)";
-    _ctx.lineWidth = 0.6;
+    _ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${BUB.RING_ALPHA})`;
+    _ctx.lineWidth = BUB.RING_WIDTH;
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     _ctx.stroke();
 
     // Very faint fill
-    _ctx.fillStyle = "rgba(0,255,200,0.04)";
+    _ctx.fillStyle = `rgba(${fill[0]},${fill[1]},${fill[2]},${BUB.FILL_ALPHA})`;
     _ctx.fill();
 
     // Specular highlight — small arc near top-left
     if (this.r >= BUB.SPECULAR_THRESHOLD) {
-      _ctx.strokeStyle = "rgba(255,255,255,0.6)";
-      _ctx.lineWidth = 0.8;
+      _ctx.strokeStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_PRIMARY_ALPHA})`;
+      _ctx.lineWidth = BUB.HIGHLIGHT_PRIMARY_WIDTH;
       _ctx.beginPath();
       _ctx.arc(
-        this.x - this.r * 0.25,
-        this.y - this.r * 0.25,
-        this.r * 0.6,
+        this.x - this.r * BUB.HIGHLIGHT_OFFSET_FRAC,
+        this.y - this.r * BUB.HIGHLIGHT_OFFSET_FRAC,
+        this.r * BUB.HIGHLIGHT_SIZE_FRAC,
         -Math.PI * 0.7,
         -Math.PI * 0.3,
       );
       _ctx.stroke();
     } else {
       // Small bubbles — just a dot highlight
-      _ctx.fillStyle = "rgba(255,255,255,0.5)";
+      _ctx.fillStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_DOT_ALPHA})`;
       _ctx.beginPath();
       _ctx.arc(
-        this.x - this.r * 0.3,
-        this.y - this.r * 0.3,
-        this.r * 0.2,
+        this.x - this.r * BUB.DOT_OFFSET_FRAC,
+        this.y - this.r * BUB.DOT_OFFSET_FRAC,
+        this.r * BUB.DOT_SIZE_FRAC,
         0,
         Math.PI * 2,
       );
@@ -488,13 +603,13 @@ class Bubble {
 
     // Large bubbles get a secondary smaller highlight
     if (this.r >= BUB.LARGE_THRESHOLD) {
-      _ctx.strokeStyle = "rgba(255,255,255,0.3)";
-      _ctx.lineWidth = 0.5;
+      _ctx.strokeStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${BUB.HIGHLIGHT_SECONDARY_ALPHA})`;
+      _ctx.lineWidth = BUB.HIGHLIGHT_SECONDARY_WIDTH;
       _ctx.beginPath();
       _ctx.arc(
-        this.x + this.r * 0.15,
-        this.y + this.r * 0.2,
-        this.r * 0.25,
+        this.x + this.r * BUB.SECONDARY_OFFSET_X_FRAC,
+        this.y + this.r * BUB.SECONDARY_OFFSET_Y_FRAC,
+        this.r * BUB.SECONDARY_SIZE_FRAC,
         Math.PI * 0.2,
         Math.PI * 0.6,
       );
@@ -710,7 +825,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
   let bubbleSpawnAccum = 0;
 
   return {
-    draw(forces, scrollVelocity, dt) {
+    draw(forces, scrollVelocity, dt, pal) {
       // Ambient bubble spawning
       bubbleSpawnAccum += BUB.AMBIENT_RATE * dt;
       while (bubbleSpawnAccum >= 1) {
@@ -738,7 +853,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
         if (Math.abs(scrollVelocity) > BUB.SCROLL_THRESHOLD) {
           b.vx += scrollVelocity * BUB.SCROLL_VX;
         }
-        b.draw();
+        b.draw(pal);
       });
 
       jellyfish.forEach((j) => {

@@ -686,6 +686,28 @@ const GLASS = defineConstants(
       step: 0.1,
       description: "Max drop slide speed",
     },
+    SPECULAR_OFFSET_FRAC: {
+      value: 0.25,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Specular highlight offset toward top-left as fraction of radius",
+    },
+    SPECULAR_SIZE_FRAC: {
+      value: 0.4,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Specular highlight radius as fraction of drop radius",
+    },
+    RIM_WIDTH: {
+      value: 0.5,
+      min: 0.1,
+      max: 3,
+      step: 0.1,
+      description: "Rim outline stroke width",
+    },
   },
   { mode: "rainy" },
 );
@@ -969,10 +991,13 @@ class GlassDrop {
     }
   }
 
-  draw(ctx) {
+  draw(ctx, pal) {
     if (!this.active || this.opacity <= 0) return;
     const a = this.opacity;
     const len = this.trail.length;
+    const body = pal.glassBody;
+    const rim = pal.glassRim;
+    const spec = pal.glassSpecular;
 
     // ── Trail — filled polygon following position history ──
     // Left edge oldest→newest, right edge newest→oldest, single fill
@@ -994,7 +1019,7 @@ class GlassDrop {
         ctx.lineTo(this.trail[i].x + hw, this.trail[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = `rgba(200,220,240,${(a * GLASS.TRAIL_TIP_ALPHA).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${(a * GLASS.TRAIL_TIP_ALPHA).toFixed(3)})`;
       ctx.fill();
     }
 
@@ -1002,20 +1027,26 @@ class GlassDrop {
     const r = this.size / 2;
     ctx.beginPath();
     ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(200,220,240,${(a * GLASS.TRAIL_BODY_ALPHA).toFixed(3)})`;
+    ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${(a * GLASS.TRAIL_BODY_ALPHA).toFixed(3)})`;
     ctx.fill();
 
     // Specular highlight — offset circle
     ctx.beginPath();
-    ctx.arc(this.x - r * 0.25, this.y - r * 0.25, r * 0.4, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(255,255,255,${(a * GLASS.SPECULAR_ALPHA).toFixed(3)})`;
+    ctx.arc(
+      this.x - r * GLASS.SPECULAR_OFFSET_FRAC,
+      this.y - r * GLASS.SPECULAR_OFFSET_FRAC,
+      r * GLASS.SPECULAR_SIZE_FRAC,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${(a * GLASS.SPECULAR_ALPHA).toFixed(3)})`;
     ctx.fill();
 
     // Rim outline
     ctx.beginPath();
     ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(220,235,250,${(a * GLASS.RIM_ALPHA).toFixed(3)})`;
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${(a * GLASS.RIM_ALPHA).toFixed(3)})`;
+    ctx.lineWidth = GLASS.RIM_WIDTH;
     ctx.stroke();
   }
 
@@ -1216,7 +1247,7 @@ export function createRain(canvasEl, ctxEl) {
       const speedBoost = updateThunder(now, pal);
 
       // Rain color from palette
-      const rc = pal.streakColor || [180, 200, 220];
+      const rc = pal.streakColor;
       const rainStyle = `${rc[0]},${rc[1]},${rc[2]}`;
 
       // Draw each layer — batched strokes per layer
@@ -1282,7 +1313,7 @@ export function createRain(canvasEl, ctxEl) {
       }
 
       // Splash particles
-      const sc = pal.clickColor || [200, 220, 255];
+      const sc = pal.clickColor;
       _ctx.save();
       _ctx.fillStyle = `rgba(${sc[0]},${sc[1]},${sc[2]},${SPLASH.DRAW_ALPHA})`;
       for (let i = 0; i < splashes.length; i++) {
@@ -1310,7 +1341,7 @@ export function createRain(canvasEl, ctxEl) {
       glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
       for (let i = 0; i < glassDrops.length; i++) {
         glassDrops[i].update(dtMs, scrollVelocity);
-        glassDrops[i].draw(glassCtx);
+        glassDrops[i].draw(glassCtx, pal);
       }
       checkGlassMerge();
     },

@@ -64,9 +64,6 @@ export const palettes = {
       [200, 225, 255],
       [230, 240, 255],
     ],
-    // Paper mode — consumed only when paper is active, safe defaults here
-    inkColor: [26, 21, 18],
-    paperColor: [245, 232, 210],
   },
   light: {
     // Sky
@@ -114,8 +111,6 @@ export const palettes = {
       [200, 225, 255],
       [230, 240, 255],
     ],
-    inkColor: [20, 14, 10],
-    paperColor: [251, 242, 221],
   },
 };
 
@@ -203,6 +198,9 @@ const overrides = {
       streakColor: [0, 180, 200],
       moteColor: [0, 255, 180],
       moteGlow: [0, 200, 150],
+      bubbleRim: [180, 255, 230],
+      bubbleFill: [0, 255, 200],
+      bubbleSpecular: [255, 255, 255],
     },
     light: {
       clickColor: [0, 200, 150],
@@ -221,6 +219,9 @@ const overrides = {
       streakColor: [0, 180, 200],
       moteColor: [0, 200, 150],
       moteGlow: [0, 170, 130],
+      bubbleRim: [140, 220, 200],
+      bubbleFill: [0, 200, 170],
+      bubbleSpecular: [240, 250, 248],
     },
   },
   rainy: {
@@ -241,6 +242,9 @@ const overrides = {
       streakColor: [180, 200, 220],
       moteColor: [200, 210, 230],
       moteGlow: [170, 185, 210],
+      glassBody: [200, 220, 240],
+      glassRim: [220, 235, 250],
+      glassSpecular: [255, 255, 255],
     },
     light: {
       clickColor: [150, 170, 200],
@@ -259,6 +263,9 @@ const overrides = {
       streakColor: [140, 165, 195],
       moteColor: [150, 170, 200],
       moteGlow: [120, 145, 180],
+      glassBody: [170, 195, 220],
+      glassRim: [195, 215, 235],
+      glassSpecular: [240, 248, 255],
     },
   },
   paper: {
@@ -285,7 +292,6 @@ const overrides = {
       moteColor: [40, 28, 22],
       moteGlow: [60, 45, 35],
       inkColor: [26, 21, 18],
-      paperColor: [245, 232, 210],
     },
     light: {
       clickColor: [30, 22, 18],
@@ -310,7 +316,6 @@ const overrides = {
       moteColor: [30, 22, 18],
       moteGlow: [50, 38, 30],
       inkColor: [20, 14, 10],
-      paperColor: [251, 242, 221],
     },
   },
   blocky: {

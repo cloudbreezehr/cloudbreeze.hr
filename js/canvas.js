@@ -378,7 +378,7 @@ export function initCanvas(canvasEl, theme, options) {
 
     // Bubbles + Jellyfish — deep-sea mode
     if (isDeepSea) {
-      deepSea.draw(forces, scrollVelocity, dt);
+      deepSea.draw(forces, scrollVelocity, dt, pal);
     }
 
     // Rain + thunder + glass drops — rainy mode
