@@ -22,13 +22,14 @@ describe("analytics/bridges/modes", () => {
     vi.resetModules();
     captured = [];
     core = await import("../../../../js/analytics/core.js");
+    // Re-importing session after resetModules gives the bridge a fresh
+    // sessionCounters object — its initial state is already what each test
+    // expects, so no manual reset is needed.
     session = await import("../../../../js/analytics/bridges/session.js");
     bridge = await import("../../../../js/analytics/bridges/modes.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });
-    session.sessionCounters.modesActivatedThisSession = new Set();
-    session.sessionCounters.lastModeActivationTs = null;
     bridge.initModesBridge();
   }
 
