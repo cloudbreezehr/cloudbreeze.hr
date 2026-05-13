@@ -1,5 +1,10 @@
 import { scrollFade } from "./canvas-utils.js";
-import { applyWellForce, HOLD } from "./interactions.js";
+import {
+  applyAttraction,
+  applyHoverDrift,
+  applyWellForce,
+  HOLD,
+} from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 
 // ── Streaks ──
@@ -700,6 +705,7 @@ const GUST = defineConstants("atmosphere.gusts", {
 });
 
 // ── Mote Impulse ──
+// Direct interaction lights motes brighter than ambient scroll-driven activity.
 const MOTE_IMP = defineConstants("atmosphere.moteImpulse", {
   REPEL_RADIUS: {
     value: 200,
@@ -715,12 +721,51 @@ const MOTE_IMP = defineConstants("atmosphere.moteImpulse", {
     step: 1,
     description: "Click repulsion strength scaler",
   },
-  OPACITY_GAIN: {
+  CLICK_OPACITY_GAIN: {
     value: 0.1,
     min: 0,
     max: 0.5,
     step: 0.01,
     description: "Opacity boost from click impulse",
+  },
+  DRAG_OPACITY_GAIN: {
+    value: 0.005,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Opacity boost per frame while drag-attracted",
+  },
+  DRAG_OPACITY_GAIN_HOLD: {
+    value: 0.01,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Extra drag opacity gain scaled by hold strength",
+  },
+  INTERACTION_OPACITY_MAX: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Opacity cap while a mote is being interacted with",
+  },
+});
+
+// ── Mote Hover Drift ──
+const MOTE_HOVER = defineConstants("atmosphere.moteHover", {
+  RADIUS: {
+    value: 140,
+    min: 30,
+    max: 400,
+    step: 5,
+    description: "Hover influence radius for motes",
+  },
+  STRENGTH: {
+    value: 0.025,
+    min: 0,
+    max: 0.2,
+    step: 0.005,
+    description: "Soft pull toward cursor on hover",
   },
 });
 
@@ -1170,28 +1215,33 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
               const f = forces.clickImpulse.strength * (1 - dist / repelR);
               m.vx += (dx / dist) * f;
               m.vy += (dy / dist) * f;
-              m.opacity = Math.min(0.5, m.opacity + f * MOTE_IMP.OPACITY_GAIN);
+              m.opacity = Math.min(
+                MOTE_IMP.INTERACTION_OPACITY_MAX,
+                m.opacity + f * MOTE_IMP.CLICK_OPACITY_GAIN,
+              );
             }
           }
           if (forces.isDragging) {
-            const dx = forces.dragPos.x - m.x;
-            const dy = forces.dragPos.y - m.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < attractRadius && dist > 5) {
-              const f = attractForce * (1 - dist / attractRadius);
-              const nx = dx / dist;
-              const ny = dy / dist;
-              m.vx +=
-                nx * f +
-                -ny * f * forces.holdStrength * HOLD.ATTRACT_TANGENT_FACTOR;
-              m.vy +=
-                ny * f +
-                nx * f * forces.holdStrength * HOLD.ATTRACT_TANGENT_FACTOR;
+            const beforeVx = m.vx;
+            const beforeVy = m.vy;
+            applyAttraction(
+              forces,
+              m,
+              attractRadius,
+              attractForce,
+              HOLD.ATTRACT_TANGENT_FACTOR,
+            );
+            // Light up only when the helper actually pulled this mote.
+            if (m.vx !== beforeVx || m.vy !== beforeVy) {
               m.opacity = Math.min(
-                0.5,
-                m.opacity + 0.005 + forces.holdStrength * 0.01,
+                MOTE_IMP.INTERACTION_OPACITY_MAX,
+                m.opacity +
+                  MOTE_IMP.DRAG_OPACITY_GAIN +
+                  forces.holdStrength * MOTE_IMP.DRAG_OPACITY_GAIN_HOLD,
               );
             }
+          } else {
+            applyHoverDrift(forces, m, MOTE_HOVER.RADIUS, MOTE_HOVER.STRENGTH);
           }
           applyWellForce(forces, m);
           m.draw(pal);

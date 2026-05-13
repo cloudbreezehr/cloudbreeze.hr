@@ -891,7 +891,6 @@ export function applyHoverDrift(forces, p, radius, strength) {
   }
 }
 
-// Re-export for cross-module use (atmosphere, particles)
 export { HOLD, WELL };
 
 // ── Factory ──
