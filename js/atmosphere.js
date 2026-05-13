@@ -1,4 +1,4 @@
-import { scrollFade } from "./canvas-utils.js";
+import { drawHaloParticle, scrollFade } from "./canvas-utils.js";
 import {
   applyAttraction,
   applyHoverDrift,
@@ -1028,26 +1028,19 @@ class ScrollMote {
   }
   draw(pal) {
     if (this.opacity < MOTE.DRAW_THRESHOLD) return;
-    const c = pal.moteColor;
-    const g = pal.moteGlow;
-    const grad = _ctx.createRadialGradient(
-      this.x,
-      this.y,
-      0,
+    drawHaloParticle(
+      _ctx,
       this.x,
       this.y,
       this.r * MOTE.GLOW_RADIUS,
+      this.opacity,
+      pal.moteColor,
+      {
+        midStop: MOTE.GRAD_MID,
+        midAlpha: MOTE.GRAD_MID_OPACITY,
+        midColor: pal.moteGlow,
+      },
     );
-    grad.addColorStop(0, `rgba(${c[0]},${c[1]},${c[2]},${this.opacity})`);
-    grad.addColorStop(
-      MOTE.GRAD_MID,
-      `rgba(${g[0]},${g[1]},${g[2]},${this.opacity * MOTE.GRAD_MID_OPACITY})`,
-    );
-    grad.addColorStop(1, "transparent");
-    _ctx.fillStyle = grad;
-    _ctx.beginPath();
-    _ctx.arc(this.x, this.y, this.r * MOTE.GLOW_RADIUS, 0, Math.PI * 2);
-    _ctx.fill();
   }
 }
 
