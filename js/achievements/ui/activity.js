@@ -136,25 +136,25 @@ function renderActivityEntry(entry, opts = {}) {
   row.dataset.entryId = entry.id;
   if (!isTrash && !entry.seen) row.classList.add("unseen");
 
+  const achievement = getAchievement(entry.payload?.achievementId);
+  if (!achievement) return null;
+
   let content = null;
   if (entry.type === "achievement-unlocked") {
-    const achievement = getAchievement(entry.payload?.achievementId);
-    if (!achievement) return null;
     content = buildAchievementToast(achievement);
     wireToastClick(content, achievement);
-    if (achievement.hint) {
-      content.addEventListener("mouseenter", () =>
-        showHintTooltip(content, achievement.hint),
-      );
-      content.addEventListener("mouseleave", hideHintTooltip);
-    }
   } else if (entry.type === "achievement-relocked") {
-    const achievement = getAchievement(entry.payload?.achievementId);
-    if (!achievement) return null;
     content = buildRelockToast(achievement);
     wireRelockToastClick(content, achievement);
   }
   if (!content) return null;
+
+  if (achievement.hint) {
+    content.addEventListener("mouseenter", () =>
+      showHintTooltip(content, achievement.hint),
+    );
+    content.addEventListener("mouseleave", hideHintTooltip);
+  }
 
   const meta = document.createElement("div");
   meta.className = "activity-meta";

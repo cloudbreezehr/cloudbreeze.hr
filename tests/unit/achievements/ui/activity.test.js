@@ -171,6 +171,19 @@ describe("achievements/ui/activity", () => {
       toast.dispatchEvent(new MouseEvent("mouseleave", { bubbles: true }));
       expect(getTooltip().classList.contains("visible")).toBe(false);
     });
+
+    it("shows the achievement hint when hovering a re-lock row", () => {
+      activityLog.log("achievement-relocked", { achievementId: "first-light" });
+      mod.renderActivity(container);
+      const toast = container.querySelector(
+        ".activity-row .achievement-toast-relock",
+      );
+      toast.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      const tip = getTooltip();
+      expect(tip).not.toBeNull();
+      expect(tip.classList.contains("visible")).toBe(true);
+      expect(tip.textContent).toEqual(getAchievement("first-light").hint);
+    });
   });
 
   describe("trash sub-view", () => {
