@@ -14,12 +14,13 @@ import {
   buildRelockToast,
   wireRelockToastClick,
 } from "./toast.js";
+import { INTRO_CARD_THRESHOLD } from "./cards.js";
 
 // ── Intro hint ──
-// Slim tip prepended to the active list while the user is still in the
-// discovery phase. Kept in step with INTRO_CARD_THRESHOLD so onboarding
-// cues across the panel vanish at the same milestone.
-export const INTRO_HINT_THRESHOLD = 10;
+// Onboarding tip prepended to the active list during the discovery phase.
+// Shares INTRO_CARD_THRESHOLD so both onboarding cues vanish at the same
+// milestone instead of drifting independently.
+export const INTRO_HINT_THRESHOLD = INTRO_CARD_THRESHOLD;
 
 let activitySubView = "list"; // "list" | "trash"
 
