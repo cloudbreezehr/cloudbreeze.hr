@@ -294,7 +294,7 @@ export function initCanvas(canvasEl, appearance, options) {
   let cachedSkyBot = null;
   let cachedSkyHeight = 0;
   let cachedSkyBucket = -1;
-  function render() {
+  function drawFrame() {
     const now = performance.now();
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
@@ -410,8 +410,20 @@ export function initCanvas(canvasEl, appearance, options) {
     if (isBlocky) {
       blocky.draw(forces, scrollVelocity, isDark);
     }
+  }
 
-    requestAnimationFrame(render);
+  // Drive the render loop.  Invariant: the next frame is always
+  // scheduled, even if drawFrame throws — otherwise a single bad frame
+  // (e.g. a palette-key dereference on a stacked theme) would kill the
+  // loop and freeze the canvas with no recovery short of a reload.
+  function render() {
+    try {
+      drawFrame();
+    } catch (err) {
+      console.error("[canvas] render frame failed:", err);
+    } finally {
+      requestAnimationFrame(render);
+    }
   }
 
   // UI overlays that should not trigger canvas fury or click-burst effects
