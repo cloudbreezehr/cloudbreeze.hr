@@ -3901,6 +3901,53 @@ nav.nav-light .achievement-btn::after {
   filter: none;
 }
 
+/* ── Theme-switch row ── */
+/* Slimmer than achievement rows so they read as ambient transitions
+   rather than peer events.  Theme color flows through --theme-color
+   set inline; the left border + icon adopt it so each theme has a
+   distinct visual signature in the log. */
+.activity-theme-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--theme-color, rgba(255, 255, 255, 0.2));
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+.activity-theme-switch:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.activity-theme-switch-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  color: var(--theme-color, rgba(255, 255, 255, 0.5));
+  flex-shrink: 0;
+}
+.activity-theme-switch-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.activity-theme-switch-text {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.03em;
+}
+.activity-list .activity-row.trashed .activity-theme-switch {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+.activity-list .activity-row.trashed:hover .activity-theme-switch {
+  opacity: 0.85;
+  filter: none;
+}
+
 /* Footer — trash-view toggle.  Absent when the log is empty AND there's
    nothing in the trash. */
 .activity-footer {

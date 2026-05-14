@@ -8,6 +8,7 @@
 import * as activityLog from "../activity-log.js";
 import { getAchievement } from "../registry.js";
 import { formatRelativeTime } from "../../time-ago.js";
+import { getTheme, toggleTheme } from "../../themes/registry.js";
 import {
   buildAchievementToast,
   wireToastClick,
@@ -137,25 +138,29 @@ function renderActivityEntry(entry, opts = {}) {
   row.dataset.entryId = entry.id;
   if (!isTrash && !entry.seen) row.classList.add("unseen");
 
-  const achievement = getAchievement(entry.payload?.achievementId);
-  if (!achievement) return null;
-
   let content = null;
-  if (entry.type === "achievement-unlocked") {
-    content = buildAchievementToast(achievement);
+  if (
+    entry.type === "achievement-unlocked" ||
+    entry.type === "achievement-relocked"
+  ) {
+    const achievement = getAchievement(entry.payload?.achievementId);
+    if (!achievement) return null;
+    content =
+      entry.type === "achievement-unlocked"
+        ? buildAchievementToast(achievement)
+        : buildRelockToast(achievement);
     wireToastClick(content, achievement);
-  } else if (entry.type === "achievement-relocked") {
-    content = buildRelockToast(achievement);
-    wireToastClick(content, achievement);
+    if (achievement.hint) {
+      content.addEventListener("mouseenter", () =>
+        showHintTooltip(content, achievement.hint),
+      );
+      content.addEventListener("mouseleave", hideHintTooltip);
+    }
+  } else if (entry.type === "theme-switched") {
+    content = buildThemeSwitchRow(entry.payload);
+    if (!content) return null;
   }
   if (!content) return null;
-
-  if (achievement.hint) {
-    content.addEventListener("mouseenter", () =>
-      showHintTooltip(content, achievement.hint),
-    );
-    content.addEventListener("mouseleave", hideHintTooltip);
-  }
 
   const meta = document.createElement("div");
   meta.className = "activity-meta";
@@ -195,6 +200,35 @@ function renderActivityEntry(entry, opts = {}) {
   row.appendChild(content);
   row.appendChild(meta);
   return row;
+}
+
+// Compact row for a theme entry/exit event.  Click toggles the theme
+// (re-enter what you left, leave what you entered).  Returns null if
+// the theme id is no longer registered — defensive against a renamed
+// or removed theme leaving stale entries in the log.
+function buildThemeSwitchRow(payload) {
+  const themeId = payload?.themeId;
+  const theme = themeId ? getTheme(themeId) : null;
+  if (!theme) return null;
+
+  const el = document.createElement("div");
+  el.className = "activity-theme-switch";
+  if (theme.color) el.style.setProperty("--theme-color", theme.color);
+
+  const icon = document.createElement("span");
+  icon.className = "activity-theme-switch-icon";
+  icon.innerHTML = theme.icon || "";
+
+  const text = document.createElement("span");
+  text.className = "activity-theme-switch-text";
+  const verb = payload.activated ? "Entered" : "Left";
+  text.textContent = `${verb} ${theme.label}`;
+
+  el.appendChild(icon);
+  el.appendChild(text);
+
+  el.addEventListener("click", () => toggleTheme(themeId));
+  return el;
 }
 
 // Find the latest active activity entry for a given achievement id and

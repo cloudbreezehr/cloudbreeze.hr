@@ -193,6 +193,72 @@ describe("achievements/ui/activity", () => {
     });
   });
 
+  describe("theme-switch rows", () => {
+    it("renders an entered-theme entry with the theme's label", () => {
+      activityLog.log("theme-switched", {
+        themeId: "rainy",
+        activated: true,
+      });
+      mod.renderActivity(container);
+      const row = container.querySelector(
+        ".activity-row .activity-theme-switch",
+      );
+      expect(row).not.toBeNull();
+      expect(row.textContent).toContain("Entered Rainy");
+    });
+
+    it("renders a left-theme entry with the theme's label", () => {
+      activityLog.log("theme-switched", {
+        themeId: "frozen",
+        activated: false,
+      });
+      mod.renderActivity(container);
+      const row = container.querySelector(
+        ".activity-row .activity-theme-switch",
+      );
+      expect(row).not.toBeNull();
+      expect(row.textContent).toContain("Left Frozen");
+    });
+
+    it("paints the theme color via the --theme-color custom property", () => {
+      activityLog.log("theme-switched", {
+        themeId: "blocky",
+        activated: true,
+      });
+      mod.renderActivity(container);
+      const row = container.querySelector(".activity-theme-switch");
+      // Blocky is registered with #ffa040; the row exposes it as
+      // --theme-color so the border + icon adopt it without per-theme CSS.
+      expect(row.style.getPropertyValue("--theme-color")).toEqual("#ffa040");
+    });
+
+    it("skips entries whose theme id is no longer registered", () => {
+      activityLog.log("theme-switched", {
+        themeId: "ghost-theme",
+        activated: true,
+      });
+      mod.renderActivity(container);
+      expect(container.querySelector(".activity-theme-switch")).toBeNull();
+      expect(container.querySelectorAll(".activity-row").length).toEqual(0);
+    });
+
+    it("clicking a row toggles the theme via the registry", async () => {
+      const themeRegistry = await import("../../../../js/themes/registry.js");
+      const calls = [];
+      themeRegistry.registerToggle("rainy", (opts) => calls.push(opts));
+
+      activityLog.log("theme-switched", {
+        themeId: "rainy",
+        activated: true,
+      });
+      mod.renderActivity(container);
+      const row = container.querySelector(".activity-theme-switch");
+      row.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+
+      expect(calls.length).toEqual(1);
+    });
+  });
+
   describe("re-lock row click navigation", () => {
     it("opens the achievement card just like an unlock row does", async () => {
       const toastMod = await import("../../../../js/achievements/ui/toast.js");
