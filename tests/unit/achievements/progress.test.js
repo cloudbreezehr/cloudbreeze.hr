@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
+import { THEME_SETS } from "../../../js/achievements/registry.js";
 
 // progress.js computes "current / total" for each progressive achievement.
 // These tests poke the underlying storage through the same module imports
@@ -39,8 +40,10 @@ describe("achievements/progress", () => {
       expect(progress.resolveProgressTotal("quadrants-clicked")).toBe(4);
     });
 
-    it("returns 6 for themes-activated (one per theme)", () => {
-      expect(progress.resolveProgressTotal("themes-activated")).toBe(6);
+    it("returns one per theme for themes-activated", () => {
+      expect(progress.resolveProgressTotal("themes-activated")).toBe(
+        THEME_SETS.length,
+      );
     });
 
     it("returns 0 for unknown progress keys", () => {
