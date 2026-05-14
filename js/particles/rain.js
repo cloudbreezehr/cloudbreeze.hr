@@ -257,7 +257,7 @@ const RAIN = defineConstants(
       description: "Horizontal off-screen wrap margin (px)",
     },
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Wind System ──
@@ -328,7 +328,7 @@ const WIND = defineConstants(
       description: "Wind scale for far layer",
     },
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Splash Particles ──
@@ -476,7 +476,7 @@ const SPLASH = defineConstants(
       description: "Splash particle draw opacity",
     },
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Glass Drops (DOM rain on screen) ──
@@ -709,7 +709,7 @@ const GLASS = defineConstants(
       description: "Rim outline stroke width",
     },
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Ambient Thunder ──
@@ -815,7 +815,7 @@ const THUNDER = defineConstants(
       description: "Window after rumble ends to reset page transform (ms)",
     },
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Module-scoped canvas refs ──

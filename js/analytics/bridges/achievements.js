@@ -6,7 +6,7 @@
 //      is a high-signal conversion moment (from "tourist" to "player").
 //
 //   2. Unlock events — every unlock records set, points, session-level
-//      ordering, and the active mode at unlock time.  This is the future
+//      ordering, and the active theme at unlock time.  This is the future
 //      rarity feed's write path.
 //
 //   3. Set completion + progress milestones — derived from counting the
@@ -97,7 +97,7 @@ export function initAchievementsBridge() {
     const unlocksAfter = unlocked.length;
     const pointsAfter = sumPoints(unlocked);
 
-    // active_mode is carried by baseProps — no snapshot needed here.
+    // active_theme is carried by baseProps — no snapshot needed here.
     // time_since_cloudlog_activated_ms is null for unlocks fired before
     // the user has discovered the Cloudlog (possible via persistent
     // state catch-up or achievements that don't require the Cloudlog).

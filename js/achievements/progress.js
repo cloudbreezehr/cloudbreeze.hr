@@ -13,7 +13,7 @@ import {
   getAllNonMeta,
   getSetPrereqs,
   sumPoints,
-  MODE_SETS,
+  THEME_SETS,
 } from "./registry.js";
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 
@@ -35,7 +35,7 @@ const PAPER_STROKES_TOTAL = 10;
 
 export const PROGRESS_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
-  "modes-activated": () => MODE_SETS,
+  "themes-activated": () => THEME_SETS,
   "appearances-used": () => APPEARANCES,
   "almanac-appearances": () => APPEARANCES,
   "panel-tabs-visited": () => PANEL_TABS,

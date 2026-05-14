@@ -68,7 +68,7 @@ describe("toRgba", () => {
 });
 
 describe("resolvePalette", () => {
-  it("returns the base dark palette when no submode is given", () => {
+  it("returns the base dark palette when no theme is given", () => {
     const pal = resolvePalette("dark", null);
     expect(pal).toBe(palettes.dark);
   });
@@ -78,14 +78,14 @@ describe("resolvePalette", () => {
     expect(pal).toBe(palettes.dark);
   });
 
-  it("overrides base colors with submode overrides", () => {
+  it("overrides base colors with theme overrides", () => {
     const pal = resolvePalette("dark", "frozen");
     // frozen overrides clickColor; base cloudWhite should survive
     expect(pal.clickColor).toEqual([0, 220, 255]);
     expect(pal.cloudWhite).toEqual(palettes.dark.cloudWhite);
   });
 
-  it("returns the base palette when submode has no overrides for the appearance", () => {
+  it("returns the base palette when theme has no overrides for the appearance", () => {
     // There is no "nothere" override table, so it should pass through.
     const pal = resolvePalette("light", "nothere");
     expect(pal).toEqual(palettes.light);

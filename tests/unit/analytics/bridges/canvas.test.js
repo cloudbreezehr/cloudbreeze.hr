@@ -6,13 +6,13 @@ import {
 } from "../../../../js/analytics/bridges/canvas.js";
 
 // Canvas-bridge test.  Focus areas:
-//   - summary aggregation (click_count, quadrant set, by-mode map)
+//   - summary aggregation (click_count, quadrant set, by-theme map)
 //   - drag_complete only fires past the DRAG_MIN_PX threshold
 //   - hold_complete ONLY fires when source dispatched a "hold" event —
 //     incidental long clicks that never reached warmup must not leak
 //     into the stream (regression guard for the pre-fix behavior)
 //   - discrete events (gravity well, fury, snow-globe, scroll surge,
-//     cursor idle) emit with counters and active_mode
+//     cursor idle) emit with counters and active_theme
 //
 // Follows the bootstrap pattern from analytics-bridge-achievements.test.js.
 
@@ -60,7 +60,7 @@ describe("analytics/bridges/canvas", () => {
   });
 
   describe("click summary", () => {
-    it("aggregates click count, distinct quadrants, and by-mode buckets", () => {
+    it("aggregates click count, distinct quadrants, and by-theme buckets", () => {
       Object.defineProperty(window, "innerWidth", {
         configurable: true,
         value: 1000,
@@ -79,10 +79,10 @@ describe("analytics/bridges/canvas", () => {
       expect(summaries.length).toEqual(1);
       expect(summaries[0].props.click_count).toEqual(3);
       expect(summaries[0].props.distinct_quadrants).toEqual(3);
-      expect(summaries[0].props.clicks_by_mode).toEqual({ none: 3 });
+      expect(summaries[0].props.clicks_by_theme).toEqual({ none: 3 });
     });
 
-    it("buckets clicks by active mode", () => {
+    it("buckets clicks by active theme", () => {
       dispatch({ type: "click", x: 10, y: 10 });
       document.body.dataset.activeTheme = "frozen";
       dispatch({ type: "click", x: 10, y: 10 });
@@ -91,7 +91,7 @@ describe("analytics/bridges/canvas", () => {
       core.flush();
 
       const summary = eventsNamed("canvas_click_summary")[0];
-      expect(summary.props.clicks_by_mode).toEqual({ none: 1, frozen: 2 });
+      expect(summary.props.clicks_by_theme).toEqual({ none: 1, frozen: 2 });
     });
 
     it("does not emit a summary when click count is zero", () => {
@@ -175,7 +175,7 @@ describe("analytics/bridges/canvas", () => {
   });
 
   describe("discrete force / burst events", () => {
-    it("hold_started fires once per hold gesture with active_mode", () => {
+    it("hold_started fires once per hold gesture with active_theme", () => {
       document.body.dataset.activeTheme = "frozen";
       dispatch({ type: "hold" });
       dispatch({ type: "hold" }); // second fires within same gesture, should no-op
@@ -184,7 +184,7 @@ describe("analytics/bridges/canvas", () => {
       core.flush();
       const starts = eventsNamed("hold_started");
       expect(starts.length).toEqual(2);
-      expect(starts[0].props.active_mode).toEqual("frozen");
+      expect(starts[0].props.active_theme).toEqual("frozen");
     });
 
     it("hold_max_reached carries time_to_max_ms when a hold was tracked", () => {
@@ -206,11 +206,11 @@ describe("analytics/bridges/canvas", () => {
       );
     });
 
-    it("orbit_locked passes through with active_mode", () => {
+    it("orbit_locked passes through with active_theme", () => {
       document.body.dataset.activeTheme = "deep-sea";
       dispatch({ type: "orbit" });
       core.flush();
-      expect(eventsNamed("orbit_locked")[0].props.active_mode).toEqual(
+      expect(eventsNamed("orbit_locked")[0].props.active_theme).toEqual(
         "deep-sea",
       );
     });
@@ -226,13 +226,13 @@ describe("analytics/bridges/canvas", () => {
       expect(eventsNamed("click_burst_triggered").length).toEqual(1);
     });
 
-    it("click_burst_triggered carries active_mode on the one emission", () => {
+    it("click_burst_triggered carries active_theme on the one emission", () => {
       document.body.dataset.activeTheme = "rainy";
       dispatch({ type: "click-burst" });
       core.flush();
-      expect(eventsNamed("click_burst_triggered")[0].props.active_mode).toEqual(
-        "rainy",
-      );
+      expect(
+        eventsNamed("click_burst_triggered")[0].props.active_theme,
+      ).toEqual("rainy");
     });
   });
 
@@ -276,20 +276,20 @@ describe("analytics/bridges/canvas", () => {
       expect(furies.map((f) => f.props.session_fury_count)).toEqual([1, 2]);
     });
 
-    it("fury_aurora, snow_globe_shake, gravity_well_filled carry active_mode", () => {
+    it("fury_aurora, snow_globe_shake, gravity_well_filled carry active_theme", () => {
       document.body.dataset.activeTheme = "deep-sea";
       dispatch({ type: "fury-aurora" });
       dispatch({ type: "snow-globe" });
       dispatch({ type: "well-full" });
       core.flush();
 
-      expect(eventsNamed("fury_aurora")[0].props.active_mode).toEqual(
+      expect(eventsNamed("fury_aurora")[0].props.active_theme).toEqual(
         "deep-sea",
       );
-      expect(eventsNamed("snow_globe_shake")[0].props.active_mode).toEqual(
+      expect(eventsNamed("snow_globe_shake")[0].props.active_theme).toEqual(
         "deep-sea",
       );
-      expect(eventsNamed("gravity_well_filled")[0].props.active_mode).toEqual(
+      expect(eventsNamed("gravity_well_filled")[0].props.active_theme).toEqual(
         "deep-sea",
       );
     });

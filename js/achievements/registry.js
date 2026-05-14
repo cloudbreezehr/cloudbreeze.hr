@@ -2,10 +2,10 @@
 // All achievement definitions as pure data. No logic, no conditions —
 // detection lives elsewhere where event state is available.
 
-import { getMode } from "../modes/registry.js";
+import { getTheme } from "../themes/registry.js";
 
-// Inline SVG icons for the non-mode sets.  Mode sets reuse their mode's
-// icon so there's one source of truth per mode.  All icons use a 16×16
+// Inline SVG icons for the non-theme sets.  Theme sets reuse their theme's
+// icon so there's one source of truth per theme.  All icons use a 16×16
 // viewBox and currentColor so they inherit the set's accent tint.
 const EXPLORATION_ICON =
   '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -33,9 +33,9 @@ const LEGENDARY = 100;
 export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
 
 // ── Achievement Sets ──
-// Mode sets pull their icon from the mode registry so there's one source of
-// truth per mode.  Non-mode sets declare their icon inline above.  Mode
-// descriptors are static data in modes/registry.js, so `getMode(id)` is
+// Theme sets pull their icon from the theme registry so there's one source of
+// truth per theme.  Non-theme sets declare their icon inline above.  Theme
+// descriptors are static data in themes/registry.js, so `getTheme(id)` is
 // safe to call at module load time — no init order dependency.
 export const SETS = [
   {
@@ -49,37 +49,37 @@ export const SETS = [
     id: "deep-sea",
     label: "Deep Sea",
     color: "#00ffc8",
-    icon: getMode("deep-sea")?.icon,
+    icon: getTheme("deep-sea")?.icon,
   },
   {
     id: "frozen",
     label: "Frozen",
     color: "#88d4f7",
-    icon: getMode("frozen")?.icon,
+    icon: getTheme("frozen")?.icon,
   },
   {
     id: "blocky",
     label: "Blocky",
     color: "#ffa040",
-    icon: getMode("blocky")?.icon,
+    icon: getTheme("blocky")?.icon,
   },
   {
     id: "rainy",
     label: "Rainy",
     color: "#6a9fc0",
-    icon: getMode("rainy")?.icon,
+    icon: getTheme("rainy")?.icon,
   },
   {
     id: "paper",
     label: "Paper",
     color: "#5a4030",
-    icon: getMode("paper")?.icon,
+    icon: getTheme("paper")?.icon,
   },
   {
     id: "upside-down",
     label: "Upside Down",
     color: "#e04050",
-    icon: getMode("upside-down")?.icon,
+    icon: getTheme("upside-down")?.icon,
   },
   { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
@@ -174,7 +174,7 @@ export const ACHIEVEMENTS = [
     id: "historian",
     title: "Historian",
     description: "Your path becomes visible.",
-    hint: "Discover your first hidden mode",
+    hint: "Discover your first hidden theme",
     set: "exploration",
     points: UNCOMMON,
     hidden: true,
@@ -481,7 +481,7 @@ export const ACHIEVEMENTS = [
     id: "the-long-watch",
     title: "The Long Watch",
     description: "Five minutes under one sky, unbroken.",
-    hint: "Stay in a single sub-mode for 5 minutes without switching",
+    hint: "Stay in a single theme for 5 minutes without switching",
     set: "mastery",
     points: EPIC,
     hidden: true,
@@ -500,11 +500,11 @@ export const ACHIEVEMENTS = [
     id: "elemental",
     title: "Elemental",
     description: "Every sky, sampled.",
-    hint: "Activate every mode at least once",
+    hint: "Activate every theme at least once",
     set: "mastery",
     points: LEGENDARY,
     hidden: true,
-    progressKey: "modes-activated",
+    progressKey: "themes-activated",
   },
 
   // ── Deep Sea ──
@@ -512,7 +512,7 @@ export const ACHIEVEMENTS = [
     id: "the-depths",
     title: "The Depths",
     description: "You sank beneath the surface.",
-    hint: "Activate deep-sea mode",
+    hint: "Activate deep-sea theme",
     set: "deep-sea",
     points: EPIC,
     hidden: true,
@@ -521,7 +521,7 @@ export const ACHIEVEMENTS = [
     id: "bioluminescent",
     title: "Bioluminescent",
     description: "Life glows in the darkness below.",
-    hint: "Click anywhere in deep-sea mode",
+    hint: "Click anywhere in deep-sea theme",
     set: "deep-sea",
     points: UNCOMMON,
     hidden: true,
@@ -540,7 +540,7 @@ export const ACHIEVEMENTS = [
     id: "pressure-drop",
     title: "Pressure Drop",
     description: "The ocean floor trembles.",
-    hint: "Open a gravity well in deep-sea mode",
+    hint: "Open a gravity well in deep-sea theme",
     set: "deep-sea",
     points: RARE,
     hidden: true,
@@ -549,7 +549,7 @@ export const ACHIEVEMENTS = [
     id: "resurface",
     title: "Resurface",
     description: "You clawed your way back to the light.",
-    hint: "Leave deep-sea mode",
+    hint: "Leave deep-sea theme",
     set: "deep-sea",
     points: UNCOMMON,
     hidden: true,
@@ -558,7 +558,7 @@ export const ACHIEVEMENTS = [
     id: "deep-orbit",
     title: "Deep Orbit",
     description: "They spiral in the current.",
-    hint: "Lock particles into orbit in deep-sea mode",
+    hint: "Lock particles into orbit in deep-sea theme",
     set: "deep-sea",
     points: UNCOMMON,
     hidden: true,
@@ -567,7 +567,7 @@ export const ACHIEVEMENTS = [
     id: "storm-surge",
     title: "Storm Surge",
     description: "Thunder in the deep.",
-    hint: "Trigger lightning in deep-sea mode",
+    hint: "Trigger lightning in deep-sea theme",
     set: "deep-sea",
     points: RARE,
     hidden: true,
@@ -576,7 +576,7 @@ export const ACHIEVEMENTS = [
     id: "permafrost",
     title: "Permafrost",
     description: "The ocean freezes.",
-    hint: "Shake the sky in deep-sea mode",
+    hint: "Shake the sky in deep-sea theme",
     set: "deep-sea",
     points: RARE,
     hidden: true,
@@ -597,7 +597,7 @@ export const ACHIEVEMENTS = [
     id: "first-frost",
     title: "First Frost",
     description: "The air turned cold.",
-    hint: "Activate frozen mode",
+    hint: "Activate frozen theme",
     set: "frozen",
     points: EPIC,
     hidden: true,
@@ -606,7 +606,7 @@ export const ACHIEVEMENTS = [
     id: "frost-breath",
     title: "Frost Breath",
     description: "Your breath crystallizes in the chill.",
-    hint: "Exhale frost in frozen mode",
+    hint: "Exhale frost in frozen theme",
     set: "frozen",
     points: UNCOMMON,
     hidden: true,
@@ -615,7 +615,7 @@ export const ACHIEVEMENTS = [
     id: "snowdrift",
     title: "Snowdrift",
     description: "The flakes obey the wind.",
-    hint: "Drag through the snow in frozen mode",
+    hint: "Drag through the snow in frozen theme",
     set: "frozen",
     points: UNCOMMON,
     hidden: true,
@@ -624,7 +624,7 @@ export const ACHIEVEMENTS = [
     id: "blizzard",
     title: "Blizzard",
     description: "A whiteout engulfs the sky.",
-    hint: "Shake the sky in frozen mode",
+    hint: "Shake the sky in frozen theme",
     set: "frozen",
     points: RARE,
     hidden: true,
@@ -633,7 +633,7 @@ export const ACHIEVEMENTS = [
     id: "thaw",
     title: "Thaw",
     description: "The ice recedes.",
-    hint: "Leave frozen mode",
+    hint: "Leave frozen theme",
     set: "frozen",
     points: UNCOMMON,
     hidden: true,
@@ -642,7 +642,7 @@ export const ACHIEVEMENTS = [
     id: "frozen-lightning",
     title: "Frozen Lightning",
     description: "Ice and fire.",
-    hint: "Trigger lightning in frozen mode",
+    hint: "Trigger lightning in frozen theme",
     set: "frozen",
     points: RARE,
     hidden: true,
@@ -663,7 +663,7 @@ export const ACHIEVEMENTS = [
     id: "resolution-drop",
     title: "Resolution Drop",
     description: "Reality pixelated.",
-    hint: "Activate blocky mode",
+    hint: "Activate blocky theme",
     set: "blocky",
     points: EPIC,
     hidden: true,
@@ -672,7 +672,7 @@ export const ACHIEVEMENTS = [
     id: "pixel-burst",
     title: "Pixel Burst",
     description: "Blocks scatter like fragments of a broken screen.",
-    hint: "Click anywhere in blocky mode",
+    hint: "Click anywhere in blocky theme",
     set: "blocky",
     points: UNCOMMON,
     hidden: true,
@@ -681,7 +681,7 @@ export const ACHIEVEMENTS = [
     id: "8-bit-storm",
     title: "8-Bit Storm",
     description: "A retro tempest brews.",
-    hint: "Trigger lightning in blocky mode",
+    hint: "Trigger lightning in blocky theme",
     set: "blocky",
     points: RARE,
     hidden: true,
@@ -690,7 +690,7 @@ export const ACHIEVEMENTS = [
     id: "defrag",
     title: "Defrag",
     description: "Resolution restored.",
-    hint: "Leave blocky mode",
+    hint: "Leave blocky theme",
     set: "blocky",
     points: UNCOMMON,
     hidden: true,
@@ -711,7 +711,7 @@ export const ACHIEVEMENTS = [
     id: "first-drop",
     title: "First Drop",
     description: "The clouds opened.",
-    hint: "Activate rainy mode",
+    hint: "Activate rainy theme",
     set: "rainy",
     points: EPIC,
     hidden: true,
@@ -720,7 +720,7 @@ export const ACHIEVEMENTS = [
     id: "puddle-jump",
     title: "Puddle Jump",
     description: "Splashes follow your steps.",
-    hint: "Click anywhere in rainy mode",
+    hint: "Click anywhere in rainy theme",
     set: "rainy",
     points: UNCOMMON,
     hidden: true,
@@ -729,7 +729,7 @@ export const ACHIEVEMENTS = [
     id: "thunder-roll",
     title: "Thunder Roll",
     description: "The sky rumbles and flashes.",
-    hint: "Trigger lightning in rainy mode",
+    hint: "Trigger lightning in rainy theme",
     set: "rainy",
     points: RARE,
     hidden: true,
@@ -738,7 +738,7 @@ export const ACHIEVEMENTS = [
     id: "rainbow",
     title: "Rainbow",
     description: "The storm breaks.",
-    hint: "Leave rainy mode",
+    hint: "Leave rainy theme",
     set: "rainy",
     points: UNCOMMON,
     hidden: true,
@@ -747,7 +747,7 @@ export const ACHIEVEMENTS = [
     id: "monsoon",
     title: "Monsoon",
     description: "The rain has weight now.",
-    hint: "Open a gravity well in rainy mode",
+    hint: "Open a gravity well in rainy theme",
     set: "rainy",
     points: RARE,
     hidden: true,
@@ -768,7 +768,7 @@ export const ACHIEVEMENTS = [
     id: "first-sketch",
     title: "First Sketch",
     description: "The page is yours to draw on.",
-    hint: "Activate paper mode",
+    hint: "Activate paper theme",
     set: "paper",
     points: EPIC,
     hidden: true,
@@ -777,7 +777,7 @@ export const ACHIEVEMENTS = [
     id: "blank-page",
     title: "Blank Page",
     description: "The marks fade, the paper clears.",
-    hint: "Leave paper mode",
+    hint: "Leave paper theme",
     set: "paper",
     points: UNCOMMON,
     hidden: true,
@@ -786,7 +786,7 @@ export const ACHIEVEMENTS = [
     id: "doodler",
     title: "Doodler",
     description: "Ten strokes across the page.",
-    hint: "Draw 10 strokes in paper mode",
+    hint: "Draw 10 strokes in paper theme",
     set: "paper",
     points: UNCOMMON,
     hidden: true,
@@ -796,7 +796,7 @@ export const ACHIEVEMENTS = [
     id: "ink-splatter",
     title: "Ink Splatter",
     description: "The nib jumps, ink bleeds across the page.",
-    hint: "Trigger lightning in paper mode",
+    hint: "Trigger lightning in paper theme",
     set: "paper",
     points: RARE,
     hidden: true,
@@ -805,7 +805,7 @@ export const ACHIEVEMENTS = [
     id: "margin-notes",
     title: "Margin Notes",
     description: "A scribble in the notebook's margin.",
-    hint: "Click a service card in paper mode",
+    hint: "Click a service card in paper theme",
     set: "paper",
     points: UNCOMMON,
     hidden: true,
@@ -826,7 +826,7 @@ export const ACHIEVEMENTS = [
     id: "the-flip",
     title: "The Flip",
     description: "The world inverted.",
-    hint: "Activate upside-down mode",
+    hint: "Activate upside-down theme",
     set: "upside-down",
     points: EPIC,
     hidden: true,
@@ -844,7 +844,7 @@ export const ACHIEVEMENTS = [
     id: "rift-walker",
     title: "Rift Walker",
     description: "You move through the inverted world with purpose.",
-    hint: "Click anywhere in upside-down mode",
+    hint: "Click anywhere in upside-down theme",
     set: "upside-down",
     points: UNCOMMON,
     hidden: true,
@@ -853,7 +853,7 @@ export const ACHIEVEMENTS = [
     id: "boundary-break",
     title: "Boundary Break",
     description: "The wall between worlds is thin here.",
-    hint: "Reach the tipping point for upside-down mode",
+    hint: "Reach the tipping point for upside-down theme",
     set: "upside-down",
     points: RARE,
     hidden: true,
@@ -862,7 +862,7 @@ export const ACHIEVEMENTS = [
     id: "restoration",
     title: "Restoration",
     description: "The world rights itself.",
-    hint: "Leave upside-down mode",
+    hint: "Leave upside-down theme",
     set: "upside-down",
     points: UNCOMMON,
     hidden: true,
@@ -880,7 +880,7 @@ export const ACHIEVEMENTS = [
     id: "glitch",
     title: "Glitch",
     description: "Reality errors in the rift.",
-    hint: "Trigger lightning in upside-down mode",
+    hint: "Trigger lightning in upside-down theme",
     set: "upside-down",
     points: RARE,
     hidden: true,
@@ -928,10 +928,10 @@ export const ACHIEVEMENTS = [
     progressKey: "non-meta-all",
   },
   {
-    id: "mode-hopper",
-    title: "Mode Hopper",
+    id: "theme-hopper",
+    title: "Theme Hopper",
     description: "A different sky every time.",
-    hint: "Activate 3 different modes in one session",
+    hint: "Activate 3 different themes in one session",
     set: "meta",
     points: EPIC,
     hidden: true,
@@ -940,7 +940,7 @@ export const ACHIEVEMENTS = [
     id: "storm-forecaster",
     title: "Storm Forecaster",
     description: "Lightning answers in every weather.",
-    hint: "Trigger lightning under 3 different sub-modes in one session",
+    hint: "Trigger lightning under 3 different themes in one session",
     set: "meta",
     points: RARE,
     hidden: true,
@@ -1017,8 +1017,8 @@ export function sumPoints(unlockedList) {
   return pts;
 }
 
-// Mode set IDs for "unlock all in set" meta-achievements
-export const MODE_SETS = [
+// Theme set IDs for "unlock all in set" meta-achievements
+export const THEME_SETS = [
   "deep-sea",
   "frozen",
   "blocky",
@@ -1027,7 +1027,7 @@ export const MODE_SETS = [
   "upside-down",
 ];
 
-// Map from mode set id to its "unlock all" achievement id
+// Map from theme set id to its "unlock all" achievement id
 export const SET_MASTERY_MAP = {
   "deep-sea": "abyssal-explorer",
   frozen: "glacial-mastery",
@@ -1038,7 +1038,7 @@ export const SET_MASTERY_MAP = {
 };
 
 /**
- * Get all non-mastery achievements for a mode set.
+ * Get all non-mastery achievements for a theme set.
  * Used to check if all prerequisite achievements are unlocked.
  */
 export function getSetPrereqs(setId) {
@@ -1056,10 +1056,10 @@ export function getAllNonMeta() {
 }
 
 /**
- * Check if a set is a mode set (has mode-specific achievements).
+ * Check if a set is a theme set (has theme-specific achievements).
  */
-export function isModeSet(setId) {
-  return MODE_SETS.includes(setId);
+export function isThemeSet(setId) {
+  return THEME_SETS.includes(setId);
 }
 
 /**

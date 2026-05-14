@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createHoldTrigger } from "../../../js/modes/triggers.js";
+import { createHoldTrigger } from "../../../js/themes/triggers.js";
 
 // Hold durations used across tests. The factory takes these as parameters,
 // so the values are defined here (not in the source) — naming them keeps

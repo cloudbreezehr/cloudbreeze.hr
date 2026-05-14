@@ -148,8 +148,8 @@ describe("analytics/bridges/session", () => {
       bridge.sessionCounters.clickTotalCanvas = 12;
       bridge.sessionCounters.clickTotalCta = 2;
       bridge.sessionCounters.keyboardUsed = true;
-      bridge.sessionCounters.modesActivatedThisSession.add("frozen");
-      bridge.sessionCounters.modesActivatedThisSession.add("deep-sea");
+      bridge.sessionCounters.themesActivatedThisSession.add("frozen");
+      bridge.sessionCounters.themesActivatedThisSession.add("deep-sea");
 
       vi.advanceTimersByTime(SESSION_END_LEAD_MS);
       window.dispatchEvent(new Event("pagehide"));
@@ -163,7 +163,7 @@ describe("analytics/bridges/session", () => {
       expect(end.props.click_total_canvas).toEqual(12);
       expect(end.props.click_total_cta).toEqual(2);
       expect(end.props.keyboard_used).toBe(true);
-      expect(end.props.modes_activated_this_session.sort()).toEqual([
+      expect(end.props.themes_activated_this_session.sort()).toEqual([
         "deep-sea",
         "frozen",
       ]);

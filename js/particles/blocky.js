@@ -17,10 +17,10 @@ const PIXEL = defineConstants(
       description: "Pixel block size for pixelation effect",
     },
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
-// ── Fireflies (Blocky mode) ──
+// ── Fireflies (Blocky theme) ──
 const FLY = defineConstants(
   "particles.fireflies",
   {
@@ -194,7 +194,7 @@ const FLY = defineConstants(
       description: "Flap threshold for spread wings",
     },
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
 // ── Butterflies (Blocky light appearance) ──
@@ -223,7 +223,7 @@ const BFLY = defineConstants(
       description: "Butterfly opacity",
     },
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
 // ── Block Fragments (Blocky click effect) ──
@@ -301,7 +301,7 @@ const FRAG = defineConstants(
       description: "Initial upward velocity offset",
     },
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
 const BLOCK_FRAG_COLORS = [

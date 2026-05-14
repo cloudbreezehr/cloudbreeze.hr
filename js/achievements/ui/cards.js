@@ -8,7 +8,7 @@
 // and dev-active rules).  The panel owns the chrome (header, tabs)
 // and hands this module a container to paint into via renderSections.
 
-import { ACHIEVEMENTS, SETS, getAchievement, isModeSet } from "../registry.js";
+import { ACHIEVEMENTS, SETS, getAchievement, isThemeSet } from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import * as storage from "../storage.js";
 import { formatTimestamp, toggleTimestampMode } from "./timestamp.js";
@@ -278,21 +278,21 @@ function buildCardTimeBlock(ach) {
 // ── Section renderer ──
 
 export function renderSections(container) {
-  const currentMode = document.body.dataset.activeTheme || null;
+  const currentTheme = document.body.dataset.activeTheme || null;
 
   if (storage.getUnlocked().length <= INTRO_CARD_THRESHOLD) {
     container.appendChild(buildIntroCard());
   }
 
   for (const set of SETS) {
-    // Mode sets: only show if user has at least one unlocked
-    if (isModeSet(set.id) && !hasAnyInSet(set.id)) continue;
+    // Theme sets: only show if user has at least one unlocked
+    if (isThemeSet(set.id) && !hasAnyInSet(set.id)) continue;
 
     const section = document.createElement("div");
     section.className = "achievement-set";
 
     if (set.color) section.style.setProperty("--set-color", set.color);
-    const isDimmed = isModeSet(set.id) && currentMode !== set.id;
+    const isDimmed = isThemeSet(set.id) && currentTheme !== set.id;
     if (isDimmed) section.classList.add("dimmed");
 
     // Section header

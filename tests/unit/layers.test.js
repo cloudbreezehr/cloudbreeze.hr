@@ -11,16 +11,16 @@ describe("z-index layer registry", () => {
     expect(Layers.Z_RAIN_GLASS).toBeLessThan(Layers.Z_PAPER_INK);
   });
 
-  it("page content stays below mode effects", () => {
-    expect(Layers.Z_PAPER_INK).toBeLessThan(Layers.Z_MODE_FLASH);
+  it("page content stays below theme effects", () => {
+    expect(Layers.Z_PAPER_INK).toBeLessThan(Layers.Z_THEME_FLASH);
   });
 
-  it("mode effects stay below panels and HUDs", () => {
-    expect(Layers.Z_MODE_FLASH).toBeLessThan(Layers.Z_MODE_HISTORY_HUD);
+  it("theme effects stay below panels and HUDs", () => {
+    expect(Layers.Z_THEME_FLASH).toBeLessThan(Layers.Z_THEME_HISTORY_HUD);
   });
 
   it("panels stay below dev tools", () => {
-    expect(Layers.Z_MODE_HISTORY_HUD).toBeLessThan(Layers.Z_DEV_CONSOLE);
+    expect(Layers.Z_THEME_HISTORY_HUD).toBeLessThan(Layers.Z_DEV_CONSOLE);
   });
 
   it("dev console stays below its own tooltip", () => {
@@ -35,10 +35,10 @@ describe("z-index layer registry", () => {
     const ranges = [
       { name: "Z_RAIN_GLASS", val: Layers.Z_RAIN_GLASS, min: 0, max: 9 },
       { name: "Z_PAPER_INK", val: Layers.Z_PAPER_INK, min: 10, max: 49 },
-      { name: "Z_MODE_FLASH", val: Layers.Z_MODE_FLASH, min: 100, max: 199 },
+      { name: "Z_THEME_FLASH", val: Layers.Z_THEME_FLASH, min: 100, max: 199 },
       {
-        name: "Z_MODE_HISTORY_HUD",
-        val: Layers.Z_MODE_HISTORY_HUD,
+        name: "Z_THEME_HISTORY_HUD",
+        val: Layers.Z_THEME_HISTORY_HUD,
         min: 300,
         max: 399,
       },

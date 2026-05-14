@@ -16,7 +16,7 @@ function defaultState() {
     seen: [],
     counters: {
       totalClicks: 0,
-      totalModeActivations: 0,
+      totalThemeActivations: 0,
       sessions: 0,
       sessionDays: [],
     },
@@ -28,20 +28,6 @@ function defaultState() {
 // ── In-memory state ──
 let _state = null;
 let _saveTimer = null;
-
-// Rename a key inside a stored object on read so visitors who recorded
-// progress under the old name keep it.  Adopts the legacy value only
-// when the new key is absent — if both exist (rare, only via manual
-// edits), the new key wins.
-function migrateKey(obj, fromKey, toKey) {
-  if (!obj) return;
-  if (Object.prototype.hasOwnProperty.call(obj, fromKey)) {
-    if (!Object.prototype.hasOwnProperty.call(obj, toKey)) {
-      obj[toKey] = obj[fromKey];
-    }
-    delete obj[fromKey];
-  }
-}
 
 function read() {
   try {
@@ -55,12 +41,9 @@ function read() {
     if (Array.isArray(parsed.unlocked)) state.unlocked = parsed.unlocked;
     if (Array.isArray(parsed.seen)) state.seen = parsed.seen;
     if (parsed.counters && typeof parsed.counters === "object") {
-      migrateKey(parsed.counters, "themeToggles", "appearanceToggles");
       Object.assign(state.counters, parsed.counters);
     }
     if (parsed.progress && typeof parsed.progress === "object") {
-      migrateKey(parsed.progress, "themes-used", "appearances-used");
-      migrateKey(parsed.progress, "almanac-themes", "almanac-appearances");
       state.progress = parsed.progress;
     }
     if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;

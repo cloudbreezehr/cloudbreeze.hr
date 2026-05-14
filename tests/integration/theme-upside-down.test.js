@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 //
 // Scope: wire-up smoke for the async-wipe path, not for the overscroll
 // trigger (which is separately unit-tested in triggers-overscroll.test.js).
-// Activation is driven through `toggleMode("upside-down", opts)` — the
+// Activation is driven through `toggleTheme("upside-down", opts)` — the
 // registered toggle calls the real complete() → real runSlidingWipe, which
 // is the code we're here to exercise. Drivng it through real wheel events
 // would add no coverage of the wipe path that this file targets, and the
@@ -37,13 +37,13 @@ function stageDom() {
 async function setupUpsideDown() {
   vi.resetModules();
   stageDom();
-  const { initUpsideDown } = await import("../../js/modes/upside-down.js");
+  const { initUpsideDown } = await import("../../js/themes/upside-down.js");
   initUpsideDown();
-  // Re-import toggleMode from the same fresh registry the mode registered
+  // Re-import toggleTheme from the same fresh registry the theme registered
   // into — a static import at file top would hold the *previous* module
   // instance after vi.resetModules(), with no toggle bound.
-  const { toggleMode } = await import("../../js/modes/registry.js");
-  return { toggleMode };
+  const { toggleTheme } = await import("../../js/themes/registry.js");
+  return { toggleTheme };
 }
 
 // Drive the factory through its async wipe path to completion.
@@ -56,7 +56,7 @@ async function completeAsyncWipe() {
   await Promise.resolve();
 }
 
-describe("mode-upside-down integration (async wipe)", () => {
+describe("theme-upside-down integration (async wipe)", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-08T12:00:00"));
@@ -70,7 +70,7 @@ describe("mode-upside-down integration (async wipe)", () => {
     }
     // Scroll staging — the init's overscroll trigger reads scrollHeight
     // at bind time. Values don't matter for these tests (we drive via
-    // toggleMode) but the properties must exist.
+    // toggleTheme) but the properties must exist.
     Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
     Object.defineProperty(document.documentElement, "scrollHeight", {
       configurable: true,
@@ -89,18 +89,18 @@ describe("mode-upside-down integration (async wipe)", () => {
   });
 
   it("activates the body class after the async wipe resolves", async () => {
-    const { toggleMode } = await setupUpsideDown();
+    const { toggleTheme } = await setupUpsideDown();
 
-    toggleMode("upside-down", { direction: "bottom" });
+    toggleTheme("upside-down", { direction: "bottom" });
     await completeAsyncWipe();
 
     expect(document.body.classList.contains("upside-down")).toBe(true);
   });
 
   it("adds the ud-wipe element during the wipe and removes it after settle", async () => {
-    const { toggleMode } = await setupUpsideDown();
+    const { toggleTheme } = await setupUpsideDown();
 
-    toggleMode("upside-down", { direction: "bottom" });
+    toggleTheme("upside-down", { direction: "bottom" });
 
     // Mid-wipe: element is in the DOM.
     expect(document.querySelector(".ud-wipe")).not.toBeNull();
@@ -110,27 +110,27 @@ describe("mode-upside-down integration (async wipe)", () => {
     expect(document.querySelector(".ud-wipe")).toBeNull();
   });
 
-  it("fires exactly one mode-activate achievement event on activation", async () => {
-    const { toggleMode } = await setupUpsideDown();
+  it("fires exactly one theme-activate achievement event on activation", async () => {
+    const { toggleTheme } = await setupUpsideDown();
     const listener = vi.fn();
     window.addEventListener("achievement", listener);
 
-    toggleMode("upside-down", { direction: "bottom" });
+    toggleTheme("upside-down", { direction: "bottom" });
     await completeAsyncWipe();
     window.removeEventListener("achievement", listener);
 
     const activations = listener.mock.calls.filter(
       (c) =>
-        c[0].detail.type === "mode-activate" &&
-        c[0].detail.mode === "upside-down",
+        c[0].detail.type === "theme-activate" &&
+        c[0].detail.theme === "upside-down",
     );
     expect(activations).toHaveLength(1);
   });
 
   it("adds upside-card class to service cards on activation", async () => {
-    const { toggleMode } = await setupUpsideDown();
+    const { toggleTheme } = await setupUpsideDown();
 
-    toggleMode("upside-down", { direction: "bottom" });
+    toggleTheme("upside-down", { direction: "bottom" });
     await completeAsyncWipe();
 
     const cards = document.querySelectorAll(".service-card");
@@ -140,13 +140,13 @@ describe("mode-upside-down integration (async wipe)", () => {
   });
 
   it("releases the transition lock after the async wipe so deactivation runs", async () => {
-    const { toggleMode } = await setupUpsideDown();
+    const { toggleTheme } = await setupUpsideDown();
 
-    toggleMode("upside-down", { direction: "bottom" });
+    toggleTheme("upside-down", { direction: "bottom" });
     await completeAsyncWipe();
     expect(document.body.classList.contains("upside-down")).toBe(true);
 
-    toggleMode("upside-down", { direction: "top" });
+    toggleTheme("upside-down", { direction: "top" });
     await completeAsyncWipe();
 
     expect(document.body.classList.contains("upside-down")).toBe(false);

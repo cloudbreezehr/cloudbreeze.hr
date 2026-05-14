@@ -11,7 +11,7 @@ import { createPaper } from "./particles/paper.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
-import { getModeIds } from "./modes/registry.js";
+import { getThemeIds } from "./themes/registry.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -38,28 +38,28 @@ const COUNTS = defineConstants("canvas.particles", {
     min: 0,
     max: 200,
     step: 1,
-    description: "Snowflake count (frozen mode)",
+    description: "Snowflake count (frozen theme)",
   },
   BUBBLE: {
     value: 30,
     min: 0,
     max: 100,
     step: 1,
-    description: "Bubble pool size (deep-sea mode)",
+    description: "Bubble pool size (deep-sea theme)",
   },
   JELLY: {
     value: 8,
     min: 0,
     max: 30,
     step: 1,
-    description: "Jellyfish count (deep-sea mode)",
+    description: "Jellyfish count (deep-sea theme)",
   },
   FIREFLY: {
     value: 28,
     min: 0,
     max: 100,
     step: 1,
-    description: "Firefly count (blocky mode)",
+    description: "Firefly count (blocky theme)",
   },
 });
 
@@ -260,14 +260,14 @@ export function initCanvas(canvasEl, appearance, options) {
   const fury = createFury();
   let currentPal = resolvePalette(isDark ? "dark" : "light", null);
 
-  // In upside-down mode the page is flipped via scaleY(-1), so canvas Y must mirror
+  // In upside-down theme the page is flipped via scaleY(-1), so canvas Y must mirror
   const isUpside = () => document.body.classList.contains("upside-down");
   const canvasY = (y) => (isUpside() ? canvas.height - y : y);
 
-  // Snapshot every sub-mode's activation flag in one pass.  Callers reuse the
+  // Snapshot every theme's activation flag in one pass.  Callers reuse the
   // result across a frame or an event handler rather than querying classList
   // six times — one object rather than six DOM reads, and far easier to read.
-  function readModes() {
+  function readThemes() {
     const cl = document.body.classList;
     return {
       frozen: cl.contains("frozen"),
@@ -299,35 +299,35 @@ export function initCanvas(canvasEl, appearance, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const modes = readModes();
+    const themes = readThemes();
     const {
       frozen: isFrozen,
       deepSea: isDeepSea,
       blocky: isBlocky,
       rainy: isRainy,
       paper: isPaper,
-    } = modes;
+    } = themes;
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
-    const activeModes = getModeIds().filter((m) =>
+    const activeThemes = getThemeIds().filter((m) =>
       document.body.classList.contains(m),
     );
-    const lastSub = document.body.dataset.lastSubmode;
-    const submode =
-      lastSub && activeModes.includes(lastSub)
-        ? lastSub
-        : activeModes[0] || null;
+    const lastTheme = document.body.dataset.lastTheme;
+    const theme =
+      lastTheme && activeThemes.includes(lastTheme)
+        ? lastTheme
+        : activeThemes[0] || null;
     // Sync active theme to body for CSS visual rules
     const prevTheme = document.body.dataset.activeTheme || null;
-    if (submode !== prevTheme) {
-      if (submode) document.body.dataset.activeTheme = submode;
+    if (theme !== prevTheme) {
+      if (theme) document.body.dataset.activeTheme = theme;
       else delete document.body.dataset.activeTheme;
     }
-    const pal = resolvePalette(isDark ? "dark" : "light", submode);
+    const pal = resolvePalette(isDark ? "dark" : "light", theme);
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient — rebuilt only when inputs change.
-    // Paper mode suppresses the sky entirely; its background comes from CSS.
+    // Paper theme suppresses the sky entirely; its background comes from CSS.
     if (opts.sky && !isPaper) {
       const bucket = Math.round(sp * SKY_GRADIENT_BUCKETS);
       if (
@@ -353,7 +353,7 @@ export function initCanvas(canvasEl, appearance, options) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Stars and shooting stars — suppressed in paper mode
+    // Stars and shooting stars — suppressed in paper theme
     if (sky && !isPaper) sky.draw(ctx, canvas, sp, pal, forces);
 
     const reducedMotion = prefersReducedMotion();
@@ -364,31 +364,31 @@ export function initCanvas(canvasEl, appearance, options) {
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
     // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
-    // Paper mode suppresses the ambient particle system entirely.
+    // Paper theme suppresses the ambient particle system entirely.
     scrollVelocity *= SCROLL.VEL_DECAY;
     const drawVelocity = reducedMotion ? 0 : scrollVelocity;
     interactions.updateHold(forces, performance.now());
     if (!isPaper) atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
-    // Snowflakes — frozen mode ambient snow with pointer interaction + snow globe.
+    // Snowflakes — frozen theme ambient snow with pointer interaction + snow globe.
     // Under reduced-motion, suppress snow-globe turbulence so reversals don't shake.
     if (isFrozen) {
       const turbulence = reducedMotion ? { value: 0 } : snowTurbulence;
       snow.draw(forces, drawVelocity, turbulence);
     }
 
-    // Bubbles + Jellyfish — deep-sea mode
+    // Bubbles + Jellyfish — deep-sea theme
     if (isDeepSea) {
       deepSea.draw(forces, scrollVelocity, dt, pal);
     }
 
-    // Rain + thunder + glass drops — rainy mode
+    // Rain + thunder + glass drops — rainy theme
     if (isRainy) {
       rain.draw(forces, scrollVelocity, dt, pal);
     }
     if (wasRainy && !isRainy) rain.cleanup();
     wasRainy = isRainy;
 
-    // Paper mode — hand-drawn sketch elements
+    // Paper theme — hand-drawn sketch elements
     if (isPaper) {
       paper.draw(pal);
     }
@@ -398,7 +398,7 @@ export function initCanvas(canvasEl, appearance, options) {
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
 
-    // ── Blocky mode: pixelation post-process + fireflies ──
+    // ── Blocky theme: pixelation post-process + fireflies ──
     if (isBlocky) {
       blocky.draw(forces, scrollVelocity, isDark);
     }
@@ -416,7 +416,7 @@ export function initCanvas(canvasEl, appearance, options) {
 
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
-    const modes = readModes();
+    const themes = readThemes();
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
@@ -432,17 +432,17 @@ export function initCanvas(canvasEl, appearance, options) {
     fury.click(cx, cy, canvas, scrollProgress);
 
     // Deep-sea click burst — bubbles erupt from click point in an upward cone
-    if (modes.deepSea) deepSea.clickBurst(cx, cy);
+    if (themes.deepSea) deepSea.clickBurst(cx, cy);
     // Blocky click burst — block fragments instead of smooth particles
-    if (modes.blocky) blocky.clickBurst(cx, cy);
+    if (themes.blocky) blocky.clickBurst(cx, cy);
     // Rainy click burst — splash droplets radiate from click
-    if (modes.rainy) rain.clickBurst(cx, cy);
+    if (themes.rainy) rain.clickBurst(cx, cy);
     // Paper click — ink splat replaces the normal burst
-    if (modes.paper) paper.clickBurst(cx, cy);
+    if (themes.paper) paper.clickBurst(cx, cy);
 
     // Normal click burst particles — blocky uses block fragments instead;
     // paper uses ink splats.
-    if (!modes.blocky && !modes.paper) {
+    if (!themes.blocky && !themes.paper) {
       interactions.click(cx, cy, currentPal);
     }
     window.dispatchEvent(
@@ -456,10 +456,10 @@ export function initCanvas(canvasEl, appearance, options) {
       if (e.target.closest(UI_OVERLAY)) return false;
       const cx = x,
         cy = canvasY(y);
-      const modes = readModes();
+      const themes = readThemes();
       interactions.startDrag(forces, cx, cy);
-      // Paper mode — start an SVG ink stroke that tracks the pointer
-      if (modes.paper) paper.startStroke(x, y);
+      // Paper theme — start an SVG ink stroke that tracks the pointer
+      if (themes.paper) paper.startStroke(x, y);
     },
     onMove(x, y) {
       const cx = x,
@@ -471,20 +471,20 @@ export function initCanvas(canvasEl, appearance, options) {
             detail: { type: "drag", x: cx, y: cy },
           }),
         );
-      const modes = readModes();
-      // Drag spawns small bubbles in deep-sea mode
-      if (trailAdded && modes.deepSea) deepSea.dragBubble(cx, cy);
-      // Paper mode — extend the active ink stroke with the new point
-      if (modes.paper) paper.extendStroke(x, y);
+      const themes = readThemes();
+      // Drag spawns small bubbles in deep-sea theme
+      if (trailAdded && themes.deepSea) deepSea.dragBubble(cx, cy);
+      // Paper theme — extend the active ink stroke with the new point
+      if (themes.paper) paper.extendStroke(x, y);
     },
     onUp() {
-      const modes = readModes();
+      const themes = readThemes();
       // Rainy well burst — massive splash on gravity well release
-      if (forces.wellStrength > 0 && modes.rainy) {
+      if (forces.wellStrength > 0 && themes.rainy) {
         rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
       }
-      // Paper mode — finalize the stroke and fire the doodler event
-      if (modes.paper) {
+      // Paper theme — finalize the stroke and fire the doodler event
+      if (themes.paper) {
         const hadContent = paper.endStroke();
         if (hadContent) {
           window.dispatchEvent(

@@ -19,7 +19,7 @@ describe("achievements/progress", () => {
     it("returns true for the known collection keys", () => {
       expect(progress.isCollectionProgress("appearances-used")).toBe(true);
       expect(progress.isCollectionProgress("quadrants-clicked")).toBe(true);
-      expect(progress.isCollectionProgress("modes-activated")).toBe(true);
+      expect(progress.isCollectionProgress("themes-activated")).toBe(true);
       expect(progress.isCollectionProgress("idle-animations")).toBe(true);
     });
 
@@ -39,8 +39,8 @@ describe("achievements/progress", () => {
       expect(progress.resolveProgressTotal("quadrants-clicked")).toBe(4);
     });
 
-    it("returns 6 for modes-activated (one per mode)", () => {
-      expect(progress.resolveProgressTotal("modes-activated")).toBe(6);
+    it("returns 6 for themes-activated (one per theme)", () => {
+      expect(progress.resolveProgressTotal("themes-activated")).toBe(6);
     });
 
     it("returns 0 for unknown progress keys", () => {

@@ -105,11 +105,11 @@ describe("achievements/ui/cards", () => {
   });
 
   describe("renderSections", () => {
-    it("renders a section per non-mode set plus any mode sets with unlocks", () => {
+    it("renders a section per non-theme set plus any theme sets with unlocks", () => {
       mod.renderSections(container);
       const sections = container.querySelectorAll(".achievement-set");
-      // Non-mode sets are always shown: exploration, mastery, meta.
-      // Mode sets appear only when at least one of their achievements
+      // Non-theme sets are always shown: exploration, mastery, meta.
+      // Theme sets appear only when at least one of their achievements
       // is unlocked — none are at this point.
       expect(sections.length).toBeGreaterThanOrEqual(3);
     });

@@ -1,8 +1,8 @@
 /* ── Z-Index Ranges (canonical map: js/layers.js) ──
  *   0–9       Background layers (canvas, grain, glass overlays)
  *   10–49     Page content & navigation
- *   50–99     Mode build-up overlays
- *   100–199   Mode warnings & fullscreen effects
+ *   50–99     Theme build-up overlays
+ *   100–199   Theme warnings & fullscreen effects
  *   200–299   Transition wipes
  *   300–399   Panels & sidebars (achievements)
  *   400–499   Dev tools (console, tooltips) — loaded via css/dev/*.css
@@ -33,7 +33,7 @@
   --glass: rgba(255, 255, 255, 0.18);
   --glass-border: rgba(255, 255, 255, 0.35);
   /* Default accent for achievement toasts/cards when the set has no color.
-     Deliberately NOT bound to --sky-4 so sub-modes that retheme the sky
+     Deliberately NOT bound to --sky-4 so themes that retheme the sky
      (e.g. upside-down turns --sky-4 red) don't hijack unrelated toasts. */
   --achievement-default-accent: #378add;
 }
@@ -799,8 +799,8 @@ body {
   pointer-events: none;
 }
 
-/* Grain overlay — opacity is overridable per-mode via --paper-grain-opacity
-   (paper mode progressively boosts it) */
+/* Grain overlay — opacity is overridable per-theme via --paper-grain-opacity
+   (paper theme progressively boosts it) */
 body::after {
   content: "";
   position: fixed;
@@ -2719,7 +2719,7 @@ body[data-active-theme="deep-sea"]::after {
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   Blocky Mode — "Voxelbreeze"
+   Blocky Theme — "Voxelbreeze"
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Progressive indicator overlays ── */
@@ -3185,7 +3185,7 @@ body.light-appearance[data-active-theme="rainy"] #cursor-ring {
   border-color: rgba(100, 130, 170, 0.4);
 }
 
-/* ── Paper Mode ── */
+/* ── Paper Theme ── */
 
 /* Wipe — ink brush sweep diagonally */
 .paper-wipe {
@@ -4016,8 +4016,8 @@ nav.nav-light .achievement-btn::after {
   color: rgba(255, 255, 255, 0.8);
   flex: 1;
 }
-/* Mode icon shown next to the set name — tinted to the set accent color
-   via currentColor on the SVG.  Matches the HUD's mode icon sizing. */
+/* Theme icon shown next to the set name — tinted to the set accent color
+   via currentColor on the SVG.  Matches the HUD's theme icon sizing. */
 .achievement-set-icon {
   display: inline-flex;
   align-items: center;
@@ -4639,14 +4639,14 @@ body.light-appearance .first-paint-mote {
     0 0 16px rgba(55, 138, 221, 0.3);
 }
 
-/* ── Mode History HUD ── */
+/* ── Theme History HUD ── */
 /* Two stacked pills: a small handle tab on top (with a chevron), and a
-   wider track pill below (with mode icons).  The handle tab looks
+   wider track pill below (with theme icons).  The handle tab looks
    identical in tucked and expanded states — the track just shows/hides
    beneath it.  That way the chevron's visual position is always "a small
    tab hanging off the nav bar", never embedded in the track. */
 
-.mode-history-hud {
+.theme-history-hud {
   position: absolute;
   top: 100%;
   left: 50%;
@@ -4662,7 +4662,7 @@ body.light-appearance .first-paint-mote {
     opacity 0.5s ease-out,
     translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.mode-history-hud.ready {
+.theme-history-hud.ready {
   opacity: 1;
   translate: -50% 0;
 }
@@ -4670,7 +4670,7 @@ body.light-appearance .first-paint-mote {
 /* ── Handle pill ── */
 /* Small floating tab at the top of the HUD column.  A single chevron
    button rotates with the HUD's tucked/expanded state. */
-.mhh-handle-slot {
+.thh-handle-slot {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4684,11 +4684,11 @@ body.light-appearance .first-paint-mote {
     background 0.3s ease,
     border-color 0.3s ease;
 }
-.mode-history-hud:not(.tucked) .mhh-handle-slot {
+.theme-history-hud:not(.tucked) .thh-handle-slot {
   background: rgba(10, 18, 32, 0.6);
   border-color: rgba(120, 160, 220, 0.22);
 }
-.mhh-handle {
+.thh-handle {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4701,26 +4701,26 @@ body.light-appearance .first-paint-mote {
   cursor: pointer;
   transition: color 0.2s ease;
 }
-.mhh-handle:hover,
-.mhh-handle:focus-visible {
+.thh-handle:hover,
+.thh-handle:focus-visible {
   color: rgba(200, 230, 255, 0.95);
   outline: none;
 }
-.mhh-handle svg {
+.thh-handle svg {
   width: 12px;
   height: 6px;
   transition: transform 0.25s ease;
 }
 /* Chevron points down when tucked (invitation to expand), and flips up
    when the HUD is open (invitation to tuck). */
-.mode-history-hud:not(.tucked) .mhh-handle svg {
+.theme-history-hud:not(.tucked) .thh-handle svg {
   transform: rotate(180deg);
 }
 
 /* ── Track pill ── */
-/* Separate pill below the handle, holding the mode icons and labels.
+/* Separate pill below the handle, holding the theme icons and labels.
    Hidden entirely when tucked. */
-.mhh-track {
+.thh-track {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -4736,16 +4736,16 @@ body.light-appearance .first-paint-mote {
     background 0.3s ease,
     border-color 0.3s ease;
 }
-.mode-history-hud.expanded .mhh-track {
+.theme-history-hud.expanded .thh-track {
   padding: 8px 14px;
   background: rgba(10, 18, 32, 0.82);
   border-color: rgba(120, 160, 220, 0.32);
 }
-.mode-history-hud.tucked .mhh-track {
+.theme-history-hud.tucked .thh-track {
   display: none;
 }
 
-.mhh-slot {
+.thh-slot {
   position: relative;
   display: flex;
   flex-direction: column;
@@ -4753,11 +4753,11 @@ body.light-appearance .first-paint-mote {
   gap: 3px;
   padding: 3px 4px;
   margin: 0;
-  /* Match the label's font-size so `1ch` in --mhh-slot-width resolves at
+  /* Match the label's font-size so `1ch` in --thh-slot-width resolves at
      label scale — otherwise ch inherits the 16px body size and slots are
      roughly 2x wider than needed. */
   font-size: 9px;
-  width: var(--mhh-slot-width, 8ch);
+  width: var(--thh-slot-width, 8ch);
   background: none;
   border: none;
   border-radius: 8px;
@@ -4769,19 +4769,19 @@ body.light-appearance .first-paint-mote {
     background 0.25s ease,
     transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.mhh-slot.discovered {
-  color: var(--mode-color, #7dbfe8);
+.thh-slot.discovered {
+  color: var(--theme-color, #7dbfe8);
   cursor: pointer;
 }
-.mhh-slot.discovered:hover {
+.thh-slot.discovered:hover {
   background: rgba(255, 255, 255, 0.06);
   transform: translateY(-1px);
 }
-.mhh-slot.discovered:focus-visible {
-  outline: 1px solid var(--mode-color, #7dbfe8);
+.thh-slot.discovered:focus-visible {
+  outline: 1px solid var(--theme-color, #7dbfe8);
   outline-offset: 2px;
 }
-.mhh-slot.active::after {
+.thh-slot.active::after {
   content: "";
   position: absolute;
   left: 50%;
@@ -4789,12 +4789,12 @@ body.light-appearance .first-paint-mote {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: var(--mode-color, #7dbfe8);
-  box-shadow: 0 0 6px 1px var(--mode-color, #7dbfe8);
+  background: var(--theme-color, #7dbfe8);
+  box-shadow: 0 0 6px 1px var(--theme-color, #7dbfe8);
   translate: -50% 0;
 }
 
-.mhh-icon {
+.thh-icon {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4802,12 +4802,12 @@ body.light-appearance .first-paint-mote {
   height: 16px;
   filter: drop-shadow(0 0 4px currentColor);
 }
-.mhh-slot.undiscovered .mhh-icon {
+.thh-slot.undiscovered .thh-icon {
   filter: none;
   opacity: 0.35;
 }
 
-.mhh-label {
+.thh-label {
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4819,15 +4819,15 @@ body.light-appearance .first-paint-mote {
     max-height 0.3s ease,
     opacity 0.25s ease 0.05s;
 }
-.mode-history-hud.expanded .mhh-label {
+.theme-history-hud.expanded .thh-label {
   max-height: 14px;
   opacity: 0.9;
 }
 
-/* Active-mode pulse — soft halo in the mode's accent color */
-@keyframes mhh-pulse {
+/* Active-theme pulse — soft halo in the theme's accent color */
+@keyframes thh-pulse {
   0% {
-    box-shadow: 0 0 0 0 var(--mode-color, #7dbfe8);
+    box-shadow: 0 0 0 0 var(--theme-color, #7dbfe8);
     opacity: 0.6;
   }
   100% {
@@ -4835,14 +4835,14 @@ body.light-appearance .first-paint-mote {
     opacity: 0;
   }
 }
-.mhh-slot.pulse .mhh-icon {
-  animation: mhh-pulse 1.2s ease-out;
+.thh-slot.pulse .thh-icon {
+  animation: thh-pulse 1.2s ease-out;
 }
 
 /* Newly discovered — periodic sheen sweep for the first few seconds.
    Uses the same pattern as card-shimmer: linear easing + full off-screen
    sweep per cycle so there's no visible pause at either edge when looping. */
-@keyframes mhh-shimmer {
+@keyframes thh-shimmer {
   0% {
     background-position: 150% 0;
   }
@@ -4850,7 +4850,7 @@ body.light-appearance .first-paint-mote {
     background-position: -150% 0;
   }
 }
-.mhh-slot.just-discovered::before {
+.thh-slot.just-discovered::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -4863,13 +4863,13 @@ body.light-appearance .first-paint-mote {
     transparent 60%
   );
   background-size: 400% 100%;
-  animation: mhh-shimmer 2.2s linear infinite;
+  animation: thh-shimmer 2.2s linear infinite;
 }
 
 /* Reduced motion — keep HUD functional but drop shimmer + pulse */
 @media (prefers-reduced-motion: reduce) {
-  .mhh-slot.just-discovered::before,
-  .mhh-slot.pulse .mhh-icon {
+  .thh-slot.just-discovered::before,
+  .thh-slot.pulse .thh-icon {
     animation: none;
   }
 }
@@ -4878,19 +4878,19 @@ body.light-appearance .first-paint-mote {
    nav's edges even with all five labels fitting individually (gaps +
    padding accumulate).  Hide labels, collapse slot width to the icon. */
 @media (max-width: 560px) {
-  .mhh-track {
+  .thh-track {
     gap: 2px;
   }
-  .mhh-slot {
+  .thh-slot {
     width: auto;
     padding: 3px 6px;
   }
-  .mhh-label {
+  .thh-label {
     display: none;
   }
 }
 
-/* ── Upside-down mode adjustments ── */
+/* ── Upside-down theme adjustments ── */
 
 body.upside-down .achievement-toast-container {
   bottom: auto;
@@ -4901,7 +4901,7 @@ body.upside-down .achievement-toast-container {
 /* ── Light appearance ── */
 
 /* Cloudlog panel keeps its dark palette in both appearances — the
-   panel is dense with tab labels, hint toggles, mode icons, and
+   panel is dense with tab labels, hint toggles, theme icons, and
    progress bars that were designed against a dark background.
    Inverting to light produced low-contrast greys across several
    elements, so we stay dark for consistency.  The nav button and its

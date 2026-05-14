@@ -1,6 +1,6 @@
 // ── Ripple Ring Effect ──
 // Expanding concentric rings that emanate from a point and fade out.
-// Used by mode triggers (deep-sea hold, frozen/rainy card clicks).
+// Used by theme triggers (deep-sea hold, frozen/rainy card clicks).
 // CSS classes control the visual appearance (size, color, border).
 
 /**

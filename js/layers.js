@@ -5,8 +5,8 @@
 // Ranges (like HTTP status codes — pick from your range, never invent outside it):
 //   0–9       Background layers (canvas, grain, glass overlays)
 //   10–49     Page content & navigation
-//   50–99     Mode build-up overlays
-//   100–199   Mode warnings & fullscreen effects
+//   50–99     Theme build-up overlays
+//   100–199   Theme warnings & fullscreen effects
 //   200–299   Transition wipes
 //   300–399   Panels & sidebars (achievements)
 //   400–499   Dev tools (console, tooltips)
@@ -20,11 +20,11 @@ export const Z_RAIN_GLASS = 6;
 // ── Page Content Overlays ──
 export const Z_PAPER_INK = 40;
 
-// ── Mode Effects ──
-export const Z_MODE_FLASH = 100;
+// ── Theme Effects ──
+export const Z_THEME_FLASH = 100;
 
 // ── Panels & HUDs ──
-export const Z_MODE_HISTORY_HUD = 300;
+export const Z_THEME_HISTORY_HUD = 300;
 
 // ── Dev Tools ──
 export const Z_DEV_CONSOLE = 400;

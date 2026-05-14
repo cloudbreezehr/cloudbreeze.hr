@@ -108,7 +108,7 @@ const SKETCH = defineConstants(
       description: "Horizon stroke opacity",
     },
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 // ── Pencil flicks (shooting-star replacement) ──
@@ -200,7 +200,7 @@ const FLICK = defineConstants(
       description: "Flick stroke width",
     },
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 // ── Ink splats (DOM pool) ──
@@ -250,7 +250,7 @@ const SPLAT = defineConstants(
       description: "Splat starting opacity",
     },
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 // ── Drag strokes (DOM pool) ──
@@ -307,7 +307,7 @@ const STROKE = defineConstants(
       description: "Min px between successive sampled points",
     },
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 const SVG_NS = "http://www.w3.org/2000/svg";

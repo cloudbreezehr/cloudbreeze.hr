@@ -7,9 +7,10 @@
     <!--
       Content Security Policy (see proposals doc).  script-src 'self' is
       the load-bearing line: no inline scripts, no remote scripts, no
-      eval.  style-src keeps 'unsafe-inline' because dynamic mode/effect
-      code sets element.style.* at runtime; tightening that is a known
-      follow-up (would need nonces or a classList-only refactor).
+      eval.  style-src keeps 'unsafe-inline' because dynamic appearance,
+      theme, and effect code set element.style.* at runtime; tightening
+      that is a known follow-up (would need nonces or a classList-only
+      refactor).
       frame-ancestors and report-to aren't expressible via meta — those
       land when the site moves behind Cloudflare.
     -->
@@ -119,7 +120,7 @@
     <!--
       Classic blocking script (no type="module", no defer/async) so it
       runs before any body content is parsed or painted.  Prevents a
-      flash of dark-mode colors for users whose preference is light.
+      flash of dark-appearance colors for users whose preference is light.
       Must stay at the top of <body> — needs document.body to exist.
     -->
     <script src="./js/appearance-boot.js"></script>

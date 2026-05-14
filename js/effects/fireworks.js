@@ -525,7 +525,7 @@ function createRendererCore() {
   // Launches `count` rockets from the visual bottom of the viewport.  Each
   // rises for ROCKET_LIFE_FRAMES then detonates into a standard burst at its
   // target.  Rockets are staggered by ROCKET_STAGGER_FRAMES so they don't
-  // launch as a perfect line.  In upside-down mode the page is flipped via
+  // launch as a perfect line.  In upside-down theme the page is flipped via
   // CSS scaleY(-1) but the overlay canvas isn't, so we mirror the y coords
   // here to keep rockets launching from what the user sees as the bottom.
   function launchRockets(viewportWidth, viewportHeight, opts = {}) {

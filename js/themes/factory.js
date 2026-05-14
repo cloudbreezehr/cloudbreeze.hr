@@ -1,11 +1,11 @@
-// ── Mode Factory ──
-// Every sub-mode shares the same skeleton: a force 0→1 accumulator, progressive
+// ── Theme Factory ──
+// Every theme shares the same skeleton: a force 0→1 accumulator, progressive
 // indicators scaled by that force, a wipe transition at 1.0, a body-class
 // toggle + achievement dispatch at the midpoint, and a reverse path. The only
 // thing that varies is the input shape — clicks, holds, overscroll, key
 // sequences. This file extracts everything except that input shape.
 //
-// A mode file calls `createMode({ id, trigger, indicators, wipe, onActivate,
+// A theme file calls `createTheme({ id, trigger, indicators, wipe, onActivate,
 // onDeactivate })` and gets back nothing — the factory wires everything up
 // (listeners, RAF loops, wipe playback, achievement events, toggle
 // registration).
@@ -20,7 +20,7 @@
 // return a Promise; the factory awaits it to release `isTransitioning`, and
 // logs any rejection so a broken wipe is observable instead of silent.
 //
-// `createMode` returns a live `ctx` — `{ force, isActive }` as getters — so
+// `createTheme` returns a live `ctx` — `{ force, isActive }` as getters — so
 // callers that run their own animation loops (blocky's jitter, paper's
 // scroll page-turn) can read current state without duplicating it locally.
 //
@@ -31,15 +31,15 @@ import { playWipe } from "../effects/wipe.js";
 import { registerToggle } from "./registry.js";
 
 /**
- * @typedef {Object} ModeCtx
+ * @typedef {Object} ThemeCtx
  * @property {number}  force     Current force (0–1). Live getter.
- * @property {boolean} isActive  Whether the mode is currently active. Live getter.
+ * @property {boolean} isActive  Whether the theme is currently active. Live getter.
  */
 
 /**
  * @typedef {Object} Indicator
  * @property {number} threshold  Force level at which this stage begins.
- * @property {(force: number, ctx: ModeCtx) => void} apply
+ * @property {(force: number, ctx: ThemeCtx) => void} apply
  *   Called every force update. Must cleanly reset itself below threshold.
  *   `ctx.isActive` is true while buildup runs toward deactivation, false
  *   during buildup toward activation — use it to pick direction-dependent
@@ -62,7 +62,7 @@ import { registerToggle } from "./registry.js";
  */
 
 /**
- * @typedef {Object} ModeDefinition
+ * @typedef {Object} ThemeDefinition
  * @property {string} id
  * @property {Trigger} trigger
  * @property {Indicator[]} indicators
@@ -72,12 +72,12 @@ import { registerToggle } from "./registry.js";
  */
 
 /**
- * Create and wire up a sub-mode.
- * @param {ModeDefinition} def
- * @returns {ModeCtx} Live ctx (getter-backed) for callers that need ongoing
+ * Create and wire up a theme.
+ * @param {ThemeDefinition} def
+ * @returns {ThemeCtx} Live ctx (getter-backed) for callers that need ongoing
  *   read access to force/isActive outside the indicator call path.
  */
-export function createMode(def) {
+export function createTheme(def) {
   const { id, trigger, indicators, wipe, onActivate, onDeactivate } = def;
 
   let force = 0;
@@ -85,10 +85,10 @@ export function createMode(def) {
   let isTransitioning = false;
 
   // ── Buildup telemetry ──
-  // Analytics wants to know how close a user got to triggering a mode
-  // even when they bail out.  We emit "mode-buildup" on the same
+  // Analytics wants to know how close a user got to triggering a theme
+  // even when they bail out.  We emit "theme-buildup" on the same
   // achievement topic when force crosses 0.25 / 0.50 / 0.75 (once per
-  // phase per mode per session), and "mode-abandoned" when a partial
+  // phase per theme per session), and "theme-abandoned" when a partial
   // buildup decays back to zero without completing.
   const BUILDUP_THRESHOLDS = [0.25, 0.5, 0.75];
   let lastEmittedThreshold = 0;
@@ -136,8 +136,8 @@ export function createMode(def) {
         window.dispatchEvent(
           new CustomEvent("achievement", {
             detail: {
-              type: "mode-buildup",
-              mode: id,
+              type: "theme-buildup",
+              theme: id,
               threshold: t,
               phase,
               peakForce,
@@ -151,8 +151,8 @@ export function createMode(def) {
       window.dispatchEvent(
         new CustomEvent("achievement", {
           detail: {
-            type: "mode-abandoned",
-            mode: id,
+            type: "theme-abandoned",
+            theme: id,
             peakForce,
             phase,
             buildupDurationMs: Date.now() - buildupStartedAt,
@@ -168,7 +168,7 @@ export function createMode(def) {
   function runMidpoint(activating, payload) {
     isActive = activating;
     document.body.classList.toggle(id, activating);
-    if (activating) document.body.dataset.lastSubmode = id;
+    if (activating) document.body.dataset.lastTheme = id;
     // `silent` distinguishes a programmatic toggle from one driven by
     // the user's gesture, so consequences reserved for organic
     // discovery (e.g. exit achievements) can skip on this path.  The
@@ -177,8 +177,8 @@ export function createMode(def) {
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: {
-          type: activating ? "mode-activate" : "mode-deactivate",
-          mode: id,
+          type: activating ? "theme-activate" : "theme-deactivate",
+          theme: id,
           silent: !!(payload && payload.silent),
         },
       }),

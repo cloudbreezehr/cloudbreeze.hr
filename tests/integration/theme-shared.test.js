@@ -1,19 +1,19 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Shared cross-mode integration test: exercises the contract that every
-// mode's init() promises — activation applies the body class, fires a
-// single mode-activate event, and wires up its card class on real
+// Shared cross-theme integration test: exercises the contract that every
+// theme's init() promises — activation applies the body class, fires a
+// single theme-activate event, and wires up its card class on real
 // .service-card elements via enableCardEffects(). This is the smoke layer:
 // "if any of these break, something is wrong with the wire-up."
 //
-// Scope intentionally narrow. Per-mode indicator details stay in
-// mode-<name>.integration.test.js files (currently frozen only), and
+// Scope intentionally narrow. Per-theme indicator details stay in
+// theme-<name>.integration.test.js files (currently frozen only), and
 // upside-down's async-wipe path has its own dedicated test (see TODO.md).
 // Frozen is also excluded here because it already has a deep integration
 // test — no point running the smoke against it too.
 
 // ── Wipe timing (shared across config-style wipes) ──
-// All four modes in this file use a wipe config with coverMs around the
+// All four themes in this file use a wipe config with coverMs around the
 // same order of magnitude; advancing 2 seconds of fake time covers the
 // cover + reveal phases for all of them.
 const WIPE_FLUSH_MS = 2000;
@@ -23,8 +23,8 @@ function flushWipe() {
 }
 
 function stageSharedDom(extra = "") {
-  // The set of selectors each mode's init() reaches for. Staged as a
-  // superset so the same DOM works for every mode — individual modes
+  // The set of selectors each theme's init() reaches for. Staged as a
+  // superset so the same DOM works for every theme — individual themes
   // ignore the elements they don't touch.
   document.body.innerHTML = `
     <nav>
@@ -46,7 +46,7 @@ function stageSharedDom(extra = "") {
 }
 
 // ── Activation recipes ──
-// Each mode declares how many real user inputs produce one activation.
+// Each theme declares how many real user inputs produce one activation.
 // The recipes drive the real trigger (click dispatches, key events, hold
 // timers) rather than calling internal methods.
 
@@ -100,30 +100,30 @@ function holdFooterActivation(ms) {
   };
 }
 
-// ── Mode cases ──
-// Each case describes one mode's wire-up: how to initialize it, how to
+// ── Theme cases ──
+// Each case describes one theme's wire-up: how to initialize it, how to
 // activate it, and what the activation produces. Upside-down is absent:
 // its async-wipe path needs dedicated coverage (see TODO.md).
 //
-// Adding a new mode here is a deliberate decision, not a default. Each
+// Adding a new theme here is a deliberate decision, not a default. Each
 // case adds ~150ms to the suite and re-verifies a contract that
-// factory.test.js + the mode's own unit tests already cover
-// component-by-component. The value of this file is the cross-mode
-// smoke: "all modes wire up through the same contract." That value is
+// factory.test.js + the theme's own unit tests already cover
+// component-by-component. The value of this file is the cross-theme
+// smoke: "all themes wire up through the same contract." That value is
 // realized once. Adding case #5 buys diminishing coverage.
 //
-// When a new mode lands, the default answer is: don't add it here.
-// Only add it if the mode's init() has failure modes that feel
+// When a new theme lands, the default answer is: don't add it here.
+// Only add it if the theme's init() has failure modes that feel
 // meaningfully different from the four cases below — and if so, say
 // what in a commit message.
 
-const MODE_CASES = [
+const THEME_CASES = [
   {
     id: "blocky",
     cardClass: "pixel-card",
     async init() {
       const toggle = document.querySelector(".appearance-toggle");
-      const { initBlocky } = await import("../../js/modes/blocky.js");
+      const { initBlocky } = await import("../../js/themes/blocky.js");
       initBlocky(toggle);
     },
     activate: clickActivation(".appearance-toggle", 20),
@@ -132,7 +132,7 @@ const MODE_CASES = [
     id: "rainy",
     cardClass: "rain-card",
     async init() {
-      const { initRainy } = await import("../../js/modes/rainy.js");
+      const { initRainy } = await import("../../js/themes/rainy.js");
       initRainy();
     },
     activate: clickActivation(".hero-tag", 15),
@@ -141,7 +141,7 @@ const MODE_CASES = [
     id: "deep-sea",
     cardClass: "caustic-card",
     async init() {
-      const { initDeepSea } = await import("../../js/modes/deep-sea.js");
+      const { initDeepSea } = await import("../../js/themes/deep-sea.js");
       initDeepSea();
     },
     activate: holdFooterActivation(10000),
@@ -150,21 +150,21 @@ const MODE_CASES = [
     id: "paper",
     cardClass: "paper-card",
     async init() {
-      const { initPaper } = await import("../../js/modes/paper.js");
+      const { initPaper } = await import("../../js/themes/paper.js");
       initPaper();
     },
     activate: typeActivation("SKETCH"),
   },
 ];
 
-describe.each(MODE_CASES)(
-  "mode-$id integration (shared contract)",
+describe.each(THEME_CASES)(
+  "theme-$id integration (shared contract)",
   ({ id, cardClass, init, activate }) => {
     beforeEach(() => {
       vi.useFakeTimers();
       vi.setSystemTime(new Date("2026-05-08T12:00:00"));
       window.scrollTo = vi.fn();
-      // Web Animations API shim — several modes spawn self-cleaning DOM
+      // Web Animations API shim — several themes spawn self-cleaning DOM
       // particles (ripples, breath, strokes) via el.animate(). happy-dom
       // doesn't provide it.
       if (!Element.prototype.animate) {
@@ -193,7 +193,7 @@ describe.each(MODE_CASES)(
       expect(document.body.classList.contains(id)).toBe(true);
     });
 
-    it("fires exactly one mode-activate event on activation", async () => {
+    it("fires exactly one theme-activate event on activation", async () => {
       await init();
       const listener = vi.fn();
       window.addEventListener("achievement", listener);
@@ -203,12 +203,13 @@ describe.each(MODE_CASES)(
       window.removeEventListener("achievement", listener);
 
       const activateEvents = listener.mock.calls.filter(
-        (c) => c[0].detail.type === "mode-activate" && c[0].detail.mode === id,
+        (c) =>
+          c[0].detail.type === "theme-activate" && c[0].detail.theme === id,
       );
       expect(activateEvents).toHaveLength(1);
     });
 
-    it("adds the mode's card class to every .service-card on activation", async () => {
+    it("adds the theme's card class to every .service-card on activation", async () => {
       await init();
 
       activate();

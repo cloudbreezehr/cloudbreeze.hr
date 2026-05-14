@@ -6,7 +6,7 @@ import {
 import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 
-// Snowflake colors — frozen mode is the only place snow renders, so the
+// Snowflake colors — frozen theme is the only place snow renders, so the
 // palette has no dedicated entries. Kept as named tuples so the helper
 // callers don't carry [r,g,b] literals inline.
 const SNOW_GLOW_RGB = [200, 230, 255];
@@ -185,7 +185,7 @@ const SNOW = defineConstants(
       description: "Crystal branch angle in radians",
     },
   },
-  { mode: "frozen" },
+  { theme: "frozen" },
 );
 
 // ── Snow Globe Shake ──
@@ -214,7 +214,7 @@ const SHAKE = defineConstants(
       description: "Opacity boost during shake",
     },
   },
-  { mode: "frozen" },
+  { theme: "frozen" },
 );
 
 // ── Module-scoped canvas refs ──

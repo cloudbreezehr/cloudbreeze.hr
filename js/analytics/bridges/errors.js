@@ -1,7 +1,7 @@
 // ── Errors Bridge ──
 // Caps at MAX_PER_SESSION and dedupes by a hash of the message + top
 // stack frame so a runaway loop doesn't exhaust the vendor's event
-// budget.  Captures the active mode — useful for pinpointing mode-
+// budget.  Captures the active theme — useful for pinpointing theme-
 // specific regressions without needing Sentry's full fidelity.
 
 import { track } from "../core.js";
@@ -46,7 +46,7 @@ function report(name, message, stack) {
     message_hash: key,
     message_truncated: msg,
     stack_top_frame: frame,
-    active_mode:
+    active_theme:
       (document.body.dataset && document.body.dataset.activeTheme) || null,
   });
 }

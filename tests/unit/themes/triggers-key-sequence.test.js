@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createKeySequenceTrigger } from "../../../js/modes/triggers.js";
+import { createKeySequenceTrigger } from "../../../js/themes/triggers.js";
 
 function makeStubCtx(overrides = {}) {
   const state = {
@@ -141,7 +141,7 @@ describe("createKeySequenceTrigger", () => {
     trigger.start(ctx);
 
     typeWord("DRAW");
-    // Mode is now active from the perspective of the trigger's ctx. A second
+    // Theme is now active from the perspective of the trigger's ctx. A second
     // DRAW should not complete; only ERASE should.
     ctx.state.active = true;
     ctx.complete.mockClear();

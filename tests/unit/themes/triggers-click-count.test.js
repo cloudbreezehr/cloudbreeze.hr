@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { createClickCountTrigger } from "../../../js/modes/triggers.js";
+import { createClickCountTrigger } from "../../../js/themes/triggers.js";
 
-// A stub ctx that mimics what createMode hands to trigger.start(). Tests
+// A stub ctx that mimics what createTheme hands to trigger.start(). Tests
 // drive setForce/complete flags manually so the trigger can be exercised
 // without spinning up the full factory.
 function makeStubCtx(overrides = {}) {

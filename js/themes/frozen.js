@@ -1,16 +1,16 @@
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { createMode } from "./factory.js";
-import { hasActiveModeExcept } from "./registry.js";
+import { createTheme } from "./factory.js";
+import { hasActiveThemeExcept } from "./registry.js";
 import { createClickCountTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 export const FF = defineConstants(
-  "modes.frozenForce",
+  "themes.frozenForce",
   {
     CLICKS_TO_FREEZE: 25,
     CLICKS_TO_THAW: 13,
@@ -23,12 +23,12 @@ export const FF = defineConstants(
     WIPE_COVER_MS: 400,
     WIPE_REVEAL_MS: 600,
   },
-  { mode: "frozen" },
+  { theme: "frozen" },
 );
 
 // ── Visual Effects ──
 const FV = defineConstants(
-  "modes.frozenVisuals",
+  "themes.frozenVisuals",
   {
     BREATH_COUNT_MIN: 3,
     BREATH_COUNT_RANGE: 4,
@@ -52,7 +52,7 @@ const FV = defineConstants(
     RIPPLE_SCALE: 4,
     RIPPLE_START_OPACITY: 0.6,
   },
-  { mode: "frozen" },
+  { theme: "frozen" },
 );
 
 export function initFrozen() {
@@ -118,7 +118,7 @@ export function initFrozen() {
     });
   }
 
-  createMode({
+  createTheme({
     id: "frozen",
     trigger: createClickCountTrigger({
       element: logoEl,
@@ -191,8 +191,8 @@ export function initFrozen() {
       {
         threshold: FF.TEMP_DROP_AT,
         apply(progress) {
-          // Don't fight other modes' own canvas filters
-          if (hasActiveModeExcept("frozen")) {
+          // Don't fight other themes' own canvas filters
+          if (hasActiveThemeExcept("frozen")) {
             canvasEl.style.filter = "";
             return;
           }

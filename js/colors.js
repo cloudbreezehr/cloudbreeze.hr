@@ -114,7 +114,7 @@ export const palettes = {
   },
 };
 
-// Sub-mode overrides — only specify colors that differ from the base palette.
+// Theme overrides — only specify colors that differ from the base palette.
 // The CSS filter on #bg-canvas handles the global tone shift; these overrides
 // are for effects that need precise color control despite the filter.
 const overrides = {
@@ -374,9 +374,9 @@ const overrides = {
   },
 };
 
-export function resolvePalette(appearance, submode) {
+export function resolvePalette(appearance, theme) {
   const base = palettes[appearance] || palettes.dark;
-  if (!submode || !overrides[submode]) return base;
-  const over = overrides[submode][appearance];
+  if (!theme || !overrides[theme]) return base;
+  const over = overrides[theme][appearance];
   return over ? { ...base, ...over } : base;
 }

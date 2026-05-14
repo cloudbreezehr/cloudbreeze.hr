@@ -1154,7 +1154,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         });
       }
 
-      // Horizon glow — shifts with descent (skipped in blocky mode)
+      // Horizon glow — shifts with descent (skipped in blocky theme)
       if (opts.horizon && !blocky) {
         const glowY = _canvas.height * (HORIZON.Y_BASE - sp * HORIZON.Y_SHIFT);
         const glowIntensity =

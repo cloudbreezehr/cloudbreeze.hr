@@ -1,16 +1,16 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Modes-bridge test.  Focus areas:
-//   - mode_activated / mode_deactivated shape
-//   - mode_switched fires when another mode is active at activation time
+// Themes-bridge test.  Focus areas:
+//   - theme_activated / theme_deactivated shape
+//   - theme_switched fires when another theme is active at activation time
 //   - is_first_ever_for_visitor is persistent across sessions
 //   - method label derives from source `silent` flag (hud vs organic)
-//   - buildup thresholds dedupe per (mode, threshold, phase) per session
-//   - mode_abandoned respects the peak threshold (belt-and-suspenders)
-//   - mode_effect_used maps source event types to stable effect ids
-//   - secret-reveal events (logo-parallax, mode-history-reveal) pass through
+//   - buildup thresholds dedupe per (theme, threshold, phase) per session
+//   - theme_abandoned respects the peak threshold (belt-and-suspenders)
+//   - theme_effect_used maps source event types to stable effect ids
+//   - secret-reveal events (logo-parallax, theme-history-reveal) pass through
 
-describe("analytics/bridges/modes", () => {
+describe("analytics/bridges/themes", () => {
   let core;
   let bridge;
   let session;
@@ -26,11 +26,11 @@ describe("analytics/bridges/modes", () => {
     // sessionCounters object — its initial state is already what each test
     // expects, so no manual reset is needed.
     session = await import("../../../../js/analytics/bridges/session.js");
-    bridge = await import("../../../../js/analytics/bridges/modes.js");
+    bridge = await import("../../../../js/analytics/bridges/themes.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });
-    bridge.initModesBridge();
+    bridge.initThemesBridge();
   }
 
   function dispatch(detail) {
@@ -52,43 +52,43 @@ describe("analytics/bridges/modes", () => {
     vi.useRealTimers();
   });
 
-  describe("mode_activated / mode_deactivated", () => {
-    it("emits mode_activated with mode id and first-ever flag", () => {
-      dispatch({ type: "mode-activate", mode: "frozen" });
+  describe("theme_activated / theme_deactivated", () => {
+    it("emits theme_activated with theme id and first-ever flag", () => {
+      dispatch({ type: "theme-activate", theme: "frozen" });
       core.flush();
-      const a = eventsNamed("mode_activated")[0];
-      expect(a.props.mode_id).toEqual("frozen");
+      const a = eventsNamed("theme_activated")[0];
+      expect(a.props.theme_id).toEqual("frozen");
       expect(a.props.is_first_ever_for_visitor).toBe(true);
       expect(a.props.method).toEqual("organic");
-      expect(a.props.prior_active_mode).toEqual(null);
+      expect(a.props.prior_active_theme).toEqual(null);
     });
 
     it("is_first_ever_for_visitor persists across bridge re-inits", async () => {
-      dispatch({ type: "mode-activate", mode: "frozen" });
+      dispatch({ type: "theme-activate", theme: "frozen" });
       // Re-initialize the bridge without clearing localStorage — simulates
       // a second page load on the same browser.
       captured = [];
       core._stopForTests();
       vi.resetModules();
       core = await import("../../../../js/analytics/core.js");
-      bridge = await import("../../../../js/analytics/bridges/modes.js");
+      bridge = await import("../../../../js/analytics/bridges/themes.js");
       core.start({
         adapter: { name: "capture", send: (batch) => captured.push(...batch) },
       });
-      bridge.initModesBridge();
-      dispatch({ type: "mode-activate", mode: "frozen" });
+      bridge.initThemesBridge();
+      dispatch({ type: "theme-activate", theme: "frozen" });
       core.flush();
-      const a = eventsNamed("mode_activated")[0];
+      const a = eventsNamed("theme_activated")[0];
       expect(a.props.is_first_ever_for_visitor).toBe(false);
     });
 
-    it("emits mode_deactivated with organic method when silent is falsy", () => {
+    it("emits theme_deactivated with organic method when silent is falsy", () => {
       const ACTIVE_DURATION_MS = 5000;
-      dispatch({ type: "mode-activate", mode: "frozen" });
+      dispatch({ type: "theme-activate", theme: "frozen" });
       vi.advanceTimersByTime(ACTIVE_DURATION_MS);
-      dispatch({ type: "mode-deactivate", mode: "frozen" });
+      dispatch({ type: "theme-deactivate", theme: "frozen" });
       core.flush();
-      const d = eventsNamed("mode_deactivated")[0];
+      const d = eventsNamed("theme_deactivated")[0];
       expect(d.props.method).toEqual("organic");
       expect(d.props.active_duration_ms).toBeGreaterThanOrEqual(
         ACTIVE_DURATION_MS,
@@ -96,121 +96,121 @@ describe("analytics/bridges/modes", () => {
     });
 
     it("labels method as 'hud' when silent is true", () => {
-      dispatch({ type: "mode-activate", mode: "frozen", silent: true });
-      dispatch({ type: "mode-deactivate", mode: "frozen", silent: true });
+      dispatch({ type: "theme-activate", theme: "frozen", silent: true });
+      dispatch({ type: "theme-deactivate", theme: "frozen", silent: true });
       core.flush();
-      expect(eventsNamed("mode_activated")[0].props.method).toEqual("hud");
-      expect(eventsNamed("mode_deactivated")[0].props.method).toEqual("hud");
+      expect(eventsNamed("theme_activated")[0].props.method).toEqual("hud");
+      expect(eventsNamed("theme_deactivated")[0].props.method).toEqual("hud");
     });
 
-    it("writes lastModeActivationTs onto sessionCounters for cross-bridge signals", () => {
-      expect(session.sessionCounters.lastModeActivationTs).toEqual(null);
-      dispatch({ type: "mode-activate", mode: "frozen" });
-      expect(typeof session.sessionCounters.lastModeActivationTs).toEqual(
+    it("writes lastThemeActivationTs onto sessionCounters for cross-bridge signals", () => {
+      expect(session.sessionCounters.lastThemeActivationTs).toEqual(null);
+      dispatch({ type: "theme-activate", theme: "frozen" });
+      expect(typeof session.sessionCounters.lastThemeActivationTs).toEqual(
         "number",
       );
     });
   });
 
-  describe("mode_switched", () => {
-    it("fires when a new mode activates without deactivating the first", () => {
+  describe("theme_switched", () => {
+    it("fires when a new theme activates without deactivating the first", () => {
       const TIME_BEFORE_SWITCH_MS = 3000;
-      dispatch({ type: "mode-activate", mode: "frozen" });
+      dispatch({ type: "theme-activate", theme: "frozen" });
       vi.advanceTimersByTime(TIME_BEFORE_SWITCH_MS);
-      dispatch({ type: "mode-activate", mode: "deep-sea" });
+      dispatch({ type: "theme-activate", theme: "deep-sea" });
       core.flush();
 
-      const switches = eventsNamed("mode_switched");
+      const switches = eventsNamed("theme_switched");
       expect(switches.length).toEqual(1);
-      expect(switches[0].props.from_mode).toEqual("frozen");
-      expect(switches[0].props.to_mode).toEqual("deep-sea");
+      expect(switches[0].props.from_theme).toEqual("frozen");
+      expect(switches[0].props.to_theme).toEqual("deep-sea");
       expect(switches[0].props.active_ms_before_switch).toBeGreaterThanOrEqual(
         TIME_BEFORE_SWITCH_MS,
       );
 
-      const activates = eventsNamed("mode_activated");
-      expect(activates[1].props.prior_active_mode).toEqual("frozen");
+      const activates = eventsNamed("theme_activated");
+      expect(activates[1].props.prior_active_theme).toEqual("frozen");
     });
 
-    it("does not fire when no other mode is active", () => {
-      dispatch({ type: "mode-activate", mode: "frozen" });
-      dispatch({ type: "mode-deactivate", mode: "frozen" });
-      dispatch({ type: "mode-activate", mode: "deep-sea" });
+    it("does not fire when no other theme is active", () => {
+      dispatch({ type: "theme-activate", theme: "frozen" });
+      dispatch({ type: "theme-deactivate", theme: "frozen" });
+      dispatch({ type: "theme-activate", theme: "deep-sea" });
       core.flush();
-      expect(eventsNamed("mode_switched").length).toEqual(0);
+      expect(eventsNamed("theme_switched").length).toEqual(0);
     });
   });
 
   describe("buildup thresholds", () => {
-    it("emits once per (mode, threshold, phase)", () => {
+    it("emits once per (theme, threshold, phase)", () => {
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.25,
         phase: "activate",
         peakForce: 0.3,
       });
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.25,
         phase: "activate",
         peakForce: 0.4,
       });
       core.flush();
-      expect(eventsNamed("mode_buildup_threshold").length).toEqual(1);
+      expect(eventsNamed("theme_buildup_threshold").length).toEqual(1);
     });
 
-    it("separates thresholds, modes, and phases", () => {
+    it("separates thresholds, themes, and phases", () => {
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.25,
         phase: "activate",
         peakForce: 0.3,
       });
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.5,
         phase: "activate",
         peakForce: 0.6,
       });
       dispatch({
-        type: "mode-buildup",
-        mode: "deep-sea",
+        type: "theme-buildup",
+        theme: "deep-sea",
         threshold: 0.25,
         phase: "activate",
         peakForce: 0.3,
       });
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.25,
         phase: "deactivate",
         peakForce: 0.3,
       });
       core.flush();
-      expect(eventsNamed("mode_buildup_threshold").length).toEqual(4);
+      expect(eventsNamed("theme_buildup_threshold").length).toEqual(4);
     });
   });
 
-  describe("mode_abandoned", () => {
+  describe("theme_abandoned", () => {
     it("emits with the tracked peak, duration, and phase", () => {
       dispatch({
-        type: "mode-buildup",
-        mode: "frozen",
+        type: "theme-buildup",
+        theme: "frozen",
         threshold: 0.25,
         phase: "activate",
         peakForce: 0.4,
       });
       const BUILDUP_DURATION_MS = 1500;
       vi.advanceTimersByTime(BUILDUP_DURATION_MS);
-      dispatch({ type: "mode-abandoned", mode: "frozen" });
+      dispatch({ type: "theme-abandoned", theme: "frozen" });
       core.flush();
 
-      const ab = eventsNamed("mode_abandoned")[0];
-      expect(ab.props.mode_id).toEqual("frozen");
+      const ab = eventsNamed("theme_abandoned")[0];
+      expect(ab.props.theme_id).toEqual("frozen");
       expect(ab.props.peak_force).toEqual(0.4);
       expect(ab.props.phase).toEqual("activate");
       expect(ab.props.buildup_duration_ms).toBeGreaterThanOrEqual(
@@ -219,22 +219,22 @@ describe("analytics/bridges/modes", () => {
     });
 
     it("does not emit when no buildup was tracked (guard preserved)", () => {
-      dispatch({ type: "mode-abandoned", mode: "frozen" });
+      dispatch({ type: "theme-abandoned", theme: "frozen" });
       core.flush();
-      expect(eventsNamed("mode_abandoned").length).toEqual(0);
+      expect(eventsNamed("theme_abandoned").length).toEqual(0);
     });
   });
 
-  describe("mode_effect_used", () => {
+  describe("theme_effect_used", () => {
     it("maps source effect events to stable ids", () => {
-      dispatch({ type: "mode-activate", mode: "frozen" });
+      dispatch({ type: "theme-activate", theme: "frozen" });
       dispatch({ type: "frost-breath" });
       dispatch({ type: "jellyfish-pulse" });
       dispatch({ type: "paper-stroke" });
       dispatch({ type: "snow-globe" });
       core.flush();
 
-      const effects = eventsNamed("mode_effect_used").map(
+      const effects = eventsNamed("theme_effect_used").map(
         (e) => e.props.effect_id,
       );
       expect(effects).toEqual([
@@ -247,28 +247,28 @@ describe("analytics/bridges/modes", () => {
   });
 
   describe("secret reveals", () => {
-    it("logo_parallax_engaged and mode_hud_opened pass through", () => {
+    it("logo_parallax_engaged and theme_hud_opened pass through", () => {
       dispatch({ type: "logo-parallax" });
-      dispatch({ type: "mode-history-reveal" });
+      dispatch({ type: "theme-history-reveal" });
       core.flush();
       expect(eventsNamed("logo_parallax_engaged").length).toEqual(1);
-      expect(eventsNamed("mode_hud_opened").length).toEqual(1);
+      expect(eventsNamed("theme_hud_opened").length).toEqual(1);
     });
   });
 
-  describe("mode_warning_shown", () => {
-    it("emits with mode_id for upside-down-warning", () => {
+  describe("theme_warning_shown", () => {
+    it("emits with theme_id for upside-down-warning", () => {
       dispatch({ type: "upside-down-warning" });
       core.flush();
-      const warn = eventsNamed("mode_warning_shown")[0];
+      const warn = eventsNamed("theme_warning_shown")[0];
       expect(warn).toBeTruthy();
-      expect(warn.props.mode_id).toEqual("upside-down");
+      expect(warn.props.theme_id).toEqual("upside-down");
     });
 
     it("ignores unmapped source types (regression guard on the map)", () => {
       dispatch({ type: "some-other-warning" });
       core.flush();
-      expect(eventsNamed("mode_warning_shown").length).toEqual(0);
+      expect(eventsNamed("theme_warning_shown").length).toEqual(0);
     });
   });
 });

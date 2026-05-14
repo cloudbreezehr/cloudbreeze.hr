@@ -1,17 +1,17 @@
-import { Z_MODE_FLASH } from "../layers.js";
+import { Z_THEME_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { createMode } from "./factory.js";
-import { hasActiveModeExcept } from "./registry.js";
+import { createTheme } from "./factory.js";
+import { hasActiveThemeExcept } from "./registry.js";
 import { createClickCountTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 const RF = defineConstants(
-  "modes.rainyForce",
+  "themes.rainyForce",
   {
     CLICKS_TO_RAIN: 15,
     CLICKS_TO_CLEAR: 8,
@@ -25,12 +25,12 @@ const RF = defineConstants(
     WIPE_COVER_MS: 400,
     WIPE_REVEAL_MS: 600,
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 // ── Visual Effects ──
 const RV = defineConstants(
-  "modes.rainyVisuals",
+  "themes.rainyVisuals",
   {
     TAG_GLOW_SPREAD_MIN: 2,
     TAG_GLOW_SPREAD_RANGE: 10,
@@ -58,10 +58,10 @@ const RV = defineConstants(
     RIPPLE_DURATION_MS: 700,
     RIPPLE_SCALE: 4,
     RIPPLE_START_OPACITY: 0.5,
-    FLASH_Z_INDEX: Z_MODE_FLASH,
+    FLASH_Z_INDEX: Z_THEME_FLASH,
     RUMBLE_FRAME_MS: 16,
   },
-  { mode: "rainy" },
+  { theme: "rainy" },
 );
 
 export function initRainy() {
@@ -165,7 +165,7 @@ export function initRainy() {
     });
   }
 
-  createMode({
+  createTheme({
     id: "rainy",
     trigger: createClickCountTrigger({
       element: heroTagEl,
@@ -182,8 +182,8 @@ export function initRainy() {
       {
         threshold: RF.CLOUD_DARKEN_AT,
         apply(progress) {
-          // Don't fight other modes' own canvas filters
-          if (hasActiveModeExcept("rainy")) {
+          // Don't fight other themes' own canvas filters
+          if (hasActiveThemeExcept("rainy")) {
             canvasEl.style.filter = "";
             return;
           }

@@ -1,14 +1,14 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
-import { createMode } from "./factory.js";
+import { createTheme } from "./factory.js";
 import { createOverscrollTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 const UD_FORCE = defineConstants(
-  "modes.upsideForce",
+  "themes.upsideForce",
   {
     COOLDOWN: {
       value: 300,
@@ -81,12 +81,12 @@ const UD_FORCE = defineConstants(
       description: "Touch drag distance to register a hit",
     },
   },
-  { mode: "upside-down" },
+  { theme: "upside-down" },
 );
 
 // ── Visual Effects ──
 const UD_VFX = defineConstants(
-  "modes.upsideVisuals",
+  "themes.upsideVisuals",
   {
     SHAKE_THRESHOLD: {
       value: 0.2,
@@ -145,7 +145,7 @@ const UD_VFX = defineConstants(
       description: "Frame normalization baseline (16.667 = 60fps)",
     },
   },
-  { mode: "upside-down" },
+  { theme: "upside-down" },
 );
 
 // ── Non-numeric constants ──
@@ -157,10 +157,10 @@ export function initUpsideDown() {
   let warningShowTime = 0;
   let lastEdgeWasBottom = true;
   let disableCardUpside = null;
-  // `modeCtx` is filled in by createMode's return value below.  We read
-  // modeCtx.isActive wherever we need to know "is the world currently
+  // `themeCtx` is filled in by createTheme's return value below.  We read
+  // themeCtx.isActive wherever we need to know "is the world currently
   // flipped?" — no local duplicate state.
-  let modeCtx;
+  let themeCtx;
 
   const pageEl = document.querySelector(".page");
   const navEl = document.querySelector("nav");
@@ -181,7 +181,7 @@ export function initUpsideDown() {
     const el = document.createElement("div");
     el.className = "ud-warning";
     el.id = "ud-warning";
-    const flipped = modeCtx.isActive;
+    const flipped = themeCtx.isActive;
     const content = document.createElement("div");
     content.className = "ud-warning-content";
 
@@ -226,7 +226,7 @@ export function initUpsideDown() {
   }
 
   // ── Bespoke sliding wipe ──
-  // Unlike other modes, upside-down's wipe is a translateY slide that covers
+  // Unlike other themes, upside-down's wipe is a translateY slide that covers
   // the viewport, persists through the state swap, then slides out the other
   // side.  Direction depends on which scroll edge triggered the flip.
   function runSlidingWipe({ activating, runMidpoint, payload }) {
@@ -256,8 +256,8 @@ export function initUpsideDown() {
         pageEl.style.translate = "";
         overlay.style.background = "none";
 
-        // runMidpoint flipped modeCtx.isActive; read the post-flip value.
-        if (modeCtx.isActive) {
+        // runMidpoint flipped themeCtx.isActive; read the post-flip value.
+        if (themeCtx.isActive) {
           document.body.appendChild(navEl);
           window.scrollTo(0, 0);
         } else {
@@ -322,7 +322,7 @@ export function initUpsideDown() {
     },
   });
 
-  modeCtx = createMode({
+  themeCtx = createTheme({
     id: "upside-down",
     trigger,
     indicators: [

@@ -15,7 +15,7 @@ import {
   importConfig,
   onSectionActivate,
 } from "./registry.js";
-import { getMode, getModes, getModeIds } from "../modes/registry.js";
+import { getTheme, getThemes, getThemeIds } from "../themes/registry.js";
 
 // ── Layout Constants ──
 const PANEL_WIDTH = 340;
@@ -85,20 +85,20 @@ const SECTION_LABEL_MAP = {
   "particles.rainSplash": "Splashes",
   "particles.rainGlass": "Glass Drops",
   "particles.rainThunder": "Thunder",
-  "modes.upsideForce": "Force & Drain",
-  "modes.upsideVisuals": "Visual Effects",
-  "modes.rainyForce": "Force & Activation",
-  "modes.rainyVisuals": "Visual Effects",
-  "modes.frozenForce": "Force & Activation",
-  "modes.frozenVisuals": "Visual Effects",
-  "modes.deepSeaForce": "Force & Activation",
-  "modes.deepSeaVisuals": "Visual Effects",
-  "modes.blockyForce": "Force & Activation",
-  "modes.blockyVisuals": "Visual Effects",
+  "themes.upsideForce": "Force & Drain",
+  "themes.upsideVisuals": "Visual Effects",
+  "themes.rainyForce": "Force & Activation",
+  "themes.rainyVisuals": "Visual Effects",
+  "themes.frozenForce": "Force & Activation",
+  "themes.frozenVisuals": "Visual Effects",
+  "themes.deepSeaForce": "Force & Activation",
+  "themes.deepSeaVisuals": "Visual Effects",
+  "themes.blockyForce": "Force & Activation",
+  "themes.blockyVisuals": "Visual Effects",
   cursor: "Cursor",
   "effects.fireworks": "Fireworks",
   "effects.logoParallax": "Logo Parallax",
-  "effects.modeHistoryHud": "Mode History HUD",
+  "effects.themeHistoryHud": "Theme History HUD",
   "achievements.activityLog": "Activity Log",
 };
 
@@ -114,15 +114,15 @@ const GROUP_ORDER = [
   { label: "Achievements", prefix: "achievements." },
 ];
 
-// ── Mode metadata helpers ──
-// Mode ids, short labels, and accent colors live in modes/registry.js.
-// The dev console appends " Mode" at render time — "Frozen" → "Frozen Mode".
-function modeColorOf(id) {
-  return getMode(id)?.color || "#7dbfe8";
+// ── Theme metadata helpers ──
+// Theme ids, short labels, and accent colors live in themes/registry.js.
+// The dev console appends " Theme" at render time — "Frozen" → "Frozen Theme".
+function themeColorOf(id) {
+  return getTheme(id)?.color || "#7dbfe8";
 }
-function modeLabelOf(id) {
-  const m = getMode(id);
-  return m ? `${m.label} Mode` : id;
+function themeLabelOf(id) {
+  const m = getTheme(id);
+  return m ? `${m.label} Theme` : id;
 }
 
 // ── Tooltip singleton ──
@@ -159,9 +159,9 @@ function buildSectionEl(category, registry, rowMap) {
   const sectionEl = document.createElement("div");
   sectionEl.className = "dc-section collapsed";
   sectionEl.dataset.category = category;
-  if (meta && meta.mode) {
-    sectionEl.dataset.mode = meta.mode;
-    sectionEl.style.setProperty("--mode-color", modeColorOf(meta.mode));
+  if (meta && meta.theme) {
+    sectionEl.dataset.theme = meta.theme;
+    sectionEl.style.setProperty("--theme-color", themeColorOf(meta.theme));
   }
 
   const sectionHeader = document.createElement("div");
@@ -303,13 +303,13 @@ function buildPanel() {
   // Build grouped structure
   const rowMap = new Map(); // category.key -> { slider, input, label, entry }
 
-  // Prefix-based groups — skip mode-tagged sections (they go in the Modes group)
+  // Prefix-based groups — skip theme-tagged sections (they go in the Themes group)
   for (const group of GROUP_ORDER) {
     const matchingSections = [];
     for (const [category] of registry) {
       if (!category.startsWith(group.prefix)) continue;
       const meta = getSectionMeta(category);
-      if (meta && meta.mode) continue;
+      if (meta && meta.theme) continue;
       matchingSections.push(category);
     }
     if (matchingSections.length === 0) continue;
@@ -334,52 +334,52 @@ function buildPanel() {
     body.appendChild(groupEl);
   }
 
-  // Modes group — all mode-tagged sections, organized by mode sub-headers
-  const byMode = new Map();
+  // Themes group — all theme-tagged sections, organized by theme sub-headers
+  const byTheme = new Map();
   for (const [category] of registry) {
     const meta = getSectionMeta(category);
-    if (!meta || !meta.mode) continue;
-    if (!byMode.has(meta.mode)) byMode.set(meta.mode, []);
-    byMode.get(meta.mode).push(category);
+    if (!meta || !meta.theme) continue;
+    if (!byTheme.has(meta.theme)) byTheme.set(meta.theme, []);
+    byTheme.get(meta.theme).push(category);
   }
 
-  if (byMode.size > 0) {
-    const modesGroupEl = document.createElement("div");
-    modesGroupEl.className = "dc-group collapsed";
-    const modesGroupHeader = document.createElement("div");
-    modesGroupHeader.className = "dc-group-header";
-    modesGroupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>Modes`;
-    modesGroupHeader.addEventListener("click", () => {
-      modesGroupEl.classList.toggle("collapsed");
+  if (byTheme.size > 0) {
+    const themesGroupEl = document.createElement("div");
+    themesGroupEl.className = "dc-group collapsed";
+    const themesGroupHeader = document.createElement("div");
+    themesGroupHeader.className = "dc-group-header";
+    themesGroupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>Themes`;
+    themesGroupHeader.addEventListener("click", () => {
+      themesGroupEl.classList.toggle("collapsed");
     });
-    modesGroupEl.appendChild(modesGroupHeader);
+    themesGroupEl.appendChild(themesGroupHeader);
 
-    const modesGroupBody = document.createElement("div");
-    modesGroupBody.className = "dc-group-body";
+    const themesGroupBody = document.createElement("div");
+    themesGroupBody.className = "dc-group-body";
 
-    for (const mode of getModeIds()) {
-      if (!byMode.has(mode)) continue;
+    for (const theme of getThemeIds()) {
+      if (!byTheme.has(theme)) continue;
       const subHeader = document.createElement("div");
-      subHeader.className = "dc-mode-subheader";
-      subHeader.dataset.mode = mode;
-      subHeader.style.setProperty("--mode-color", modeColorOf(mode));
-      subHeader.textContent = modeLabelOf(mode);
-      modesGroupBody.appendChild(subHeader);
-      const cats = byMode
-        .get(mode)
+      subHeader.className = "dc-theme-subheader";
+      subHeader.dataset.theme = theme;
+      subHeader.style.setProperty("--theme-color", themeColorOf(theme));
+      subHeader.textContent = themeLabelOf(theme);
+      themesGroupBody.appendChild(subHeader);
+      const cats = byTheme
+        .get(theme)
         .slice()
         .sort((a, b) => {
-          const aMode = a.startsWith("modes.") ? 0 : 1;
-          const bMode = b.startsWith("modes.") ? 0 : 1;
-          return aMode - bMode;
+          const aTheme = a.startsWith("themes.") ? 0 : 1;
+          const bTheme = b.startsWith("themes.") ? 0 : 1;
+          return aTheme - bTheme;
         });
       for (const cat of cats) {
-        modesGroupBody.appendChild(buildSectionEl(cat, registry, rowMap));
+        themesGroupBody.appendChild(buildSectionEl(cat, registry, rowMap));
       }
     }
 
-    modesGroupEl.appendChild(modesGroupBody);
-    body.appendChild(modesGroupEl);
+    themesGroupEl.appendChild(themesGroupBody);
+    body.appendChild(themesGroupEl);
   }
 
   panel.appendChild(body);
@@ -449,7 +449,7 @@ function buildPanel() {
     const sections = body.querySelectorAll(".dc-section");
     const groups = body.querySelectorAll(".dc-group");
 
-    const subHeaders = body.querySelectorAll(".dc-mode-subheader");
+    const subHeaders = body.querySelectorAll(".dc-theme-subheader");
 
     if (!q) {
       rows.forEach((r) => (r.style.display = ""));
@@ -492,9 +492,9 @@ function buildPanel() {
       if (visible.length > 0) s.classList.remove("collapsed");
     });
     subHeaders.forEach((h) => {
-      const mode = h.dataset.mode;
+      const theme = h.dataset.theme;
       const siblingSections = body.querySelectorAll(
-        `.dc-section[data-mode="${mode}"]:not([style*="display: none"])`,
+        `.dc-section[data-theme="${theme}"]:not([style*="display: none"])`,
       );
       h.style.display = siblingSections.length > 0 ? "" : "none";
     });
@@ -533,7 +533,7 @@ function splitPath(path) {
 
 /**
  * Scan modified labels and propagate has-modified + count badges
- * up to section headers, mode sub-headers, and group headers.
+ * up to section headers, theme sub-headers, and group headers.
  */
 function propagateModified(panel) {
   if (!panel) return;
@@ -556,13 +556,15 @@ function propagateModified(panel) {
     }
   });
 
-  // Mode sub-headers
-  panel.querySelectorAll(".dc-mode-subheader").forEach((h) => {
-    const mode = h.dataset.mode;
+  // Theme sub-headers
+  panel.querySelectorAll(".dc-theme-subheader").forEach((h) => {
+    const theme = h.dataset.theme;
     let total = 0;
-    panel.querySelectorAll(`.dc-section[data-mode="${mode}"]`).forEach((s) => {
-      total += s.querySelectorAll(".dc-row-label.modified").length;
-    });
+    panel
+      .querySelectorAll(`.dc-section[data-theme="${theme}"]`)
+      .forEach((s) => {
+        total += s.querySelectorAll(".dc-row-label.modified").length;
+      });
     h.classList.toggle("has-modified", total > 0);
     let badge = h.querySelector(".dc-modified-badge");
     if (total > 0) {
@@ -933,9 +935,9 @@ function setupDocking(panel) {
   applyDock();
 }
 
-// ── Mode-aware state updates ──
+// ── Theme-aware state updates ──
 
-let _prevActiveModes = null;
+let _prevActiveThemes = null;
 
 function setsEqual(a, b) {
   if (a.size !== b.size) return false;
@@ -946,11 +948,11 @@ function setsEqual(a, b) {
 const SCROLL_INTO_VIEW_DELAY_MS = 80;
 // ── Highlight pulse on auto-scroll target ──
 const HIGHLIGHT_DURATION_MS = 1200;
-const HIGHLIGHT_FALLBACK_COLOR = "125, 191, 232"; // matches --mode-color default
+const HIGHLIGHT_FALLBACK_COLOR = "125, 191, 232"; // matches --theme-color default
 const HIGHLIGHT_PEAK_ALPHA = 0.22;
 
-function parseModeColor(cssColor) {
-  // Accept #rrggbb — the only format used for mode accent colors.
+function parseThemeColor(cssColor) {
+  // Accept #rrggbb — the only format used for theme accent colors.
   if (!cssColor || cssColor[0] !== "#" || cssColor.length !== 7) return null;
   const r = parseInt(cssColor.slice(1, 3), 16);
   const g = parseInt(cssColor.slice(3, 5), 16);
@@ -961,8 +963,10 @@ function parseModeColor(cssColor) {
 
 function flashHighlight(el) {
   if (!el) return;
-  const modeColor = parseModeColor(el.style.getPropertyValue("--mode-color"));
-  const rgb = modeColor || HIGHLIGHT_FALLBACK_COLOR;
+  const themeColor = parseThemeColor(
+    el.style.getPropertyValue("--theme-color"),
+  );
+  const rgb = themeColor || HIGHLIGHT_FALLBACK_COLOR;
   el.animate(
     [
       { backgroundColor: `rgba(${rgb}, ${HIGHLIGHT_PEAK_ALPHA})` },
@@ -972,32 +976,33 @@ function flashHighlight(el) {
   );
 }
 
-function updateModeStates(panel) {
-  const activeModes = new Set();
-  for (const mode of getModeIds()) {
-    if (document.body.classList.contains(mode)) activeModes.add(mode);
+function updateThemeStates(panel) {
+  const activeThemes = new Set();
+  for (const theme of getThemeIds()) {
+    if (document.body.classList.contains(theme)) activeThemes.add(theme);
   }
 
-  const isFirstCall = _prevActiveModes === null;
-  const modeChanged = isFirstCall || !setsEqual(activeModes, _prevActiveModes);
+  const isFirstCall = _prevActiveThemes === null;
+  const themeChanged =
+    isFirstCall || !setsEqual(activeThemes, _prevActiveThemes);
 
-  // Detect newly activated modes (skip first call — that's initial state, not a user action)
+  // Detect newly activated themes (skip first call — that's initial state, not a user action)
   const newlyActivated = new Set();
-  if (!isFirstCall && modeChanged) {
-    for (const mode of activeModes) {
-      if (!_prevActiveModes.has(mode)) newlyActivated.add(mode);
+  if (!isFirstCall && themeChanged) {
+    for (const theme of activeThemes) {
+      if (!_prevActiveThemes.has(theme)) newlyActivated.add(theme);
     }
   }
 
-  const modeEls = panel.querySelectorAll("[data-mode]");
-  modeEls.forEach((el) => {
-    const mode = el.dataset.mode;
-    const isActive = activeModes.has(mode);
-    el.classList.toggle("mode-active", isActive);
-    el.classList.toggle("mode-inactive", !isActive);
+  const themeEls = panel.querySelectorAll("[data-theme]");
+  themeEls.forEach((el) => {
+    const theme = el.dataset.theme;
+    const isActive = activeThemes.has(theme);
+    el.classList.toggle("theme-active", isActive);
+    el.classList.toggle("theme-inactive", !isActive);
 
-    // Auto-collapse/expand sections on mode change
-    if (modeChanged && el.classList.contains("dc-section")) {
+    // Auto-collapse/expand sections on theme change
+    if (themeChanged && el.classList.contains("dc-section")) {
       if (isActive) {
         el.classList.remove("collapsed");
         delete el.dataset.userToggled;
@@ -1007,14 +1012,14 @@ function updateModeStates(panel) {
     }
   });
 
-  // Auto-scroll to newly activated mode's sub-header
+  // Auto-scroll to newly activated theme's sub-header
   if (newlyActivated.size > 0) {
     // Pick the last one in registration order if multiple activated at once
     let scrollTarget = null;
-    for (const mode of getModeIds()) {
-      if (!newlyActivated.has(mode)) continue;
+    for (const theme of getThemeIds()) {
+      if (!newlyActivated.has(theme)) continue;
       const subHeader = panel.querySelector(
-        `.dc-mode-subheader[data-mode="${mode}"]`,
+        `.dc-theme-subheader[data-theme="${theme}"]`,
       );
       if (subHeader) scrollTarget = subHeader;
     }
@@ -1044,16 +1049,16 @@ function updateModeStates(panel) {
     }
   }
 
-  _prevActiveModes = activeModes;
+  _prevActiveThemes = activeThemes;
 }
 
-function setupModeObserver(panel) {
-  updateModeStates(panel);
+function setupThemeObserver(panel) {
+  updateThemeStates(panel);
   propagateModified(panel);
   const observer = new MutationObserver((mutations) => {
     for (const m of mutations) {
       if (m.type === "attributes" && m.attributeName === "class") {
-        updateModeStates(panel);
+        updateThemeStates(panel);
         break;
       }
     }
@@ -1066,7 +1071,7 @@ function setupModeObserver(panel) {
 
 // ── Auto-scroll suppression while the user interacts with the panel ──
 // Pointer activity inside the dev console sets a debounce timer.  While
-// active, both mode-change and section-activation auto-scrolls are skipped
+// active, both theme-change and section-activation auto-scrolls are skipped
 // so slider adjustments and drags don't yank the scroll position away.
 
 let _scrollSuppressedUntil = 0;
@@ -1141,7 +1146,7 @@ export function openDevConsole() {
   const { panel, searchInput } = buildPanel();
   document.body.appendChild(panel);
   setupDocking(panel);
-  setupModeObserver(panel);
+  setupThemeObserver(panel);
   setupSectionActivateListener(panel);
   panelInstance = { panel, searchInput };
 

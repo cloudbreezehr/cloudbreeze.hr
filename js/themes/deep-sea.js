@@ -1,16 +1,16 @@
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
-import { createMode } from "./factory.js";
-import { hasActiveModeExcept } from "./registry.js";
+import { createTheme } from "./factory.js";
+import { hasActiveThemeExcept } from "./registry.js";
 import { createHoldTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 const DF = defineConstants(
-  "modes.deepSeaForce",
+  "themes.deepSeaForce",
   {
     HOLD_TO_DIVE_MS: 10000,
     HOLD_TO_SURFACE_MS: 5000,
@@ -21,12 +21,12 @@ const DF = defineConstants(
     WIPE_COVER_MS: 400,
     WIPE_REVEAL_MS: 600,
   },
-  { mode: "deep-sea" },
+  { theme: "deep-sea" },
 );
 
 // ── Visual Effects ──
 const DV = defineConstants(
-  "modes.deepSeaVisuals",
+  "themes.deepSeaVisuals",
   {
     RIPPLE_INTERVAL_MS: 400,
     RIPPLE_COUNT: 3,
@@ -41,7 +41,7 @@ const DV = defineConstants(
     BRI_DROP: 0.65,
     VIGNETTE_MAX_OPACITY: 0.7,
   },
-  { mode: "deep-sea" },
+  { theme: "deep-sea" },
 );
 
 export function initDeepSea() {
@@ -99,7 +99,7 @@ export function initDeepSea() {
   // ── Card caustic interactions ──
   let disableCardCaustics = null;
 
-  createMode({
+  createTheme({
     id: "deep-sea",
     trigger: createHoldTrigger({
       holdActivateMs: DF.HOLD_TO_DIVE_MS,
@@ -144,8 +144,8 @@ export function initDeepSea() {
       {
         threshold: DF.COLOR_SHIFT_AT,
         apply(progress) {
-          // Don't fight other modes' own canvas filters
-          if (hasActiveModeExcept("deep-sea")) {
+          // Don't fight other themes' own canvas filters
+          if (hasActiveThemeExcept("deep-sea")) {
             canvasEl.style.filter = "";
             return;
           }

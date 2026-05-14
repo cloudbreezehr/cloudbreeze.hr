@@ -52,18 +52,18 @@ export function initCtaBridge() {
     const cta = matchCta(target);
     if (cta) {
       sessionCounters.clickTotalCta++;
-      // since_last_mode_activation_ms is null when the visitor converted
-      // without ever activating a mode — the "passive" cohort.  A real
+      // since_last_theme_activation_ms is null when the visitor converted
+      // without ever activating a theme — the "passive" cohort.  A real
       // number puts the click inside an "in-play" session and lets us
       // see whether discovery helps or hurts the conversion rate.
-      const lastMode = sessionCounters.lastModeActivationTs;
+      const lastTheme = sessionCounters.lastThemeActivationTs;
       track("cta_click", {
         cta_id: cta.id,
         scroll_depth_at_click: sessionCounters.scrollMaxDepth,
         session_elapsed_ms: Date.now() - startedAt,
         clicks_before_this: priorClicks,
-        since_last_mode_activation_ms:
-          lastMode != null ? Date.now() - lastMode : null,
+        since_last_theme_activation_ms:
+          lastTheme != null ? Date.now() - lastTheme : null,
       });
       priorClicks++;
     }

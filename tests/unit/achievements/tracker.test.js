@@ -5,7 +5,7 @@ import {
   NIGHT_OWL_MS,
   NIGHT_OWL_CHECK_INTERVAL,
   AFTERSHOCK_WINDOW_MS,
-  STORM_FORECASTER_MODE_COUNT,
+  STORM_FORECASTER_THEME_COUNT,
   LONG_WATCH_MS,
 } from "../../../js/achievements/tracker.js";
 
@@ -62,9 +62,9 @@ function dispatchAchievement(type, data = {}) {
   );
 }
 
-function setMode(mode) {
-  if (mode === null) delete document.body.dataset.activeTheme;
-  else document.body.dataset.activeTheme = mode;
+function setTheme(theme) {
+  if (theme === null) delete document.body.dataset.activeTheme;
+  else document.body.dataset.activeTheme = theme;
 }
 
 describe("tracker — tryUnlock", () => {
@@ -174,9 +174,9 @@ describe("tracker — click handler", () => {
     expect(storage.isUnlocked("rapid-fire")).toBe(false);
   });
 
-  it("unlocks vertigo when rapid-fire lands inside upside-down mode", async () => {
+  it("unlocks vertigo when rapid-fire lands inside upside-down theme", async () => {
     const { storage } = await startTracker();
-    setMode("upside-down");
+    setTheme("upside-down");
 
     for (let i = 0; i < RAPID_FIRE_CLICKS; i++) {
       dispatchAchievement("click");
@@ -185,7 +185,7 @@ describe("tracker — click handler", () => {
     expect(storage.isUnlocked("vertigo")).toBe(true);
   });
 
-  it("does not unlock vertigo outside upside-down mode", async () => {
+  it("does not unlock vertigo outside upside-down theme", async () => {
     const { storage } = await startTracker();
 
     for (let i = 0; i < RAPID_FIRE_CLICKS; i++) {
@@ -250,7 +250,7 @@ describe("tracker — click handler", () => {
 
   it("unlocks bioluminescent on click in deep-sea", async () => {
     const { storage } = await startTracker();
-    setMode("deep-sea");
+    setTheme("deep-sea");
 
     dispatchAchievement("click");
 
@@ -259,7 +259,7 @@ describe("tracker — click handler", () => {
 
   it("unlocks pixel-burst on click in blocky", async () => {
     const { storage } = await startTracker();
-    setMode("blocky");
+    setTheme("blocky");
 
     dispatchAchievement("click");
 
@@ -268,7 +268,7 @@ describe("tracker — click handler", () => {
 
   it("unlocks puddle-jump on click in rainy", async () => {
     const { storage } = await startTracker();
-    setMode("rainy");
+    setTheme("rainy");
 
     dispatchAchievement("click");
 
@@ -277,16 +277,16 @@ describe("tracker — click handler", () => {
 
   it("unlocks rift-walker on click in upside-down", async () => {
     const { storage } = await startTracker();
-    setMode("upside-down");
+    setTheme("upside-down");
 
     dispatchAchievement("click");
 
     expect(storage.isUnlocked("rift-walker")).toBe(true);
   });
 
-  it("unlocks margin-notes only when a card click lands in paper mode", async () => {
+  it("unlocks margin-notes only when a card click lands in paper theme", async () => {
     const { storage } = await startTracker();
-    setMode("paper");
+    setTheme("paper");
 
     dispatchAchievement("click", { card: false });
     expect(storage.isUnlocked("margin-notes")).toBe(false);
@@ -355,9 +355,9 @@ describe("tracker — drag handler", () => {
     expect(storage.isUnlocked("the-long-drag")).toBe(false);
   });
 
-  it("unlocks snowdrift on drag in frozen mode", async () => {
+  it("unlocks snowdrift on drag in frozen theme", async () => {
     const { storage } = await startTracker();
-    setMode("frozen");
+    setTheme("frozen");
 
     dispatchAchievement("drag", { x: 100, y: 100 });
 
@@ -429,9 +429,9 @@ describe("tracker — scroll handler", () => {
     expect(storage.isUnlocked("scroll-surge")).toBe(true);
   });
 
-  it("unlocks disoriented when scrolling to the bottom in upside-down mode", async () => {
+  it("unlocks disoriented when scrolling to the bottom in upside-down theme", async () => {
     const { storage } = await startTracker();
-    setMode("upside-down");
+    setTheme("upside-down");
 
     dispatchAchievement("scroll", { progress: 0.96 });
 
@@ -562,7 +562,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
 
   it("well-activate unlocks pressure-drop in deep-sea", async () => {
     const { storage } = await startTracker();
-    setMode("deep-sea");
+    setTheme("deep-sea");
 
     dispatchAchievement("well-activate");
 
@@ -571,7 +571,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
 
   it("well-activate unlocks monsoon in rainy", async () => {
     const { storage } = await startTracker();
-    setMode("rainy");
+    setTheme("rainy");
 
     dispatchAchievement("well-activate");
 
@@ -590,15 +590,15 @@ describe("tracker — hold / well / fury / misc handlers", () => {
   });
 
   it.each([
-    { mode: "blocky", unlock: "8-bit-storm" },
-    { mode: "rainy", unlock: "thunder-roll" },
-    { mode: "deep-sea", unlock: "storm-surge" },
-    { mode: "frozen", unlock: "frozen-lightning" },
-    { mode: "upside-down", unlock: "glitch" },
-    { mode: "paper", unlock: "ink-splatter" },
-  ])("fury-lightning unlocks $unlock in $mode", async ({ mode, unlock }) => {
+    { theme: "blocky", unlock: "8-bit-storm" },
+    { theme: "rainy", unlock: "thunder-roll" },
+    { theme: "deep-sea", unlock: "storm-surge" },
+    { theme: "frozen", unlock: "frozen-lightning" },
+    { theme: "upside-down", unlock: "glitch" },
+    { theme: "paper", unlock: "ink-splatter" },
+  ])("fury-lightning unlocks $unlock in $theme", async ({ theme, unlock }) => {
     const { storage } = await startTracker();
-    setMode(mode);
+    setTheme(theme);
 
     dispatchAchievement("fury-lightning");
 
@@ -622,14 +622,14 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     }
     {
       const { storage } = await startTracker();
-      setMode("frozen");
+      setTheme("frozen");
       dispatchAchievement("snow-globe");
       expect(storage.isUnlocked("blizzard")).toBe(true);
       stopAllTrackers();
     }
     {
       const { storage } = await startTracker();
-      setMode("deep-sea");
+      setTheme("deep-sea");
       dispatchAchievement("snow-globe");
       expect(storage.isUnlocked("permafrost")).toBe(true);
     }
@@ -642,7 +642,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     expect(storage.isUnlocked("orbit-lock")).toBe(true);
     expect(storage.isUnlocked("deep-orbit")).toBe(false);
 
-    setMode("deep-sea");
+    setTheme("deep-sea");
     dispatchAchievement("orbit");
     expect(storage.isUnlocked("deep-orbit")).toBe(true);
   });
@@ -654,7 +654,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     { event: "linkedin-click", unlock: "connected" },
     { event: "dev-console-open", unlock: "reverse-engineer" },
     { event: "logo-parallax", unlock: "magnetic-letters" },
-    { event: "mode-history-reveal", unlock: "historian" },
+    { event: "theme-history-reveal", unlock: "historian" },
     { event: "cloudlog-activate", unlock: "cloudlog-activated" },
     { event: "timestamp-toggle", unlock: "time-warp" },
     { event: "cloudlog-shortcut", unlock: "shortcut-master" },
@@ -713,7 +713,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
   });
 });
 
-describe("tracker — mode-activate / mode-deactivate", () => {
+describe("tracker — theme-activate / theme-deactivate", () => {
   beforeEach(() => {
     document.body.className = "";
     delete document.body.dataset.activeTheme;
@@ -727,37 +727,37 @@ describe("tracker — mode-activate / mode-deactivate", () => {
   });
 
   it.each([
-    { mode: "deep-sea", unlock: "the-depths" },
-    { mode: "frozen", unlock: "first-frost" },
-    { mode: "blocky", unlock: "resolution-drop" },
-    { mode: "rainy", unlock: "first-drop" },
-    { mode: "paper", unlock: "first-sketch" },
-    { mode: "upside-down", unlock: "the-flip" },
+    { theme: "deep-sea", unlock: "the-depths" },
+    { theme: "frozen", unlock: "first-frost" },
+    { theme: "blocky", unlock: "resolution-drop" },
+    { theme: "rainy", unlock: "first-drop" },
+    { theme: "paper", unlock: "first-sketch" },
+    { theme: "upside-down", unlock: "the-flip" },
   ])(
-    "mode-activate unlocks $unlock on first $mode activation",
-    async ({ mode, unlock }) => {
+    "theme-activate unlocks $unlock on first $theme activation",
+    async ({ theme, unlock }) => {
       const { storage } = await startTracker();
 
-      dispatchAchievement("mode-activate", { mode });
+      dispatchAchievement("theme-activate", { theme });
 
       expect(storage.isUnlocked(unlock)).toBe(true);
     },
   );
 
-  it("unlocks mode-hopper after 3 distinct modes activate in a session", async () => {
+  it("unlocks theme-hopper after 3 distinct themes activate in a session", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
-    dispatchAchievement("mode-activate", { mode: "blocky" });
-    expect(storage.isUnlocked("mode-hopper")).toBe(false);
-    dispatchAchievement("mode-activate", { mode: "rainy" });
-    expect(storage.isUnlocked("mode-hopper")).toBe(true);
+    dispatchAchievement("theme-activate", { theme: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "blocky" });
+    expect(storage.isUnlocked("theme-hopper")).toBe(false);
+    dispatchAchievement("theme-activate", { theme: "rainy" });
+    expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
-  it("records modes-activated across all six for elemental progress", async () => {
+  it("records themes-activated across all six for elemental progress", async () => {
     const { storage } = await startTracker();
 
-    for (const mode of [
+    for (const theme of [
       "deep-sea",
       "frozen",
       "blocky",
@@ -765,10 +765,10 @@ describe("tracker — mode-activate / mode-deactivate", () => {
       "paper",
       "upside-down",
     ]) {
-      dispatchAchievement("mode-activate", { mode });
+      dispatchAchievement("theme-activate", { theme });
     }
 
-    expect(storage.getProgressItems("modes-activated").sort()).toEqual([
+    expect(storage.getProgressItems("themes-activated").sort()).toEqual([
       "blocky",
       "deep-sea",
       "frozen",
@@ -778,36 +778,36 @@ describe("tracker — mode-activate / mode-deactivate", () => {
     ]);
   });
 
-  it("increments totalModeActivations", async () => {
+  it("increments totalThemeActivations", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
 
-    expect(storage.getCounter("totalModeActivations")).toBe(2);
+    expect(storage.getCounter("totalThemeActivations")).toBe(2);
   });
 
-  it("ignores mode-activate without a mode field", async () => {
+  it("ignores theme-activate without a theme field", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", {});
+    dispatchAchievement("theme-activate", {});
 
-    expect(storage.getCounter("totalModeActivations")).toBe(0);
+    expect(storage.getCounter("totalThemeActivations")).toBe(0);
   });
 
   it.each([
-    { mode: "deep-sea", unlock: "resurface" },
-    { mode: "frozen", unlock: "thaw" },
-    { mode: "blocky", unlock: "defrag" },
-    { mode: "rainy", unlock: "rainbow" },
-    { mode: "paper", unlock: "blank-page" },
-    { mode: "upside-down", unlock: "restoration" },
+    { theme: "deep-sea", unlock: "resurface" },
+    { theme: "frozen", unlock: "thaw" },
+    { theme: "blocky", unlock: "defrag" },
+    { theme: "rainy", unlock: "rainbow" },
+    { theme: "paper", unlock: "blank-page" },
+    { theme: "upside-down", unlock: "restoration" },
   ])(
-    "mode-deactivate unlocks $unlock on non-silent $mode exit",
-    async ({ mode, unlock }) => {
+    "theme-deactivate unlocks $unlock on non-silent $theme exit",
+    async ({ theme, unlock }) => {
       const { storage } = await startTracker();
 
-      dispatchAchievement("mode-deactivate", { mode });
+      dispatchAchievement("theme-deactivate", { theme });
 
       expect(storage.isUnlocked(unlock)).toBe(true);
     },
@@ -816,15 +816,15 @@ describe("tracker — mode-activate / mode-deactivate", () => {
   it("skips the deactivation achievement when data.silent is true (HUD toggle)", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-deactivate", { mode: "frozen", silent: true });
+    dispatchAchievement("theme-deactivate", { theme: "frozen", silent: true });
 
     expect(storage.isUnlocked("thaw")).toBe(false);
   });
 
-  it("ignores mode-deactivate without a mode field", async () => {
+  it("ignores theme-deactivate without a theme field", async () => {
     await startTracker();
 
-    expect(() => dispatchAchievement("mode-deactivate", {})).not.toThrow();
+    expect(() => dispatchAchievement("theme-deactivate", {})).not.toThrow();
   });
 });
 
@@ -1075,10 +1075,10 @@ describe("tracker — the-long-watch", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks after LONG_WATCH_MS uninterrupted in a single mode", async () => {
+  it("unlocks after LONG_WATCH_MS uninterrupted in a single theme", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(true);
@@ -1087,23 +1087,23 @@ describe("tracker — the-long-watch", () => {
   it("does not unlock when the user deactivates before the threshold", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
-    dispatchAchievement("mode-deactivate", { mode: "frozen" });
+    dispatchAchievement("theme-deactivate", { theme: "frozen" });
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(false);
   });
 
-  it("resets the watch when the user switches to a different mode", async () => {
+  it("resets the watch when the user switches to a different theme", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
-    // mode-factory dispatches deactivate of the prior mode before
+    // theme-factory dispatches deactivate of the prior theme before
     // activating the new one; mirror that here.
-    dispatchAchievement("mode-deactivate", { mode: "frozen" });
-    dispatchAchievement("mode-activate", { mode: "deep-sea" });
+    dispatchAchievement("theme-deactivate", { theme: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "deep-sea" });
     // The remaining half of the original window plus slack — together
     // less than a fresh PAST_LONG_WATCH_MS, so the watch should not fire.
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS + SLACK_MS);
@@ -1118,42 +1118,42 @@ describe("tracker — the-long-watch", () => {
 
   it("clears the timer on silent deactivations too", async () => {
     // Programmatic deactivations (e.g. HUD toggle) carry silent=true and
-    // skip exit achievements, but the user's mode experience still ended,
+    // skip exit achievements, but the user's theme experience still ended,
     // so the watch must clear regardless of silent.
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
-    dispatchAchievement("mode-deactivate", { mode: "frozen", silent: true });
+    dispatchAchievement("theme-deactivate", { theme: "frozen", silent: true });
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(false);
   });
 
-  it("ignores mode-deactivate without a mode field (no spurious clear)", async () => {
+  it("ignores theme-deactivate without a theme field (no spurious clear)", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
-    dispatchAchievement("mode-deactivate", {});
+    dispatchAchievement("theme-deactivate", {});
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS + SLACK_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(true);
   });
 
-  it("catchUp starts the watch when a mode is already active", async () => {
-    // Simulates Cloudlog-after-the-fact: the user entered a mode, then
+  it("catchUp starts the watch when a theme is already active", async () => {
+    // Simulates Cloudlog-after-the-fact: the user entered a theme, then
     // triple-clicked to activate the achievement system.
     const { storage, tracker } = await startTracker();
 
-    setMode("frozen");
+    setTheme("frozen");
     tracker.catchUp();
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(true);
   });
 
-  it("catchUp does not start the watch when no mode is active", async () => {
+  it("catchUp does not start the watch when no theme is active", async () => {
     const { storage, tracker } = await startTracker();
 
     tracker.catchUp();
@@ -1165,7 +1165,7 @@ describe("tracker — the-long-watch", () => {
   it("stop() clears the timer so a pending watch does not fire later", async () => {
     const { storage, tracker } = await startTracker();
 
-    dispatchAchievement("mode-activate", { mode: "frozen" });
+    dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(HALF_LONG_WATCH_MS);
     tracker.stop();
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
@@ -1187,50 +1187,50 @@ describe("tracker — storm-forecaster", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks after STORM_FORECASTER_MODE_COUNT distinct sub-modes see lightning", async () => {
+  it("unlocks after STORM_FORECASTER_THEME_COUNT distinct themes see lightning", async () => {
     const { storage } = await startTracker();
-    const modes = ["frozen", "deep-sea", "rainy"];
-    expect(modes).toHaveLength(STORM_FORECASTER_MODE_COUNT);
+    const themes = ["frozen", "deep-sea", "rainy"];
+    expect(themes).toHaveLength(STORM_FORECASTER_THEME_COUNT);
 
-    for (let i = 0; i < modes.length - 1; i++) {
-      setMode(modes[i]);
+    for (let i = 0; i < themes.length - 1; i++) {
+      setTheme(themes[i]);
       dispatchAchievement("fury-lightning");
       expect(storage.isUnlocked("storm-forecaster")).toBe(false);
     }
 
-    setMode(modes[modes.length - 1]);
+    setTheme(themes[themes.length - 1]);
     dispatchAchievement("fury-lightning");
     expect(storage.isUnlocked("storm-forecaster")).toBe(true);
   });
 
-  it("does not count repeated triggers in the same mode", async () => {
+  it("does not count repeated triggers in the same theme", async () => {
     const { storage } = await startTracker();
-    setMode("frozen");
+    setTheme("frozen");
 
-    for (let i = 0; i < STORM_FORECASTER_MODE_COUNT + 2; i++) {
+    for (let i = 0; i < STORM_FORECASTER_THEME_COUNT + 2; i++) {
       dispatchAchievement("fury-lightning");
     }
 
     expect(storage.isUnlocked("storm-forecaster")).toBe(false);
   });
 
-  it("excludes the no-mode (default canvas) state from the set", async () => {
+  it("excludes the no-theme (default canvas) state from the set", async () => {
     const { storage } = await startTracker();
 
-    // No mode active — should not contribute.
-    setMode(null);
+    // No theme active — should not contribute.
+    setTheme(null);
     dispatchAchievement("fury-lightning");
-    setMode(null);
+    setTheme(null);
     dispatchAchievement("fury-lightning");
-    setMode(null);
+    setTheme(null);
     dispatchAchievement("fury-lightning");
     expect(storage.isUnlocked("storm-forecaster")).toBe(false);
 
-    // Adding genuine sub-modes after — the no-mode triggers are still
-    // ignored, so we need STORM_FORECASTER_MODE_COUNT real ones.
-    const modes = ["frozen", "deep-sea", "rainy"];
-    for (const mode of modes) {
-      setMode(mode);
+    // Adding genuine themes after — the no-theme triggers are still
+    // ignored, so we need STORM_FORECASTER_THEME_COUNT real ones.
+    const themes = ["frozen", "deep-sea", "rainy"];
+    for (const theme of themes) {
+      setTheme(theme);
       dispatchAchievement("fury-lightning");
     }
     expect(storage.isUnlocked("storm-forecaster")).toBe(true);
@@ -1239,9 +1239,9 @@ describe("tracker — storm-forecaster", () => {
   it("catchUp retroactively unlocks when the threshold is already met", async () => {
     const { storage, tracker } = await startTracker();
 
-    const modes = ["frozen", "deep-sea", "rainy"];
-    for (const mode of modes) {
-      setMode(mode);
+    const themes = ["frozen", "deep-sea", "rainy"];
+    for (const theme of themes) {
+      setTheme(theme);
       dispatchAchievement("fury-lightning");
     }
     storage.relock("storm-forecaster");

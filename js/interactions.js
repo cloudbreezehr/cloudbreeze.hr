@@ -1079,7 +1079,7 @@ export function createInteractions() {
       }
     },
 
-    // Spawn click burst particles at (x, y). Skipped in blocky mode.
+    // Spawn click burst particles at (x, y). Skipped in blocky theme.
     click(x, y, pal) {
       const count =
         CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);

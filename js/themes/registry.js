@@ -1,23 +1,23 @@
-// ── Sub-mode Registry ──
+// ── Theme Registry ──
 // Two-stage design, separated to avoid module-init ordering fragility:
 //
 //   1. Metadata (id, label, color, icon) — declared as static data in the
-//      MODES array below.  Available unconditionally at import time, no
+//      THEMES array below.  Available unconditionally at import time, no
 //      side effects, so any consumer can read it regardless of whether
-//      any mode's init has run.
+//      any theme's init has run.
 //
-//   2. Runtime toggle handler — bound during each mode's `initXxx()` via
+//   2. Runtime toggle handler — bound during each theme's `initXxx()` via
 //      `registerToggle`.  Genuinely can't exist earlier because it closes
-//      over per-mode local state (isFrozen, isSubmerged, ...).
+//      over per-theme local state (isFrozen, isSubmerged, ...).
 //
-// To add a new mode: add a descriptor entry to MODES, then in the mode's
+// To add a new theme: add a descriptor entry to THEMES, then in the theme's
 // `initXxx()` call `registerToggle(id, () => ...)`.  The behavior lives
-// in the mode file; the metadata lives here.
+// in the theme file; the metadata lives here.
 //
 // Icons are inline SVG strings so there's no fetch step; they use
 // currentColor so callers can tint them with CSS.
 
-const MODES = [
+const THEMES = [
   {
     id: "frozen",
     label: "Frozen",
@@ -82,35 +82,35 @@ const MODES = [
   },
 ];
 
-const _byId = new Map(MODES.map((m) => [m.id, m]));
+const _byId = new Map(THEMES.map((m) => [m.id, m]));
 const _toggles = new Map();
 
 /**
- * Bind the runtime toggle handler for a mode.  Called during the mode's
+ * Bind the runtime toggle handler for a theme.  Called during the theme's
  * `init()` after local state (isFrozen, etc.) exists.
  */
 export function registerToggle(id, toggle) {
-  if (!_byId.has(id)) throw new Error(`registerToggle: unknown mode "${id}"`);
+  if (!_byId.has(id)) throw new Error(`registerToggle: unknown theme "${id}"`);
   _toggles.set(id, toggle);
 }
 
-/** All modes in declaration order. */
-export function getModes() {
-  return MODES.slice();
+/** All themes in declaration order. */
+export function getThemes() {
+  return THEMES.slice();
 }
 
 /** Canonical id list — preferred over hardcoded arrays. */
-export function getModeIds() {
-  return MODES.map((m) => m.id);
+export function getThemeIds() {
+  return THEMES.map((m) => m.id);
 }
 
-/** Single-mode lookup.  Returns null if the id isn't known. */
-export function getMode(id) {
+/** Single-theme lookup.  Returns null if the id isn't known. */
+export function getTheme(id) {
   return _byId.get(id) || null;
 }
 
 /**
- * Toggle a mode by id.  No-op if the toggle hasn't been bound yet.
+ * Toggle a theme by id.  No-op if the toggle hasn't been bound yet.
  *
  * @param {string} id
  * @param {{silent?: boolean}} [opts]
@@ -118,25 +118,25 @@ export function getMode(id) {
  *   doesn't award the exit achievement — that reward is reserved for
  *   users who discover the original exit gesture.
  */
-export function toggleMode(id, opts) {
+export function toggleTheme(id, opts) {
   const fn = _toggles.get(id);
   if (typeof fn === "function") fn(opts);
 }
 
-export function isModeRegistered(id) {
+export function isThemeRegistered(id) {
   return _byId.has(id);
 }
 
 /**
- * True if any registered mode other than the listed ones has its body class
- * set.  Modes whose indicators drive a canvas CSS filter use this to back
- * off when another mode's filter is already active — without each mode file
+ * True if any registered theme other than the listed ones has its body class
+ * set.  Themes whose indicators drive a canvas CSS filter use this to back
+ * off when another theme's filter is already active — without each theme file
  * having to hardcode the list of competitors.
  *
  * @param {...string} exceptIds  Ids to ignore (typically the caller's own).
  */
-export function hasActiveModeExcept(...exceptIds) {
-  for (const m of MODES) {
+export function hasActiveThemeExcept(...exceptIds) {
+  for (const m of THEMES) {
     if (exceptIds.includes(m.id)) continue;
     if (document.body.classList.contains(m.id)) return true;
   }

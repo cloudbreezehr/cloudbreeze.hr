@@ -343,7 +343,7 @@ export function createKeySequenceTrigger({
 // Cooldown ensures one trackpad swipe counts as one hit, not dozens.
 // Accepts predicates for edge detection and force-per-hit (callers can
 // e.g. apply a multiplier to one direction).  Calls `onHit` on each
-// accepted hit so the mode can trigger warnings / track direction.
+// accepted hit so the theme can trigger warnings / track direction.
 export function createOverscrollTrigger({
   forcePerHit,
   cooldownMs,

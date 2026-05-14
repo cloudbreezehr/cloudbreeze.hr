@@ -23,7 +23,7 @@ export function initCanvasBridge() {
   let sinceLastSummary = {
     clickCount: 0,
     quadrants: new Set(),
-    byMode: {},
+    byTheme: {},
   };
   let sessionWellCount = 0;
   let sessionFuryCount = 0;
@@ -45,12 +45,12 @@ export function initCanvasBridge() {
     track("canvas_click_summary", {
       click_count: sinceLastSummary.clickCount,
       distinct_quadrants: sinceLastSummary.quadrants.size,
-      clicks_by_mode: { ...sinceLastSummary.byMode },
+      clicks_by_theme: { ...sinceLastSummary.byTheme },
     });
     sinceLastSummary = {
       clickCount: 0,
       quadrants: new Set(),
-      byMode: {},
+      byTheme: {},
     };
   }
 
@@ -68,12 +68,12 @@ export function initCanvasBridge() {
           const qy = d.y < window.innerHeight / 2 ? "t" : "b";
           sinceLastSummary.quadrants.add(qy + qx);
         }
-        const mode =
+        const theme =
           document.body.dataset && document.body.dataset.activeTheme
             ? document.body.dataset.activeTheme
             : "none";
-        sinceLastSummary.byMode[mode] =
-          (sinceLastSummary.byMode[mode] || 0) + 1;
+        sinceLastSummary.byTheme[theme] =
+          (sinceLastSummary.byTheme[theme] || 0) + 1;
 
         // Drag sampling: reset accumulators on click (source uses this
         // to tell "a fresh gesture started").  holdStart is NOT set here
@@ -100,7 +100,7 @@ export function initCanvasBridge() {
           holdStart = { t: Date.now() };
           holdReachedWell = false;
           holdReachedFull = false;
-          track("hold_started", { active_mode: activeMode() });
+          track("hold_started", { active_theme: activeTheme() });
         }
         break;
 
@@ -110,19 +110,19 @@ export function initCanvasBridge() {
         // on pointerup — a user can reach max and release without ever
         // producing a hold_complete if they were already flagged earlier.
         track("hold_max_reached", {
-          active_mode: activeMode(),
+          active_theme: activeTheme(),
           time_to_max_ms: holdStart ? Date.now() - holdStart.t : null,
         });
         break;
 
       case "orbit":
-        track("orbit_locked", { active_mode: activeMode() });
+        track("orbit_locked", { active_theme: activeTheme() });
         break;
 
       case "click-burst":
         if (!clickBurstFired) {
           clickBurstFired = true;
-          track("click_burst_triggered", { active_mode: activeMode() });
+          track("click_burst_triggered", { active_theme: activeTheme() });
         }
         break;
 
@@ -131,7 +131,7 @@ export function initCanvasBridge() {
         holdReachedWell = true;
         track("gravity_well_opened", {
           session_well_count: sessionWellCount,
-          active_mode: activeMode(),
+          active_theme: activeTheme(),
           // hold_ms_to_open is the mastery curve: as users get better at
           // this, the time drops.  Null when the well opened outside of
           // a tracked hold (shouldn't happen, but we don't lie if it does).
@@ -141,23 +141,23 @@ export function initCanvasBridge() {
 
       case "well-full":
         holdReachedFull = true;
-        track("gravity_well_filled", { active_mode: activeMode() });
+        track("gravity_well_filled", { active_theme: activeTheme() });
         break;
 
       case "fury-lightning":
         sessionFuryCount++;
         track("fury_lightning", {
           session_fury_count: sessionFuryCount,
-          active_mode: activeMode(),
+          active_theme: activeTheme(),
         });
         break;
 
       case "fury-aurora":
-        track("fury_aurora", { active_mode: activeMode() });
+        track("fury_aurora", { active_theme: activeTheme() });
         break;
 
       case "snow-globe":
-        track("snow_globe_shake", { active_mode: activeMode() });
+        track("snow_globe_shake", { active_theme: activeTheme() });
         break;
 
       case "scroll":
@@ -195,7 +195,7 @@ export function initCanvasBridge() {
             duration_ms: Date.now() - dragStart.t,
             distance_px: Math.round(dist),
             distance_fraction_viewport: vp > 0 ? dist / vp : 0,
-            active_mode: activeMode(),
+            active_theme: activeTheme(),
           });
         }
         dragStart = null;
@@ -216,6 +216,6 @@ export function initCanvasBridge() {
   );
 }
 
-function activeMode() {
+function activeTheme() {
   return (document.body.dataset && document.body.dataset.activeTheme) || null;
 }

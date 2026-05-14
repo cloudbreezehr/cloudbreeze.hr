@@ -305,7 +305,7 @@ const BUB = defineConstants(
         "Secondary highlight arc radius as fraction of bubble radius",
     },
   },
-  { mode: "deep-sea" },
+  { theme: "deep-sea" },
 );
 
 // ── Jellyfish ──
@@ -606,7 +606,7 @@ const JELLY = defineConstants(
         "Initial trail anchor offset for a tentacle base, as fraction of TRAIL_VX_MUL",
     },
   },
-  { mode: "deep-sea" },
+  { theme: "deep-sea" },
 );
 
 const JELLY_COLORS = [

@@ -12,19 +12,19 @@ export const HEARTBEAT_MS = 15000;
 // Counters other bridges mutate.  Values are snapshotted onto heartbeat
 // and session_end events.  No mutation from outside the bridges.
 //
-// lastModeActivationTs is the epoch-ms timestamp of the most recent
-// mode activation in this session — separates "in-play" sessions
-// (user discovered a mode) from "passive" ones for downstream
-// analysis.  Null until the first mode_activated in the session.
+// lastThemeActivationTs is the epoch-ms timestamp of the most recent
+// theme activation in this session — separates "in-play" sessions
+// (user discovered a theme) from "passive" ones for downstream
+// analysis.  Null until the first theme_activated in the session.
 export const sessionCounters = {
   scrollMaxDepth: 0,
   unlocksThisSession: 0,
   pointsThisSession: 0,
-  modesActivatedThisSession: new Set(),
+  themesActivatedThisSession: new Set(),
   clickTotalCanvas: 0,
   clickTotalCta: 0,
   keyboardUsed: false,
-  lastModeActivationTs: null,
+  lastThemeActivationTs: null,
 };
 
 let _startedAt = 0;
@@ -89,8 +89,8 @@ function emitSessionEnd() {
     total_visible_ms: visibleMs,
     hidden_ms: hiddenMs,
     max_scroll_depth: sessionCounters.scrollMaxDepth,
-    modes_activated_this_session: [
-      ...sessionCounters.modesActivatedThisSession,
+    themes_activated_this_session: [
+      ...sessionCounters.themesActivatedThisSession,
     ],
     unlocks_this_session: sessionCounters.unlocksThisSession,
     points_this_session: sessionCounters.pointsThisSession,

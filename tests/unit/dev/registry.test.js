@@ -63,8 +63,8 @@ describe("defineConstants", () => {
 
   it("stores section options when provided", () => {
     const cat = uniq("e");
-    defineConstants(cat, { A: 1 }, { mode: "frozen" });
-    expect(getSectionMeta(cat)).toEqual({ mode: "frozen" });
+    defineConstants(cat, { A: 1 }, { theme: "frozen" });
+    expect(getSectionMeta(cat)).toEqual({ theme: "frozen" });
   });
 
   it("returns null sectionMeta for categories with no options", () => {

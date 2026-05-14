@@ -4,7 +4,7 @@
 // loop reads from. The dev console iterates the registry to build UI controls.
 
 const _sections = new Map(); // category -> Map<key, { ref, default, min, max, step, label, description }>
-const _sectionMeta = new Map(); // category -> { mode?: string }
+const _sectionMeta = new Map(); // category -> { theme?: string }
 
 // ── Smart defaults ──
 // When metadata omits min/max/step, infer sensible defaults from the value.
@@ -67,8 +67,8 @@ function formatLabel(key) {
  * The dev console mutates the returned object to change values live.
  *
  * Optional third argument: section-level options.
- *   { mode: "frozen" }  — tags this section as belonging to that sub-mode.
- *   The dev console uses this to dim/highlight sections based on active modes.
+ *   { theme: "frozen" }  — tags this section as belonging to that theme.
+ *   The dev console uses this to dim/highlight sections based on active themes.
  */
 export function defineConstants(category, defs, sectionOpts) {
   const obj = {};
@@ -106,7 +106,7 @@ export function getRegistry() {
 }
 
 /**
- * Get section-level metadata (e.g. mode tag).
+ * Get section-level metadata (e.g. theme tag).
  */
 export function getSectionMeta(category) {
   return _sectionMeta.get(category) || null;

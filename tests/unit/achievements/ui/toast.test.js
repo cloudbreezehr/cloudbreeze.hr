@@ -112,7 +112,7 @@ describe("achievements/ui/toast", () => {
     });
 
     it("applies the set's accent color as a CSS custom property when present", () => {
-      // Deep-sea is a mode set with a concrete color; exploration has
+      // Deep-sea is a theme set with a concrete color; exploration has
       // color: null and skips the property.  Both paths exist.
       mod.showToast(makeAchievement({ set: "deep-sea" }));
       const toast = getContainer().querySelector(".achievement-toast");

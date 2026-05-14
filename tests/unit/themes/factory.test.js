@@ -7,13 +7,13 @@ vi.mock("../../../js/effects/wipe.js", () => ({
 }));
 
 import { playWipe } from "../../../js/effects/wipe.js";
-import { createMode } from "../../../js/modes/factory.js";
-import { toggleMode } from "../../../js/modes/registry.js";
+import { createTheme } from "../../../js/themes/factory.js";
+import { toggleTheme } from "../../../js/themes/registry.js";
 
-// createMode requires an id that exists in the registry; pick one and share it.
+// createTheme requires an id that exists in the registry; pick one and share it.
 // The id is only used as a body-class and an achievement-event field.
-const MODE_ID = "frozen";
-const OTHER_ID = "blocky";
+const THEME_ID = "frozen";
+const OTHER_THEME_ID = "blocky";
 
 function makeIndicator({ threshold = 0, withClear = false } = {}) {
   const ind = { threshold, apply: vi.fn() };
@@ -41,17 +41,17 @@ function defaultPlayWipeImpl({ onMidpoint, onComplete }) {
   if (onComplete) onComplete();
 }
 
-describe("createMode — force and indicators", () => {
+describe("createTheme — force and indicators", () => {
   beforeEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
     playWipe.mockReset();
     playWipe.mockImplementation(defaultPlayWipeImpl);
   });
 
   afterEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
   });
 
   it("passes the current force and ctx to every indicator's apply on setForce", () => {
@@ -59,8 +59,8 @@ describe("createMode — force and indicators", () => {
     const b = makeIndicator();
     const { trigger, capture } = makeManualTrigger();
 
-    const ctx = createMode({
-      id: MODE_ID,
+    const ctx = createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [a, b],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -75,8 +75,8 @@ describe("createMode — force and indicators", () => {
   it("clamps setForce below 0 to 0", () => {
     const ind = makeIndicator();
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [ind],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -90,8 +90,8 @@ describe("createMode — force and indicators", () => {
   it("clamps setForce above 1 to 1", () => {
     const ind = makeIndicator();
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [ind],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -104,8 +104,8 @@ describe("createMode — force and indicators", () => {
 
   it("returned ctx reports force as a live getter", () => {
     const { trigger, capture } = makeManualTrigger();
-    const ctx = createMode({
-      id: MODE_ID,
+    const ctx = createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -118,8 +118,8 @@ describe("createMode — force and indicators", () => {
 
   it("returned ctx reports isActive as a live getter", () => {
     const { trigger, capture } = makeManualTrigger();
-    const ctx = createMode({
-      id: MODE_ID,
+    const ctx = createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -131,23 +131,23 @@ describe("createMode — force and indicators", () => {
   });
 });
 
-describe("createMode — runMidpoint side effects", () => {
+describe("createTheme — runMidpoint side effects", () => {
   beforeEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
     playWipe.mockReset();
     playWipe.mockImplementation(defaultPlayWipeImpl);
   });
 
   afterEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
   });
 
   it("toggles body class on activation", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -155,13 +155,13 @@ describe("createMode — runMidpoint side effects", () => {
 
     capture.ctx.complete();
 
-    expect(document.body.classList.contains(MODE_ID)).toBe(true);
+    expect(document.body.classList.contains(THEME_ID)).toBe(true);
   });
 
   it("removes body class on deactivation", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -170,13 +170,13 @@ describe("createMode — runMidpoint side effects", () => {
     capture.ctx.complete(); // activate
     capture.ctx.complete(); // deactivate
 
-    expect(document.body.classList.contains(MODE_ID)).toBe(false);
+    expect(document.body.classList.contains(THEME_ID)).toBe(false);
   });
 
-  it("stamps body.dataset.lastSubmode on activation", () => {
+  it("stamps body.dataset.lastTheme on activation", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -184,31 +184,31 @@ describe("createMode — runMidpoint side effects", () => {
 
     capture.ctx.complete();
 
-    expect(document.body.dataset.lastSubmode).toBe(MODE_ID);
+    expect(document.body.dataset.lastTheme).toBe(THEME_ID);
   });
 
-  it("leaves a prior lastSubmode value untouched on deactivation", () => {
+  it("leaves a prior lastTheme value untouched on deactivation", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
     });
 
-    capture.ctx.complete(); // activate stamps lastSubmode
+    capture.ctx.complete(); // activate stamps lastTheme
     capture.ctx.complete(); // deactivate
 
-    expect(document.body.dataset.lastSubmode).toBe(MODE_ID);
+    expect(document.body.dataset.lastTheme).toBe(THEME_ID);
   });
 
-  it("dispatches an achievement event with type mode-activate on activation", () => {
+  it("dispatches an achievement event with type theme-activate on activation", () => {
     const listener = vi.fn();
     window.addEventListener("achievement", listener);
 
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -218,16 +218,16 @@ describe("createMode — runMidpoint side effects", () => {
 
     expect(listener).toHaveBeenCalledOnce();
     expect(listener.mock.calls[0][0].detail).toMatchObject({
-      type: "mode-activate",
-      mode: MODE_ID,
+      type: "theme-activate",
+      theme: THEME_ID,
       silent: false,
     });
   });
 
-  it("dispatches an achievement event with type mode-deactivate on deactivation", () => {
+  it("dispatches an achievement event with type theme-deactivate on deactivation", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -240,7 +240,7 @@ describe("createMode — runMidpoint side effects", () => {
     window.removeEventListener("achievement", listener);
 
     expect(listener).toHaveBeenCalledOnce();
-    expect(listener.mock.calls[0][0].detail.type).toBe("mode-deactivate");
+    expect(listener.mock.calls[0][0].detail.type).toBe("theme-deactivate");
   });
 
   it("propagates payload.silent into the achievement event detail", () => {
@@ -248,8 +248,8 @@ describe("createMode — runMidpoint side effects", () => {
     window.addEventListener("achievement", listener);
 
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -264,8 +264,8 @@ describe("createMode — runMidpoint side effects", () => {
     const onActivate = vi.fn();
     const onDeactivate = vi.fn();
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -285,8 +285,8 @@ describe("createMode — runMidpoint side effects", () => {
     const onActivate = vi.fn();
     const onDeactivate = vi.fn();
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -305,8 +305,8 @@ describe("createMode — runMidpoint side effects", () => {
   it("calls each indicator's clear() when provided", () => {
     const ind = makeIndicator({ withClear: true });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [ind],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -320,8 +320,8 @@ describe("createMode — runMidpoint side effects", () => {
   it("falls back to apply(0, ctx) when an indicator has no clear", () => {
     const ind = makeIndicator();
     const { trigger, capture } = makeManualTrigger();
-    const ctx = createMode({
-      id: MODE_ID,
+    const ctx = createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [ind],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -336,8 +336,8 @@ describe("createMode — runMidpoint side effects", () => {
 
   it("resets force to 0 on midpoint so ctx.force reflects the cleared state", () => {
     const { trigger, capture } = makeManualTrigger();
-    const ctx = createMode({
-      id: MODE_ID,
+    const ctx = createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -350,32 +350,32 @@ describe("createMode — runMidpoint side effects", () => {
   });
 });
 
-describe("createMode — complete with wipe config", () => {
+describe("createTheme — complete with wipe config", () => {
   beforeEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
     playWipe.mockReset();
   });
 
   afterEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
   });
 
   it("delegates to playWipe with className, coverMs, revealMs", () => {
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
-      wipe: { className: "mode-wipe", coverMs: 200, revealMs: 400 },
+      wipe: { className: "theme-wipe", coverMs: 200, revealMs: 400 },
     });
 
     capture.ctx.complete();
 
     expect(playWipe).toHaveBeenCalledOnce();
     const opts = playWipe.mock.calls[0][0];
-    expect(opts.className).toBe("mode-wipe");
+    expect(opts.className).toBe("theme-wipe");
     expect(opts.coverMs).toBe(200);
     expect(opts.revealMs).toBe(400);
   });
@@ -383,12 +383,12 @@ describe("createMode — complete with wipe config", () => {
   it("appends reverseModifier to the class on the deactivation path", () => {
     playWipe.mockImplementation(defaultPlayWipeImpl);
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: {
-        className: "mode-wipe",
+        className: "theme-wipe",
         reverseModifier: "reverse",
         coverMs: 0,
         revealMs: 0,
@@ -398,18 +398,18 @@ describe("createMode — complete with wipe config", () => {
     capture.ctx.complete(); // activate
     capture.ctx.complete(); // deactivate
 
-    expect(playWipe.mock.calls[1][0].className).toBe("mode-wipe reverse");
+    expect(playWipe.mock.calls[1][0].className).toBe("theme-wipe reverse");
   });
 
   it("does not append reverseModifier on the activation path", () => {
     playWipe.mockImplementation(defaultPlayWipeImpl);
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: {
-        className: "mode-wipe",
+        className: "theme-wipe",
         reverseModifier: "reverse",
         coverMs: 0,
         revealMs: 0,
@@ -418,7 +418,7 @@ describe("createMode — complete with wipe config", () => {
 
     capture.ctx.complete();
 
-    expect(playWipe.mock.calls[0][0].className).toBe("mode-wipe");
+    expect(playWipe.mock.calls[0][0].className).toBe("theme-wipe");
   });
 
   it("runs the midpoint callback during the cover phase (before reveal)", () => {
@@ -427,8 +427,8 @@ describe("createMode — complete with wipe config", () => {
       capturedOpts = opts;
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 100, revealMs: 100 },
@@ -436,10 +436,10 @@ describe("createMode — complete with wipe config", () => {
 
     capture.ctx.complete();
     // Cover phase: midpoint has not yet fired
-    expect(document.body.classList.contains(MODE_ID)).toBe(false);
+    expect(document.body.classList.contains(THEME_ID)).toBe(false);
 
     capturedOpts.onMidpoint();
-    expect(document.body.classList.contains(MODE_ID)).toBe(true);
+    expect(document.body.classList.contains(THEME_ID)).toBe(true);
   });
 
   it("blocks re-entry into complete() while a wipe is in progress", () => {
@@ -447,8 +447,8 @@ describe("createMode — complete with wipe config", () => {
       // never call onMidpoint / onComplete — simulate an in-flight wipe
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 100, revealMs: 100 },
@@ -467,8 +467,8 @@ describe("createMode — complete with wipe config", () => {
       capturedOpts = opts;
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -489,8 +489,8 @@ describe("createMode — complete with wipe config", () => {
     });
     const ind = makeIndicator();
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [ind],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
@@ -504,16 +504,16 @@ describe("createMode — complete with wipe config", () => {
   });
 });
 
-describe("createMode — complete with wipe function", () => {
+describe("createTheme — complete with wipe function", () => {
   beforeEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
     playWipe.mockReset();
   });
 
   afterEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
   });
 
   it("calls the wipe function with { activating, runMidpoint, payload }", () => {
@@ -521,8 +521,8 @@ describe("createMode — complete with wipe function", () => {
       runMidpoint();
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe,
@@ -544,8 +544,8 @@ describe("createMode — complete with wipe function", () => {
       runMidpoint();
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe,
@@ -570,8 +570,8 @@ describe("createMode — complete with wipe function", () => {
         }),
     );
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe,
@@ -599,8 +599,8 @@ describe("createMode — complete with wipe function", () => {
       .mockImplementation(() => {});
 
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe,
@@ -622,8 +622,8 @@ describe("createMode — complete with wipe function", () => {
       runMidpoint();
     });
     const { trigger, capture } = makeManualTrigger();
-    createMode({
-      id: MODE_ID,
+    createTheme({
+      id: THEME_ID,
       trigger,
       indicators: [],
       wipe,
@@ -641,38 +641,38 @@ describe("createMode — complete with wipe function", () => {
   });
 });
 
-describe("createMode — registerToggle wiring", () => {
+describe("createTheme — registerToggle wiring", () => {
   beforeEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
     playWipe.mockReset();
     playWipe.mockImplementation(defaultPlayWipeImpl);
   });
 
   afterEach(() => {
     document.body.className = "";
-    delete document.body.dataset.lastSubmode;
+    delete document.body.dataset.lastTheme;
   });
 
-  it("routes toggleMode(id, opts) through to complete(opts)", () => {
+  it("routes toggleTheme(id, opts) through to complete(opts)", () => {
     const listener = vi.fn();
     window.addEventListener("achievement", listener);
 
     const { trigger } = makeManualTrigger();
-    createMode({
-      id: OTHER_ID,
+    createTheme({
+      id: OTHER_THEME_ID,
       trigger,
       indicators: [],
       wipe: { className: "w", coverMs: 0, revealMs: 0 },
     });
 
-    toggleMode(OTHER_ID, { silent: true });
+    toggleTheme(OTHER_THEME_ID, { silent: true });
     window.removeEventListener("achievement", listener);
 
     expect(listener).toHaveBeenCalledOnce();
     expect(listener.mock.calls[0][0].detail).toMatchObject({
-      type: "mode-activate",
-      mode: OTHER_ID,
+      type: "theme-activate",
+      theme: OTHER_THEME_ID,
       silent: true,
     });
   });

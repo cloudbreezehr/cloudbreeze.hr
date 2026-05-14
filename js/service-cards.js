@@ -1,12 +1,12 @@
 // ── Service Card Interactions ──
 // Shared utility for service card visual effects.
 //
-// Base tilt: 3D perspective rotation on hover, mode-aware.
-// Mode effects: class toggling, CSS custom property mouse tracking,
-// and optional click handlers — each mode opts in via enableCardEffects().
+// Base tilt: 3D perspective rotation on hover, theme-aware.
+// Theme effects: class toggling, CSS custom property mouse tracking,
+// and optional click handlers — each theme opts in via enableCardEffects().
 //
-// Modes register their own tilt personality by passing a `tilt` config to
-// enableCardEffects(). Only one mode's tilt is active at a time; cleanup
+// Themes register their own tilt personality by passing a `tilt` config to
+// enableCardEffects(). Only one theme's tilt is active at a time; cleanup
 // restores the default.
 
 const CARD_SELECTOR = ".service-card";
@@ -19,12 +19,12 @@ const TILT_HOVER_SCALE = 1.02;
 const TILT_TRANSITION = "background 0.4s, transform 0.4s ease";
 const TILT_TRANSITION_ENTER = "background 0.4s";
 
-// Active mode tilt config — set by enableCardEffects(), cleared on disable.
+// Active theme tilt config — set by enableCardEffects(), cleared on disable.
 let activeTilt = null;
 
 /**
  * Apply 3D tilt to all service cards on hover.
- * When a mode is active and has registered a tilt config via
+ * When a theme is active and has registered a tilt config via
  * enableCardEffects(), that config overrides the defaults.
  * Disabled on touch-only devices.
  */
@@ -66,10 +66,10 @@ export function initTilt() {
   });
 }
 
-// ── Mode-Specific Card Effects ──
+// ── Theme-Specific Card Effects ──
 
 /**
- * Enable mode-specific card effects on all service cards.
+ * Enable theme-specific card effects on all service cards.
  * Returns a cleanup function that removes all added classes,
  * CSS custom properties, and event listeners.
  *
@@ -78,7 +78,7 @@ export function initTilt() {
  * @param {string}   [config.trackingPrefix] CSS property prefix for mouse tracking
  *                                           (e.g. "frost" produces --frost-x / --frost-y)
  * @param {function} [config.onClick]        Click handler (receives the native event)
- * @param {object}   [config.tilt]           Tilt override for this mode. Supported fields:
+ * @param {object}   [config.tilt]           Tilt override for this theme. Supported fields:
  *                                           intensity, scale, invertY, transition,
  *                                           transitionEnter, transformFn(x, y)
  * @returns {function(...extraClasses: string[]): void} Cleanup function;

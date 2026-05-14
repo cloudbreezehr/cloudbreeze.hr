@@ -54,12 +54,12 @@ describe("analytics/adapters/posthog", () => {
     it("merges base props into event properties", () => {
       const adapter = createPostHogAdapter({ apiKey: "phc_abc" });
       adapter.send([
-        makeEvent({ props: { viewport_w: 1920, active_mode: "frozen" } }),
+        makeEvent({ props: { viewport_w: 1920, active_theme: "frozen" } }),
       ]);
       const body = JSON.parse(fetchSpy.mock.calls[0][1].body);
       const p = body.batch[0].properties;
       expect(p.viewport_w).toEqual(1920);
-      expect(p.active_mode).toEqual("frozen");
+      expect(p.active_theme).toEqual("frozen");
       expect(p.visitor_id).toEqual("v-123");
     });
 

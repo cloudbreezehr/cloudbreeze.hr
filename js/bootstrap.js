@@ -17,16 +17,16 @@ import { initButtonRipple } from "./effects/button-ripple.js";
 import { initNavSparkle } from "./effects/nav-sparkle.js";
 import { initLogoBreathing } from "./effects/logo-breathing.js";
 import { initLogoParallax } from "./effects/logo-parallax.js";
-import { initModeHistoryHud } from "./effects/mode-history-hud.js";
+import { initThemeHistoryHud } from "./effects/theme-history-hud.js";
 import { initCursorIdle } from "./effects/cursor-idle.js";
 import { initFooterHint } from "./effects/footer-hint.js";
 import { initFirstPaintMote } from "./effects/first-paint-mote.js";
-import { initUpsideDown } from "./modes/upside-down.js";
-import { initFrozen } from "./modes/frozen.js";
-import { initDeepSea } from "./modes/deep-sea.js";
-import { initBlocky } from "./modes/blocky.js";
-import { initRainy } from "./modes/rainy.js";
-import { initPaper } from "./modes/paper.js";
+import { initUpsideDown } from "./themes/upside-down.js";
+import { initFrozen } from "./themes/frozen.js";
+import { initDeepSea } from "./themes/deep-sea.js";
+import { initBlocky } from "./themes/blocky.js";
+import { initRainy } from "./themes/rainy.js";
+import { initPaper } from "./themes/paper.js";
 import { toggleDevConsole, openDevConsole } from "./dev/console.js";
 import { toggleFps } from "./dev/fps.js";
 import { onKey } from "./keyboard.js";
@@ -48,7 +48,7 @@ const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
 // Analytics first — bridges attach listeners before other modules
 // start dispatching events, so session_start, early scroll_depth, and
-// the initial mode-buildup all land in the stream.  Wrapped so a
+// the initial theme-buildup all land in the stream.  Wrapped so a
 // broken adapter or context lookup can never break page load.
 //
 // Strict production gate: only cloudbreeze.hr sends to PostHog.  Any
@@ -90,7 +90,7 @@ initDeepSea();
 initBlocky(document.querySelector(".appearance-toggle"));
 initRainy();
 initPaper();
-initModeHistoryHud();
+initThemeHistoryHud();
 initAchievements();
 
 // Subtle parallax on hero elements — each layer drifts at a different

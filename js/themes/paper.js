@@ -1,16 +1,16 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
-import { createMode } from "./factory.js";
-import { hasActiveModeExcept } from "./registry.js";
+import { createTheme } from "./factory.js";
+import { hasActiveThemeExcept } from "./registry.js";
 import { createKeySequenceTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 const PF = defineConstants(
-  "modes.paperForce",
+  "themes.paperForce",
   {
     MAX_GAP_MS: 600,
     DECAY_TIMEOUT_MS: 2000,
@@ -22,12 +22,12 @@ const PF = defineConstants(
     WIPE_COVER_MS: 400,
     WIPE_REVEAL_MS: 600,
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 // ── Visual Effects ──
 const PV = defineConstants(
-  "modes.paperVisuals",
+  "themes.paperVisuals",
   {
     GRAIN_OPACITY_BASE: 0.025,
     GRAIN_OPACITY_PEAK: 0.14,
@@ -53,11 +53,11 @@ const PV = defineConstants(
     HOVER_LERP: 0.2,
     HOVER_SETTLE: 0.005,
   },
-  { mode: "paper" },
+  { theme: "paper" },
 );
 
 // Every semantic text element thickens when the cursor is near it.
-// Kept intentionally broad so paper mode doesn't have to know about
+// Kept intentionally broad so paper theme doesn't have to know about
 // specific other modules' markup.
 const HOVER_TARGETS = "h1, h2, h3, h4, h5, h6, p, span, a, li, em, strong";
 
@@ -227,7 +227,7 @@ export function initPaper() {
     hoverCurrents = [];
   }
 
-  createMode({
+  createTheme({
     id: "paper",
     trigger: createKeySequenceTrigger({
       activationWords: ACTIVATION_WORDS,
@@ -262,8 +262,8 @@ export function initPaper() {
       {
         threshold: PF.DESAT_AT,
         apply(progress) {
-          // Don't fight other modes' own canvas filters
-          if (hasActiveModeExcept("paper")) {
+          // Don't fight other themes' own canvas filters
+          if (hasActiveThemeExcept("paper")) {
             canvasEl.style.filter = "";
             return;
           }

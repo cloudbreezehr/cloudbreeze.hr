@@ -30,7 +30,7 @@ describe("achievements/storage", () => {
       });
       expect(state.counters).toMatchObject({
         totalClicks: 0,
-        totalModeActivations: 0,
+        totalThemeActivations: 0,
         sessions: 0,
         sessionDays: [],
       });

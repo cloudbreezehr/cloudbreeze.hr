@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // Errors-bridge test.  Focus areas:
 //   - error / unhandled_rejection emit with message hash, truncation,
-//     top stack frame, and active_mode
+//     top stack frame, and active_theme
 //   - per-session cap at MAX_PER_SESSION (10) with dedupe by hash
 //   - topFrame skips the V8 "Error: ..." header but keeps Safari
 //     frames like "ErrorHandler@file.js:12" (regression guard)
@@ -77,11 +77,11 @@ describe("analytics/bridges/errors", () => {
       );
     });
 
-    it("captures active_mode at the time of the error", () => {
+    it("captures active_theme at the time of the error", () => {
       document.body.dataset.activeTheme = "paper";
       fireError("kaboom", null);
       core.flush();
-      expect(eventsNamed("error")[0].props.active_mode).toEqual("paper");
+      expect(eventsNamed("error")[0].props.active_theme).toEqual("paper");
     });
 
     it("dedupes identical errors by hash", () => {

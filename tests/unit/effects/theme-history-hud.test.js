@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// mode-history-hud is a DOM coordinator with module-level state for the
+// theme-history-hud is a DOM coordinator with module-level state for the
 // discovered map, the HUD element, and the user-intent flag.  Each test
 // resets modules + clears localStorage so a fresh import starts from a
 // known-empty state.
@@ -9,26 +9,26 @@ const BOOT_TIME = new Date("2026-05-08T12:00:00Z").getTime();
 
 async function importHud() {
   vi.resetModules();
-  return await import("../../../js/effects/mode-history-hud.js");
+  return await import("../../../js/effects/theme-history-hud.js");
 }
 
-function dispatchModeActivate(modeId) {
+function dispatchThemeActivate(themeId) {
   window.dispatchEvent(
     new CustomEvent("achievement", {
-      detail: { type: "mode-activate", mode: modeId },
+      detail: { type: "theme-activate", theme: themeId },
     }),
   );
 }
 
-function dispatchModeDeactivate(modeId) {
+function dispatchThemeDeactivate(themeId) {
   window.dispatchEvent(
     new CustomEvent("achievement", {
-      detail: { type: "mode-deactivate", mode: modeId },
+      detail: { type: "theme-deactivate", theme: themeId },
     }),
   );
 }
 
-describe("effects/mode-history-hud", () => {
+describe("effects/theme-history-hud", () => {
   let hud;
 
   beforeEach(async () => {
@@ -50,50 +50,50 @@ describe("effects/mode-history-hud", () => {
   });
 
   describe("first-discovery flow", () => {
-    it("does not render the HUD before any mode has been discovered", () => {
-      hud.initModeHistoryHud();
-      expect(document.querySelector(".mode-history-hud")).toBeNull();
+    it("does not render the HUD before any theme has been discovered", () => {
+      hud.initThemeHistoryHud();
+      expect(document.querySelector(".theme-history-hud")).toBeNull();
     });
 
-    it("renders the HUD on first mode-activate", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
-      expect(document.querySelector(".mode-history-hud")).not.toBeNull();
+    it("renders the HUD on first theme-activate", () => {
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
+      expect(document.querySelector(".theme-history-hud")).not.toBeNull();
     });
 
-    it("dispatches mode-history-reveal exactly on the first ever discovery", () => {
-      hud.initModeHistoryHud();
+    it("dispatches theme-history-reveal exactly on the first ever discovery", () => {
+      hud.initThemeHistoryHud();
       const listener = vi.fn();
       window.addEventListener("achievement", listener);
 
-      dispatchModeActivate("frozen");
+      dispatchThemeActivate("frozen");
       const reveals = listener.mock.calls.filter(
-        (c) => c[0].detail.type === "mode-history-reveal",
+        (c) => c[0].detail.type === "theme-history-reveal",
       );
       expect(reveals).toHaveLength(1);
 
       // A second activation in the same session does not re-dispatch.
-      dispatchModeActivate("deep-sea");
+      dispatchThemeActivate("deep-sea");
       const revealsAfter = listener.mock.calls.filter(
-        (c) => c[0].detail.type === "mode-history-reveal",
+        (c) => c[0].detail.type === "theme-history-reveal",
       );
       expect(revealsAfter).toHaveLength(1);
 
       window.removeEventListener("achievement", listener);
     });
 
-    it("ignores mode-activate for unknown ids", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("not-a-real-mode");
-      expect(document.querySelector(".mode-history-hud")).toBeNull();
+    it("ignores theme-activate for unknown ids", () => {
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("not-a-real-theme");
+      expect(document.querySelector(".theme-history-hud")).toBeNull();
       expect(localStorage.getItem(hud.STORAGE_KEY)).toBeNull();
     });
   });
 
   describe("persistence", () => {
     it("writes the discovered map to localStorage on first discovery", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
 
       const raw = localStorage.getItem(hud.STORAGE_KEY);
       expect(raw).toBeTruthy();
@@ -102,10 +102,10 @@ describe("effects/mode-history-hud", () => {
     });
 
     it("appends new discoveries to the persisted map without losing prior entries", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
       vi.advanceTimersByTime(60_000);
-      dispatchModeActivate("deep-sea");
+      dispatchThemeActivate("deep-sea");
 
       const parsed = JSON.parse(localStorage.getItem(hud.STORAGE_KEY));
       expect(parsed).toEqual({
@@ -115,10 +115,10 @@ describe("effects/mode-history-hud", () => {
     });
 
     it("does not overwrite the original discovery timestamp on re-activation", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
       vi.advanceTimersByTime(60_000);
-      dispatchModeActivate("frozen");
+      dispatchThemeActivate("frozen");
 
       const parsed = JSON.parse(localStorage.getItem(hud.STORAGE_KEY));
       expect(parsed.frozen).toEqual(BOOT_TIME);
@@ -132,58 +132,58 @@ describe("effects/mode-history-hud", () => {
       );
       hud = await importHud();
 
-      hud.initModeHistoryHud();
+      hud.initThemeHistoryHud();
       // No dispatch needed — the HUD is already present from the seeded state.
-      expect(document.querySelector(".mode-history-hud")).not.toBeNull();
+      expect(document.querySelector(".theme-history-hud")).not.toBeNull();
     });
 
     it("falls back to empty discovered map on invalid JSON", async () => {
       localStorage.setItem(hud.STORAGE_KEY, "not-json");
       hud = await importHud();
-      hud.initModeHistoryHud();
-      expect(document.querySelector(".mode-history-hud")).toBeNull();
+      hud.initThemeHistoryHud();
+      expect(document.querySelector(".theme-history-hud")).toBeNull();
     });
   });
 
   describe("slot rendering", () => {
-    it("renders a discovered mode as a button with mode label and color", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
+    it("renders a discovered theme as a button with theme label and color", () => {
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
 
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
       expect(slot).not.toBeNull();
       expect(slot.tagName).toEqual("BUTTON");
       expect(slot.classList.contains("discovered")).toBe(true);
-      expect(slot.querySelector(".mhh-label").textContent).toEqual("Frozen");
+      expect(slot.querySelector(".thh-label").textContent).toEqual("Frozen");
     });
 
-    it("renders undiscovered modes as non-button placeholders with ??? label", () => {
-      hud.initModeHistoryHud();
-      // Discover one mode so the HUD appears.
-      dispatchModeActivate("frozen");
+    it("renders undiscovered themes as non-button placeholders with ??? label", () => {
+      hud.initThemeHistoryHud();
+      // Discover one theme so the HUD appears.
+      dispatchThemeActivate("frozen");
 
-      const undiscovered = document.querySelectorAll(".mhh-slot.undiscovered");
-      // Five remaining undiscovered modes from the registry.
+      const undiscovered = document.querySelectorAll(".thh-slot.undiscovered");
+      // Five remaining undiscovered themes from the registry.
       expect(undiscovered.length).toBeGreaterThan(0);
       for (const slot of undiscovered) {
         expect(slot.tagName).not.toEqual("BUTTON");
-        expect(slot.querySelector(".mhh-label").textContent).toEqual("???");
-        expect(slot.getAttribute("aria-label")).toEqual("Undiscovered mode");
+        expect(slot.querySelector(".thh-label").textContent).toEqual("???");
+        expect(slot.getAttribute("aria-label")).toEqual("Undiscovered theme");
       }
     });
 
-    it("upgrades an undiscovered slot to discovered when its mode is activated", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
+    it("upgrades an undiscovered slot to discovered when its theme is activated", () => {
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
       // deep-sea is still undiscovered.
-      let deepSea = Array.from(document.querySelectorAll(".mhh-slot")).find(
-        (s) => s.querySelector(".mhh-label").textContent === "???",
+      let deepSea = Array.from(document.querySelectorAll(".thh-slot")).find(
+        (s) => s.querySelector(".thh-label").textContent === "???",
       );
       expect(deepSea).toBeTruthy();
 
-      dispatchModeActivate("deep-sea");
+      dispatchThemeActivate("deep-sea");
       const deepSeaButton = document.querySelector(
-        '.mhh-slot[data-mode="deep-sea"]',
+        '.thh-slot[data-theme="deep-sea"]',
       );
       expect(deepSeaButton).not.toBeNull();
       expect(deepSeaButton.tagName).toEqual("BUTTON");
@@ -192,26 +192,26 @@ describe("effects/mode-history-hud", () => {
 
   describe("active-state sync", () => {
     it("toggles slot.active to mirror body.classList", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
 
       // body.frozen needs to be set by the test — the HUD just mirrors it.
       document.body.classList.add("frozen");
-      dispatchModeActivate("frozen"); // re-trigger sync
+      dispatchThemeActivate("frozen"); // re-trigger sync
       expect(slot.classList.contains("active")).toBe(true);
 
       document.body.classList.remove("frozen");
-      dispatchModeDeactivate("frozen");
+      dispatchThemeDeactivate("frozen");
       expect(slot.classList.contains("active")).toBe(false);
     });
   });
 
   describe("just-discovered shimmer", () => {
     it("adds and removes just-discovered within NEW_DISCOVERY_HIGHLIGHT_MS", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
 
       expect(slot.classList.contains("just-discovered")).toBe(true);
 
@@ -229,9 +229,9 @@ describe("effects/mode-history-hud", () => {
       const recent = BOOT_TIME - hud.HUD.NEW_DISCOVERY_HIGHLIGHT_MS / 2;
       localStorage.setItem(hud.STORAGE_KEY, JSON.stringify({ frozen: recent }));
       hud = await importHud();
-      hud.initModeHistoryHud();
+      hud.initThemeHistoryHud();
 
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
       expect(slot.classList.contains("just-discovered")).toBe(true);
     });
 
@@ -239,18 +239,18 @@ describe("effects/mode-history-hud", () => {
       const old = BOOT_TIME - hud.HUD.NEW_DISCOVERY_HIGHLIGHT_MS * 2;
       localStorage.setItem(hud.STORAGE_KEY, JSON.stringify({ frozen: old }));
       hud = await importHud();
-      hud.initModeHistoryHud();
+      hud.initThemeHistoryHud();
 
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
       expect(slot.classList.contains("just-discovered")).toBe(false);
     });
   });
 
   describe("active pulse", () => {
     it("adds and removes pulse within ACTIVE_PULSE_MS", () => {
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
-      const slot = document.querySelector('.mhh-slot[data-mode="frozen"]');
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
+      const slot = document.querySelector('.thh-slot[data-theme="frozen"]');
 
       expect(slot.classList.contains("pulse")).toBe(true);
 
@@ -268,9 +268,9 @@ describe("effects/mode-history-hud", () => {
       // computed from body.classList — set the active class first so
       // updateTucked() leaves the HUD visible.
       document.body.classList.add("frozen");
-      hud.initModeHistoryHud();
-      dispatchModeActivate("frozen");
-      const hudEl = document.querySelector(".mode-history-hud");
+      hud.initThemeHistoryHud();
+      dispatchThemeActivate("frozen");
+      const hudEl = document.querySelector(".theme-history-hud");
       expect(hudEl.classList.contains("tucked")).toBe(false);
 
       hudEl.dispatchEvent(

@@ -3,16 +3,16 @@ import {
   ACHIEVEMENTS,
   SETS,
   POINT_TIERS,
-  MODE_SETS,
+  THEME_SETS,
   SET_MASTERY_MAP,
   getAchievement,
   sumPoints,
   getSetPrereqs,
   getAllNonMeta,
-  isModeSet,
+  isThemeSet,
   getProgressiveAchievements,
 } from "../../../js/achievements/registry.js";
-import { getModeIds } from "../../../js/modes/registry.js";
+import { getThemeIds } from "../../../js/themes/registry.js";
 
 describe("achievements/registry — data shape", () => {
   it("every achievement has the required fields", () => {
@@ -48,13 +48,13 @@ describe("achievements/registry — data shape", () => {
   });
 });
 
-describe("MODE_SETS", () => {
-  it("matches the modes registry one-for-one", () => {
-    expect([...MODE_SETS].sort()).toEqual([...getModeIds()].sort());
+describe("THEME_SETS", () => {
+  it("matches the themes registry one-for-one", () => {
+    expect([...THEME_SETS].sort()).toEqual([...getThemeIds()].sort());
   });
 
-  it("SET_MASTERY_MAP has an entry per mode set", () => {
-    for (const id of MODE_SETS) {
+  it("SET_MASTERY_MAP has an entry per theme set", () => {
+    for (const id of THEME_SETS) {
       expect(SET_MASTERY_MAP[id]).toBeTruthy();
     }
   });
@@ -96,7 +96,7 @@ describe("sumPoints", () => {
 
 describe("getSetPrereqs", () => {
   it("excludes the mastery achievement from the prereq list", () => {
-    for (const setId of MODE_SETS) {
+    for (const setId of THEME_SETS) {
       const prereqs = getSetPrereqs(setId);
       const masteryId = SET_MASTERY_MAP[setId];
       expect(prereqs).not.toContain(masteryId);
@@ -104,7 +104,7 @@ describe("getSetPrereqs", () => {
   });
 
   it("returns only ids belonging to the requested set", () => {
-    for (const setId of MODE_SETS) {
+    for (const setId of THEME_SETS) {
       const prereqs = getSetPrereqs(setId);
       for (const id of prereqs) {
         expect(getAchievement(id).set).toBe(setId);
@@ -127,15 +127,15 @@ describe("getAllNonMeta", () => {
   });
 });
 
-describe("isModeSet", () => {
-  it("returns true for registered mode sets", () => {
-    for (const id of MODE_SETS) expect(isModeSet(id)).toBe(true);
+describe("isThemeSet", () => {
+  it("returns true for registered theme sets", () => {
+    for (const id of THEME_SETS) expect(isThemeSet(id)).toBe(true);
   });
 
-  it("returns false for non-mode sets", () => {
-    expect(isModeSet("exploration")).toBe(false);
-    expect(isModeSet("meta")).toBe(false);
-    expect(isModeSet("made-up")).toBe(false);
+  it("returns false for non-theme sets", () => {
+    expect(isThemeSet("exploration")).toBe(false);
+    expect(isThemeSet("meta")).toBe(false);
+    expect(isThemeSet("made-up")).toBe(false);
   });
 });
 

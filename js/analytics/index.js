@@ -13,7 +13,7 @@ import { initSessionBridge } from "./bridges/session.js";
 import { initPageBridge } from "./bridges/page.js";
 import { initCtaBridge } from "./bridges/cta.js";
 import { initAchievementsBridge } from "./bridges/achievements.js";
-import { initModesBridge } from "./bridges/modes.js";
+import { initThemesBridge } from "./bridges/themes.js";
 import { initCanvasBridge } from "./bridges/canvas.js";
 import { initAppearanceBridge } from "./bridges/appearance.js";
 import { initErrorsBridge } from "./bridges/errors.js";
@@ -30,7 +30,7 @@ export function initAnalytics(options = {}) {
   initPageBridge();
   initCtaBridge();
   initAchievementsBridge();
-  initModesBridge();
+  initThemesBridge();
   initCanvasBridge();
   initAppearanceBridge();
   initErrorsBridge();

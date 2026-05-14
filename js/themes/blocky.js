@@ -1,14 +1,14 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
-import { createMode } from "./factory.js";
+import { createTheme } from "./factory.js";
 import { createClickCountTrigger } from "./triggers.js";
 
-// Mode metadata (id, label, color, icon) lives in modes/registry.js.
+// Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
 
 // ── Force & Activation ──
 const BF = defineConstants(
-  "modes.blockyForce",
+  "themes.blockyForce",
   {
     PRESSES_TO_ACTIVATE: 20,
     PRESSES_TO_DEACTIVATE: 10,
@@ -23,12 +23,12 @@ const BF = defineConstants(
     CASCADE_REFINE_MS: 300,
     CASCADE_TERRAIN_MS: 500,
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
 // ── Visual Effects ──
 const BV = defineConstants(
-  "modes.blockyVisuals",
+  "themes.blockyVisuals",
   {
     ICON_SHRINK_FACTOR: 0.4,
     ICON_CONTRAST_THRESHOLD: 0.3,
@@ -43,7 +43,7 @@ const BV = defineConstants(
     STATIC_FLASH_RANGE: 0.1,
     STATIC_FLASH_DURATION_MS: 50,
   },
-  { mode: "blocky" },
+  { theme: "blocky" },
 );
 
 export function initBlocky(toggleEl) {
@@ -64,9 +64,9 @@ export function initBlocky(toggleEl) {
   staticOverlay.className = "blocky-static";
   document.body.appendChild(staticOverlay);
 
-  // `modeCtx` is filled in by createMode's return value below.  The jitter
-  // loop reads modeCtx.force directly — no local mirror required.
-  let modeCtx;
+  // `themeCtx` is filled in by createTheme's return value below.  The jitter
+  // loop reads themeCtx.force directly — no local mirror required.
+  let themeCtx;
   let jitterRunning = false;
 
   // ── Screen jitter + static flashes ──
@@ -75,7 +75,7 @@ export function initBlocky(toggleEl) {
     jitterRunning = true;
     const page = document.querySelector(".page");
     function jitterLoop() {
-      const force = modeCtx.force;
+      const force = themeCtx.force;
       if (!jitterRunning || force < BF.JITTER_AT) {
         if (page) page.style.translate = "";
         staticOverlay.style.opacity = "0";
@@ -130,7 +130,7 @@ export function initBlocky(toggleEl) {
     });
   }
 
-  modeCtx = createMode({
+  themeCtx = createTheme({
     id: "blocky",
     trigger: createClickCountTrigger({
       element: toggleEl,
@@ -217,7 +217,7 @@ export function initBlocky(toggleEl) {
         },
       },
       // ── 4. Screen jitter + static flashes ──
-      // The jitter loop reads modeCtx.force directly, so this indicator only
+      // The jitter loop reads themeCtx.force directly, so this indicator only
       // flips the loop on/off at the threshold.
       {
         threshold: BF.JITTER_AT,

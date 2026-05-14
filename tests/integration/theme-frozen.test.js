@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { FF } from "../../js/modes/frozen.js";
+import { FF } from "../../js/themes/frozen.js";
 
 // Integration test: exercises initFrozen() end-to-end through the real
 // factory, real click-count trigger, and real playWipe — no module mocks.
@@ -54,11 +54,11 @@ function flushWipe() {
 async function setupFrozen() {
   vi.resetModules();
   stageDom();
-  const { initFrozen } = await import("../../js/modes/frozen.js");
+  const { initFrozen } = await import("../../js/themes/frozen.js");
   initFrozen();
 }
 
-describe("mode-frozen integration", () => {
+describe("theme-frozen integration", () => {
   beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-05-08T12:00:00"));
@@ -85,7 +85,7 @@ describe("mode-frozen integration", () => {
     delete Element.prototype.animate;
   });
 
-  it("activates after CLICKS_TO_FREEZE logo clicks and applies the body class + mode-activate event", async () => {
+  it("activates after CLICKS_TO_FREEZE logo clicks and applies the body class + theme-activate event", async () => {
     await setupFrozen();
     const listener = vi.fn();
     window.addEventListener("achievement", listener);
@@ -97,7 +97,7 @@ describe("mode-frozen integration", () => {
 
     const activateEvents = listener.mock.calls.filter(
       (c) =>
-        c[0].detail.type === "mode-activate" && c[0].detail.mode === "frozen",
+        c[0].detail.type === "theme-activate" && c[0].detail.theme === "frozen",
     );
     expect(activateEvents).toHaveLength(1);
     window.removeEventListener("achievement", listener);

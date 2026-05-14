@@ -33,15 +33,15 @@ const PIXEL_PERFECT_RADIUS = 30;
 export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
-const MODE_HOPPER_COUNT = 3;
-// Storm Forecaster — distinct sub-modes the user must trigger lightning
-// under within a single session. Doesn't count the default (no-mode)
+const THEME_HOPPER_COUNT = 3;
+// Storm Forecaster — distinct themes the user must trigger lightning
+// under within a single session. Doesn't count the default (no-theme)
 // canvas, so the achievement specifically rewards weather across active
-// sub-modes.
-export const STORM_FORECASTER_MODE_COUNT = 3;
-// The Long Watch — uninterrupted ms in a single sub-mode required to
-// unlock. Restarts on each mode-activate (any switch resets the watch);
-// cleared on mode-deactivate regardless of whether the deactivation was
+// themes.
+export const STORM_FORECASTER_THEME_COUNT = 3;
+// The Long Watch — uninterrupted ms in a single theme required to
+// unlock. Restarts on each theme-activate (any switch resets the watch);
+// cleared on theme-deactivate regardless of whether the deactivation was
 // user-driven or programmatic.
 export const LONG_WATCH_MS = 300000;
 const MOONLIT_START_HOUR = 0;
@@ -60,13 +60,13 @@ export function createTracker(onUnlock, onRelock) {
     lightningTriggered: false,
     auroraTriggered: false,
     snowGlobeTriggered: false,
-    modesActivated: new Set(),
+    themesActivated: new Set(),
     panelOpened: false,
     startTime: Date.now(),
     visibleMs: 0,
     lastVisibleTime: document.hidden ? 0 : Date.now(),
     lightningCount: 0,
-    lightningModes: new Set(),
+    lightningThemes: new Set(),
     wellCount: 0,
     dragStartX: null,
     dragStartY: null,
@@ -129,14 +129,14 @@ export function createTracker(onUnlock, onRelock) {
     }
   }
 
-  function activeMode() {
+  function activeTheme() {
     return document.body.dataset.activeTheme || null;
   }
 
   // ── The Long Watch ──
-  // Single timer is shared across all modes — starting a watch for one
-  // mode replaces any prior watch, which is the right behavior since the
-  // achievement requires a single uninterrupted span in any mode.
+  // Single timer is shared across all themes — starting a watch for one
+  // theme replaces any prior watch, which is the right behavior since the
+  // achievement requires a single uninterrupted span in any theme.
 
   function restartLongWatch() {
     if (session.longWatchTimer != null) clearTimeout(session.longWatchTimer);
@@ -173,7 +173,7 @@ export function createTracker(onUnlock, onRelock) {
       }
       if (session.clickTimestamps.length >= RAPID_FIRE_CLICKS) {
         tryUnlock("rapid-fire");
-        if (activeMode() === "upside-down") tryUnlock("vertigo");
+        if (activeTheme() === "upside-down") tryUnlock("vertigo");
       }
 
       // Quadrant tracking for cartographer
@@ -204,13 +204,13 @@ export function createTracker(onUnlock, onRelock) {
       session.dragStartX = null;
       session.dragStartY = null;
 
-      // Mode-specific click achievements
-      const mode = activeMode();
-      if (mode === "deep-sea") tryUnlock("bioluminescent");
-      if (mode === "blocky") tryUnlock("pixel-burst");
-      if (mode === "rainy") tryUnlock("puddle-jump");
-      if (mode === "upside-down") tryUnlock("rift-walker");
-      if (mode === "paper" && data && data.card) tryUnlock("margin-notes");
+      // Theme-specific click achievements
+      const theme = activeTheme();
+      if (theme === "deep-sea") tryUnlock("bioluminescent");
+      if (theme === "blocky") tryUnlock("pixel-burst");
+      if (theme === "rainy") tryUnlock("puddle-jump");
+      if (theme === "upside-down") tryUnlock("rift-walker");
+      if (theme === "paper" && data && data.card) tryUnlock("margin-notes");
     },
 
     "click-burst"() {
@@ -234,7 +234,7 @@ export function createTracker(onUnlock, onRelock) {
         }
 
         // Upside-down full scroll
-        if (activeMode() === "upside-down" && data.progress >= SCROLL_BOTTOM) {
+        if (activeTheme() === "upside-down" && data.progress >= SCROLL_BOTTOM) {
           tryUnlock("disoriented");
         }
       }
@@ -284,7 +284,7 @@ export function createTracker(onUnlock, onRelock) {
       }
 
       // Frozen drag
-      if (activeMode() === "frozen") tryUnlock("snowdrift");
+      if (activeTheme() === "frozen") tryUnlock("snowdrift");
     },
 
     hold() {
@@ -305,9 +305,9 @@ export function createTracker(onUnlock, onRelock) {
         tryUnlock("void-caller");
       }
 
-      const mode = activeMode();
-      if (mode === "deep-sea") tryUnlock("pressure-drop");
-      if (mode === "rainy") tryUnlock("monsoon");
+      const theme = activeTheme();
+      if (theme === "deep-sea") tryUnlock("pressure-drop");
+      if (theme === "rainy") tryUnlock("monsoon");
     },
 
     "well-full"() {
@@ -326,19 +326,19 @@ export function createTracker(onUnlock, onRelock) {
         tryUnlock("chain-lightning");
       }
 
-      const mode = activeMode();
-      if (mode === "blocky") tryUnlock("8-bit-storm");
-      if (mode === "rainy") tryUnlock("thunder-roll");
-      if (mode === "deep-sea") tryUnlock("storm-surge");
-      if (mode === "frozen") tryUnlock("frozen-lightning");
-      if (mode === "upside-down") tryUnlock("glitch");
-      if (mode === "paper") tryUnlock("ink-splatter");
+      const theme = activeTheme();
+      if (theme === "blocky") tryUnlock("8-bit-storm");
+      if (theme === "rainy") tryUnlock("thunder-roll");
+      if (theme === "deep-sea") tryUnlock("storm-surge");
+      if (theme === "frozen") tryUnlock("frozen-lightning");
+      if (theme === "upside-down") tryUnlock("glitch");
+      if (theme === "paper") tryUnlock("ink-splatter");
 
-      // Storm Forecaster — distinct sub-modes count toward this within a
-      // single session. The default (no-mode) canvas is excluded.
-      if (mode) {
-        session.lightningModes.add(mode);
-        if (session.lightningModes.size >= STORM_FORECASTER_MODE_COUNT) {
+      // Storm Forecaster — distinct themes count toward this within a
+      // single session. The default (no-theme) canvas is excluded.
+      if (theme) {
+        session.lightningThemes.add(theme);
+        if (session.lightningThemes.size >= STORM_FORECASTER_THEME_COUNT) {
           tryUnlock("storm-forecaster");
         }
       }
@@ -353,16 +353,16 @@ export function createTracker(onUnlock, onRelock) {
       session.snowGlobeTriggered = true;
       tryUnlock("snow-globe");
 
-      if (activeMode() === "frozen") tryUnlock("blizzard");
-      if (activeMode() === "deep-sea") tryUnlock("permafrost");
+      if (activeTheme() === "frozen") tryUnlock("blizzard");
+      if (activeTheme() === "deep-sea") tryUnlock("permafrost");
     },
 
-    "mode-activate"(data) {
-      if (!data || !data.mode) return;
-      session.modesActivated.add(data.mode);
-      storage.incrementCounter("totalModeActivations");
+    "theme-activate"(data) {
+      if (!data || !data.theme) return;
+      session.themesActivated.add(data.theme);
+      storage.incrementCounter("totalThemeActivations");
 
-      const modeMap = {
+      const themeMap = {
         "deep-sea": "the-depths",
         frozen: "first-frost",
         blocky: "resolution-drop",
@@ -370,25 +370,25 @@ export function createTracker(onUnlock, onRelock) {
         paper: "first-sketch",
         "upside-down": "the-flip",
       };
-      if (modeMap[data.mode]) tryUnlock(modeMap[data.mode]);
+      if (themeMap[data.theme]) tryUnlock(themeMap[data.theme]);
 
-      // Mode hopper
-      if (session.modesActivated.size >= MODE_HOPPER_COUNT) {
-        tryUnlock("mode-hopper");
+      // Theme hopper
+      if (session.themesActivated.size >= THEME_HOPPER_COUNT) {
+        tryUnlock("theme-hopper");
       }
 
-      // Elemental — every mode activated at least once (persistent)
-      tryProgressItem("modes-activated", data.mode);
+      // Elemental — every theme activated at least once (persistent)
+      tryProgressItem("themes-activated", data.theme);
 
-      // The Long Watch — start a fresh countdown for the new mode. Any
-      // switch (activate of another mode while one is running) resets
-      // the timer because mode-deactivate fires first.
+      // The Long Watch — start a fresh countdown for the new theme. Any
+      // switch (activate of another theme while one is running) resets
+      // the timer because theme-deactivate fires first.
       restartLongWatch();
     },
 
-    "mode-deactivate"(data) {
-      if (!data || !data.mode) return;
-      // Long Watch must clear regardless of silent — leaving the mode
+    "theme-deactivate"(data) {
+      if (!data || !data.theme) return;
+      // Long Watch must clear regardless of silent — leaving the theme
       // breaks the watch whether or not the exit was user-driven.
       clearLongWatch();
       // Programmatic deactivations carry silent=true — the exit
@@ -403,7 +403,7 @@ export function createTracker(onUnlock, onRelock) {
         paper: "blank-page",
         "upside-down": "restoration",
       };
-      if (deactivateMap[data.mode]) tryUnlock(deactivateMap[data.mode]);
+      if (deactivateMap[data.theme]) tryUnlock(deactivateMap[data.theme]);
     },
 
     "upside-down-warning"() {
@@ -456,7 +456,7 @@ export function createTracker(onUnlock, onRelock) {
 
     orbit() {
       tryUnlock("orbit-lock");
-      if (activeMode() === "deep-sea") tryUnlock("deep-orbit");
+      if (activeTheme() === "deep-sea") tryUnlock("deep-orbit");
     },
 
     "dev-console-open"() {
@@ -467,7 +467,7 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("magnetic-letters");
     },
 
-    "mode-history-reveal"() {
+    "theme-history-reveal"() {
       tryUnlock("historian");
     },
 
@@ -581,15 +581,15 @@ export function createTracker(onUnlock, onRelock) {
     if (session.wellFull) tryUnlock("singularity");
     if (session.lightningCount >= CHAIN_LIGHTNING_COUNT)
       tryUnlock("chain-lightning");
-    if (session.lightningModes.size >= STORM_FORECASTER_MODE_COUNT)
+    if (session.lightningThemes.size >= STORM_FORECASTER_THEME_COUNT)
       tryUnlock("storm-forecaster");
     if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
-    // If a mode is already active when Cloudlog activates, the
-    // mode-activate event has already been dispatched and missed —
+    // If a theme is already active when Cloudlog activates, the
+    // theme-activate event has already been dispatched and missed —
     // start the watch now from the catch-up moment. The achievement
     // measures uninterrupted time from this point forward, which is
     // strictly conservative (the user gets less credit, never more).
-    if (activeMode() && session.longWatchTimer == null) restartLongWatch();
+    if (activeTheme() && session.longWatchTimer == null) restartLongWatch();
     checkProgressiveState();
   }
 
