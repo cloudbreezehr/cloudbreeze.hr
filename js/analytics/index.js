@@ -15,7 +15,7 @@ import { initCtaBridge } from "./bridges/cta.js";
 import { initAchievementsBridge } from "./bridges/achievements.js";
 import { initModesBridge } from "./bridges/modes.js";
 import { initCanvasBridge } from "./bridges/canvas.js";
-import { initThemeBridge } from "./bridges/theme.js";
+import { initAppearanceBridge } from "./bridges/appearance.js";
 import { initErrorsBridge } from "./bridges/errors.js";
 
 // Bridges always attach, even when consent is denied.  They're cheap
@@ -32,7 +32,7 @@ export function initAnalytics(options = {}) {
   initAchievementsBridge();
   initModesBridge();
   initCanvasBridge();
-  initThemeBridge();
+  initAppearanceBridge();
   initErrorsBridge();
 }
 

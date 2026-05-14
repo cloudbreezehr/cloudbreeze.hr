@@ -8,11 +8,11 @@ const BORDER_BRIGHT = "rgba(0,0,0,0.06)";
 const BORDER_DARK = "rgba(255,255,255,0.05)";
 const ACTIVE_OFFSET = 0.4;
 
-export function initNav(navEl, theme) {
+export function initNav(navEl, appearance) {
   let scrollProgress = 0;
 
-  function updateNavTheme() {
-    if (theme.isDark()) {
+  function updateNavAppearance() {
+    if (appearance.isDark()) {
       navEl.style.background = "";
       navEl.style.borderBottomColor = "";
       navEl.style.setProperty("--nav-bg", NAV_BG_DARK);
@@ -58,13 +58,13 @@ export function initNav(navEl, theme) {
       document.documentElement.scrollHeight - window.innerHeight;
     scrollProgress =
       docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
-    updateNavTheme();
+    updateNavAppearance();
     updateActiveLink();
   }
 
   updateScroll();
   window.addEventListener("scroll", updateScroll, { passive: true });
-  theme.onChange(() => updateNavTheme());
+  appearance.onChange(() => updateNavAppearance());
 
   // Hamburger menu
   const burger = navEl.querySelector(".nav-burger");

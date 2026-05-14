@@ -7,7 +7,7 @@
 // Otherwise the initializers are independent and could run in any
 // order.
 
-import { initTheme } from "./theme.js";
+import { initAppearance } from "./appearance.js";
 import { initNav } from "./nav.js";
 import { initCanvas } from "./canvas.js";
 import { initCursor } from "./cursor.js";
@@ -65,9 +65,9 @@ try {
   console.warn("[analytics] init failed:", err);
 }
 
-const theme = initTheme(document.querySelector(".theme-toggle"));
-initNav(document.querySelector("nav"), theme);
-initCanvas(document.getElementById("bg-canvas"), theme);
+const appearance = initAppearance(document.querySelector(".appearance-toggle"));
+initNav(document.querySelector("nav"), appearance);
+initCanvas(document.getElementById("bg-canvas"), appearance);
 initCursor(
   document.getElementById("cursor"),
   document.getElementById("cursor-ring"),
@@ -87,7 +87,7 @@ initFirstPaintMote();
 initUpsideDown();
 initFrozen();
 initDeepSea();
-initBlocky(document.querySelector(".theme-toggle"));
+initBlocky(document.querySelector(".appearance-toggle"));
 initRainy();
 initPaper();
 initModeHistoryHud();

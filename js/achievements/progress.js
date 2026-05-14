@@ -1,6 +1,6 @@
 // ── Progressive Achievement Resolvers ──
 // Two kinds of progress:
-//   Collection — fixed set of items that must be collected (themes, quadrants).
+//   Collection — fixed set of items that must be collected (appearances, quadrants).
 //     Stored in localStorage via storage.addProgressItem; total = set size.
 //   Count — derived numeric tally (unlocks, points, days, set mastery).
 //     Computed on demand from storage state; nothing stored per-key.
@@ -17,12 +17,12 @@ import {
 } from "./registry.js";
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 
-export const THEMES = ["dark", "light", "auto"];
+export const APPEARANCES = ["dark", "light", "auto"];
 export const QUADRANTS = ["tl", "tr", "bl", "br"];
 export const PANEL_TABS = ["achievements", "activity"];
 
 // ── Thresholds for count-based achievements ──
-const THEME_TOGGLES_TOTAL = 3;
+const APPEARANCE_TOGGLES_TOTAL = 3;
 const CURIOUS_MIND_TOTAL = 5;
 const DEDICATED_TOTAL = 15;
 const HUNDRED_POINTS = 100;
@@ -36,8 +36,8 @@ const PAPER_STROKES_TOTAL = 10;
 export const PROGRESS_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
   "modes-activated": () => MODE_SETS,
-  "themes-used": () => THEMES,
-  "almanac-themes": () => THEMES,
+  "appearances-used": () => APPEARANCES,
+  "almanac-appearances": () => APPEARANCES,
   "panel-tabs-visited": () => PANEL_TABS,
   "quadrants-clicked": () => QUADRANTS,
 };
@@ -56,8 +56,8 @@ function countSessionDays() {
   return (storage.getState().counters.sessionDays || []).length;
 }
 
-function countThemeToggles() {
-  return storage.getCounter("themeToggles");
+function countAppearanceToggles() {
+  return storage.getCounter("appearanceToggles");
 }
 
 function countUnlocks() {
@@ -69,9 +69,9 @@ function countPoints() {
 }
 
 export const PROGRESS_COUNTS = {
-  "theme-toggles-3": {
-    current: countThemeToggles,
-    total: () => THEME_TOGGLES_TOTAL,
+  "appearance-toggles-3": {
+    current: countAppearanceToggles,
+    total: () => APPEARANCE_TOGGLES_TOTAL,
   },
   "unlocks-5": { current: countUnlocks, total: () => CURIOUS_MIND_TOTAL },
   "unlocks-15": { current: countUnlocks, total: () => DEDICATED_TOTAL },

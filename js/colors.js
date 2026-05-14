@@ -374,9 +374,9 @@ const overrides = {
   },
 };
 
-export function resolvePalette(theme, submode) {
-  const base = palettes[theme] || palettes.dark;
+export function resolvePalette(appearance, submode) {
+  const base = palettes[appearance] || palettes.dark;
   if (!submode || !overrides[submode]) return base;
-  const over = overrides[submode][theme];
+  const over = overrides[submode][appearance];
   return over ? { ...base, ...over } : base;
 }

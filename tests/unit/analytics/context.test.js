@@ -19,13 +19,13 @@ describe("analytics/context", () => {
   });
 
   describe("baseProps", () => {
-    it("includes identity, viewport, theme, and timestamps", () => {
+    it("includes identity, viewport, appearance, and timestamps", () => {
       const p = context.baseProps();
       expect(p.visitor_id).toBeTruthy();
       expect(p.session_id).toBeTruthy();
       expect(p.session_seq).toBeGreaterThan(0);
       expect(p.viewport_w).toBeGreaterThan(0);
-      expect(p.theme_effective).toMatch(/^(dark|light)$/);
+      expect(p.appearance_effective).toMatch(/^(dark|light)$/);
       expect(p.ts).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
 

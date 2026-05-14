@@ -249,13 +249,14 @@ export function createTracker(onUnlock, onRelock) {
       }
     },
 
-    "theme-change"(data) {
-      storage.incrementCounter("themeToggles");
-      checkProgressiveState("theme-toggles-3");
+    "appearance-change"(data) {
+      storage.incrementCounter("appearanceToggles");
+      checkProgressiveState("appearance-toggles-3");
 
-      if (data && data.theme === "dark") tryUnlock("nightfall");
-      if (data && data.theme === "light") tryUnlock("daybreak");
-      if (data && data.theme) tryProgressItem("themes-used", data.theme);
+      if (data && data.appearance === "dark") tryUnlock("nightfall");
+      if (data && data.appearance === "light") tryUnlock("daybreak");
+      if (data && data.appearance)
+        tryProgressItem("appearances-used", data.appearance);
     },
 
     drag(data) {
@@ -428,10 +429,11 @@ export function createTracker(onUnlock, onRelock) {
         session.panelOpened = true;
         tryUnlock("cloud-reader");
       }
-      // Cartographer's Almanac — record the active theme each time the
-      // panel opens; collected across (auto, light, dark) over any number
-      // of sessions.
-      if (data && data.theme) tryProgressItem("almanac-themes", data.theme);
+      // Cartographer's Almanac — record the active appearance each time
+      // the panel opens; collected across (auto, light, dark) over any
+      // number of sessions.
+      if (data && data.appearance)
+        tryProgressItem("almanac-appearances", data.appearance);
       // Tab Tourist credits the initial tab on open so the user only
       // needs to click the other tab to complete the pair. Default tab
       // is reported by the dispatcher so this stays UI-agnostic.

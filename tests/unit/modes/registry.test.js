@@ -111,7 +111,7 @@ describe("modes/registry — hasActiveModeExcept", () => {
   });
 
   it("ignores unrelated body classes", () => {
-    document.body.classList.add("light-mode", "dev-active");
+    document.body.classList.add("light-appearance", "dev-active");
     expect(hasActiveModeExcept("paper")).toBe(false);
   });
 });

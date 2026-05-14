@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// theme.js queries matchMedia at init; tests control its return value.
+// appearance.js queries matchMedia at init; tests control its return value.
 
-describe("initTheme", () => {
+describe("initAppearance", () => {
   let mqlMatches;
   let mqlListeners;
 
@@ -36,49 +36,49 @@ describe("initTheme", () => {
   }
 
   it("defaults to dark when no stored preference exists", async () => {
-    const { initTheme } = await import("../../js/theme.js");
-    const theme = initTheme(makeToggle());
-    expect(theme.isDark()).toBe(true);
-    expect(document.body.classList.contains("light-mode")).toBe(false);
+    const { initAppearance } = await import("../../js/appearance.js");
+    const appearance = initAppearance(makeToggle());
+    expect(appearance.isDark()).toBe(true);
+    expect(document.body.classList.contains("light-appearance")).toBe(false);
   });
 
   it("reads an explicit light preference from storage", async () => {
-    localStorage.setItem("theme", "light");
-    const { initTheme } = await import("../../js/theme.js");
-    const theme = initTheme(makeToggle());
-    expect(theme.isDark()).toBe(false);
-    expect(document.body.classList.contains("light-mode")).toBe(true);
+    localStorage.setItem("appearance", "light");
+    const { initAppearance } = await import("../../js/appearance.js");
+    const appearance = initAppearance(makeToggle());
+    expect(appearance.isDark()).toBe(false);
+    expect(document.body.classList.contains("light-appearance")).toBe(true);
   });
 
-  it("respects the OS preference when auto mode is stored", async () => {
-    localStorage.setItem("theme", "auto");
+  it("respects the OS preference when auto is stored", async () => {
+    localStorage.setItem("appearance", "auto");
     mqlMatches = true; // prefers-color-scheme: light → true = light
-    const { initTheme } = await import("../../js/theme.js");
-    const theme = initTheme(makeToggle());
-    expect(theme.isDark()).toBe(false);
+    const { initAppearance } = await import("../../js/appearance.js");
+    const appearance = initAppearance(makeToggle());
+    expect(appearance.isDark()).toBe(false);
   });
 
   it("cycles auto → light → dark on successive clicks", async () => {
-    localStorage.setItem("theme", "auto");
-    const { initTheme } = await import("../../js/theme.js");
+    localStorage.setItem("appearance", "auto");
+    const { initAppearance } = await import("../../js/appearance.js");
     const toggle = makeToggle();
-    initTheme(toggle);
-    expect(toggle.getAttribute("data-theme")).toBe("auto");
+    initAppearance(toggle);
+    expect(toggle.getAttribute("data-appearance")).toBe("auto");
 
     toggle.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(toggle.getAttribute("data-theme")).toBe("light");
+    expect(toggle.getAttribute("data-appearance")).toBe("light");
 
     toggle.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(toggle.getAttribute("data-theme")).toBe("dark");
+    expect(toggle.getAttribute("data-appearance")).toBe("dark");
 
     toggle.dispatchEvent(new MouseEvent("click", { bubbles: true }));
-    expect(toggle.getAttribute("data-theme")).toBe("auto");
+    expect(toggle.getAttribute("data-appearance")).toBe("auto");
   });
 
-  it("dispatches a theme-change achievement event on click", async () => {
-    const { initTheme } = await import("../../js/theme.js");
+  it("dispatches an appearance-change achievement event on click", async () => {
+    const { initAppearance } = await import("../../js/appearance.js");
     const toggle = makeToggle();
-    initTheme(toggle);
+    initAppearance(toggle);
 
     const listener = vi.fn();
     window.addEventListener("achievement", listener);
@@ -87,28 +87,28 @@ describe("initTheme", () => {
 
     expect(listener).toHaveBeenCalled();
     const [event] = listener.mock.calls[0];
-    expect(event.detail.type).toBe("theme-change");
-    expect(["auto", "light", "dark"]).toContain(event.detail.theme);
+    expect(event.detail.type).toBe("appearance-change");
+    expect(["auto", "light", "dark"]).toContain(event.detail.appearance);
   });
 
-  it("notifies onChange subscribers when the theme changes", async () => {
-    const { initTheme } = await import("../../js/theme.js");
+  it("notifies onChange subscribers when the appearance changes", async () => {
+    const { initAppearance } = await import("../../js/appearance.js");
     const toggle = makeToggle();
-    const theme = initTheme(toggle);
+    const appearance = initAppearance(toggle);
     const cb = vi.fn();
-    theme.onChange(cb);
+    appearance.onChange(cb);
 
     // Cycle all the way to light to guarantee an isDark transition
     // regardless of the default cycle's starting point.
     toggle.dispatchEvent(new MouseEvent("click", { bubbles: true })); // → auto
     toggle.dispatchEvent(new MouseEvent("click", { bubbles: true })); // → light
     expect(cb).toHaveBeenCalled();
-    expect(theme.isDark()).toBe(false);
+    expect(appearance.isDark()).toBe(false);
     expect(cb.mock.lastCall[0]).toBe(false);
   });
 });
 
-describe("getThemePreference", () => {
+describe("getAppearancePreference", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.resetModules();
@@ -119,16 +119,17 @@ describe("getThemePreference", () => {
   });
 
   it("returns 'dark' when no preference is stored", async () => {
-    const { getThemePreference } = await import("../../js/theme.js");
-    expect(getThemePreference()).toEqual("dark");
+    const { getAppearancePreference } = await import("../../js/appearance.js");
+    expect(getAppearancePreference()).toEqual("dark");
   });
 
   it.each(["dark", "light", "auto"])(
     "returns the stored '%s' preference",
     async (pref) => {
-      localStorage.setItem("theme", pref);
-      const { getThemePreference } = await import("../../js/theme.js");
-      expect(getThemePreference()).toEqual(pref);
+      localStorage.setItem("appearance", pref);
+      const { getAppearancePreference } =
+        await import("../../js/appearance.js");
+      expect(getAppearancePreference()).toEqual(pref);
     },
   );
 });

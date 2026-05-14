@@ -1683,10 +1683,10 @@ footer.footer-hinting::after {
   .nav-actions {
     gap: 1rem;
   }
-  body.light-mode .nav-links {
+  body.light-appearance .nav-links {
     border-bottom-color: rgba(0, 0, 0, 0.06);
   }
-  body.light-mode .nav-links li {
+  body.light-appearance .nav-links li {
     border-bottom-color: rgba(0, 0, 0, 0.04);
   }
 }
@@ -1752,8 +1752,8 @@ nav.nav-light .nav-burger:hover {
   color: var(--ink);
 }
 
-/* Theme toggle */
-.theme-toggle {
+/* Appearance toggle */
+.appearance-toggle {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -1769,26 +1769,26 @@ nav.nav-light .nav-burger:hover {
     background 0.3s;
   position: relative;
 }
-.theme-toggle:hover {
+.appearance-toggle:hover {
   color: #fff;
   border-color: rgba(55, 138, 221, 0.4);
   background: rgba(55, 138, 221, 0.08);
 }
-.theme-toggle svg {
+.appearance-toggle svg {
   width: 14px;
   height: 14px;
   display: none;
 }
-.theme-toggle[data-theme="light"] .icon-sun {
+.appearance-toggle[data-appearance="light"] .icon-sun {
   display: block;
 }
-.theme-toggle[data-theme="dark"] .icon-moon {
+.appearance-toggle[data-appearance="dark"] .icon-moon {
   display: block;
 }
-.theme-toggle[data-theme="auto"] .icon-auto {
+.appearance-toggle[data-appearance="auto"] .icon-auto {
   display: block;
 }
-.theme-toggle::after {
+.appearance-toggle::after {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 8px);
@@ -1806,51 +1806,51 @@ nav.nav-light .nav-burger:hover {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.theme-toggle:hover::after {
+.appearance-toggle:hover::after {
   opacity: 1;
 }
-nav.nav-light .theme-toggle {
+nav.nav-light .appearance-toggle {
   color: rgba(10, 22, 40, 0.5);
   border-color: rgba(0, 0, 0, 0.1);
 }
-nav.nav-light .theme-toggle:hover {
+nav.nav-light .appearance-toggle:hover {
   color: var(--ink);
   border-color: rgba(26, 95, 168, 0.4);
   background: rgba(55, 138, 221, 0.08);
 }
-nav.nav-light .theme-toggle::after {
+nav.nav-light .appearance-toggle::after {
   color: rgba(10, 22, 40, 0.7);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 @media (hover: none), (pointer: coarse) {
-  .theme-toggle {
+  .appearance-toggle {
     cursor: auto;
   }
 }
 
-/* LIGHT MODE (class-based for manual toggle support) */
-body.light-mode {
+/* LIGHT APPEARANCE (class-based for manual toggle support) */
+body.light-appearance {
   background: #f0f7ff;
 }
 
-body.light-mode .section-label {
+body.light-appearance .section-label {
   color: var(--sky-5);
 }
-body.light-mode .section-label::before {
+body.light-appearance .section-label::before {
   background: var(--sky-5);
 }
-body.light-mode .services-grid {
+body.light-appearance .services-grid {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.06);
 }
-body.light-mode .service-card {
+body.light-appearance .service-card {
   background: rgba(255, 255, 255, 0.75);
 }
-body.light-mode .service-card:hover {
+body.light-appearance .service-card:hover {
   background: rgba(255, 255, 255, 0.9);
 }
-body.light-mode .service-card::before {
+body.light-appearance .service-card::before {
   background: linear-gradient(
     90deg,
     transparent,
@@ -1858,30 +1858,30 @@ body.light-mode .service-card::before {
     transparent
   );
 }
-body.light-mode .service-num {
+body.light-appearance .service-num {
   color: rgba(26, 95, 168, 0.5);
 }
-body.light-mode .service-title {
+body.light-appearance .service-title {
   color: var(--ink);
 }
-body.light-mode .service-desc {
+body.light-appearance .service-desc {
   color: rgba(10, 22, 40, 0.55);
 }
 
-body.light-mode .about-heading {
+body.light-appearance .about-heading {
   color: var(--ink);
 }
-body.light-mode .about-body {
+body.light-appearance .about-body {
   color: rgba(10, 22, 40, 0.6);
 }
-body.light-mode .stat-num {
+body.light-appearance .stat-num {
   color: var(--ink);
 }
-body.light-mode .stat-label {
+body.light-appearance .stat-label {
   color: rgba(10, 22, 40, 0.45);
 }
 
-body.light-mode .contact-card {
+body.light-appearance .contact-card {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.8) 0%,
@@ -1889,73 +1889,73 @@ body.light-mode .contact-card {
   );
   border-color: rgba(55, 138, 221, 0.2);
 }
-body.light-mode .contact-card::before {
+body.light-appearance .contact-card::before {
   background: radial-gradient(
     circle,
     rgba(55, 138, 221, 0.08),
     transparent 70%
   );
 }
-body.light-mode .contact-heading {
+body.light-appearance .contact-heading {
   color: var(--ink);
 }
-body.light-mode .contact-sub {
+body.light-appearance .contact-sub {
   color: rgba(10, 22, 40, 0.5);
 }
-body.light-mode .contact-link {
+body.light-appearance .contact-link {
   color: rgba(10, 22, 40, 0.65);
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.6);
 }
-body.light-mode .contact-link:hover {
+body.light-appearance .contact-link:hover {
   color: var(--ink);
   border-color: rgba(55, 138, 221, 0.3);
   background: rgba(255, 255, 255, 0.85);
 }
-body.light-mode .contact-link svg {
+body.light-appearance .contact-link svg {
   color: var(--sky-5);
 }
 
-body.light-mode .footer-info {
+body.light-appearance .footer-info {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
-body.light-mode .footer-brand {
+body.light-appearance .footer-brand {
   color: var(--ink);
 }
-body.light-mode .footer-col-title {
+body.light-appearance .footer-col-title {
   color: var(--sky-5);
 }
-body.light-mode .footer-text {
+body.light-appearance .footer-text {
   color: rgba(10, 22, 40, 0.5);
 }
-body.light-mode .footer-link {
+body.light-appearance .footer-link {
   color: rgba(10, 22, 40, 0.5);
 }
-body.light-mode .footer-link:hover {
+body.light-appearance .footer-link:hover {
   color: var(--sky-5);
 }
 
-body.light-mode footer {
+body.light-appearance footer {
   border-top-color: rgba(0, 0, 0, 0.05);
 }
-body.light-mode .footer-copy {
+body.light-appearance .footer-copy {
   color: rgba(10, 22, 40, 0.3);
 }
-body.light-mode .footer-badge {
+body.light-appearance .footer-badge {
   color: rgba(55, 138, 221, 0.5);
 }
 
-body.light-mode::after {
+body.light-appearance::after {
   opacity: 0.015;
 }
-body.light-mode #cursor {
+body.light-appearance #cursor {
   background: var(--sky-4);
   mix-blend-mode: normal;
   box-shadow:
     0 0 6px rgba(55, 138, 221, 0.5),
     0 0 2px rgba(255, 255, 255, 0.7);
 }
-body.light-mode #cursor-ring {
+body.light-appearance #cursor-ring {
   border-color: rgba(55, 138, 221, 0.5);
   box-shadow: 0 0 4px rgba(55, 138, 221, 0.15);
 }
@@ -2946,18 +2946,18 @@ body[data-active-theme="blocky"]::after {
   opacity: 0.03;
 }
 
-/* ── Light mode overrides for blocky ── */
-body.light-mode[data-active-theme="blocky"] {
+/* ── Light appearance overrides for blocky ── */
+body.light-appearance[data-active-theme="blocky"] {
   background: #e8f0ff;
 }
-body.light-mode[data-active-theme="blocky"] #bg-canvas {
+body.light-appearance[data-active-theme="blocky"] #bg-canvas {
   filter: contrast(1.1) saturate(1.2);
   image-rendering: pixelated;
 }
-body.light-mode[data-active-theme="blocky"] #cursor {
+body.light-appearance[data-active-theme="blocky"] #cursor {
   background: rgb(60, 200, 60);
 }
-body.light-mode[data-active-theme="blocky"] #cursor-ring {
+body.light-appearance[data-active-theme="blocky"] #cursor-ring {
   border-color: rgba(60, 200, 60, 0.4);
 }
 
@@ -3167,21 +3167,21 @@ body[data-active-theme="rainy"] #cursor-ring {
   }
 }
 
-/* ── Light mode overrides for rainy ── */
-body.light-mode[data-active-theme="rainy"] {
+/* ── Light appearance overrides for rainy ── */
+body.light-appearance[data-active-theme="rainy"] {
   background: #d0d8e4;
 }
-body.light-mode[data-active-theme="rainy"] #bg-canvas {
+body.light-appearance[data-active-theme="rainy"] #bg-canvas {
   filter: saturate(0.55) brightness(0.85) hue-rotate(5deg);
 }
-body.light-mode[data-active-theme="rainy"] .service-card {
+body.light-appearance[data-active-theme="rainy"] .service-card {
   background: rgba(200, 215, 230, 0.6);
   border-color: rgba(100, 130, 170, 0.15);
 }
-body.light-mode[data-active-theme="rainy"] #cursor {
+body.light-appearance[data-active-theme="rainy"] #cursor {
   background: rgb(100, 130, 170);
 }
-body.light-mode[data-active-theme="rainy"] #cursor-ring {
+body.light-appearance[data-active-theme="rainy"] #cursor-ring {
   border-color: rgba(100, 130, 170, 0.4);
 }
 
@@ -3424,12 +3424,12 @@ body[data-active-theme="paper"] .stat-label {
   color: var(--ink-color);
 }
 
-/* Light-mode paper — brighter paper, darker ink */
-body.light-mode[data-active-theme="paper"] {
+/* Light-appearance paper — brighter paper, darker ink */
+body.light-appearance[data-active-theme="paper"] {
   --paper-color: #fbf2dd;
   --ink-color: #140e0a;
 }
-body.light-mode[data-active-theme="paper"] #bg-canvas {
+body.light-appearance[data-active-theme="paper"] #bg-canvas {
   filter: saturate(0.2) contrast(1.05) sepia(0.3);
 }
 
@@ -3483,7 +3483,7 @@ nav.nav-light .achievement-btn.active {
   }
 }
 
-/* Tooltip — matches theme-toggle pattern */
+/* Tooltip — matches appearance-toggle pattern */
 .achievement-btn::after {
   content: attr(data-tooltip);
   position: absolute;
@@ -4441,7 +4441,7 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
-body.light-mode .achievement-tooltip {
+body.light-appearance .achievement-tooltip {
   background: rgba(240, 247, 255, 0.96);
   border-color: rgba(0, 0, 0, 0.1);
   color: rgba(10, 22, 40, 0.65);
@@ -4627,7 +4627,7 @@ body.light-mode .achievement-tooltip {
   transform: translate(-50%, -50%);
   will-change: transform, opacity;
 }
-body.light-mode .first-paint-mote {
+body.light-appearance .first-paint-mote {
   background: radial-gradient(
     circle at center,
     rgba(55, 138, 221, 0.9) 0%,
@@ -4898,40 +4898,41 @@ body.upside-down .achievement-toast-container {
   transform: scaleY(-1);
 }
 
-/* ── Light mode ── */
+/* ── Light appearance ── */
 
-/* Cloudlog panel keeps its dark-mode palette in both themes — the panel
-   is dense with tab labels, hint toggles, mode icons, and progress bars
-   that were designed against a dark background.  Inverting to light
-   produced low-contrast greys across several elements, so we stay dark
-   for consistency.  The nav button and its badge still adopt light-mode
-   styling; those sit on the site chrome, not inside the panel. */
-body.light-mode .achievement-view::-webkit-scrollbar-thumb {
+/* Cloudlog panel keeps its dark palette in both appearances — the
+   panel is dense with tab labels, hint toggles, mode icons, and
+   progress bars that were designed against a dark background.
+   Inverting to light produced low-contrast greys across several
+   elements, so we stay dark for consistency.  The nav button and its
+   badge still adopt light-appearance styling; those sit on the site
+   chrome, not inside the panel. */
+body.light-appearance .achievement-view::-webkit-scrollbar-thumb {
   background: rgba(0, 0, 0, 0.1);
 }
 
-/* Light mode toasts */
-body.light-mode .achievement-toast {
+/* Light appearance toasts */
+body.light-appearance .achievement-toast {
   background: rgba(240, 247, 255, 0.95);
   border-color: rgba(0, 0, 0, 0.08);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
 }
-body.light-mode .achievement-toast-title {
+body.light-appearance .achievement-toast-title {
   color: var(--ink);
 }
-body.light-mode .achievement-toast-desc {
+body.light-appearance .achievement-toast-desc {
   color: rgba(10, 22, 40, 0.5);
 }
-body.light-mode .achievement-activation-toast {
+body.light-appearance .achievement-activation-toast {
   background: rgba(240, 247, 255, 0.95);
   border-color: rgba(0, 0, 0, 0.08);
 }
-body.light-mode .achievement-activation-toast span {
+body.light-appearance .achievement-activation-toast span {
   color: var(--ink);
 }
 
-/* Light mode badge */
-body.light-mode .achievement-badge {
+/* Light appearance badge */
+body.light-appearance .achievement-badge {
   background: var(--sky-5, #1a5fa8);
 }
 

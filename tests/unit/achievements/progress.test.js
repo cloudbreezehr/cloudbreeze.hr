@@ -17,7 +17,7 @@ describe("achievements/progress", () => {
 
   describe("isCollectionProgress", () => {
     it("returns true for the known collection keys", () => {
-      expect(progress.isCollectionProgress("themes-used")).toBe(true);
+      expect(progress.isCollectionProgress("appearances-used")).toBe(true);
       expect(progress.isCollectionProgress("quadrants-clicked")).toBe(true);
       expect(progress.isCollectionProgress("modes-activated")).toBe(true);
       expect(progress.isCollectionProgress("idle-animations")).toBe(true);
@@ -31,8 +31,8 @@ describe("achievements/progress", () => {
   });
 
   describe("resolveProgressTotal — collection", () => {
-    it("returns 3 for themes-used", () => {
-      expect(progress.resolveProgressTotal("themes-used")).toBe(3);
+    it("returns 3 for appearances-used", () => {
+      expect(progress.resolveProgressTotal("appearances-used")).toBe(3);
     });
 
     it("returns 4 for quadrants-clicked", () => {
@@ -50,21 +50,21 @@ describe("achievements/progress", () => {
 
   describe("resolveProgressCurrent — collection", () => {
     it("returns 0 when nothing has been collected", () => {
-      expect(progress.resolveProgressCurrent("themes-used")).toBe(0);
+      expect(progress.resolveProgressCurrent("appearances-used")).toBe(0);
     });
 
     it("counts unique items added via storage.addProgressItem", () => {
-      storage.addProgressItem("themes-used", "dark");
-      storage.addProgressItem("themes-used", "light");
-      expect(progress.resolveProgressCurrent("themes-used")).toBe(2);
+      storage.addProgressItem("appearances-used", "dark");
+      storage.addProgressItem("appearances-used", "light");
+      expect(progress.resolveProgressCurrent("appearances-used")).toBe(2);
     });
   });
 
   describe("resolveProgressCurrent — counts", () => {
-    it("theme-toggles-3 reads the themeToggles counter", () => {
-      storage.setCounter("themeToggles", 2);
-      expect(progress.resolveProgressCurrent("theme-toggles-3")).toBe(2);
-      expect(progress.resolveProgressTotal("theme-toggles-3")).toBe(3);
+    it("appearance-toggles-3 reads the appearanceToggles counter", () => {
+      storage.setCounter("appearanceToggles", 2);
+      expect(progress.resolveProgressCurrent("appearance-toggles-3")).toBe(2);
+      expect(progress.resolveProgressTotal("appearance-toggles-3")).toBe(3);
     });
 
     it("unlocks-5 reads the total unlock count", () => {

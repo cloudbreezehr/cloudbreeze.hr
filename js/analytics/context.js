@@ -4,8 +4,8 @@
 //   1. Captured once per session (or once ever) — referrer domain, UTM
 //      params, language, timezone, device flags.  Memoized.
 //
-//   2. Read live at track() time — viewport, theme, active mode, unlock
-//      totals.  Cheap DOM/localStorage reads, safe per-event.
+//   2. Read live at track() time — viewport, appearance, active mode,
+//      unlock totals.  Cheap DOM/localStorage reads, safe per-event.
 //
 // Base props never include PII.  Referrer is hostname-only; UTM is a
 // well-known marketing convention and carries no cross-site identifier.
@@ -103,9 +103,10 @@ function staticContext() {
 
 function liveContext() {
   const body = document.body;
-  const themeSetting = localGet("theme") || "auto";
-  const themeEffective =
-    body && body.classList.contains("light-mode") ? "light" : "dark";
+  const appearanceSetting =
+    localGet("appearance") || localGet("theme") || "auto";
+  const appearanceEffective =
+    body && body.classList.contains("light-appearance") ? "light" : "dark";
   const activeMode = (body && body.dataset && body.dataset.activeTheme) || null;
 
   let cloudlogActive = false;
@@ -129,8 +130,8 @@ function liveContext() {
     viewport_w: window.innerWidth,
     viewport_h: window.innerHeight,
     dpr: window.devicePixelRatio || 1,
-    theme_setting: themeSetting,
-    theme_effective: themeEffective,
+    appearance_setting: appearanceSetting,
+    appearance_effective: appearanceEffective,
     active_mode: activeMode,
     cloudlog_active: cloudlogActive,
     unlocks_total: unlocksTotal,

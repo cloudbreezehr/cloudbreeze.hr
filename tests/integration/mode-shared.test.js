@@ -29,7 +29,7 @@ function stageSharedDom(extra = "") {
   document.body.innerHTML = `
     <nav>
       <a class="nav-logo" href="#"></a>
-      <button class="theme-toggle"></button>
+      <button class="appearance-toggle"></button>
     </nav>
     <main>
       <span class="hero-tag"></span>
@@ -122,11 +122,11 @@ const MODE_CASES = [
     id: "blocky",
     cardClass: "pixel-card",
     async init() {
-      const toggle = document.querySelector(".theme-toggle");
+      const toggle = document.querySelector(".appearance-toggle");
       const { initBlocky } = await import("../../js/modes/blocky.js");
       initBlocky(toggle);
     },
-    activate: clickActivation(".theme-toggle", 20),
+    activate: clickActivation(".appearance-toggle", 20),
   },
   {
     id: "rainy",

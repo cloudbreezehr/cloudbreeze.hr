@@ -29,7 +29,7 @@ const RIPPLE = defineConstants("effects.buttonRipple", {
 });
 
 const SELECTOR =
-  ".btn-primary, .nav-cta, .contact-link, .theme-toggle, .achievement-btn";
+  ".btn-primary, .nav-cta, .contact-link, .appearance-toggle, .achievement-btn";
 
 /**
  * Initialize click ripple on interactive buttons.

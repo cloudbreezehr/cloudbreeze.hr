@@ -73,8 +73,8 @@ describe("resolvePalette", () => {
     expect(pal).toBe(palettes.dark);
   });
 
-  it("falls back to dark when theme is unknown", () => {
-    const pal = resolvePalette("nosuch-theme", null);
+  it("falls back to dark when appearance is unknown", () => {
+    const pal = resolvePalette("nosuch-appearance", null);
     expect(pal).toBe(palettes.dark);
   });
 
@@ -85,7 +85,7 @@ describe("resolvePalette", () => {
     expect(pal.cloudWhite).toEqual(palettes.dark.cloudWhite);
   });
 
-  it("returns the base palette when submode has no overrides for the theme", () => {
+  it("returns the base palette when submode has no overrides for the appearance", () => {
     // There is no "nothere" override table, so it should pass through.
     const pal = resolvePalette("light", "nothere");
     expect(pal).toEqual(palettes.light);

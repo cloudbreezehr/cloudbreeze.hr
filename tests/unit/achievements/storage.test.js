@@ -119,8 +119,8 @@ describe("achievements/storage", () => {
     });
 
     it("setCounter updates the counter", () => {
-      storage.setCounter("themeToggles", 5);
-      expect(storage.getCounter("themeToggles")).toBe(5);
+      storage.setCounter("appearanceToggles", 5);
+      expect(storage.getCounter("appearanceToggles")).toBe(5);
     });
 
     it("incrementCounter adds the default increment of 1", () => {
@@ -141,20 +141,20 @@ describe("achievements/storage", () => {
     });
 
     it("addProgressItem adds uniquely", () => {
-      expect(storage.addProgressItem("themes-used", "dark")).toBe(true);
-      expect(storage.addProgressItem("themes-used", "dark")).toBe(false);
-      expect(storage.addProgressItem("themes-used", "light")).toBe(true);
-      expect(storage.getProgressItems("themes-used")).toEqual([
+      expect(storage.addProgressItem("appearances-used", "dark")).toBe(true);
+      expect(storage.addProgressItem("appearances-used", "dark")).toBe(false);
+      expect(storage.addProgressItem("appearances-used", "light")).toBe(true);
+      expect(storage.getProgressItems("appearances-used")).toEqual([
         "dark",
         "light",
       ]);
     });
 
     it("pruneProgressItems drops entries not in the valid list", () => {
-      storage.addProgressItem("themes-used", "dark");
-      storage.addProgressItem("themes-used", "old-name");
-      storage.pruneProgressItems("themes-used", ["dark", "light"]);
-      expect(storage.getProgressItems("themes-used")).toEqual(["dark"]);
+      storage.addProgressItem("appearances-used", "dark");
+      storage.addProgressItem("appearances-used", "old-name");
+      storage.pruneProgressItems("appearances-used", ["dark", "light"]);
+      expect(storage.getProgressItems("appearances-used")).toEqual(["dark"]);
     });
 
     it("pruneProgressItems is a no-op for an unknown key", () => {

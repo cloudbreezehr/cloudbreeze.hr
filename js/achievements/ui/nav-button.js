@@ -26,10 +26,10 @@ export function createNavButton(onPanelToggle, { onBadgeChange } = {}) {
   badgeEl.textContent = "0";
   navBtn.appendChild(badgeEl);
 
-  // Insert before the theme toggle
-  const themeToggle = actions.querySelector(".theme-toggle");
-  if (themeToggle) {
-    actions.insertBefore(navBtn, themeToggle);
+  // Insert before the appearance toggle
+  const appearanceToggle = actions.querySelector(".appearance-toggle");
+  if (appearanceToggle) {
+    actions.insertBefore(navBtn, appearanceToggle);
   } else {
     actions.insertBefore(navBtn, actions.firstChild);
   }

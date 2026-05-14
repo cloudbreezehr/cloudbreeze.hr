@@ -153,12 +153,12 @@ const defaults = {
   moteCount: RENDER.MOTE_COUNT,
 };
 
-export function initCanvas(canvasEl, theme, options) {
+export function initCanvas(canvasEl, appearance, options) {
   canvas = canvasEl;
   ctx = canvas.getContext("2d");
   const opts = Object.assign({}, defaults, options);
 
-  let isDarkMode = theme.isDark();
+  let isDark = appearance.isDark();
   let scrollProgress = 0;
   let scrollVelocity = 0;
   let lastScrollTop = window.scrollY || 0;
@@ -180,8 +180,8 @@ export function initCanvas(canvasEl, theme, options) {
     return lvhProbe.offsetHeight || window.innerHeight;
   }
 
-  theme.onChange((dark) => {
-    isDarkMode = dark;
+  appearance.onChange((dark) => {
+    isDark = dark;
   });
 
   function resize() {
@@ -258,7 +258,7 @@ export function initCanvas(canvasEl, theme, options) {
 
   const sky = opts.stars ? createSky(opts.starCount) : null;
   const fury = createFury();
-  let currentPal = resolvePalette(isDarkMode ? "dark" : "light", null);
+  let currentPal = resolvePalette(isDark ? "dark" : "light", null);
 
   // In upside-down mode the page is flipped via scaleY(-1), so canvas Y must mirror
   const isUpside = () => document.body.classList.contains("upside-down");
@@ -322,7 +322,7 @@ export function initCanvas(canvasEl, theme, options) {
       if (submode) document.body.dataset.activeTheme = submode;
       else delete document.body.dataset.activeTheme;
     }
-    const pal = resolvePalette(isDarkMode ? "dark" : "light", submode);
+    const pal = resolvePalette(isDark ? "dark" : "light", submode);
     currentPal = pal;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -400,7 +400,7 @@ export function initCanvas(canvasEl, theme, options) {
 
     // ── Blocky mode: pixelation post-process + fireflies ──
     if (isBlocky) {
-      blocky.draw(forces, scrollVelocity, isDarkMode);
+      blocky.draw(forces, scrollVelocity, isDark);
     }
 
     requestAnimationFrame(render);

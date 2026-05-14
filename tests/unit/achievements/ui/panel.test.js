@@ -35,7 +35,7 @@ describe("achievements/ui/panel", () => {
     document.body.innerHTML = `
       <nav>
         <div class="nav-actions">
-          <button class="theme-toggle"></button>
+          <button class="appearance-toggle"></button>
         </div>
       </nav>
     `;

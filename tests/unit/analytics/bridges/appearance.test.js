@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Theme-bridge test.  Focus areas:
-//   - theme_toggle fires with from/to sequencing (first toggle's `from` is null)
+// Appearance-bridge test.  Focus areas:
+//   - appearance_toggle fires with from/to sequencing (first toggle's `from` is null)
 //   - toggles_in_session counter increments monotonically
 //   - via is "click" today (only source path); regression guard so future
 //     changes are intentional
 
-describe("analytics/bridges/theme", () => {
+describe("analytics/bridges/appearance", () => {
   let core;
   let bridge;
   let captured;
@@ -17,17 +17,17 @@ describe("analytics/bridges/theme", () => {
     vi.resetModules();
     captured = [];
     core = await import("../../../../js/analytics/core.js");
-    bridge = await import("../../../../js/analytics/bridges/theme.js");
+    bridge = await import("../../../../js/analytics/bridges/appearance.js");
     core.start({
       adapter: { name: "capture", send: (batch) => captured.push(...batch) },
     });
-    bridge.initThemeBridge();
+    bridge.initAppearanceBridge();
   }
 
-  function dispatchThemeChange(theme) {
+  function dispatchAppearanceChange(appearance) {
     window.dispatchEvent(
       new CustomEvent("achievement", {
-        detail: { type: "theme-change", theme },
+        detail: { type: "appearance-change", appearance },
       }),
     );
   }
@@ -44,22 +44,22 @@ describe("analytics/bridges/theme", () => {
     if (core && core._stopForTests) core._stopForTests();
   });
 
-  it("emits theme_toggle with null `from` on the first toggle", () => {
-    dispatchThemeChange("dark");
+  it("emits appearance_toggle with null `from` on the first toggle", () => {
+    dispatchAppearanceChange("dark");
     core.flush();
-    const t = eventsNamed("theme_toggle")[0];
+    const t = eventsNamed("appearance_toggle")[0];
     expect(t.props.from).toEqual(null);
     expect(t.props.to).toEqual("dark");
     expect(t.props.toggles_in_session).toEqual(1);
     expect(t.props.via).toEqual("click");
   });
 
-  it("subsequent toggles carry the previous theme as `from`", () => {
-    dispatchThemeChange("dark");
-    dispatchThemeChange("light");
-    dispatchThemeChange("auto");
+  it("subsequent toggles carry the previous appearance as `from`", () => {
+    dispatchAppearanceChange("dark");
+    dispatchAppearanceChange("light");
+    dispatchAppearanceChange("auto");
     core.flush();
-    const toggles = eventsNamed("theme_toggle").map((e) => ({
+    const toggles = eventsNamed("appearance_toggle").map((e) => ({
       from: e.props.from,
       to: e.props.to,
     }));
@@ -71,29 +71,29 @@ describe("analytics/bridges/theme", () => {
   });
 
   it("toggles_in_session increments monotonically", () => {
-    dispatchThemeChange("dark");
-    dispatchThemeChange("light");
-    dispatchThemeChange("dark");
+    dispatchAppearanceChange("dark");
+    dispatchAppearanceChange("light");
+    dispatchAppearanceChange("dark");
     core.flush();
-    const counts = eventsNamed("theme_toggle").map(
+    const counts = eventsNamed("appearance_toggle").map(
       (e) => e.props.toggles_in_session,
     );
     expect(counts).toEqual([1, 2, 3]);
   });
 
-  it("ignores non-theme-change achievement events", () => {
+  it("ignores non-appearance-change achievement events", () => {
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "click" } }),
     );
     core.flush();
-    expect(eventsNamed("theme_toggle").length).toEqual(0);
+    expect(eventsNamed("appearance_toggle").length).toEqual(0);
   });
 
-  it("handles missing theme field with to: null", () => {
+  it("handles missing appearance field with to: null", () => {
     window.dispatchEvent(
-      new CustomEvent("achievement", { detail: { type: "theme-change" } }),
+      new CustomEvent("achievement", { detail: { type: "appearance-change" } }),
     );
     core.flush();
-    expect(eventsNamed("theme_toggle")[0].props.to).toEqual(null);
+    expect(eventsNamed("appearance_toggle")[0].props.to).toEqual(null);
   });
 });

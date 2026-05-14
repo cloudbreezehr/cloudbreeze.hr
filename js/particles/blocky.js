@@ -197,7 +197,7 @@ const FLY = defineConstants(
   { mode: "blocky" },
 );
 
-// ── Butterflies (Blocky light mode) ──
+// ── Butterflies (Blocky light appearance) ──
 const BUTTERFLY_COLORS = [
   [255, 80, 80], // red
   [80, 120, 255], // blue
@@ -331,7 +331,7 @@ class Firefly {
     this.colorVariant = Math.random(); // 0-1: determines rare color variants
     this.prevX = this.x;
     this.prevY = this.y;
-    // Butterfly state (light mode)
+    // Butterfly state (light appearance)
     this.flapPhase = Math.random() * Math.PI * 2;
     this.butterflyColor =
       BUTTERFLY_COLORS[Math.floor(Math.random() * BUTTERFLY_COLORS.length)];
@@ -435,7 +435,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
   resizePixelCanvas();
 
   return {
-    draw(forces, scrollVelocity, isDarkMode) {
+    draw(forces, scrollVelocity, isDark) {
       // Pixelation post-process: downsample then scale back up
       const pw = pixelCanvas.width;
       const ph = pixelCanvas.height;
@@ -483,7 +483,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
         if (Math.abs(scrollVelocity) > FLY.SCROLL_THRESHOLD) {
           f.vx += scrollVelocity * FLY.SCROLL_VX;
         }
-        if (isDarkMode) {
+        if (isDark) {
           f.drawFirefly(_ctx);
         } else {
           f.drawButterfly(_ctx);

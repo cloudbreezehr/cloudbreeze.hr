@@ -439,7 +439,7 @@ describe("tracker — scroll handler", () => {
   });
 });
 
-describe("tracker — theme-change handler", () => {
+describe("tracker — appearance-change handler", () => {
   beforeEach(() => {
     document.body.className = "";
     delete document.body.dataset.activeTheme;
@@ -452,52 +452,52 @@ describe("tracker — theme-change handler", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks nightfall for the dark theme", async () => {
+  it("unlocks nightfall for the dark appearance", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("theme-change", { theme: "dark" });
+    dispatchAchievement("appearance-change", { appearance: "dark" });
 
     expect(storage.isUnlocked("nightfall")).toBe(true);
   });
 
-  it("unlocks daybreak for the light theme", async () => {
+  it("unlocks daybreak for the light appearance", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("theme-change", { theme: "light" });
+    dispatchAchievement("appearance-change", { appearance: "light" });
 
     expect(storage.isUnlocked("daybreak")).toBe(true);
   });
 
-  it("records themes-used as a collection", async () => {
+  it("records appearances-used as a collection", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("theme-change", { theme: "dark" });
-    dispatchAchievement("theme-change", { theme: "light" });
+    dispatchAchievement("appearance-change", { appearance: "dark" });
+    dispatchAchievement("appearance-change", { appearance: "light" });
 
-    expect(storage.getProgressItems("themes-used").sort()).toEqual([
+    expect(storage.getProgressItems("appearances-used").sort()).toEqual([
       "dark",
       "light",
     ]);
   });
 
-  it("increments themeToggles counter", async () => {
+  it("increments appearanceToggles counter", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("theme-change", { theme: "dark" });
-    dispatchAchievement("theme-change", { theme: "light" });
-    dispatchAchievement("theme-change", { theme: "auto" });
+    dispatchAchievement("appearance-change", { appearance: "dark" });
+    dispatchAchievement("appearance-change", { appearance: "light" });
+    dispatchAchievement("appearance-change", { appearance: "auto" });
 
-    expect(storage.getCounter("themeToggles")).toBe(3);
+    expect(storage.getCounter("appearanceToggles")).toBe(3);
   });
 
-  it("unlocks the theme-toggles-3 progressive after three toggles", async () => {
+  it("unlocks the appearance-toggles-3 progressive after three toggles", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("theme-change", { theme: "dark" });
-    dispatchAchievement("theme-change", { theme: "light" });
-    dispatchAchievement("theme-change", { theme: "auto" });
+    dispatchAchievement("appearance-change", { appearance: "dark" });
+    dispatchAchievement("appearance-change", { appearance: "light" });
+    dispatchAchievement("appearance-change", { appearance: "auto" });
 
-    // The progressive achievement with progressKey "theme-toggles-3" is
+    // The progressive achievement with progressKey "appearance-toggles-3" is
     // "dusk-and-dawn" — confirm it unlocked by checking storage.
     expect(storage.isUnlocked("dusk-and-dawn")).toBe(true);
   });
@@ -860,15 +860,15 @@ describe("tracker — progressive re-evaluation", () => {
     const onRelock = vi.fn();
     const { storage } = await startTracker(() => {}, onRelock);
 
-    dispatchAchievement("theme-change", { theme: "dark" });
-    dispatchAchievement("theme-change", { theme: "light" });
-    dispatchAchievement("theme-change", { theme: "auto" });
+    dispatchAchievement("appearance-change", { appearance: "dark" });
+    dispatchAchievement("appearance-change", { appearance: "light" });
+    dispatchAchievement("appearance-change", { appearance: "auto" });
     expect(storage.isUnlocked("dusk-and-dawn")).toBe(true);
 
     // Simulate state drift by rolling back the counter. A subsequent event
     // re-runs the progressive check and should trigger a relock.
-    storage.setCounter("themeToggles", 1);
-    dispatchAchievement("theme-change", { theme: "dark" });
+    storage.setCounter("appearanceToggles", 1);
+    dispatchAchievement("appearance-change", { appearance: "dark" });
 
     expect(storage.isUnlocked("dusk-and-dawn")).toBe(false);
     const ids = onRelock.mock.calls.map((c) => c[0].id);
@@ -1321,37 +1321,37 @@ describe("tracker — cartographers-almanac", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks after panel-open under each of the three theme preferences", async () => {
+  it("unlocks after panel-open under each of the three appearance preferences", async () => {
     const { storage } = await startTracker();
 
-    dispatchAchievement("panel-open", { theme: "dark" });
+    dispatchAchievement("panel-open", { appearance: "dark" });
     expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
 
-    dispatchAchievement("panel-open", { theme: "light" });
+    dispatchAchievement("panel-open", { appearance: "light" });
     expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
 
-    dispatchAchievement("panel-open", { theme: "auto" });
+    dispatchAchievement("panel-open", { appearance: "auto" });
     expect(storage.isUnlocked("cartographers-almanac")).toBe(true);
   });
 
-  it("repeating the same theme does not advance progress", async () => {
+  it("repeating the same appearance does not advance progress", async () => {
     const { storage } = await startTracker();
 
     for (let i = 0; i < 5; i++) {
-      dispatchAchievement("panel-open", { theme: "dark" });
+      dispatchAchievement("panel-open", { appearance: "dark" });
     }
 
     expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
   });
 
-  it("ignores panel-open without a theme field", async () => {
+  it("ignores panel-open without an appearance field", async () => {
     const { storage } = await startTracker();
 
     dispatchAchievement("panel-open", {});
-    dispatchAchievement("panel-open", { theme: "light" });
-    dispatchAchievement("panel-open", { theme: "auto" });
+    dispatchAchievement("panel-open", { appearance: "light" });
+    dispatchAchievement("panel-open", { appearance: "auto" });
 
-    // Only two themes credited.
+    // Only two appearances credited.
     expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
   });
 });
