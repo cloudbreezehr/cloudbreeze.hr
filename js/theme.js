@@ -2,7 +2,18 @@
 // Paired with js/theme-boot.js: the boot file runs a minimal subset of
 // this logic synchronously before first paint so light-mode users
 // don't flash dark colors.  If the default-preference fallback here
-// ("theme" || "dark") ever changes, update theme-boot.js to match.
+// ("dark") ever changes, update theme-boot.js to match.
+
+const STORAGE_KEY = "theme";
+const DEFAULT_PREFERENCE = "dark";
+
+/**
+ * Read the user's theme preference — one of "auto", "light", "dark".
+ * Falls back to the default when no preference has been stored.
+ */
+export function getThemePreference() {
+  return localStorage.getItem(STORAGE_KEY) || DEFAULT_PREFERENCE;
+}
 
 export function initTheme(toggleEl) {
   let isDarkMode = !document.body.classList.contains("light-mode");
@@ -25,13 +36,13 @@ export function initTheme(toggleEl) {
     callbacks.forEach((cb) => cb(isDarkMode));
   }
 
-  applyTheme(localStorage.getItem("theme") || "dark");
+  applyTheme(getThemePreference());
 
   toggleEl.addEventListener("click", () => {
-    const current = localStorage.getItem("theme") || "dark";
+    const current = getThemePreference();
     const next =
       themeOrder[(themeOrder.indexOf(current) + 1) % themeOrder.length];
-    localStorage.setItem("theme", next);
+    localStorage.setItem(STORAGE_KEY, next);
     applyTheme(next);
     window.dispatchEvent(
       new CustomEvent("achievement", {
@@ -43,7 +54,7 @@ export function initTheme(toggleEl) {
   window
     .matchMedia("(prefers-color-scheme: dark)")
     .addEventListener("change", (e) => {
-      if ((localStorage.getItem("theme") || "dark") === "auto") {
+      if (getThemePreference() === "auto") {
         isDarkMode = e.matches;
         document.body.classList.toggle("light-mode", !isDarkMode);
         callbacks.forEach((cb) => cb(isDarkMode));

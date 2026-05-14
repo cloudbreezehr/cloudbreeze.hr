@@ -11,6 +11,7 @@ import * as storage from "../storage.js";
 import * as activityLog from "../activity-log.js";
 import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
+import { getThemePreference } from "../../theme.js";
 import { hideHintTooltip } from "./tooltip.js";
 import { getNavBtnEl, setActive as setNavActive } from "./nav-button.js";
 import { configureToasts, toastContainerContains } from "./toast.js";
@@ -124,14 +125,17 @@ function openPanelUI(onHide) {
   panelOpen = true;
   setNavActive(true);
 
-  // Theme preference (auto/light/dark) — feeds the cartographers-almanac
-  // achievement which collects each theme the panel is opened under.
-  const themePref = localStorage.getItem("theme") || "dark";
-  // Initial tab — credits Tab Tourist for the default view so the user
-  // only needs to click the other tab to complete the pair.
+  // Theme preference feeds the cartographers-almanac achievement which
+  // collects each theme the panel is opened under. Initial tab credits
+  // Tab Tourist for the default view so the user only needs to click
+  // the other tab to complete the pair.
   window.dispatchEvent(
     new CustomEvent("achievement", {
-      detail: { type: "panel-open", theme: themePref, tab: getActiveTab() },
+      detail: {
+        type: "panel-open",
+        theme: getThemePreference(),
+        tab: getActiveTab(),
+      },
     }),
   );
 

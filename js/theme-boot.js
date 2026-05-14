@@ -8,9 +8,9 @@
 //
 // Matches the `initTheme` logic in js/theme.js: the stored preference
 // wins when it's "dark" or "light"; "auto" defers to the OS
-// preference.  No stored value defaults to dark — same as initTheme's
-// `localStorage.getItem("theme") || "dark"`.  The result is a
-// body.light-mode class that the stylesheet reads on first paint.
+// preference.  No stored value defaults to dark — same fallback as
+// `getThemePreference()` in theme.js.  The result is a body.light-mode
+// class that the stylesheet reads on first paint.
 //
 // Kept deliberately small — anything this file does delays every
 // render.  If future pre-paint work shows up (density mode, reduced-

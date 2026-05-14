@@ -107,3 +107,28 @@ describe("initTheme", () => {
     expect(cb.mock.lastCall[0]).toBe(false);
   });
 });
+
+describe("getThemePreference", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("returns 'dark' when no preference is stored", async () => {
+    const { getThemePreference } = await import("../../js/theme.js");
+    expect(getThemePreference()).toEqual("dark");
+  });
+
+  it.each(["dark", "light", "auto"])(
+    "returns the stored '%s' preference",
+    async (pref) => {
+      localStorage.setItem("theme", pref);
+      const { getThemePreference } = await import("../../js/theme.js");
+      expect(getThemePreference()).toEqual(pref);
+    },
+  );
+});
