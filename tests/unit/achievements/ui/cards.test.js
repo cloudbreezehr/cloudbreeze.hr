@@ -187,6 +187,60 @@ describe("achievements/ui/cards", () => {
     });
   });
 
+  describe("progress bar", () => {
+    it("renders one segment per unit when total is small", () => {
+      // dusk-and-dawn → progressKey theme-toggles-3 (total = 3).
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="dusk-and-dawn"]',
+      );
+      const wrap = card.querySelector(".achievement-card-progress-bar-wrap");
+      expect(wrap).not.toBeNull();
+      expect(wrap.classList.contains("segmented")).toBe(true);
+      const segments = wrap.querySelectorAll(
+        ".achievement-card-progress-bar-segment",
+      );
+      expect(segments.length).toEqual(3);
+    });
+
+    it("paints the .filled class on segments matching the collected count", () => {
+      // Unlock 3 unrelated achievements so curious-mind (unlocks-5) reads 3/5.
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      storage.unlock("a-stillness");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="curious-mind"]',
+      );
+      const wrap = card.querySelector(".achievement-card-progress-bar-wrap");
+      const segments = wrap.querySelectorAll(
+        ".achievement-card-progress-bar-segment",
+      );
+      expect(segments.length).toEqual(5);
+      const filled = wrap.querySelectorAll(
+        ".achievement-card-progress-bar-segment.filled",
+      ).length;
+      expect(filled).toEqual(3);
+    });
+
+    it("falls back to a smooth fill when total exceeds the segmented threshold", () => {
+      // dedicated → progressKey unlocks-15 (total = 15, above threshold).
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="dedicated"]',
+      );
+      const wrap = card.querySelector(".achievement-card-progress-bar-wrap");
+      expect(wrap).not.toBeNull();
+      expect(wrap.classList.contains("segmented")).toBe(false);
+      expect(
+        wrap.querySelectorAll(".achievement-card-progress-bar-segment").length,
+      ).toEqual(0);
+      expect(
+        wrap.querySelector(".achievement-card-progress-bar-fill"),
+      ).not.toBeNull();
+    });
+  });
+
   describe("refreshCard", () => {
     it("no-ops when the panel is closed", () => {
       mod.renderSections(container);

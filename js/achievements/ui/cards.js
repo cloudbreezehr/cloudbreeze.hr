@@ -30,6 +30,13 @@ const SEEN_INTERSECTION_RATIO = 0.5;
 // ── Card animation ──
 const SHINE_DURATION_MS = 800;
 
+// ── Progress bar ──
+// Cap on the unit count for which we render one segment per progress
+// unit instead of a single smooth fill.  Above this, individual
+// segments would be too narrow to read at the bar's 2px height; the
+// numeric "N/M" text takes over the precise-progress role.
+const SEGMENTED_PROGRESS_MAX = 10;
+
 // ── Intro card ──
 // Onboarding card shown at the top of the Achievements view while the
 // user is still discovering the panel's purpose.  Auto-vanishes once
@@ -275,6 +282,38 @@ function buildCardTimeBlock(ach) {
   return timeEl;
 }
 
+// Build the bottom-edge progress bar for an achievement with a
+// progressKey.  Returns null when the achievement has no progress.
+// Two render modes:
+//   - segmented: total ≤ SEGMENTED_PROGRESS_MAX, one filled tick per
+//     completed unit, gaps between.  Reinforces the textual N/M.
+//   - smooth: anything larger, a single proportionally-wide fill.
+function buildProgressBar(progressKey) {
+  const total = resolveProgressTotal(progressKey);
+  if (total <= 0) return null;
+  const collected = Math.min(resolveProgressCurrent(progressKey), total);
+
+  const wrap = document.createElement("div");
+  wrap.className = "achievement-card-progress-bar-wrap";
+
+  if (total <= SEGMENTED_PROGRESS_MAX) {
+    wrap.classList.add("segmented");
+    for (let i = 0; i < total; i++) {
+      const seg = document.createElement("div");
+      seg.className = "achievement-card-progress-bar-segment";
+      if (i < collected) seg.classList.add("filled");
+      wrap.appendChild(seg);
+    }
+  } else {
+    const fill = document.createElement("div");
+    fill.className = "achievement-card-progress-bar-fill";
+    fill.style.width = `${(collected / total) * 100}%`;
+    wrap.appendChild(fill);
+  }
+
+  return wrap;
+}
+
 // ── Section renderer ──
 
 export function renderSections(container) {
@@ -428,19 +467,9 @@ export function renderSections(container) {
       card.appendChild(text);
       card.appendChild(cardPts);
 
-      // Progress bar — absolutely positioned at card bottom edge
       if (ach.progressKey) {
-        const total = resolveProgressTotal(ach.progressKey);
-        const collected = resolveProgressCurrent(ach.progressKey);
-        if (total > 0) {
-          const barWrap = document.createElement("div");
-          barWrap.className = "achievement-card-progress-bar-wrap";
-          const barFill = document.createElement("div");
-          barFill.className = "achievement-card-progress-bar-fill";
-          barFill.style.width = `${Math.min((collected / total) * 100, 100)}%`;
-          barWrap.appendChild(barFill);
-          card.appendChild(barWrap);
-        }
+        const bar = buildProgressBar(ach.progressKey);
+        if (bar) card.appendChild(bar);
       }
 
       // Click pop on unlocked cards

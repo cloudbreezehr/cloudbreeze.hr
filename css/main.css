@@ -4333,6 +4333,24 @@ nav.nav-light .achievement-btn::after {
   border-radius: 0 0 6px 6px;
   transition: width 0.4s ease-out;
 }
+/* Segmented variant — one tick per progress unit, used when the count
+   is small enough that individual segments are still readable.  The
+   wrap's own track background shows through the gaps as the unfilled
+   tick. */
+.achievement-card-progress-bar-wrap.segmented {
+  display: flex;
+  gap: 2px;
+  background: transparent;
+}
+.achievement-card-progress-bar-segment {
+  flex: 1;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease-out;
+}
+.achievement-card-progress-bar-segment.filled {
+  background: var(--set-color, var(--achievement-default-accent));
+}
 
 /* ── Relocked Card State ── */
 
