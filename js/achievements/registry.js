@@ -107,6 +107,16 @@ export const ACHIEVEMENTS = [
     hidden: false,
   },
   {
+    id: "tab-tourist",
+    title: "Tab Tourist",
+    description: "Both halves of the logbook, browsed.",
+    hint: "Switch between the Achievements and Activity tabs",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+    progressKey: "panel-tabs-visited",
+  },
+  {
     id: "time-warp",
     title: "Time Warp",
     description: "Time stands still when you look closely.",
@@ -168,15 +178,6 @@ export const ACHIEVEMENTS = [
     hint: "Move your cursor near the Cloudbreeze wordmark",
     set: "exploration",
     points: COMMON,
-    hidden: true,
-  },
-  {
-    id: "historian",
-    title: "Historian",
-    description: "Your path becomes visible.",
-    hint: "Discover your first hidden theme",
-    set: "exploration",
-    points: UNCOMMON,
     hidden: true,
   },
   // ── Exploration: Scroll ──
@@ -303,18 +304,6 @@ export const ACHIEVEMENTS = [
     set: "exploration",
     points: RARE,
     hidden: true,
-  },
-
-  // ── Mastery: Cloudlog Navigation ──
-  {
-    id: "tab-tourist",
-    title: "Tab Tourist",
-    description: "Both halves of the logbook, browsed.",
-    hint: "Switch between the Achievements and Activity tabs",
-    set: "mastery",
-    points: UNCOMMON,
-    hidden: true,
-    progressKey: "panel-tabs-visited",
   },
 
   // ── Mastery: Hold / Gravity Progression ──
@@ -926,6 +915,15 @@ export const ACHIEVEMENTS = [
     points: LEGENDARY,
     hidden: true,
     progressKey: "non-meta-all",
+  },
+  {
+    id: "historian",
+    title: "Historian",
+    description: "Your path becomes visible.",
+    hint: "Discover your first hidden theme",
+    set: "meta",
+    points: UNCOMMON,
+    hidden: true,
   },
   {
     id: "theme-hopper",
