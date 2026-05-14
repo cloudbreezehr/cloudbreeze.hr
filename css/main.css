@@ -3736,6 +3736,13 @@ nav.nav-light .achievement-btn::after {
 .achievement-view.active {
   display: flex;
 }
+/* Direct children of the scroll container must not flex-shrink, or
+   the column layout will compress them below their natural height
+   when the content fits — collapsing the intro card and any sections
+   shorter than they should be. */
+.achievement-view > * {
+  flex-shrink: 0;
+}
 .achievement-view::-webkit-scrollbar {
   width: 4px;
 }
