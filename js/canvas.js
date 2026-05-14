@@ -322,8 +322,16 @@ export function initCanvas(canvasEl, appearance, options) {
       if (theme) document.body.dataset.activeTheme = theme;
       else delete document.body.dataset.activeTheme;
     }
-    const pal = resolvePalette(isDark ? "dark" : "light", theme);
+    const appearance = isDark ? "dark" : "light";
+    const pal = resolvePalette(appearance, theme);
     currentPal = pal;
+    // Themes stack: body classes can coexist, but only one wins the shared
+    // palette (sky, fury, atmosphere, interactions).  Theme-specific
+    // renderers must read *their own* theme's palette, otherwise a stacked
+    // theme would either pick up the winner's colors or — for keys that
+    // exist only in its own override block (e.g. bubbleRim, glassBody) —
+    // dereference `undefined` and crash the render loop.
+    const palFor = (id) => resolvePalette(appearance, id);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient — rebuilt only when inputs change.
@@ -378,19 +386,19 @@ export function initCanvas(canvasEl, appearance, options) {
 
     // Bubbles + Jellyfish — deep-sea theme
     if (isDeepSea) {
-      deepSea.draw(forces, scrollVelocity, dt, pal);
+      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"));
     }
 
     // Rain + thunder + glass drops — rainy theme
     if (isRainy) {
-      rain.draw(forces, scrollVelocity, dt, pal);
+      rain.draw(forces, scrollVelocity, dt, palFor("rainy"));
     }
     if (wasRainy && !isRainy) rain.cleanup();
     wasRainy = isRainy;
 
     // Paper theme — hand-drawn sketch elements
     if (isPaper) {
-      paper.draw(pal);
+      paper.draw(palFor("paper"));
     }
     if (wasPaper && !isPaper) paper.cleanup();
     wasPaper = isPaper;
