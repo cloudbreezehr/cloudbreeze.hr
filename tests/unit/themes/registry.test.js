@@ -10,13 +10,14 @@ import {
 } from "../../../js/themes/registry.js";
 
 describe("themes/registry — metadata", () => {
-  it("exposes all six known themes in declaration order", () => {
+  it("exposes all known themes in declaration order", () => {
     expect(getThemeIds()).toEqual([
       "frozen",
       "deep-sea",
       "blocky",
       "rainy",
       "paper",
+      "vhs",
       "upside-down",
     ]);
   });

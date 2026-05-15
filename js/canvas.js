@@ -8,6 +8,7 @@ import { createDeepSea } from "./particles/deep-sea.js";
 import { createBlocky } from "./particles/blocky.js";
 import { createRain } from "./particles/rain.js";
 import { createPaper } from "./particles/paper.js";
+import { createVhs } from "./particles/vhs.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
@@ -238,6 +239,7 @@ export function initCanvas(canvasEl, appearance, options) {
   const blocky = createBlocky(canvas, ctx, COUNTS.FIREFLY);
   const rain = createRain(canvas, ctx);
   const paper = createPaper(canvas, ctx);
+  const vhs = createVhs(canvas);
 
   window.addEventListener("resize", () => {
     resize();
@@ -275,6 +277,7 @@ export function initCanvas(canvasEl, appearance, options) {
       blocky: cl.contains("blocky"),
       rainy: cl.contains("rainy"),
       paper: cl.contains("paper"),
+      vhs: cl.contains("vhs"),
       upsideDown: cl.contains("upside-down"),
     };
   }
@@ -282,6 +285,7 @@ export function initCanvas(canvasEl, appearance, options) {
   let lastFrameTime = performance.now();
   let wasRainy = false;
   let wasPaper = false;
+  let wasVhs = false;
 
   // ── Sky gradient cache ──
   // Rebuilding the gradient every frame is the most expensive per-frame op.
@@ -306,6 +310,7 @@ export function initCanvas(canvasEl, appearance, options) {
       blocky: isBlocky,
       rainy: isRainy,
       paper: isPaper,
+      vhs: isVhs,
     } = themes;
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeThemes = getThemeIds().filter((m) =>
@@ -410,6 +415,15 @@ export function initCanvas(canvasEl, appearance, options) {
     if (isBlocky) {
       blocky.draw(forces, scrollVelocity, isDark);
     }
+
+    // ── VHS theme: phosphor decay layer ──
+    // Runs last so it composites on top of every other layer. The phosphor
+    // module does its own ghost-overlay + decay + capture cycle in one call.
+    if (isVhs) {
+      vhs.drawAfter(ctx);
+    }
+    if (wasVhs && !isVhs) vhs.cleanup();
+    wasVhs = isVhs;
   }
 
   // Drive the render loop.  Invariant: the next frame is always
@@ -459,6 +473,9 @@ export function initCanvas(canvasEl, appearance, options) {
     if (themes.rainy) rain.clickBurst(cx, cy);
     // Paper click — ink splat replaces the normal burst
     if (themes.paper) paper.clickBurst(cx, cy);
+    // VHS click — channel glitch on top of the normal burst (additive,
+    // not a replacement, so the cursor still feels reactive).
+    if (themes.vhs) vhs.clickGlitch(cx, cy);
 
     // Normal click burst particles — blocky uses block fragments instead;
     // paper uses ink splats.

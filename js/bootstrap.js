@@ -27,6 +27,7 @@ import { initDeepSea } from "./themes/deep-sea.js";
 import { initBlocky } from "./themes/blocky.js";
 import { initRainy } from "./themes/rainy.js";
 import { initPaper } from "./themes/paper.js";
+import { initVhs } from "./themes/vhs.js";
 import { toggleDevConsole, openDevConsole } from "./dev/console.js";
 import { toggleFps } from "./dev/fps.js";
 import { onKey } from "./keyboard.js";
@@ -90,6 +91,7 @@ initDeepSea();
 initBlocky(document.querySelector(".appearance-toggle"));
 initRainy();
 initPaper();
+initVhs();
 initThemeHistoryHud();
 initAchievements();
 

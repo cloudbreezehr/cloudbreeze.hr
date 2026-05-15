@@ -71,6 +71,17 @@ const THEMES = [
       "</svg>",
   },
   {
+    id: "vhs",
+    label: "VHS",
+    color: "#b4f0b4",
+    icon:
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<rect x="2" y="4" width="12" height="8" rx="1"/>' +
+      '<circle cx="6" cy="8" r="1.3" fill="currentColor"/>' +
+      '<circle cx="10" cy="8" r="1.3" fill="currentColor"/>' +
+      "</svg>",
+  },
+  {
     id: "upside-down",
     label: "Upside Down",
     color: "#e04050",

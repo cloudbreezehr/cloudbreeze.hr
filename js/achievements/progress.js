@@ -116,6 +116,10 @@ export const PROGRESS_COUNTS = {
     current: () => countSetUnlocked("paper"),
     total: () => getSetPrereqs("paper").length,
   },
+  "vhs-set": {
+    current: () => countSetUnlocked("vhs"),
+    total: () => getSetPrereqs("vhs").length,
+  },
   "upside-down-set": {
     current: () => countSetUnlocked("upside-down"),
     total: () => getSetPrereqs("upside-down").length,

@@ -34,6 +34,8 @@ export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
 const THEME_HOPPER_COUNT = 3;
+// Channel Surfer — distinct click-glitches in a single VHS session.
+const CHANNEL_SURFER_COUNT = 5;
 // Storm Forecaster — distinct themes the user must trigger lightning
 // under within a single session. Doesn't count the default (no-theme)
 // canvas, so the achievement specifically rewards weather across active
@@ -68,6 +70,7 @@ export function createTracker(onUnlock, onRelock) {
     lightningCount: 0,
     lightningThemes: new Set(),
     wellCount: 0,
+    vhsGlitchCount: 0,
     dragStartX: null,
     dragStartY: null,
     lastFuryTime: 0,
@@ -308,6 +311,7 @@ export function createTracker(onUnlock, onRelock) {
       const theme = activeTheme();
       if (theme === "deep-sea") tryUnlock("pressure-drop");
       if (theme === "rainy") tryUnlock("monsoon");
+      if (theme === "vhs") tryUnlock("bad-tracking");
     },
 
     "well-full"() {
@@ -368,6 +372,7 @@ export function createTracker(onUnlock, onRelock) {
         blocky: "resolution-drop",
         rainy: "first-drop",
         paper: "first-sketch",
+        vhs: "tracking-lost",
         "upside-down": "the-flip",
       };
       if (themeMap[data.theme]) tryUnlock(themeMap[data.theme]);
@@ -401,6 +406,7 @@ export function createTracker(onUnlock, onRelock) {
         blocky: "defrag",
         rainy: "rainbow",
         paper: "blank-page",
+        vhs: "tape-eject",
         "upside-down": "restoration",
       };
       if (deactivateMap[data.theme]) tryUnlock(deactivateMap[data.theme]);
@@ -422,6 +428,17 @@ export function createTracker(onUnlock, onRelock) {
     "paper-stroke"() {
       storage.incrementCounter("paperStrokes");
       checkProgressiveState("paper-strokes");
+    },
+
+    "vhs-glitch"() {
+      session.vhsGlitchCount++;
+      if (session.vhsGlitchCount >= CHANNEL_SURFER_COUNT) {
+        tryUnlock("channel-surfer");
+      }
+    },
+
+    "vhs-cursor-still"() {
+      tryUnlock("phosphor-burn");
     },
 
     "panel-open"(data) {
@@ -584,6 +601,8 @@ export function createTracker(onUnlock, onRelock) {
     if (session.lightningThemes.size >= STORM_FORECASTER_THEME_COUNT)
       tryUnlock("storm-forecaster");
     if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
+    if (session.vhsGlitchCount >= CHANNEL_SURFER_COUNT)
+      tryUnlock("channel-surfer");
     // If a theme is already active when Cloudlog activates, the
     // theme-activate event has already been dispatched and missed —
     // start the watch now from the catch-up moment. The achievement

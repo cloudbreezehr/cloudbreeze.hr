@@ -76,6 +76,12 @@ export const SETS = [
     icon: getTheme("paper")?.icon,
   },
   {
+    id: "vhs",
+    label: "VHS",
+    color: "#b4f0b4",
+    icon: getTheme("vhs")?.icon,
+  },
+  {
     id: "upside-down",
     label: "Upside Down",
     color: "#e04050",
@@ -810,6 +816,63 @@ export const ACHIEVEMENTS = [
     progressKey: "paper-set",
   },
 
+  // ── VHS ──
+  {
+    id: "tracking-lost",
+    title: "Tracking Lost",
+    description: "Please adjust the tracking on your VCR.",
+    hint: "Activate VHS theme",
+    set: "vhs",
+    points: EPIC,
+    hidden: true,
+  },
+  {
+    id: "phosphor-burn",
+    title: "Phosphor Burn",
+    description: "The image stays after the source has gone.",
+    hint: "Hold the cursor still in one spot for 5 seconds in VHS theme",
+    set: "vhs",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "channel-surfer",
+    title: "Channel Surfer",
+    description: "Glitch through the static.",
+    hint: "Trigger 5 click glitches in one session in VHS theme",
+    set: "vhs",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "bad-tracking",
+    title: "Bad Tracking",
+    description: "The tape is being eaten by the player.",
+    hint: "Open a gravity well in VHS theme",
+    set: "vhs",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "tape-eject",
+    title: "Tape Eject",
+    description: "The cassette pops free.",
+    hint: "Deactivate VHS theme",
+    set: "vhs",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "analog-mastery",
+    title: "Analog Mastery",
+    description: "Every distortion catalogued.",
+    hint: "Unlock all other VHS achievements",
+    set: "vhs",
+    points: LEGENDARY,
+    hidden: true,
+    progressKey: "vhs-set",
+  },
+
   // ── Upside Down ──
   {
     id: "the-flip",
@@ -1022,6 +1085,7 @@ export const THEME_SETS = [
   "blocky",
   "rainy",
   "paper",
+  "vhs",
   "upside-down",
 ];
 
@@ -1032,6 +1096,7 @@ export const SET_MASTERY_MAP = {
   blocky: "voxel-master",
   rainy: "storm-chaser",
   paper: "sketchbook-full",
+  vhs: "analog-mastery",
   "upside-down": "world-turner",
 };
 

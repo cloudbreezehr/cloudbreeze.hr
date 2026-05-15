@@ -578,6 +578,15 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     expect(storage.isUnlocked("monsoon")).toBe(true);
   });
 
+  it("well-activate unlocks bad-tracking in vhs", async () => {
+    const { storage } = await startTracker();
+    setTheme("vhs");
+
+    dispatchAchievement("well-activate");
+
+    expect(storage.isUnlocked("bad-tracking")).toBe(true);
+  });
+
   it("fury-lightning unlocks fury-unleashed; 5 triggers unlock chain-lightning", async () => {
     const { storage } = await startTracker();
 
@@ -732,6 +741,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     { theme: "blocky", unlock: "resolution-drop" },
     { theme: "rainy", unlock: "first-drop" },
     { theme: "paper", unlock: "first-sketch" },
+    { theme: "vhs", unlock: "tracking-lost" },
     { theme: "upside-down", unlock: "the-flip" },
   ])(
     "theme-activate unlocks $unlock on first $theme activation",
@@ -754,7 +764,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
-  it("records themes-activated across all six for elemental progress", async () => {
+  it("records themes-activated across every theme for elemental progress", async () => {
     const { storage } = await startTracker();
 
     for (const theme of [
@@ -763,6 +773,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
       "blocky",
       "rainy",
       "paper",
+      "vhs",
       "upside-down",
     ]) {
       dispatchAchievement("theme-activate", { theme });
@@ -775,6 +786,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
       "paper",
       "rainy",
       "upside-down",
+      "vhs",
     ]);
   });
 
@@ -801,6 +813,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     { theme: "blocky", unlock: "defrag" },
     { theme: "rainy", unlock: "rainbow" },
     { theme: "paper", unlock: "blank-page" },
+    { theme: "vhs", unlock: "tape-eject" },
     { theme: "upside-down", unlock: "restoration" },
   ])(
     "theme-deactivate unlocks $unlock on non-silent $theme exit",
@@ -1353,5 +1366,47 @@ describe("tracker — cartographers-almanac", () => {
 
     // Only two appearances credited.
     expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+  });
+});
+
+describe("tracker — vhs handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("vhs-cursor-still unlocks phosphor-burn", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("vhs-cursor-still");
+
+    expect(storage.isUnlocked("phosphor-burn")).toBe(true);
+  });
+
+  it("vhs-glitch unlocks channel-surfer after the threshold count", async () => {
+    const { storage } = await startTracker();
+
+    for (let i = 0; i < 4; i++) dispatchAchievement("vhs-glitch");
+    expect(storage.isUnlocked("channel-surfer")).toBe(false);
+
+    dispatchAchievement("vhs-glitch");
+    expect(storage.isUnlocked("channel-surfer")).toBe(true);
+  });
+
+  it("vhs-glitch counts accumulate across the session, not per-theme", async () => {
+    const { storage } = await startTracker();
+
+    // Glitches outside vhs (theoretical, but the handler doesn't gate on
+    // theme) still count — channel-surfer's contract is "5 glitches in
+    // one session" not "5 while VHS is the active theme".
+    for (let i = 0; i < 5; i++) dispatchAchievement("vhs-glitch");
+    expect(storage.isUnlocked("channel-surfer")).toBe(true);
   });
 });
