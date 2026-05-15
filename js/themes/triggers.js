@@ -8,6 +8,7 @@
 //   createClickCountTrigger — N clicks on an element.
 //   createHoldTrigger       — hold pointer down inside a region for N ms.
 //   createKeySequenceTrigger— type a word within per-letter gap.
+//   createKeyChordTrigger   — N rapid presses of one named key.
 //   createOverscrollTrigger — N overscroll events at the scroll edge.
 
 import { bindPointer } from "../pointer.js";
@@ -333,6 +334,83 @@ export function createKeySequenceTrigger({
           // otherwise a stale prefix could complete a word after a long idle.
           if (next === 0) accumulator.reset();
         },
+      });
+    },
+  };
+}
+
+// ── Key-chord trigger ──
+// N rapid presses of one named key (e.g. Escape × 5).  Mirrors the integer-
+// count source-of-truth and target-relative decay shape of the click-count
+// trigger, but listens on window keydown for the configured `key` rather
+// than on a DOM element's click.
+//
+// preventDefault is conditional: only presses that contribute to the count
+// are swallowed.  Presses rejected for any reason (modifiers, focused input,
+// transitioning) propagate normally so existing handlers (Cloudlog Esc-close,
+// browser dialog dismissal) keep working.
+export function createKeyChordTrigger({
+  key,
+  activateCount,
+  deactivateCount,
+  timeoutMs = 1500,
+  decayRate = 2,
+}) {
+  let presses = 0;
+  let lastPressTime = 0;
+  let ctx = null;
+
+  function forceFor(target) {
+    return Math.min(1, presses / target);
+  }
+
+  return {
+    start(_ctx) {
+      ctx = _ctx;
+      function onKeydown(e) {
+        if (e.key !== key) return;
+        if (e.ctrlKey || e.metaKey || e.altKey || e.shiftKey) return;
+        const tag = document.activeElement?.tagName;
+        if (tag && INPUT_TAGS.has(tag)) return;
+        if (document.activeElement?.isContentEditable) return;
+        if (ctx.isTransitioning()) return;
+        // Only swallow the press if we're actually counting it — otherwise
+        // existing Escape consumers (panel close, etc.) keep working.
+        e.preventDefault();
+        lastPressTime = Date.now();
+        const target = ctx.isActive() ? deactivateCount : activateCount;
+        presses = Math.min(target, presses + 1);
+        ctx.setForce(forceFor(target));
+        if (presses >= target) {
+          presses = 0;
+          ctx.complete();
+        }
+      }
+      window.addEventListener("keydown", onKeydown);
+
+      createIdleDecayLoop({
+        getForce() {
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          return forceFor(target);
+        },
+        setForce(f) {
+          // Decay is continuous; reverse-derive presses so the next real
+          // press still lands at the right level. Press count is a float
+          // during decay — the integer invariant only applies on the
+          // press path, where Math.min(target, presses + 1) restores it.
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          presses = Math.max(0, Math.min(target, f * target));
+          ctx.setForce(f);
+        },
+        getIdleMs: () => Date.now() - lastPressTime,
+        // Target-relative: one press is 1/N of the force, so "decayRate
+        // presses per second" is decayRate/N as a fraction-per-second.
+        getRatePerSec() {
+          const target = ctx.isActive() ? deactivateCount : activateCount;
+          return decayRate / Math.max(1, target);
+        },
+        idleThresholdMs: timeoutMs,
+        isBlocked: () => ctx.isTransitioning(),
       });
     },
   };
