@@ -52,6 +52,8 @@ const PV = defineConstants(
     HOVER_RADIUS_PX: 80,
     HOVER_LERP: 0.2,
     HOVER_SETTLE: 0.005,
+    TILT_INTENSITY: 2,
+    TILT_SCALE: 1.005,
   },
   { theme: "paper" },
 );
@@ -331,7 +333,7 @@ export function initPaper() {
     onActivate() {
       disableCardPaper = enableCardEffects({
         className: "paper-card",
-        tilt: { intensity: 2, scale: 1.005 },
+        tilt: { intensity: PV.TILT_INTENSITY, scale: PV.TILT_SCALE },
       });
       startPageTurn();
       startHover();

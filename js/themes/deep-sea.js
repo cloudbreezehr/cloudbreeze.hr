@@ -40,6 +40,8 @@ const DV = defineConstants(
     SAT_BOOST: 0.4,
     BRI_DROP: 0.65,
     VIGNETTE_MAX_OPACITY: 0.7,
+    TILT_INTENSITY: 10,
+    TILT_SCALE: 1.03,
   },
   { theme: "deep-sea" },
 );
@@ -196,8 +198,8 @@ export function initDeepSea() {
         className: "caustic-card",
         trackingPrefix: "caustic",
         tilt: {
-          intensity: 10,
-          scale: 1.03,
+          intensity: DV.TILT_INTENSITY,
+          scale: DV.TILT_SCALE,
           transition: "background 0.4s, transform 0.8s ease",
           transitionEnter: "background 0.4s, transform 0.6s ease",
         },

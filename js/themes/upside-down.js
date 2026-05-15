@@ -144,6 +144,20 @@ const UD_VFX = defineConstants(
       step: 0.001,
       description: "Frame normalization baseline (16.667 = 60fps)",
     },
+    TILT_INTENSITY: {
+      value: 8,
+      min: 0,
+      max: 20,
+      step: 1,
+      description: "Card tilt intensity at full pointer travel",
+    },
+    TILT_SCALE: {
+      value: 1.02,
+      min: 1,
+      max: 1.1,
+      step: 0.005,
+      description: "Card tilt scale at full pointer travel",
+    },
   },
   { theme: "upside-down" },
 );
@@ -362,7 +376,11 @@ export function initUpsideDown() {
     onActivate() {
       disableCardUpside = enableCardEffects({
         className: "upside-card",
-        tilt: { intensity: 8, scale: 1.02, invertY: true },
+        tilt: {
+          intensity: UD_VFX.TILT_INTENSITY,
+          scale: UD_VFX.TILT_SCALE,
+          invertY: true,
+        },
       });
     },
     onDeactivate() {

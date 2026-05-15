@@ -51,6 +51,8 @@ const FV = defineConstants(
     RIPPLE_DURATION_MS: 600,
     RIPPLE_SCALE: 4,
     RIPPLE_START_OPACITY: 0.6,
+    TILT_INTENSITY: 3,
+    TILT_SCALE: 1.01,
   },
   { theme: "frozen" },
 );
@@ -249,7 +251,7 @@ export function initFrozen() {
         className: "frost-card",
         trackingPrefix: "frost",
         onClick: cardClick,
-        tilt: { intensity: 3, scale: 1.01 },
+        tilt: { intensity: FV.TILT_INTENSITY, scale: FV.TILT_SCALE },
       });
     },
     onDeactivate() {

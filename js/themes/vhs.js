@@ -48,6 +48,8 @@ const VV = defineConstants(
     STILLNESS_RADIUS_PX: 5,
     STILLNESS_DURATION_MS: 5000,
     STILLNESS_CHECK_INTERVAL_MS: 250,
+    TILT_INTENSITY: 2,
+    TILT_SCALE: 1.005,
   },
   { theme: "vhs" },
 );
@@ -360,7 +362,7 @@ export function initVhs() {
     onActivate() {
       disableCardVhs = enableCardEffects({
         className: "vhs-card",
-        tilt: { intensity: 2, scale: 1.005 },
+        tilt: { intensity: VV.TILT_INTENSITY, scale: VV.TILT_SCALE },
       });
       mountOverlays();
       startDrift();
