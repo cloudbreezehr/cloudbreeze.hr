@@ -418,9 +418,19 @@ export function initCanvas(canvasEl, appearance, options) {
 
     // ── VHS theme: phosphor decay layer ──
     // Runs last so it composites on top of every other layer. The phosphor
-    // module does its own ghost-overlay + decay + capture cycle in one call.
+    // module does its own ghost-overlay + decay + capture cycle, then
+    // paints the cursor trail on top of the result.
     if (isVhs) {
-      vhs.drawAfter(ctx);
+      // Feed the live cursor position into the trail history so the DOM
+      // cursor (which doesn't render into the canvas) leaves an
+      // afterimage. clearCursor on hover-out so a stale trail doesn't
+      // hang in mid-air after the pointer leaves the canvas.
+      if (forces.hover.active) {
+        vhs.recordCursor(forces.hover.x, forces.hover.y);
+      } else {
+        vhs.clearCursor();
+      }
+      vhs.drawAfter(ctx, palFor("vhs"));
     }
     if (wasVhs && !isVhs) vhs.cleanup();
     wasVhs = isVhs;
@@ -535,8 +545,11 @@ export function initCanvas(canvasEl, appearance, options) {
     },
   });
 
-  // Hover tracking — passive cursor position for proximity effects
-  canvas.addEventListener(
+  // Hover tracking — passive cursor position for proximity effects.
+  // Listens on window because the canvas element has `pointer-events:
+  // none` and therefore never receives mouse events directly.  mouseout
+  // with a falsy relatedTarget means the cursor left the viewport.
+  window.addEventListener(
     "mousemove",
     (e) => {
       forces.hover.x = e.clientX;
@@ -545,10 +558,10 @@ export function initCanvas(canvasEl, appearance, options) {
     },
     { passive: true },
   );
-  canvas.addEventListener(
-    "mouseleave",
-    () => {
-      forces.hover.active = false;
+  window.addEventListener(
+    "mouseout",
+    (e) => {
+      if (!e.relatedTarget) forces.hover.active = false;
     },
     { passive: true },
   );

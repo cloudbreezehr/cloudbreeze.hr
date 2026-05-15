@@ -2,7 +2,8 @@
 // The "particle" is a misnomer here — VHS doesn't add discrete particles.
 // Its identity is a canvas-level phosphor layer that ages the previous
 // frame and composites it on top of the current frame at low alpha
-// (creating a faint ghost trail), plus a small DOM click-glitch effect.
+// (creating a faint ghost trail), a cursor afterimage trail painted on
+// top, and a small DOM click-glitch effect.
 //
 // Phosphor cycle (called once per frame at the END of the main draw):
 //   drawAfter():
@@ -12,6 +13,9 @@
 //        contributions fade away).
 //     3. Capture the just-composited main canvas back into the phosphor
 //        at CAPTURE_OPACITY (this frame contributes to next frame's ghost).
+//     4. Render the cursor trail directly on the main canvas, after the
+//        phosphor capture so the trail is a self-contained polyline
+//        rather than feeding into the phosphor's recursive decay.
 //
 // Painting last means the sky gradient and every other layer have already
 // rendered at their natural alpha, and the phosphor reads as a CRT
@@ -41,6 +45,96 @@ const PHOSPHOR = defineConstants(
   },
   { theme: "vhs" },
 );
+
+// ── Cursor Trail ──
+// Recent cursor positions kept in a ring buffer; rendered each frame as
+// three chromatic-fringed polylines (magenta offset left, cyan offset
+// right, green core in the middle).  Width and alpha taper from the
+// tail (oldest position) toward the head (newest), so the trail reads
+// as a phosphor afterimage even when the cursor is stationary briefly.
+// Independent of the phosphor pipeline so neither feeds the other.
+export const TRAIL = defineConstants(
+  "particles.vhs.trail",
+  {
+    // Number of cursor positions kept in history.  At ~60fps, 24 ≈ 0.4s
+    // of trail.  Higher values cost a few extra strokes per frame.
+    HISTORY_LEN: 24,
+    // Stroke width at the head (most recent position) in px.
+    HEAD_WIDTH_PX: 6,
+    // Stroke width at the tail (oldest position).  Tapers linearly
+    // between head and tail across the polyline.
+    TAIL_WIDTH_PX: 0.5,
+    // Alpha of the green core line at the head.
+    HEAD_ALPHA: 0.85,
+    // Alpha at the tail (alpha tapers linearly toward this).  Zero by
+    // default so the tail dissolves into the page.
+    TAIL_ALPHA: 0,
+    // Sideways pixel offset of the chromatic fringe satellites.  Read
+    // as a scanline-misalignment artifact rather than a deliberate
+    // double-image.
+    FRINGE_OFFSET_PX: 2,
+    // Fringe alpha relative to core alpha (per-segment factor).  Below
+    // 1 so the green core reads as the center of the trail and the
+    // fringes as bleed-out.
+    FRINGE_ALPHA_FACTOR: 0.6,
+    // Squared px the cursor must travel between samples for a new
+    // position to be recorded.  Avoids a runaway buffer of identical
+    // positions when the cursor is stationary, which would otherwise
+    // paint the same spot N times and inflate apparent intensity.
+    MIN_SAMPLE_DIST_SQ_PX: 1,
+  },
+  { theme: "vhs" },
+);
+
+// Render the cursor afterimage as three chromatic-fringed polylines on
+// `ctx`.  History is an array of {x, y} positions oldest → newest.
+// Pure function — no module state, no side effects beyond ctx.  Pulled
+// out of createVhs so it can be tested directly without spinning up the
+// full factory.
+export function drawCursorTrail(ctx, history, pal) {
+  const n = history.length;
+  if (n < 2 || !pal || !pal.cursorPhosphor) return;
+
+  const headW = TRAIL.HEAD_WIDTH_PX;
+  const tailW = TRAIL.TAIL_WIDTH_PX;
+  const headA = TRAIL.HEAD_ALPHA;
+  const tailA = TRAIL.TAIL_ALPHA;
+  const fringeAlpha = TRAIL.FRINGE_ALPHA_FACTOR;
+  const fringeOff = TRAIL.FRINGE_OFFSET_PX;
+  const segments = n - 1;
+  // Alpha and width are interpolated per-segment from tail (segment 0)
+  // toward head (segment n-2).  Each chromatic channel paints with the
+  // same geometry, just shifted in x.
+  const channels = [
+    { color: pal.cursorPhosphorMagenta, dx: -fringeOff, alphaMul: fringeAlpha },
+    { color: pal.cursorPhosphorCyan, dx: fringeOff, alphaMul: fringeAlpha },
+    { color: pal.cursorPhosphor, dx: 0, alphaMul: 1 },
+  ];
+
+  ctx.save();
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  for (const ch of channels) {
+    const c = ch.color;
+    for (let i = 0; i < segments; i++) {
+      // t=0 at the tail, t→1 at the head.  Use (i+1) so the head segment
+      // (between the two newest points) gets the full head width/alpha.
+      const t = (i + 1) / segments;
+      const w = tailW + (headW - tailW) * t;
+      const a = (tailA + (headA - tailA) * t) * ch.alphaMul;
+      if (a <= 0 || w <= 0) continue;
+      const p0 = history[i];
+      const p1 = history[i + 1];
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;
+      ctx.lineWidth = w;
+      ctx.beginPath();
+      ctx.moveTo(p0.x + ch.dx, p0.y);
+      ctx.lineTo(p1.x + ch.dx, p1.y);
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
 
 export function createVhs(canvasEl) {
   // ── Offscreen phosphor canvas ──
@@ -74,6 +168,13 @@ export function createVhs(canvasEl) {
       lastH = h;
     }
   }
+
+  // ── Cursor trail history ──
+  // Ring buffer of recent cursor positions, oldest → newest.  Capped at
+  // TRAIL.HISTORY_LEN; oldest entry shifts out as new ones arrive.  Held
+  // here as closure state so each createVhs gets its own buffer (the
+  // module is constructed once per canvas init).
+  let cursorHistory = [];
 
   // ── Click-glitch DOM pool ──
   // Tracked in a FIFO array so a sustained click mash doesn't unbound the
@@ -115,10 +216,11 @@ export function createVhs(canvasEl) {
   return {
     // Called at the END of the main draw cycle. Composites the persisted
     // phosphor onto the just-rendered frame (faint ghost overlay), ages
-    // the phosphor, and captures the composited frame back in for the
-    // next cycle. Single entry point keeps the canvas.js integration to
-    // one line and the order of operations local to this module.
-    drawAfter(ctx) {
+    // the phosphor, captures the composited frame back in for the next
+    // cycle, and finally renders the cursor trail directly on top.
+    // Single entry point keeps the canvas.js integration to one line and
+    // the order of operations local to this module.
+    drawAfter(ctx, pal) {
       ensurePhosphor();
 
       // 1. Composite phosphor onto main canvas (ghost overlay).
@@ -140,6 +242,35 @@ export function createVhs(canvasEl) {
       pctx.globalAlpha = PHOSPHOR.CAPTURE_OPACITY;
       pctx.drawImage(canvasEl, 0, 0);
       pctx.restore();
+
+      // 4. Cursor trail — drawn after capture so the trail is fully owned
+      //    by its own history buffer and doesn't compound with the
+      //    phosphor's recursive decay.
+      drawCursorTrail(ctx, cursorHistory, pal);
+    },
+
+    // Stamp the live cursor position into the trail history.  Skips the
+    // sample if the cursor hasn't moved meaningfully since the last
+    // stamp, so a stationary cursor doesn't paint identical positions
+    // repeatedly and inflate apparent intensity.
+    recordCursor(x, y) {
+      const n = cursorHistory.length;
+      if (n > 0) {
+        const last = cursorHistory[n - 1];
+        const dx = x - last.x;
+        const dy = y - last.y;
+        if (dx * dx + dy * dy < TRAIL.MIN_SAMPLE_DIST_SQ_PX) return;
+      }
+      cursorHistory.push({ x, y });
+      if (cursorHistory.length > TRAIL.HISTORY_LEN) {
+        cursorHistory.shift();
+      }
+    },
+
+    // Drop history so the trail vanishes — used when the pointer leaves
+    // the canvas so a stale trail doesn't hang in mid-air.
+    clearCursor() {
+      cursorHistory = [];
     },
 
     clickGlitch,
@@ -154,6 +285,7 @@ export function createVhs(canvasEl) {
         const el = glitches.shift();
         el.remove();
       }
+      cursorHistory = [];
     },
   };
 }

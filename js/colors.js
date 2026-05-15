@@ -344,6 +344,9 @@ const overrides = {
       gustColor: [120, 140, 160],
       cloudWhite: [200, 215, 225],
       cloudMid: [160, 180, 200],
+      cursorPhosphor: [220, 245, 220],
+      cursorPhosphorMagenta: [255, 80, 220],
+      cursorPhosphorCyan: [80, 255, 220],
     },
     light: {
       clickColor: [100, 180, 100],
@@ -370,6 +373,9 @@ const overrides = {
       gustColor: [90, 110, 130],
       cloudWhite: [230, 240, 235],
       cloudMid: [200, 215, 220],
+      cursorPhosphor: [180, 220, 180],
+      cursorPhosphorMagenta: [200, 60, 170],
+      cursorPhosphorCyan: [60, 200, 170],
     },
   },
   blocky: {
