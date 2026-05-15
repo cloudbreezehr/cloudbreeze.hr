@@ -1,9 +1,61 @@
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { createSnow } from "../particles/frozen.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
+
+// ── Particle counts ──
+const COUNTS = defineConstants(
+  "themes.frozen.particles",
+  {
+    SNOW: {
+      value: 40,
+      min: 0,
+      max: 200,
+      step: 1,
+      description: "Snowflake count",
+    },
+  },
+  { theme: "frozen" },
+);
+
+// ── Snow Globe Shake ──
+// Rapid scroll-direction reversals fire the `snow-globe` achievement
+// and, when frozen is active, burst the snowflakes.  Detection lives
+// here because the gesture *is* the snow-globe — the achievement and
+// the visual reaction share a name.  The scroll listener registers at
+// init (unconditionally) so the achievement is reachable for users who
+// have never entered frozen.
+const SHAKE = defineConstants(
+  "themes.frozen.shake",
+  {
+    REVERSAL_WINDOW: {
+      value: 500,
+      min: 100,
+      max: 2000,
+      step: 50,
+      description: "ms window for counting scroll reversals",
+    },
+    REVERSALS_NEEDED: {
+      value: 3,
+      min: 2,
+      max: 10,
+      step: 1,
+      description: "Rapid reversals needed to trigger shake",
+    },
+    MIN_DELTA: {
+      value: 3,
+      min: 1,
+      max: 20,
+      step: 1,
+      description: "Minimum scroll delta to count as directional",
+    },
+  },
+  { theme: "frozen" },
+);
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
@@ -119,6 +171,50 @@ export function initFrozen() {
       startOpacity: FV.RIPPLE_START_OPACITY,
     });
   }
+
+  // Canvas-side hooks — ambient snow with pointer interaction + the snow
+  // globe gesture (rapid scroll-direction reversals burst the flakes).
+  const snow = createSnow(canvasEl, canvasEl.getContext("2d"), COUNTS.SNOW);
+  // Snow globe turbulence — set to 1 on a successful shake, decayed by
+  // the snow factory each draw call.
+  const snowTurbulence = { value: 0 };
+  let lastScrollDir = 0; // -1 = up, 1 = down, 0 = idle
+  let lastScrollTop = window.scrollY || 0;
+  let reversalTimes = [];
+  window.addEventListener(
+    "scroll",
+    () => {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const delta = scrollTop - lastScrollTop;
+      lastScrollTop = scrollTop;
+      if (Math.abs(delta) < SHAKE.MIN_DELTA) return;
+      const dir = delta > 0 ? 1 : -1;
+      if (lastScrollDir !== 0 && dir !== lastScrollDir) {
+        const now = performance.now();
+        reversalTimes.push(now);
+        reversalTimes = reversalTimes.filter(
+          (t) => now - t < SHAKE.REVERSAL_WINDOW,
+        );
+        if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
+          snowTurbulence.value = 1;
+          reversalTimes.length = 0;
+          window.dispatchEvent(
+            new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
+          );
+        }
+      }
+      lastScrollDir = dir;
+    },
+    { passive: true },
+  );
+  registerCanvasHooks("frozen", {
+    drawAmbient({ drawVelocity, reducedMotion, forces }) {
+      // Under reduced-motion, suppress turbulence so reversals don't
+      // trigger a vestibular-unfriendly shake.
+      const turbulence = reducedMotion ? { value: 0 } : snowTurbulence;
+      snow.draw(forces, drawVelocity, turbulence);
+    },
+  });
 
   createTheme({
     id: "frozen",

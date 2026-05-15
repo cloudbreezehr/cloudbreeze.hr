@@ -25,7 +25,7 @@ function stageDom() {
   document.body.innerHTML = `
     <a class="nav-logo" href="#"></a>
     <svg class="cloud-svg"></svg>
-    <div id="bg-canvas"></div>
+    <canvas id="bg-canvas"></canvas>
     <div class="service-card"></div>
     <div class="service-card"></div>
   `;

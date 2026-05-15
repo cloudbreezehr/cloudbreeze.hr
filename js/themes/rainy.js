@@ -2,8 +2,10 @@ import { Z_THEME_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { createRain } from "../particles/rain.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
@@ -164,6 +166,28 @@ export function initRainy() {
       startOpacity: RV.RIPPLE_START_OPACITY,
     });
   }
+
+  // Canvas-side hooks — rain streaks + glass droplets render layer,
+  // splash bursts on click, well burst on drag-release.
+  const rain = createRain(canvasEl, canvasEl.getContext("2d"));
+  registerCanvasHooks("rainy", {
+    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
+      rain.draw(forces, scrollVelocity, dt, palFor("rainy"));
+    },
+    onClick({ cx, cy }) {
+      rain.clickBurst(cx, cy);
+    },
+    onDragEnd({ forces }) {
+      // Massive splash on gravity-well release: only if the well had
+      // accumulated meaningful charge before the user let go.
+      if (forces.wellStrength > 0) {
+        rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
+      }
+    },
+    onDeactivate() {
+      rain.cleanup();
+    },
+  });
 
   createTheme({
     id: "rainy",

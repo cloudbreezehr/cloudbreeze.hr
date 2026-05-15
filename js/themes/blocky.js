@@ -1,7 +1,24 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
+import { createBlocky } from "../particles/blocky.js";
 import { createTheme } from "./factory.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
+
+// ── Particle counts ──
+const COUNTS = defineConstants(
+  "themes.blocky.particles",
+  {
+    FIREFLY: {
+      value: 28,
+      min: 0,
+      max: 100,
+      step: 1,
+      description: "Firefly count",
+    },
+  },
+  { theme: "blocky" },
+);
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
@@ -130,6 +147,27 @@ export function initBlocky(toggleEl) {
       },
     });
   }
+
+  // Canvas-side hooks — pixelation post-process + fireflies, click block
+  // fragments.  Runs as drawPost so the entire scene below has been
+  // composited before the post-process kicks in.
+  const blocky = createBlocky(
+    canvasEl,
+    canvasEl.getContext("2d"),
+    COUNTS.FIREFLY,
+  );
+  window.addEventListener("resize", () => {
+    blocky.resizePixelCanvas();
+  });
+  registerCanvasHooks("blocky", {
+    suppressDefaultClickBurst: true,
+    drawPost({ scrollVelocity, isDark, forces }) {
+      blocky.draw(forces, scrollVelocity, isDark);
+    },
+    onClick({ cx, cy }) {
+      blocky.clickBurst(cx, cy);
+    },
+  });
 
   themeCtx = createTheme({
     id: "blocky",

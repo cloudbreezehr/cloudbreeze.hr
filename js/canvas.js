@@ -3,12 +3,7 @@ import { bindPointer } from "./pointer.js";
 import { createSky } from "./sky.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
-import { createSnow } from "./particles/frozen.js";
-import { createDeepSea } from "./particles/deep-sea.js";
-import { createBlocky } from "./particles/blocky.js";
-import { createRain } from "./particles/rain.js";
-import { createPaper } from "./particles/paper.js";
-import { createVhs } from "./particles/vhs.js";
+import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion } from "./motion.js";
@@ -29,63 +24,6 @@ const SCROLL = defineConstants("canvas.scroll", {
     max: 1,
     step: 0.01,
     description: "Scroll velocity decay per frame",
-  },
-});
-
-// ── Particle counts ──
-const COUNTS = defineConstants("canvas.particles", {
-  SNOW: {
-    value: 40,
-    min: 0,
-    max: 200,
-    step: 1,
-    description: "Snowflake count (frozen theme)",
-  },
-  BUBBLE: {
-    value: 30,
-    min: 0,
-    max: 100,
-    step: 1,
-    description: "Bubble pool size (deep-sea theme)",
-  },
-  JELLY: {
-    value: 8,
-    min: 0,
-    max: 30,
-    step: 1,
-    description: "Jellyfish count (deep-sea theme)",
-  },
-  FIREFLY: {
-    value: 28,
-    min: 0,
-    max: 100,
-    step: 1,
-    description: "Firefly count (blocky theme)",
-  },
-});
-
-// ── Snow Globe Shake ──
-const SHAKE = defineConstants("canvas.shake", {
-  REVERSAL_WINDOW: {
-    value: 500,
-    min: 100,
-    max: 2000,
-    step: 50,
-    description: "ms window for counting scroll reversals",
-  },
-  REVERSALS_NEEDED: {
-    value: 3,
-    min: 2,
-    max: 10,
-    step: 1,
-    description: "Rapid reversals needed to trigger shake",
-  },
-  MIN_DELTA: {
-    value: 3,
-    min: 1,
-    max: 20,
-    step: 1,
-    description: "Minimum scroll delta to count as directional",
   },
 });
 
@@ -164,11 +102,6 @@ export function initCanvas(canvasEl, appearance, options) {
   let scrollVelocity = 0;
   let lastScrollTop = window.scrollY || 0;
 
-  // Snow globe shake detection — track scroll direction reversals
-  let lastScrollDir = 0; // -1 = up, 1 = down, 0 = idle
-  let reversalTimes = []; // timestamps of recent direction changes
-  const snowTurbulence = { value: 0 }; // current turbulence intensity, decays per frame
-
   // Stable viewport height that ignores the mobile browser toolbar.
   // CSS `lvh` resolves to the large viewport (toolbar hidden).
   // Using it prevents particles from teleporting when the toolbar
@@ -207,44 +140,14 @@ export function initCanvas(canvasEl, appearance, options) {
     const delta = scrollTop - lastScrollTop;
     scrollVelocity += delta * SCROLL.VEL_GAIN;
     lastScrollTop = scrollTop;
-
-    // Detect direction reversals for snow globe shake
-    if (Math.abs(delta) >= SHAKE.MIN_DELTA) {
-      const dir = delta > 0 ? 1 : -1;
-      if (lastScrollDir !== 0 && dir !== lastScrollDir) {
-        const now = performance.now();
-        reversalTimes.push(now);
-        // Prune old reversals outside the window
-        reversalTimes = reversalTimes.filter(
-          (t) => now - t < SHAKE.REVERSAL_WINDOW,
-        );
-        if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
-          snowTurbulence.value = 1;
-          reversalTimes.length = 0;
-          window.dispatchEvent(
-            new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
-          );
-        }
-      }
-      lastScrollDir = dir;
-    }
   }
 
   resize();
   updateScroll();
 
   const atmosphere = createAtmosphere(canvas, ctx, opts);
-  const snow = createSnow(canvas, ctx, COUNTS.SNOW);
-  const deepSea = createDeepSea(canvas, ctx, COUNTS.BUBBLE, COUNTS.JELLY);
-  const blocky = createBlocky(canvas, ctx, COUNTS.FIREFLY);
-  const rain = createRain(canvas, ctx);
-  const paper = createPaper(canvas, ctx);
-  const vhs = createVhs(canvas);
 
-  window.addEventListener("resize", () => {
-    resize();
-    blocky.resizePixelCanvas();
-  });
+  window.addEventListener("resize", resize);
   window.addEventListener("scroll", updateScroll, { passive: true });
 
   // Interaction forces — click repels, drag attracts, hold charges, hover attracts gently
@@ -266,26 +169,7 @@ export function initCanvas(canvasEl, appearance, options) {
   const isUpside = () => document.body.classList.contains("upside-down");
   const canvasY = (y) => (isUpside() ? canvas.height - y : y);
 
-  // Snapshot every theme's activation flag in one pass.  Callers reuse the
-  // result across a frame or an event handler rather than querying classList
-  // six times — one object rather than six DOM reads, and far easier to read.
-  function readThemes() {
-    const cl = document.body.classList;
-    return {
-      frozen: cl.contains("frozen"),
-      deepSea: cl.contains("deep-sea"),
-      blocky: cl.contains("blocky"),
-      rainy: cl.contains("rainy"),
-      paper: cl.contains("paper"),
-      vhs: cl.contains("vhs"),
-      upsideDown: cl.contains("upside-down"),
-    };
-  }
-
   let lastFrameTime = performance.now();
-  let wasRainy = false;
-  let wasPaper = false;
-  let wasVhs = false;
 
   // ── Sky gradient cache ──
   // Rebuilding the gradient every frame is the most expensive per-frame op.
@@ -303,15 +187,10 @@ export function initCanvas(canvasEl, appearance, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
-    const themes = readThemes();
-    const {
-      frozen: isFrozen,
-      deepSea: isDeepSea,
-      blocky: isBlocky,
-      rainy: isRainy,
-      paper: isPaper,
-      vhs: isVhs,
-    } = themes;
+    // Atmosphere skips horizon glow when blocky is active — that's a
+    // coupling the suppress system can't model (blocky post-processes
+    // atmosphere instead of replacing it).
+    const isBlocky = document.body.classList.contains("blocky");
     // Last-triggered-wins for palette + CSS — iterate registry, no hardcoded priority
     const activeThemes = getThemeIds().filter((m) =>
       document.body.classList.contains(m),
@@ -327,21 +206,27 @@ export function initCanvas(canvasEl, appearance, options) {
       if (theme) document.body.dataset.activeTheme = theme;
       else delete document.body.dataset.activeTheme;
     }
-    const appearance = isDark ? "dark" : "light";
-    const pal = resolvePalette(appearance, theme);
+    const pal = resolvePalette(isDark ? "dark" : "light", theme);
     currentPal = pal;
     // Themes stack: body classes can coexist, but only one wins the shared
     // palette (sky, fury, atmosphere, interactions).  Theme-specific
-    // renderers must read *their own* theme's palette, otherwise a stacked
-    // theme would either pick up the winner's colors or — for keys that
-    // exist only in its own override block (e.g. bubbleRim, glassBody) —
-    // dereference `undefined` and crash the render loop.
-    const palFor = (id) => resolvePalette(appearance, id);
+    // renderers must read *their own* theme's palette via `palFor` — a
+    // stacked theme would otherwise pick up the winner's colors, or, for
+    // keys that exist only in its own override block (e.g. bubbleRim,
+    // glassBody), dereference `undefined` and crash the render loop.
+
+    const activeHooks = getActiveHooks();
+    dispatchTransitions(activeHooks);
+    const suppress = (key) => activeHooks.some(({ hooks }) => hooks[key]);
+    const suppressSky = suppress("suppressSky");
+    const suppressAtmosphere = suppress("suppressAtmosphere");
+
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Scroll-interpolated sky gradient — rebuilt only when inputs change.
-    // Paper theme suppresses the sky entirely; its background comes from CSS.
-    if (opts.sky && !isPaper) {
+    // Themes that paint their own background (e.g. paper, whose backdrop
+    // comes from CSS) raise `suppressSky` to skip this layer.
+    if (opts.sky && !suppressSky) {
       const bucket = Math.round(sp * SKY_GRADIENT_BUCKETS);
       if (
         cachedSkyGradient === null ||
@@ -366,8 +251,7 @@ export function initCanvas(canvasEl, appearance, options) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Stars and shooting stars — suppressed in paper theme
-    if (sky && !isPaper) sky.draw(ctx, canvas, sp, pal, forces);
+    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces);
 
     const reducedMotion = prefersReducedMotion();
 
@@ -377,63 +261,37 @@ export function initCanvas(canvasEl, appearance, options) {
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
     // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
-    // Paper theme suppresses the ambient particle system entirely.
     scrollVelocity *= SCROLL.VEL_DECAY;
     const drawVelocity = reducedMotion ? 0 : scrollVelocity;
     interactions.updateHold(forces, performance.now());
-    if (!isPaper) atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
-    // Snowflakes — frozen theme ambient snow with pointer interaction + snow globe.
-    // Under reduced-motion, suppress snow-globe turbulence so reversals don't shake.
-    if (isFrozen) {
-      const turbulence = reducedMotion ? { value: 0 } : snowTurbulence;
-      snow.draw(forces, drawVelocity, turbulence);
+    if (!suppressAtmosphere) {
+      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
     }
 
-    // Bubbles + Jellyfish — deep-sea theme
-    if (isDeepSea) {
-      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"));
-    }
-
-    // Rain + thunder + glass drops — rainy theme
-    if (isRainy) {
-      rain.draw(forces, scrollVelocity, dt, palFor("rainy"));
-    }
-    if (wasRainy && !isRainy) rain.cleanup();
-    wasRainy = isRainy;
-
-    // Paper theme — hand-drawn sketch elements
-    if (isPaper) {
-      paper.draw(palFor("paper"));
-    }
-    if (wasPaper && !isPaper) paper.cleanup();
-    wasPaper = isPaper;
+    // Theme-owned ambient particles. Each registered theme decides what
+    // it needs from the frame state — palette, dt, velocity — and the
+    // loop here doesn't know the difference between paper's flick spawns
+    // and snow's globe shake.
+    const frame = {
+      sp,
+      dt,
+      scrollVelocity,
+      drawVelocity,
+      pal,
+      palFor,
+      isDark,
+      reducedMotion,
+      forces,
+      ctx,
+      canvas,
+    };
+    for (const { hooks } of activeHooks) hooks.drawAmbient?.(frame);
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
 
-    // ── Blocky theme: pixelation post-process + fireflies ──
-    if (isBlocky) {
-      blocky.draw(forces, scrollVelocity, isDark);
-    }
-
-    // ── VHS theme: phosphor decay layer ──
-    // Runs last so it composites on top of every other layer. The phosphor
-    // module does its own ghost-overlay + decay + capture cycle, then
-    // paints the cursor trail on top of the result.
-    if (isVhs) {
-      // Feed the live cursor position into the trail history so the DOM
-      // cursor (which doesn't render into the canvas) leaves an
-      // afterimage. clearCursor on hover-out so a stale trail doesn't
-      // hang in mid-air after the pointer leaves the canvas.
-      if (forces.hover.active) {
-        vhs.recordCursor(forces.hover.x, forces.hover.y);
-      } else {
-        vhs.clearCursor();
-      }
-      vhs.drawAfter(ctx, palFor("vhs"));
-    }
-    if (wasVhs && !isVhs) vhs.cleanup();
-    wasVhs = isVhs;
+    for (const { hooks } of activeHooks) hooks.drawForeground?.(frame);
+    for (const { hooks } of activeHooks) hooks.drawPost?.(frame);
   }
 
   // Drive the render loop.  Invariant: the next frame is always
@@ -454,13 +312,19 @@ export function initCanvas(canvasEl, appearance, options) {
   const UI_OVERLAY =
     "nav, .achievement-panel, .achievement-toast-container, .dev-console";
 
+  // Per-theme palette resolver matching the current appearance.  Re-built
+  // on each event because `isDark` mutates outside this scope.
+  function palFor(id) {
+    return resolvePalette(isDark ? "dark" : "light", id);
+  }
+
   document.addEventListener("click", (e) => {
     // Skip all canvas effects for clicks on UI controls
     if (e.target.closest(UI_OVERLAY)) return;
 
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
-    const themes = readThemes();
+    const activeHooks = getActiveHooks();
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
@@ -475,21 +339,16 @@ export function initCanvas(canvasEl, appearance, options) {
 
     fury.click(cx, cy, canvas, scrollProgress);
 
-    // Deep-sea click burst — bubbles erupt from click point in an upward cone
-    if (themes.deepSea) deepSea.clickBurst(cx, cy);
-    // Blocky click burst — block fragments instead of smooth particles
-    if (themes.blocky) blocky.clickBurst(cx, cy);
-    // Rainy click burst — splash droplets radiate from click
-    if (themes.rainy) rain.clickBurst(cx, cy);
-    // Paper click — ink splat replaces the normal burst
-    if (themes.paper) paper.clickBurst(cx, cy);
-    // VHS click — channel glitch on top of the normal burst (additive,
-    // not a replacement, so the cursor still feels reactive).
-    if (themes.vhs) vhs.clickGlitch(cx, cy);
+    const ptr = { x: e.clientX, y: e.clientY, cx, cy, forces, palFor };
+    for (const { hooks } of activeHooks) hooks.onClick?.(ptr);
 
-    // Normal click burst particles — blocky uses block fragments instead;
-    // paper uses ink splats.
-    if (!themes.blocky && !themes.paper) {
+    // Default click burst particles — themes that paint their own click
+    // visual (blocky's block fragments, paper's ink splat) raise
+    // suppressDefaultClickBurst to skip this layer.
+    const suppressDefault = activeHooks.some(
+      ({ hooks }) => hooks.suppressDefaultClickBurst,
+    );
+    if (!suppressDefault) {
       interactions.click(cx, cy, currentPal);
     }
     window.dispatchEvent(
@@ -503,10 +362,9 @@ export function initCanvas(canvasEl, appearance, options) {
       if (e.target.closest(UI_OVERLAY)) return false;
       const cx = x,
         cy = canvasY(y);
-      const themes = readThemes();
       interactions.startDrag(forces, cx, cy);
-      // Paper theme — start an SVG ink stroke that tracks the pointer
-      if (themes.paper) paper.startStroke(x, y);
+      const ptr = { x, y, cx, cy, forces, palFor };
+      for (const { hooks } of getActiveHooks()) hooks.onDragStart?.(ptr);
     },
     onMove(x, y) {
       const cx = x,
@@ -518,29 +376,12 @@ export function initCanvas(canvasEl, appearance, options) {
             detail: { type: "drag", x: cx, y: cy },
           }),
         );
-      const themes = readThemes();
-      // Drag spawns small bubbles in deep-sea theme
-      if (trailAdded && themes.deepSea) deepSea.dragBubble(cx, cy);
-      // Paper theme — extend the active ink stroke with the new point
-      if (themes.paper) paper.extendStroke(x, y);
+      const ptr = { x, y, cx, cy, trailAdded, forces, palFor };
+      for (const { hooks } of getActiveHooks()) hooks.onDragMove?.(ptr);
     },
     onUp() {
-      const themes = readThemes();
-      // Rainy well burst — massive splash on gravity well release
-      if (forces.wellStrength > 0 && themes.rainy) {
-        rain.wellBurst(forces.dragPos.x, forces.dragPos.y);
-      }
-      // Paper theme — finalize the stroke and fire the doodler event
-      if (themes.paper) {
-        const hadContent = paper.endStroke();
-        if (hadContent) {
-          window.dispatchEvent(
-            new CustomEvent("achievement", {
-              detail: { type: "paper-stroke" },
-            }),
-          );
-        }
-      }
+      const ptr = { forces, palFor };
+      for (const { hooks } of getActiveHooks()) hooks.onDragEnd?.(ptr);
       interactions.releaseDrag(forces, currentPal);
     },
   });

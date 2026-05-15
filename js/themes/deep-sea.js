@@ -1,9 +1,33 @@
 import { defineConstants } from "../dev/registry.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
+import { createDeepSea } from "../particles/deep-sea.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
+
+// ── Particle counts ──
+const COUNTS = defineConstants(
+  "themes.deepSea.particles",
+  {
+    BUBBLE: {
+      value: 30,
+      min: 0,
+      max: 100,
+      step: 1,
+      description: "Bubble pool size",
+    },
+    JELLY: {
+      value: 8,
+      min: 0,
+      max: 30,
+      step: 1,
+      description: "Jellyfish count",
+    },
+  },
+  { theme: "deep-sea" },
+);
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
 // This file is for behavior only.
@@ -100,6 +124,28 @@ export function initDeepSea() {
 
   // ── Card caustic interactions ──
   let disableCardCaustics = null;
+
+  // Canvas-side hooks — bubbles + jellyfish render layer, click bursts,
+  // bubble spawning while dragging.
+  const deepSea = createDeepSea(
+    canvasEl,
+    canvasEl.getContext("2d"),
+    COUNTS.BUBBLE,
+    COUNTS.JELLY,
+  );
+  registerCanvasHooks("deep-sea", {
+    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
+      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"));
+    },
+    onClick({ cx, cy }) {
+      deepSea.clickBurst(cx, cy);
+    },
+    onDragMove({ cx, cy, trailAdded }) {
+      // Trail rate-limits to one point per frame; skipping non-trail
+      // moves keeps the bubble count bounded.
+      if (trailAdded) deepSea.dragBubble(cx, cy);
+    },
+  });
 
   createTheme({
     id: "deep-sea",

@@ -1,8 +1,10 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
+import { createPaper } from "../particles/paper.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeySequenceTrigger } from "./triggers.js";
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
@@ -228,6 +230,42 @@ export function initPaper() {
     hoverTargets = [];
     hoverCurrents = [];
   }
+
+  // Canvas-side hooks — render layer, pointer effects, and DOM cleanup
+  // for ink splats and strokes. The paper theme replaces the sky and
+  // atmosphere entirely (its background is CSS), and substitutes its own
+  // ink splat for the default click burst.
+  const paper = createPaper(canvasEl, canvasEl.getContext("2d"));
+  registerCanvasHooks("paper", {
+    suppressSky: true,
+    suppressAtmosphere: true,
+    suppressDefaultClickBurst: true,
+
+    drawAmbient({ palFor }) {
+      paper.draw(palFor("paper"));
+    },
+
+    onClick({ cx, cy }) {
+      paper.clickBurst(cx, cy);
+    },
+    onDragStart({ x, y }) {
+      paper.startStroke(x, y);
+    },
+    onDragMove({ x, y }) {
+      paper.extendStroke(x, y);
+    },
+    onDragEnd() {
+      const hadContent = paper.endStroke();
+      if (hadContent) {
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "paper-stroke" } }),
+        );
+      }
+    },
+    onDeactivate() {
+      paper.cleanup();
+    },
+  });
 
   createTheme({
     id: "paper",

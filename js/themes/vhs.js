@@ -1,8 +1,10 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
+import { createVhs } from "../particles/vhs.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeyChordTrigger } from "./triggers.js";
 
 // Theme metadata (id, label, color, icon) lives in themes/registry.js.
@@ -231,6 +233,32 @@ export function initVhs() {
       stillnessInterval = null;
     }
   }
+
+  // Canvas-side phosphor-decay layer.  Runs as drawPost so every other
+  // layer is committed before the phosphor captures into its buffer —
+  // anything painting after this would be lost from the trail.
+  const canvasEl = document.getElementById("bg-canvas");
+  const vhs = createVhs(canvasEl);
+  registerCanvasHooks("vhs", {
+    drawPost({ ctx, palFor, forces }) {
+      // The DOM cursor is not part of the canvas, so the trail history
+      // has to be fed manually for the cursor to leave a phosphor
+      // afterimage. clearCursor on hover-out so a stale trail doesn't
+      // hang in mid-air after the pointer leaves.
+      if (forces.hover.active) {
+        vhs.recordCursor(forces.hover.x, forces.hover.y);
+      } else {
+        vhs.clearCursor();
+      }
+      vhs.drawAfter(ctx, palFor("vhs"));
+    },
+    onClick({ cx, cy }) {
+      vhs.clickGlitch(cx, cy);
+    },
+    onDeactivate() {
+      vhs.cleanup();
+    },
+  });
 
   createTheme({
     id: "vhs",

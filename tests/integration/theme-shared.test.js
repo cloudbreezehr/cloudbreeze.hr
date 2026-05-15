@@ -40,7 +40,7 @@ function stageSharedDom(extra = "") {
       <div class="service-card"></div>
     </main>
     <footer></footer>
-    <div id="bg-canvas"></div>
+    <canvas id="bg-canvas"></canvas>
     ${extra}
   `;
 }
