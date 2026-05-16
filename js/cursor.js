@@ -40,6 +40,7 @@ export function initCursor(dotEl, ringEl) {
       setPos(ringEl, rx, ry);
       dotEl.classList.add("visible");
       ringEl.classList.add("visible");
+      document.body.classList.add("has-custom-cursor");
     }
   });
 

@@ -76,8 +76,14 @@ body {
   color: #fff;
   min-height: 100vh;
   overflow-x: hidden;
-  cursor: none;
   --cursor-glow: 55, 138, 221;
+}
+
+/* OS cursor stays visible until cursor.js has both initialized and
+   received its first mousemove — otherwise slow loads leave a window
+   where neither cursor is showing. */
+body.has-custom-cursor {
+  cursor: none;
 }
 
 /* Custom cursor.
