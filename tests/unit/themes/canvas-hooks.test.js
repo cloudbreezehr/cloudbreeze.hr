@@ -69,6 +69,39 @@ describe("themes/canvas-hooks", () => {
       /unknown/,
     );
   });
+
+  it("returns the same array reference on stable frames so callers can hold onto it", () => {
+    registerCanvasHooks("paper", { drawAmbient() {} });
+    document.body.classList.add("paper");
+    const first = getActiveHooks();
+    const second = getActiveHooks();
+    expect(second).toBe(first);
+  });
+
+  it("invalidates the cache when a body class flips", () => {
+    registerCanvasHooks("paper", { drawAmbient() {} });
+    registerCanvasHooks("vhs", { drawPost() {} });
+    document.body.classList.add("paper");
+    const first = getActiveHooks();
+    document.body.classList.add("vhs");
+    const second = getActiveHooks();
+    expect(second).not.toBe(first);
+    expect(second.map((a) => a.id)).toEqual(["paper", "vhs"]);
+  });
+
+  it("invalidates the cache when a theme re-registers, even with the same body class", () => {
+    const original = { drawAmbient() {} };
+    const replacement = { drawPost() {} };
+    registerCanvasHooks("paper", original);
+    document.body.classList.add("paper");
+    const first = getActiveHooks();
+    expect(first[0].hooks).toBe(original);
+
+    registerCanvasHooks("paper", replacement);
+    const second = getActiveHooks();
+    expect(second).not.toBe(first);
+    expect(second[0].hooks).toBe(replacement);
+  });
 });
 
 describe("themes/canvas-hooks — dispatchTransitions", () => {

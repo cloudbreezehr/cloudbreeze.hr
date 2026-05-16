@@ -88,6 +88,28 @@ import { getThemeIds } from "./registry.js";
 
 const _hooks = new Map();
 
+// Cached output of getActiveHooks().  Invalidated whenever the body's
+// active-theme bitfield changes or a hook re-registers.  Callers can
+// hold the returned array across frames; it's the same reference until
+// the cache invalidates.
+let _cachedActive = null;
+let _cachedSig = -1;
+
+// Compute a bitfield signature of which theme ids currently have their
+// body class set.  7 themes fit in a single integer; comparison is O(1).
+// classList.contains is a cheap hash lookup on the live token list, so
+// the per-call cost is bounded by theme count even on cache miss.
+function activeSignature() {
+  const cl = document.body.classList;
+  let sig = 0;
+  let bit = 1;
+  for (const id of getThemeIds()) {
+    if (cl.contains(id)) sig |= bit;
+    bit <<= 1;
+  }
+  return sig;
+}
+
 /**
  * Register canvas-side hooks for a theme. Idempotent within a session —
  * later registrations replace earlier ones, which keeps test re-init
@@ -105,34 +127,54 @@ export function registerCanvasHooks(id, hooks) {
     throw new Error(`registerCanvasHooks: unknown theme "${id}"`);
   }
   _hooks.set(id, hooks);
+  _cachedActive = null;
+  _cachedSig = -1;
 }
 
 /**
  * Snapshot of currently active themes that have registered hooks, in
  * `getThemeIds()` order. Returns plain objects; callers iterate.
  *
+ * The result is cached behind a body-classList signature so the steady
+ * state (no theme transitions) returns the same reference each call —
+ * the render loop and pointer handlers fire this at high frequency.
+ *
  * @returns {{id: string, hooks: CanvasHooks}[]}
  */
 export function getActiveHooks() {
+  const sig = activeSignature();
+  if (sig === _cachedSig && _cachedActive !== null) return _cachedActive;
   const out = [];
-  const cl = document.body.classList;
+  let bit = 1;
   for (const id of getThemeIds()) {
-    if (cl.contains(id) && _hooks.has(id)) {
+    if (sig & bit && _hooks.has(id)) {
       out.push({ id, hooks: _hooks.get(id) });
     }
+    bit <<= 1;
   }
+  _cachedActive = out;
+  _cachedSig = sig;
   return out;
 }
 
-// Invariant: `_prevActiveIds` mirrors the set of theme ids whose
-// `onActivate` has fired without a matching `onDeactivate`.  Mutated
-// only by `dispatchTransitions`.
+// Last-seen active signature for transition detection.  -1 sentinel
+// matches the cache's "never computed" state so the first call always
+// fires onActivate for any pre-set classes.
+let _prevSig = -1;
 let _prevActiveIds = new Set();
 
 /**
  * Compare `active` (this frame's snapshot from `getActiveHooks()`)
  * against the previous call's snapshot and fire `onActivate` /
- * `onDeactivate` exactly once per transition.
+ * `onDeactivate` exactly once per transition.  Skips the diff entirely
+ * when the active signature is unchanged, which is the steady-state
+ * case (no theme just (de)activated).
+ *
+ * Contract: must be invoked immediately after `getActiveHooks()` in the
+ * same synchronous tick — the short-circuit relies on `_cachedSig` from
+ * that call reflecting the same body state as `active`.  A stale
+ * `active` array passed without a fresh `getActiveHooks()` could fire
+ * the wrong transitions.
  *
  * Deactivation needs the registered hooks for an id whose body class
  * is already gone — read directly from the internal map, bypassing the
@@ -141,7 +183,9 @@ let _prevActiveIds = new Set();
  * @param {{id: string, hooks: CanvasHooks}[]} active
  */
 export function dispatchTransitions(active) {
-  const ids = new Set(active.map((a) => a.id));
+  if (_cachedSig === _prevSig) return;
+  const ids = new Set();
+  for (const a of active) ids.add(a.id);
   for (const { id, hooks } of active) {
     if (!_prevActiveIds.has(id)) hooks.onActivate?.();
   }
@@ -149,6 +193,7 @@ export function dispatchTransitions(active) {
     if (!ids.has(id)) _hooks.get(id)?.onDeactivate?.();
   }
   _prevActiveIds = ids;
+  _prevSig = _cachedSig;
 }
 
 /**
@@ -159,5 +204,8 @@ export function dispatchTransitions(active) {
  */
 export function _resetForTests() {
   _hooks.clear();
+  _cachedActive = null;
+  _cachedSig = -1;
   _prevActiveIds = new Set();
+  _prevSig = -1;
 }
