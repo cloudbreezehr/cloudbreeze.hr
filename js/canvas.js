@@ -215,8 +215,7 @@ export function initCanvas(canvasEl, appearance, options) {
     // keys that exist only in its own override block (e.g. bubbleRim,
     // glassBody), dereference `undefined` and crash the render loop.
 
-    const activeHooks = getActiveHooks();
-    dispatchTransitions(activeHooks);
+    const activeHooks = syncActiveHooks();
     const suppress = (key) => activeHooks.some(({ hooks }) => hooks[key]);
     const suppressSky = suppress("suppressSky");
     const suppressAtmosphere = suppress("suppressAtmosphere");
@@ -318,13 +317,23 @@ export function initCanvas(canvasEl, appearance, options) {
     return resolvePalette(isDark ? "dark" : "light", id);
   }
 
+  // Read the active hooks set and fire any pending lifecycle transitions.
+  // Pairing the two means onActivate is observed before pointer hooks
+  // fire for the same theme, even when a body class flips between
+  // render frames.
+  function syncActiveHooks() {
+    const active = getActiveHooks();
+    dispatchTransitions(active);
+    return active;
+  }
+
   document.addEventListener("click", (e) => {
     // Skip all canvas effects for clicks on UI controls
     if (e.target.closest(UI_OVERLAY)) return;
 
     const cx = e.clientX;
     const cy = canvasY(e.clientY);
-    const activeHooks = getActiveHooks();
+    const activeHooks = syncActiveHooks();
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
@@ -364,7 +373,7 @@ export function initCanvas(canvasEl, appearance, options) {
         cy = canvasY(y);
       interactions.startDrag(forces, cx, cy);
       const ptr = { x, y, cx, cy, forces, palFor };
-      for (const { hooks } of getActiveHooks()) hooks.onDragStart?.(ptr);
+      for (const { hooks } of syncActiveHooks()) hooks.onDragStart?.(ptr);
     },
     onMove(x, y) {
       const cx = x,
@@ -377,11 +386,11 @@ export function initCanvas(canvasEl, appearance, options) {
           }),
         );
       const ptr = { x, y, cx, cy, trailAdded, forces, palFor };
-      for (const { hooks } of getActiveHooks()) hooks.onDragMove?.(ptr);
+      for (const { hooks } of syncActiveHooks()) hooks.onDragMove?.(ptr);
     },
     onUp() {
       const ptr = { forces, palFor };
-      for (const { hooks } of getActiveHooks()) hooks.onDragEnd?.(ptr);
+      for (const { hooks } of syncActiveHooks()) hooks.onDragEnd?.(ptr);
       interactions.releaseDrag(forces, currentPal);
     },
   });
