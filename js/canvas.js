@@ -311,8 +311,9 @@ export function initCanvas(canvasEl, appearance, options) {
   const UI_OVERLAY =
     "nav, .achievement-panel, .achievement-toast-container, .dev-console";
 
-  // Per-theme palette resolver matching the current appearance.  Re-built
-  // on each event because `isDark` mutates outside this scope.
+  // Per-theme palette resolver matching the current appearance.  Reads
+  // `isDark` on each call so changes from `appearance.onChange` apply
+  // immediately without re-binding consumers.
   function palFor(id) {
     return resolvePalette(isDark ? "dark" : "light", id);
   }
