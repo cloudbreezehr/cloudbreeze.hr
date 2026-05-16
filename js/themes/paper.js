@@ -240,8 +240,8 @@ export function initPaper() {
       paper.draw(palFor("paper"));
     },
 
-    onClick({ cx, cy }) {
-      paper.clickBurst(cx, cy);
+    onClick({ x, y }) {
+      paper.clickBurst(x, y);
     },
     onDragStart({ x, y }) {
       paper.startStroke(x, y);
