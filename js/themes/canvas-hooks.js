@@ -49,10 +49,15 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
 
 /**
  * @typedef {Object} PointerCtx
- * @property {number} x        Raw client x (pre canvasY mirror for upside-down).
- * @property {number} y        Raw client y.
- * @property {number} cx       Canvas-space x.
- * @property {number} cy       Canvas-space y (post canvasY mirror).
+ * @property {number} x        Raw client x.  Use when painting into a
+ *                             container that lives in screen space —
+ *                             SVG siblings of <body>, fixed-position
+ *                             DOM nodes, anything outside the flipped
+ *                             .page subtree.
+ * @property {number} y        Raw client y (paired with `x`).
+ * @property {number} cx       Canvas-pixel x.  Use when painting into
+ *                             the #bg-canvas buffer.
+ * @property {number} cy       Canvas-pixel y (paired with `cx`).
  * @property {boolean} [trailAdded]  onDragMove only — true when the trail
  *                                   accepted this point (rate-limited).
  * @property {object} forces
