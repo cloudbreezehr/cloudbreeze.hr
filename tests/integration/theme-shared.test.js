@@ -8,9 +8,10 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 //
 // Scope intentionally narrow. Per-theme indicator details stay in
 // theme-<name>.integration.test.js files (currently frozen only), and
-// upside-down's async-wipe path has its own dedicated test (see TODO.md).
-// Frozen is also excluded here because it already has a deep integration
-// test — no point running the smoke against it too.
+// upside-down's async-wipe path needs its own dedicated test rather
+// than being shoe-horned into the config-wipe smoke below.  Frozen is
+// also excluded because it already has a deep integration test — no
+// point running the smoke against it too.
 
 // ── Wipe timing (shared across config-style wipes) ──
 // All four themes in this file use a wipe config with coverMs around the
@@ -103,7 +104,8 @@ function holdFooterActivation(ms) {
 // ── Theme cases ──
 // Each case describes one theme's wire-up: how to initialize it, how to
 // activate it, and what the activation produces. Upside-down is absent:
-// its async-wipe path needs dedicated coverage (see TODO.md).
+// its async-wipe path needs its own dedicated test, not the smoke this
+// file provides.
 //
 // Adding a new theme here is a deliberate decision, not a default. Each
 // case adds ~150ms to the suite and re-verifies a contract that
