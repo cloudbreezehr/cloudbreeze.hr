@@ -10,6 +10,7 @@
 import { initAppearance } from "./appearance.js";
 import { initNav } from "./nav.js";
 import { initCanvas } from "./canvas.js";
+import { subscribe as subscribeScroll } from "./scroll-bus.js";
 import { initCursor } from "./cursor.js";
 import { initReveal } from "./reveal.js";
 import { initTilt } from "./service-cards.js";
@@ -102,38 +103,29 @@ const parallaxEls = PARALLAX_LAYERS.map(({ selector, rate }) => ({
   el: document.querySelector(selector),
   rate,
 }));
-window.addEventListener(
-  "scroll",
-  () => {
-    const isFlipped = document.body.classList.contains("upside-down");
-    const maxScroll =
-      document.documentElement.scrollHeight - window.innerHeight;
-    const y = isFlipped ? maxScroll - window.scrollY : window.scrollY;
-    if (y > window.innerHeight) return;
-    for (const p of parallaxEls) {
-      if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
-    }
-  },
-  { passive: true },
-);
+subscribeScroll(({ scrollY }) => {
+  const isFlipped = document.body.classList.contains("upside-down");
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const y = isFlipped ? maxScroll - scrollY : scrollY;
+  if (y > window.innerHeight) return;
+  for (const p of parallaxEls) {
+    if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
+  }
+});
 
 // Fade out scroll hint once the user starts scrolling
 const scrollHint = document.querySelector(".scroll-hint");
 if (scrollHint) {
-  window.addEventListener(
-    "scroll",
-    function hide() {
-      if (window.scrollY > SCROLL_HINT_FADE_AT) {
-        scrollHint.style.animation = "none";
-        scrollHint.style.opacity = "1";
-        void scrollHint.offsetHeight;
-        scrollHint.style.transition = "opacity 0.6s";
-        scrollHint.style.opacity = "0";
-        window.removeEventListener("scroll", hide);
-      }
-    },
-    { passive: true },
-  );
+  const unsub = subscribeScroll(({ scrollY }) => {
+    if (scrollY > SCROLL_HINT_FADE_AT) {
+      scrollHint.style.animation = "none";
+      scrollHint.style.opacity = "1";
+      void scrollHint.offsetHeight;
+      scrollHint.style.transition = "opacity 0.6s";
+      scrollHint.style.opacity = "0";
+      unsub();
+    }
+  });
 }
 
 // Dev console — triggered via URL hash #dev or Ctrl+Shift+.

@@ -3,6 +3,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createSnow } from "../particles/frozen.js";
+import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -180,34 +181,26 @@ export function initFrozen() {
   // the snow factory each draw call.
   const snowTurbulence = { value: 0 };
   let lastScrollDir = 0; // -1 = up, 1 = down, 0 = idle
-  let lastScrollTop = window.scrollY || 0;
   let reversalTimes = [];
-  window.addEventListener(
-    "scroll",
-    () => {
-      const scrollTop = window.scrollY || document.documentElement.scrollTop;
-      const delta = scrollTop - lastScrollTop;
-      lastScrollTop = scrollTop;
-      if (Math.abs(delta) < SHAKE.MIN_DELTA) return;
-      const dir = delta > 0 ? 1 : -1;
-      if (lastScrollDir !== 0 && dir !== lastScrollDir) {
-        const now = performance.now();
-        reversalTimes.push(now);
-        reversalTimes = reversalTimes.filter(
-          (t) => now - t < SHAKE.REVERSAL_WINDOW,
+  subscribeScroll(({ deltaY }) => {
+    if (Math.abs(deltaY) < SHAKE.MIN_DELTA) return;
+    const dir = deltaY > 0 ? 1 : -1;
+    if (lastScrollDir !== 0 && dir !== lastScrollDir) {
+      const now = performance.now();
+      reversalTimes.push(now);
+      reversalTimes = reversalTimes.filter(
+        (t) => now - t < SHAKE.REVERSAL_WINDOW,
+      );
+      if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
+        snowTurbulence.value = 1;
+        reversalTimes.length = 0;
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
         );
-        if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
-          snowTurbulence.value = 1;
-          reversalTimes.length = 0;
-          window.dispatchEvent(
-            new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
-          );
-        }
       }
-      lastScrollDir = dir;
-    },
-    { passive: true },
-  );
+    }
+    lastScrollDir = dir;
+  });
   registerCanvasHooks("frozen", {
     drawAmbient({ drawVelocity, reducedMotion, forces }) {
       // Under reduced-motion, suppress turbulence so reversals don't

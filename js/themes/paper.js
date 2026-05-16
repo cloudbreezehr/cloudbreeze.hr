@@ -3,6 +3,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
 import { createPaper } from "../particles/paper.js";
+import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -88,7 +89,6 @@ export function initPaper() {
   let pageTargetRot = 0;
   let pageCurrentX = 0;
   let pageCurrentRot = 0;
-  let lastScrollY = window.scrollY || 0;
   let pageTurnRaf = null;
 
   function pageTurnTick() {
@@ -121,7 +121,6 @@ export function initPaper() {
 
   function startPageTurn() {
     if (pageTurnRaf !== null) return;
-    lastScrollY = window.scrollY || 0;
     pageTurnRaf = requestAnimationFrame(pageTurnTick);
   }
 
@@ -140,19 +139,14 @@ export function initPaper() {
     }
   }
 
-  window.addEventListener(
-    "scroll",
-    () => {
-      if (pageTurnRaf === null) return;
-      const y = window.scrollY || 0;
-      const delta = y - lastScrollY;
-      lastScrollY = y;
-      const norm = Math.max(-1, Math.min(1, delta * PV.SCROLL_NORM_FACTOR));
-      pageTargetX = norm * PV.PAGE_TURN_AMP_PX;
-      pageTargetRot = norm * PV.PAGE_TURN_ROT_DEG;
-    },
-    { passive: true },
-  );
+  subscribeScroll(({ deltaY }) => {
+    // Page-turn only animates while the theme is active; the rAF flag
+    // is the gate that stayed true under the old listener too.
+    if (pageTurnRaf === null) return;
+    const norm = Math.max(-1, Math.min(1, deltaY * PV.SCROLL_NORM_FACTOR));
+    pageTargetX = norm * PV.PAGE_TURN_AMP_PX;
+    pageTargetRot = norm * PV.PAGE_TURN_ROT_DEG;
+  });
 
   // ── Hover text thickening ──
   // While paper is active, text elements near the cursor get a stronger

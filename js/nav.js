@@ -1,4 +1,5 @@
 import { multiLerp, palettes } from "./colors.js";
+import { subscribe as subscribeScroll } from "./scroll-bus.js";
 
 const NAV_BG_DARK = "rgba(10,22,40,0.97)";
 const NAV_BG_ALPHA = 0.85;
@@ -52,18 +53,18 @@ export function initNav(navEl, appearance) {
     });
   }
 
-  function updateScroll() {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  function updateScroll(snapshot) {
+    const scrollY = snapshot?.scrollY ?? window.scrollY ?? 0;
     const docHeight =
       document.documentElement.scrollHeight - window.innerHeight;
     scrollProgress =
-      docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
+      docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
     updateNavAppearance();
     updateActiveLink();
   }
 
   updateScroll();
-  window.addEventListener("scroll", updateScroll, { passive: true });
+  subscribeScroll(updateScroll);
   appearance.onChange(() => updateNavAppearance());
 
   // Hamburger menu
@@ -104,5 +105,5 @@ export function initNav(navEl, appearance) {
     link.addEventListener("click", closeMenu);
   });
 
-  window.addEventListener("scroll", closeMenu, { passive: true });
+  subscribeScroll(closeMenu);
 }

@@ -3,6 +3,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
 import { createVhs } from "../particles/vhs.js";
+import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -116,7 +117,7 @@ export function initVhs() {
   // ── Tracking drift on scroll ──
   let driftTargetX = 0;
   let driftCurrentX = 0;
-  let lastScrollY = window.scrollY || 0;
+  let driftUnsub = null;
   let driftRaf = null;
 
   function driftTick() {
@@ -140,14 +141,11 @@ export function initVhs() {
     driftRaf = requestAnimationFrame(driftTick);
   }
 
-  function onScroll() {
+  function onScroll({ deltaY }) {
     if (!pageEl) return;
-    const y = window.scrollY || 0;
-    const dy = y - lastScrollY;
-    lastScrollY = y;
     // Drift in the opposite direction of scroll so it feels like a
     // tracking error chasing the playhead.
-    driftTargetX += -dy * VV.SCROLL_NORM_FACTOR;
+    driftTargetX += -deltaY * VV.SCROLL_NORM_FACTOR;
     // Clamp so a frantic scroll doesn't jolt the page off-screen.
     driftTargetX = Math.max(
       -VV.DRIFT_AMP_PX,
@@ -157,13 +155,15 @@ export function initVhs() {
   }
 
   function startDrift() {
-    if (prefersReducedMotion()) return;
-    lastScrollY = window.scrollY || 0;
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (prefersReducedMotion() || driftUnsub) return;
+    driftUnsub = subscribeScroll(onScroll);
   }
 
   function stopDrift() {
-    window.removeEventListener("scroll", onScroll);
+    if (driftUnsub) {
+      driftUnsub();
+      driftUnsub = null;
+    }
     if (driftRaf !== null) {
       cancelAnimationFrame(driftRaf);
       driftRaf = null;

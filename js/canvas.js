@@ -3,6 +3,7 @@ import { bindPointer } from "./pointer.js";
 import { createSky } from "./sky.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
+import { subscribe as subscribeScroll } from "./scroll-bus.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
@@ -100,7 +101,6 @@ export function initCanvas(canvasEl, appearance, options) {
   let isDark = appearance.isDark();
   let scrollProgress = 0;
   let scrollVelocity = 0;
-  let lastScrollTop = window.scrollY || 0;
 
   // Stable viewport height that ignores the mobile browser toolbar.
   // CSS `lvh` resolves to the large viewport (toolbar hidden).
@@ -123,11 +123,13 @@ export function initCanvas(canvasEl, appearance, options) {
     canvas.height = stableHeight();
   }
 
-  function updateScroll() {
-    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+  function updateScroll(snapshot) {
+    const scrollY =
+      snapshot?.scrollY ?? window.scrollY ?? document.documentElement.scrollTop;
+    const deltaY = snapshot?.deltaY ?? 0;
     const docHeight = document.documentElement.scrollHeight - stableHeight();
     scrollProgress =
-      docHeight > 0 ? Math.min(1, Math.max(0, scrollTop / docHeight)) : 0;
+      docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: {
@@ -137,9 +139,7 @@ export function initCanvas(canvasEl, appearance, options) {
         },
       }),
     );
-    const delta = scrollTop - lastScrollTop;
-    scrollVelocity += delta * SCROLL.VEL_GAIN;
-    lastScrollTop = scrollTop;
+    scrollVelocity += deltaY * SCROLL.VEL_GAIN;
   }
 
   resize();
@@ -148,7 +148,7 @@ export function initCanvas(canvasEl, appearance, options) {
   const atmosphere = createAtmosphere(canvas, ctx, opts);
 
   window.addEventListener("resize", resize);
-  window.addEventListener("scroll", updateScroll, { passive: true });
+  subscribeScroll(updateScroll);
 
   // Interaction forces — click repels, drag attracts, hold charges, hover attracts gently
   const forces = {
