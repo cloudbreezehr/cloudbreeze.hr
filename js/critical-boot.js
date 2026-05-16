@@ -9,7 +9,6 @@
 
 import { injectLayerVars } from "./layers.js";
 import { initAppearance } from "./appearance.js";
-import { initCanvas } from "./canvas.js";
 import { initCursor } from "./cursor.js";
 
 // Layer vars first — `var(--z-...)` rules resolve to `auto` until
@@ -21,7 +20,6 @@ import { initCursor } from "./cursor.js";
 injectLayerVars();
 
 const appearance = initAppearance(document.querySelector(".appearance-toggle"));
-initCanvas(document.getElementById("bg-canvas"), appearance);
 initCursor(
   document.getElementById("cursor"),
   document.getElementById("cursor-ring"),

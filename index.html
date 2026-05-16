@@ -117,10 +117,11 @@
     <link rel="stylesheet" href="css/main.css" />
 
     <!--
-      Start fetching the first-paint module during HTML parse instead
-      of waiting until the deferred <script> tag near the end of <body>.
+      Start fetching the first-paint modules during HTML parse instead
+      of waiting until the deferred <script> tags near the end of <body>.
     -->
     <link rel="modulepreload" href="./js/critical-boot.js" />
+    <link rel="modulepreload" href="./js/canvas-boot.js" />
   </head>
   <body>
     <!--
@@ -529,10 +530,13 @@
     </div>
 
     <!--
-      Module scripts are deferred and execute in document order — the
-      first-paint subset evaluates before the rest of the graph.
+      Module scripts are deferred and evaluate in document order.
+      Each entry's subgraph downloads in parallel, but a later entry
+      can't start running until the earlier one finishes — so the
+      smallest first-paint subset goes first to unblock the rest.
     -->
     <script type="module" src="./js/critical-boot.js"></script>
+    <script type="module" src="./js/canvas-boot.js"></script>
     <script type="module" src="./js/bootstrap.js"></script>
   </body>
 </html>
