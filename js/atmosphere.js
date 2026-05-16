@@ -99,36 +99,48 @@ class Cloud {
     // the gradient cache; the visual difference between adjacent buckets
     // is below the threshold of perception against a sky gradient.
     const opBucket = Math.round(op * CLOUD.OP_BUCKET_RESOLUTION);
+    // Snapshot the GRAD_* knobs once per cloud — they're tunable, so
+    // each blob's cache key has to track them or live edits silently
+    // no-op until palette swap or page reload.
+    const gradInner = CLOUD.GRAD_INNER;
+    const gradMid = CLOUD.GRAD_MID;
+    const gradMidOp = CLOUD.GRAD_MID_OPACITY;
     this.blobs.forEach((b) => {
       const bx = this.x + b.ox;
       const by = y + b.oy;
       // Cache the gradient on the blob itself.  Invalidates on op
-      // bucket change or palette swap; otherwise the same gradient
-      // reference is reused frame after frame.  Drawn at origin under
-      // a translate so position changes don't invalidate the cache.
+      // bucket change, palette swap, or any GRAD_* tune; otherwise the
+      // same gradient reference is reused frame after frame.  Drawn at
+      // origin under a translate so position changes don't invalidate.
       if (
         b._gradOpBucket !== opBucket ||
         b._gradCw !== cw ||
-        b._gradCm !== cm
+        b._gradCm !== cm ||
+        b._gradInner !== gradInner ||
+        b._gradMid !== gradMid ||
+        b._gradMidOp !== gradMidOp
       ) {
         const grad = _ctx.createRadialGradient(
           0,
           0,
-          b.r * CLOUD.GRAD_INNER,
+          b.r * gradInner,
           0,
           0,
           b.r,
         );
         grad.addColorStop(0, `rgba(${cw[0]},${cw[1]},${cw[2]},${op})`);
         grad.addColorStop(
-          CLOUD.GRAD_MID,
-          `rgba(${cm[0]},${cm[1]},${cm[2]},${op * CLOUD.GRAD_MID_OPACITY})`,
+          gradMid,
+          `rgba(${cm[0]},${cm[1]},${cm[2]},${op * gradMidOp})`,
         );
         grad.addColorStop(1, "transparent");
         b._grad = grad;
         b._gradOpBucket = opBucket;
         b._gradCw = cw;
         b._gradCm = cm;
+        b._gradInner = gradInner;
+        b._gradMid = gradMid;
+        b._gradMidOp = gradMidOp;
       }
       _ctx.save();
       _ctx.translate(bx, by);
