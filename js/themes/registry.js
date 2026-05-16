@@ -96,6 +96,11 @@ const THEMES = [
 const _byId = new Map(THEMES.map((m) => [m.id, m]));
 const _toggles = new Map();
 
+// Frozen so callers can keep the reference across calls instead of
+// paying for a fresh allocation each time.  Mutation attempts throw —
+// that's deliberate, the registry is the single source of truth.
+const _themeIds = Object.freeze(THEMES.map((m) => m.id));
+
 /**
  * Bind the runtime toggle handler for a theme.  Called during the theme's
  * `init()` after local state (isFrozen, etc.) exists.
@@ -105,14 +110,17 @@ export function registerToggle(id, toggle) {
   _toggles.set(id, toggle);
 }
 
-/** All themes in declaration order. */
+/** All themes in declaration order.  Returns a defensive copy. */
 export function getThemes() {
   return THEMES.slice();
 }
 
-/** Canonical id list — preferred over hardcoded arrays. */
+/**
+ * Canonical id list — preferred over hardcoded arrays.  Returns a stable
+ * frozen reference; callers may keep it across frames.
+ */
 export function getThemeIds() {
-  return THEMES.map((m) => m.id);
+  return _themeIds;
 }
 
 /** Single-theme lookup.  Returns null if the id isn't known. */
