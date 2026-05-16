@@ -3,6 +3,11 @@
 // inits independently as its own promise resolves.  Failures in one
 // module don't block the others.
 //
+// Must run after critical-boot.js — reads the appearance singleton
+// from `window.__cloudbreezeAppearance` set there.  The <script> tag
+// order in index.html enforces this; the assert below traps any
+// future reordering loudly instead of letting `undefined` propagate.
+//
 // External module so the page can ship with a strict script-src
 // 'self' CSP — inline scripts would force 'unsafe-inline' and undo
 // most of the policy's value.
@@ -11,6 +16,11 @@ const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
 const appearance = window.__cloudbreezeAppearance;
+if (!appearance) {
+  throw new Error(
+    "[bootstrap] window.__cloudbreezeAppearance missing — critical-boot.js must run first",
+  );
+}
 
 function load(path, run) {
   import(path)

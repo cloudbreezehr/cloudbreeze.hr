@@ -3,9 +3,13 @@
 // modulepreloaded) so its imports can paint without waiting for the
 // full bootstrap graph.
 //
-// Hands the appearance singleton off to the deferred bootstrap via
-// `window.__cloudbreezeAppearance` — re-running `initAppearance`
-// there would double-bind the toggle's click handler.
+// Hands the appearance singleton off to the other boot entry points
+// via `window.__cloudbreezeAppearance` — they run in separate module
+// realms (one per <script type="module">) and can't share state via
+// imports, so a window global is the only seam.  The underscore
+// prefix marks it as private to the boot pipeline.  Re-running
+// `initAppearance` in a consumer would double-bind the toggle's
+// click handler.
 
 import { injectLayerVars } from "./layers.js";
 import { initAppearance } from "./appearance.js";
