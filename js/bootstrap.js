@@ -14,7 +14,6 @@
 import { mirrorYWhenInverted } from "./viewport.js";
 import { initNav } from "./nav.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
-import { initReveal } from "./reveal.js";
 import { initTilt } from "./service-cards.js";
 import { initButtonRipple } from "./effects/button-ripple.js";
 import { initNavSparkle } from "./effects/nav-sparkle.js";
@@ -71,7 +70,6 @@ try {
 
 const appearance = window.__cloudbreezeAppearance;
 initNav(document.querySelector("nav"), appearance);
-initReveal();
 initTilt();
 initButtonRipple();
 initNavSparkle();

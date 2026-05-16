@@ -10,6 +10,7 @@
 import { injectLayerVars } from "./layers.js";
 import { initAppearance } from "./appearance.js";
 import { initCursor } from "./cursor.js";
+import { initReveal } from "./reveal.js";
 
 // Layer vars first — `var(--z-...)` rules resolve to `auto` until
 // these are written, which is fine for elements present in the
@@ -24,5 +25,6 @@ initCursor(
   document.getElementById("cursor"),
   document.getElementById("cursor-ring"),
 );
+initReveal();
 
 window.__cloudbreezeAppearance = appearance;
