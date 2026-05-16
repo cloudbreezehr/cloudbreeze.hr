@@ -386,6 +386,11 @@ export function createSky(starCount) {
       if (starVis <= 0) return;
 
       t += STARS.TIME_STEP;
+      // Hoisted halo opts shared across every glow-tier star this frame.
+      const haloOpts = {
+        midStop: STARS.GLOW_MID,
+        midAlpha: STARS.GLOW_MID_ALPHA,
+      };
       stars.forEach((s) => {
         s.twinkle += s.twinkleSpeed;
         // Random bright flash — rare, brief spike
@@ -419,10 +424,15 @@ export function createSky(starCount) {
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {
-          drawHaloParticle(ctx, sx, py, s.r * STARS.GLOW_RADIUS, op, sc, {
-            midStop: STARS.GLOW_MID,
-            midAlpha: STARS.GLOW_MID_ALPHA,
-          });
+          drawHaloParticle(
+            ctx,
+            sx,
+            py,
+            s.r * STARS.GLOW_RADIUS,
+            op,
+            sc,
+            haloOpts,
+          );
         } else {
           ctx.fillStyle = rgbaStr(sc, op);
           ctx.beginPath();

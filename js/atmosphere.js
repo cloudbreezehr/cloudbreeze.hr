@@ -229,7 +229,7 @@ class ScrollMote {
       this.vy = 0;
     }
   }
-  draw(pal) {
+  draw(pal, opts) {
     if (this.opacity < MOTE.DRAW_THRESHOLD) return;
     drawHaloParticle(
       _ctx,
@@ -238,11 +238,7 @@ class ScrollMote {
       this.r * MOTE.GLOW_RADIUS,
       this.opacity,
       pal.moteColor,
-      {
-        midStop: MOTE.GRAD_MID,
-        midAlpha: MOTE.GRAD_MID_OPACITY,
-        midColor: pal.moteGlow,
-      },
+      opts,
     );
   }
 }
@@ -373,10 +369,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           glowY,
           _canvas.width * (HORIZON.RADIUS_BASE + sp * HORIZON.RADIUS_SCROLL),
         );
-        hg.addColorStop(
-          0,
-          `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity})`,
-        );
+        hg.addColorStop(0, `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity})`);
         hg.addColorStop(1, "transparent");
         _ctx.fillStyle = hg;
         _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
@@ -458,6 +451,14 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         const attractForce =
           HOLD.ATTRACT_FORCE_BASE +
           forces.holdStrength * HOLD.ATTRACT_FORCE_HOLD;
+        // One halo opts object shared across every mote this frame —
+        // midColor is palette-derived so it must rebuild per frame, but
+        // not per particle.
+        const moteHaloOpts = {
+          midStop: MOTE.GRAD_MID,
+          midAlpha: MOTE.GRAD_MID_OPACITY,
+          midColor: pal.moteGlow,
+        };
         motes.forEach((m) => {
           m.update(scrollVelocity);
           if (forces.clickImpulse.strength > 0.05) {
@@ -500,7 +501,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             applyHoverDrift(forces, m, MOTE_HOVER.RADIUS, MOTE_HOVER.STRENGTH);
           }
           applyWellForce(forces, m);
-          m.draw(pal);
+          m.draw(pal, moteHaloOpts);
         });
       }
     },

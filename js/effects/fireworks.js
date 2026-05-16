@@ -193,6 +193,14 @@ class FireworkParticle {
     this.maxLife = 0;
     this.stage = "primary";
     this.hasSpawnedSecondary = false;
+    // Halo opts allocated per-particle so the pooled draw call can pass
+    // a stable reference to drawHaloParticle.  midColor is mutated in
+    // spawnPrimary when the particle's color is reassigned.
+    this._haloOpts = {
+      midStop: FW.GLOW_MID_STOP,
+      midAlpha: FW.GLOW_MID_OPACITY,
+      midColor: this.color,
+    };
     // Trail ring buffer
     this.trail = new Array(FW.TRAIL_LENGTH);
     for (let i = 0; i < FW.TRAIL_LENGTH; i++) {
@@ -211,6 +219,7 @@ class FireworkParticle {
     this.opacity = 1;
     this.color = color;
     this.brightColor = brightenRgb(color);
+    this._haloOpts.midColor = color;
     this.life = 0;
     this.maxLife = FW.PRIMARY_LIFE_MIN + Math.random() * FW.PRIMARY_LIFE_RANGE;
     this.stage = "primary";
@@ -232,6 +241,7 @@ class FireworkParticle {
     this.opacity = 1;
     this.color = color;
     this.brightColor = brightenRgb(color);
+    this._haloOpts.midColor = color;
     this.life = 0;
     this.maxLife =
       FW.SECONDARY_LIFE_MIN + Math.random() * FW.SECONDARY_LIFE_RANGE;
@@ -316,11 +326,7 @@ class FireworkParticle {
         this.r * FW.GLOW_RADIUS_MULT,
         op,
         bc,
-        {
-          midStop: FW.GLOW_MID_STOP,
-          midAlpha: FW.GLOW_MID_OPACITY,
-          midColor: c,
-        },
+        this._haloOpts,
       );
     } else {
       // Secondary: simple filled circle (skip gradient for perf)
@@ -351,6 +357,13 @@ class Rocket {
     this.life = 0;
     this.maxLife = 0;
     this.delay = 0;
+    // Halo opts allocated per-rocket; midColor mutated on spawn when
+    // the rocket's color changes.
+    this._haloOpts = {
+      midStop: FW.GLOW_MID_STOP,
+      midAlpha: FW.GLOW_MID_OPACITY,
+      midColor: this.color,
+    };
     this.trail = new Array(FW.ROCKET_TRAIL_LENGTH);
     for (let i = 0; i < FW.ROCKET_TRAIL_LENGTH; i++) {
       this.trail[i] = { x: 0, y: 0, active: false, ember: false };
@@ -367,6 +380,7 @@ class Rocket {
     this.targetY = targetY;
     this.color = color;
     this.brightColor = brightenRgb(color);
+    this._haloOpts.midColor = color;
     this.life = 0;
     this.maxLife = FW.ROCKET_LIFE_FRAMES;
     this.delay = delay;
@@ -445,7 +459,7 @@ class Rocket {
       FW.ROCKET_RADIUS * FW.GLOW_RADIUS_MULT,
       1,
       bc,
-      { midStop: FW.GLOW_MID_STOP, midAlpha: FW.GLOW_MID_OPACITY, midColor: c },
+      this._haloOpts,
     );
   }
 }

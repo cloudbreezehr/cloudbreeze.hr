@@ -100,6 +100,23 @@ export function createInteractions() {
     // Called each frame from the render loop to draw click particles, orbits,
     // gravity well aura, and drag trail.
     draw(ctx, pal, forces) {
+      // Halo opt bags hoisted out of the per-particle loops.  CLICK /
+      // ORBIT / WELL are mutable at runtime, so rebuild the opts each
+      // frame to pick up live edits, then reuse for every particle in
+      // the frame to avoid per-particle allocation churn.
+      const clickOpts = {
+        midStop: CLICK.GLOW_MID_STOP,
+        midAlpha: CLICK.GLOW_MID_ALPHA,
+      };
+      const orbitOpts = {
+        midStop: ORBIT.GLOW_MID_STOP,
+        midAlpha: ORBIT.GLOW_MID_ALPHA,
+      };
+      const auraOpts = {
+        midStop: WELL.AURA_MID_STOP,
+        midAlpha: WELL.AURA_MID_ALPHA,
+      };
+
       // Click burst particles
       for (let i = clickParticles.length - 1; i >= 0; i--) {
         const p = clickParticles[i];
@@ -119,10 +136,15 @@ export function createInteractions() {
         const fade = 1 - p.life / p.maxLife;
         const op = p.opacity * fade;
         if (op < CLICK.DRAW_THRESHOLD) continue;
-        drawHaloParticle(ctx, p.x, p.y, p.r * CLICK.GLOW_RADIUS, op, p.color, {
-          midStop: CLICK.GLOW_MID_STOP,
-          midAlpha: CLICK.GLOW_MID_ALPHA,
-        });
+        drawHaloParticle(
+          ctx,
+          p.x,
+          p.y,
+          p.r * CLICK.GLOW_RADIUS,
+          op,
+          p.color,
+          clickOpts,
+        );
       }
 
       // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
@@ -185,7 +207,7 @@ export function createInteractions() {
             p.r * ORBIT.GLOW_RADIUS,
             p.opacity,
             oc,
-            { midStop: ORBIT.GLOW_MID_STOP, midAlpha: ORBIT.GLOW_MID_ALPHA },
+            orbitOpts,
           );
         }
       }
@@ -207,7 +229,7 @@ export function createInteractions() {
           auraR,
           auraOp,
           oc,
-          { midStop: WELL.AURA_MID_STOP, midAlpha: WELL.AURA_MID_ALPHA },
+          auraOpts,
         );
         ctx.restore();
       }
