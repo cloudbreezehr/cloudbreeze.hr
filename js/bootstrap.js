@@ -8,6 +8,7 @@
 // order.
 
 import { initAppearance } from "./appearance.js";
+import { injectLayerVars } from "./layers.js";
 import { initNav } from "./nav.js";
 import { initCanvas } from "./canvas.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
@@ -47,6 +48,24 @@ const PARALLAX_LAYERS = [
 const SCROLL_HINT_FADE_AT = 60;
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
+
+// CSS layer variables — must run before any DOM-creating init below,
+// because every later module that appends an overlay reads
+// `var(--z-...)` from its CSS rules.
+//
+// First-paint window: this module is deferred (ES modules are
+// evaluated after document parse).  The stylesheet has already been
+// applied to the document by the time this runs, so any
+// `z-index: var(--z-foo)` rule on an element present in the initial
+// HTML (#bg-canvas, .page, nav, body::after grain) resolves to `auto`
+// for one paint frame before injection lands.  In practice the
+// initial set of fixed/positioned elements stack correctly under
+// `auto` (document order matches the intended order); fixed overlays
+// that *would* depend on these values (toasts, panels, theme wipes)
+// don't exist in the DOM yet.  If injection is ever skipped or
+// throws, every var() falls through to `auto` — a louder failure
+// than the prior hard-coded values, which is intentional.
+injectLayerVars();
 
 // Analytics first — bridges attach listeners before other modules
 // start dispatching events, so session_start, early scroll_depth, and

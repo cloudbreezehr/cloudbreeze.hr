@@ -1,14 +1,10 @@
-/* ── Z-Index Ranges (canonical map: js/layers.js) ──
- *   0–9       Background layers (canvas, grain, glass overlays)
- *   10–49     Page content & navigation
- *   50–99     Theme build-up overlays
- *   100–199   Theme warnings & fullscreen effects
- *   200–299   Transition wipes
- *   300–399   Panels & sidebars (achievements)
- *   400–499   Dev tools (console, tooltips) — loaded via css/dev/*.css
- *   500–599   Toasts, fireworks & ephemeral overlays
- *   600–699   Tooltips & popovers
- *   9000+     Cursor (always on top)
+/* ── Z-Index ──
+ * Cross-cutting stacking values come from `js/layers.js`, which
+ * injects them as `--z-*` custom properties on :root at bootstrap.
+ * Use `z-index: var(--z-name)` for anything that has to stack against
+ * another module's overlay; keep raw integers only for local stacking
+ * (sibling nodes inside one component).  See js/layers.js for the
+ * range table and naming.
  */
 
 *,
@@ -141,7 +137,7 @@ body {
   border-radius: var(--cursor-dot-radius, 50%);
   clip-path: var(--cursor-dot-clip, none);
   pointer-events: none;
-  z-index: 9999;
+  z-index: var(--z-cursor);
   will-change: translate;
   mix-blend-mode: screen;
   opacity: 0;
@@ -158,7 +154,7 @@ body {
   border-color: rgba(55, 138, 221, 0.5);
   border-radius: var(--cursor-ring-radius, 50%);
   pointer-events: none;
-  z-index: 9998;
+  z-index: var(--z-cursor-ring);
   will-change: translate;
   animation: var(--cursor-ring-animation, none);
   opacity: 0;
@@ -795,7 +791,7 @@ body {
 #bg-canvas {
   position: fixed;
   inset: 0;
-  z-index: 0;
+  z-index: var(--z-canvas);
   pointer-events: none;
 }
 
@@ -805,7 +801,7 @@ body::after {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: var(--z-grain);
   pointer-events: none;
   opacity: var(--paper-grain-opacity, 0.025);
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
@@ -815,7 +811,7 @@ body::after {
 /* Layout */
 .page {
   position: relative;
-  z-index: 2;
+  z-index: var(--z-page-content);
   min-height: 100vh;
   display: grid;
   grid-template-rows: auto 1fr auto;
@@ -829,7 +825,7 @@ nav {
   padding: 1.5rem 3rem;
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-nav);
   background: rgba(10, 22, 40, 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -1175,7 +1171,7 @@ nav {
 section {
   padding: 6rem 3rem;
   position: relative;
-  z-index: 2;
+  z-index: var(--z-page-content);
 }
 
 /* SERVICES */
@@ -1419,7 +1415,7 @@ section {
 /* FOOTER INFO */
 .footer-info {
   position: relative;
-  z-index: 2;
+  z-index: var(--z-page-content);
   padding: 4rem 3rem;
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
@@ -1473,7 +1469,7 @@ section {
 /* FOOTER BAR */
 footer {
   position: relative;
-  z-index: 2;
+  z-index: var(--z-page-content);
   padding: 1.5rem 3rem;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
@@ -1966,7 +1962,7 @@ body.light-appearance #cursor-ring {
 .ud-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   pointer-events: none;
 }
 
@@ -1974,7 +1970,7 @@ body.light-appearance #cursor-ring {
 .ud-warning {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-theme-warning);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2026,7 +2022,7 @@ body.light-appearance #cursor-ring {
 .ud-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   pointer-events: none;
   background: radial-gradient(
     ellipse at center,
@@ -2255,7 +2251,7 @@ body[data-active-theme="upside-down"]::after {
     rgba(0, 220, 255, 0.3)
   );
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-theme-effect);
 }
 .frost-breath.warm {
   background: radial-gradient(
@@ -2269,7 +2265,7 @@ body[data-active-theme="upside-down"]::after {
 .frost-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -2301,7 +2297,7 @@ body[data-active-theme="upside-down"]::after {
 .frost-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background: radial-gradient(
     ellipse at center,
     rgba(200, 240, 255, 0.95),
@@ -2496,14 +2492,14 @@ body[data-active-theme="frozen"]::after {
   border: 1.5px solid rgba(0, 200, 180, 0.5);
   transform: translate(-50%, -50%);
   pointer-events: none;
-  z-index: 100;
+  z-index: var(--z-theme-effect);
 }
 
 /* Water creep overlay — dark teal gradients from edges */
 .deep-sea-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -2535,7 +2531,7 @@ body[data-active-theme="frozen"]::after {
 .deep-sea-vignette {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -2550,7 +2546,7 @@ body[data-active-theme="frozen"]::after {
 .deep-sea-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background: linear-gradient(
     180deg,
     rgba(0, 20, 40, 0.98),
@@ -2726,7 +2722,7 @@ body[data-active-theme="deep-sea"]::after {
 .blocky-scanlines {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-theme-effect);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -2741,7 +2737,7 @@ body[data-active-theme="deep-sea"]::after {
 .blocky-grid {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-theme-effect);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -2753,7 +2749,7 @@ body[data-active-theme="deep-sea"]::after {
 .blocky-static {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-theme-effect);
   pointer-events: none;
   opacity: 0;
   background: repeating-linear-gradient(
@@ -2769,7 +2765,7 @@ body[data-active-theme="deep-sea"]::after {
 .blocky-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background: radial-gradient(
     ellipse at center,
     rgba(90, 180, 60, 0.95),
@@ -2967,7 +2963,7 @@ body.light-appearance[data-active-theme="blocky"] #cursor-ring {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   opacity: 0;
   transition: opacity 0.3s;
   background: radial-gradient(
@@ -2980,7 +2976,7 @@ body.light-appearance[data-active-theme="blocky"] #cursor-ring {
 .storm-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background: linear-gradient(180deg, #1a2030 0%, #2a3545 50%, #1a2530 100%);
   opacity: 0;
   transition: opacity 0.4s ease-in-out;
@@ -3147,7 +3143,7 @@ body[data-active-theme="rainy"] #cursor-ring {
   border-radius: 50%;
   background: rgba(160, 185, 210, 0.7);
   pointer-events: none;
-  z-index: 10;
+  z-index: var(--z-page-overlay);
 }
 .rain-splash.clearing {
   background: rgba(200, 180, 140, 0.7);
@@ -3191,7 +3187,7 @@ body.light-appearance[data-active-theme="rainy"] #cursor-ring {
 .paper-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background: linear-gradient(
     115deg,
     transparent 0%,
@@ -3222,7 +3218,7 @@ body.light-appearance[data-active-theme="rainy"] #cursor-ring {
 .paper-overlay {
   position: fixed;
   inset: 0;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.3s;
@@ -3564,7 +3560,7 @@ nav.nav-light .achievement-btn::after {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 300;
+  z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
   transform: translateX(100%);
@@ -4488,7 +4484,7 @@ nav.nav-light .achievement-btn::after {
 
 .achievement-tooltip {
   position: fixed;
-  z-index: 600;
+  z-index: var(--z-tooltip);
   max-width: 320px;
   padding: 0.4rem 0.65rem;
   background: rgba(10, 22, 40, 0.95);
@@ -4525,7 +4521,7 @@ body.light-appearance .achievement-tooltip {
   position: fixed;
   bottom: 1.5rem;
   right: 1.5rem;
-  z-index: 500;
+  z-index: var(--z-toast);
   display: flex;
   flex-direction: column-reverse;
   gap: 8px;
@@ -4625,7 +4621,7 @@ body.light-appearance .achievement-tooltip {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 100px;
-  z-index: 500;
+  z-index: var(--z-toast);
   opacity: 0;
   transition:
     opacity 0.4s ease-out,
@@ -4661,7 +4657,7 @@ body.light-appearance .achievement-tooltip {
   border-radius: 50%;
   border: 2px solid var(--sky-3, #7dbfe8);
   pointer-events: none;
-  z-index: 500;
+  z-index: var(--z-toast);
   transform: translate(-50%, -50%) scale(0);
   will-change: transform, opacity;
   animation: achievement-pulse-expand 0.8s ease-out forwards;
@@ -4695,7 +4691,7 @@ body.light-appearance .achievement-tooltip {
     0 0 8px var(--sky-3, #7dbfe8),
     0 0 16px rgba(125, 191, 232, 0.4);
   pointer-events: none;
-  z-index: 500;
+  z-index: var(--z-toast);
   transform: translate(-50%, -50%);
   will-change: transform, opacity;
 }
@@ -4970,7 +4966,7 @@ body.light-appearance .first-paint-mote {
 .vhs-wipe {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: var(--z-theme-wipe);
   background:
     repeating-linear-gradient(
       to bottom,
@@ -5342,7 +5338,7 @@ body.light-appearance[data-active-theme="vhs"] .hero-title {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 50;
+  z-index: var(--z-theme-buildup);
   background: repeating-linear-gradient(
     to bottom,
     transparent 0,
@@ -5359,7 +5355,7 @@ body.light-appearance[data-active-theme="vhs"] .hero-title {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  z-index: 51;
+  z-index: var(--z-theme-buildup-flash);
   background:
     repeating-linear-gradient(
       to bottom,
@@ -5388,7 +5384,7 @@ body.light-appearance[data-active-theme="vhs"] .hero-title {
 .vhs-glitch-rect {
   position: fixed;
   pointer-events: none;
-  z-index: 60;
+  z-index: var(--z-theme-click-glitch);
   background: rgba(180, 240, 180, 0.18);
   border: 1px solid rgba(255, 80, 220, 0.45);
   animation: vhs-glitch-snap 50ms linear forwards;

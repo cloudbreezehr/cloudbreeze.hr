@@ -2,7 +2,7 @@
 
 .dev-console {
   position: fixed;
-  z-index: 400;
+  z-index: var(--z-dev-console);
   font-family: "DM Mono", "SF Mono", "Fira Code", monospace;
   font-size: 11px;
   color: #c8d6e5;
@@ -64,7 +64,7 @@
 .dc-wall-glow {
   position: fixed;
   width: 4px;
-  z-index: 400;
+  z-index: var(--z-dev-console);
   pointer-events: none;
   background: rgba(100, 180, 255, 0.6);
   box-shadow: 0 0 18px 9px rgba(100, 180, 255, 0.35);
@@ -413,7 +413,7 @@
 
 .dc-tooltip {
   position: fixed;
-  z-index: 450;
+  z-index: var(--z-dev-tooltip);
   background: rgba(10, 18, 30, 0.95);
   border: 1px solid rgba(120, 160, 220, 0.3);
   border-radius: 6px;
