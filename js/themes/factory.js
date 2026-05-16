@@ -3,29 +3,27 @@
 // indicators scaled by that force, a wipe transition at 1.0, a body-class
 // toggle + achievement dispatch at the midpoint, and a reverse path. The only
 // thing that varies is the input shape — clicks, holds, overscroll, key
-// sequences. This file extracts everything except that input shape.
+// sequences — which is supplied as a `trigger` strategy.
 //
 // A theme file calls `createTheme({ id, trigger, indicators, wipe, onActivate,
-// onDeactivate })` and gets back nothing — the factory wires everything up
-// (listeners, RAF loops, wipe playback, achievement events, toggle
-// registration).
+// onDeactivate })` and gets back a live `ctx` exposing `{ force, isActive }`
+// as getters, so callers that run their own animation loops can read current
+// state without duplicating it. The factory wires everything up (listeners,
+// RAF loops, wipe playback, achievement events, toggle registration).
 //
 // Trigger strategies are small objects: `{ start({setForce, complete, isActive}) }`.
 // They own their own decay loop because decay shape is input-specific
 // (a key-sequence timeout differs from a hold's continuous progress).
 //
-// The wipe variation point accepts either a playWipe config (for the common
-// opacity-sweep case) or a custom async function (for upside-down's
-// translateY slide, which persists past the midpoint).  A custom wipe may
-// return a Promise; the factory awaits it to release `isTransitioning`, and
-// logs any rejection so a broken wipe is observable instead of silent.
+// The wipe slot accepts either a playWipe config (the common opacity-sweep
+// case) or a custom async function for wipes whose effect persists past the
+// midpoint.  A custom wipe may return a Promise; the factory awaits it to
+// release `isTransitioning`, and logs any rejection so a broken wipe is
+// observable instead of silent.
 //
 // `createTheme` returns a live `ctx` — `{ force, isActive }` as getters — so
-// callers that run their own animation loops (blocky's jitter, paper's
-// scroll page-turn) can read current state without duplicating it locally.
-//
-// See createClickCountTrigger / createHoldTrigger / createKeySequenceTrigger /
-// createOverscrollTrigger for strategies.
+// callers that run their own animation loops can read current state without
+// duplicating it locally.
 
 import { playWipe } from "../effects/wipe.js";
 import { registerToggle } from "./registry.js";
@@ -85,11 +83,11 @@ export function createTheme(def) {
   let isTransitioning = false;
 
   // ── Buildup telemetry ──
-  // Analytics wants to know how close a user got to triggering a theme
-  // even when they bail out.  We emit "theme-buildup" on the same
-  // achievement topic when force crosses 0.25 / 0.50 / 0.75 (once per
-  // phase per theme per session), and "theme-abandoned" when a partial
-  // buildup decays back to zero without completing.
+  // Emit `theme-buildup` when force crosses each threshold (once per
+  // phase per theme per session), and `theme-abandoned` when a partial
+  // buildup decays back to zero without completing.  Together they let
+  // listeners see how close a user got to triggering a theme even when
+  // they bail out.
   const BUILDUP_THRESHOLDS = [0.25, 0.5, 0.75];
   let lastEmittedThreshold = 0;
   let peakForce = 0;
@@ -171,9 +169,8 @@ export function createTheme(def) {
     if (activating) document.body.dataset.lastTheme = id;
     // `silent` distinguishes a programmatic toggle from one driven by
     // the user's gesture, so consequences reserved for organic
-    // discovery (e.g. exit achievements) can skip on this path.  The
-    // event still fires either way so all listeners stay in sync with
-    // the underlying state.
+    // discovery can opt out.  The event still fires either way so
+    // listeners stay in sync with the underlying state.
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: {
