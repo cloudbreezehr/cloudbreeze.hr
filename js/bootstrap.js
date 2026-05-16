@@ -15,71 +15,6 @@
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
-const appearance = window.__cloudbreezeAppearance;
-if (!appearance) {
-  throw new Error(
-    "[bootstrap] window.__cloudbreezeAppearance missing — critical-boot.js must run first",
-  );
-}
-
-function load(path, run) {
-  import(path)
-    .then(run)
-    .catch((err) => console.warn(`[bootstrap] ${path} failed:`, err));
-}
-
-// Strict production gate: only the prod hostname sends to PostHog.
-// Other hostnames (localhost, IPs, preview subdomains) fall through
-// to the default console adapter so stats stay clean.
-load("./analytics/index.js", async ({ initAnalytics }) => {
-  const isProd = location.hostname === PROD_HOSTNAME;
-  if (!isProd) {
-    initAnalytics();
-    return;
-  }
-  const { createPostHogAdapter } =
-    await import("./analytics/adapters/posthog.js");
-  initAnalytics({ adapter: createPostHogAdapter({ apiKey: POSTHOG_API_KEY }) });
-});
-
-load("./nav.js", ({ initNav }) =>
-  initNav(document.querySelector("nav"), appearance),
-);
-load("./service-cards.js", ({ initTilt }) => initTilt());
-load("./effects/button-ripple.js", ({ initButtonRipple }) =>
-  initButtonRipple(),
-);
-load("./effects/nav-sparkle.js", ({ initNavSparkle }) => initNavSparkle());
-load("./effects/logo-breathing.js", ({ initLogoBreathing }) =>
-  initLogoBreathing(),
-);
-load("./effects/logo-parallax.js", ({ initLogoParallax }) =>
-  initLogoParallax(),
-);
-load("./effects/cursor-idle.js", ({ initCursorIdle }) =>
-  initCursorIdle(
-    document.getElementById("cursor"),
-    document.getElementById("cursor-ring"),
-  ),
-);
-load("./effects/footer-hint.js", ({ initFooterHint }) => initFooterHint());
-load("./effects/first-paint-mote.js", ({ initFirstPaintMote }) =>
-  initFirstPaintMote(),
-);
-load("./effects/theme-history-hud.js", ({ initThemeHistoryHud }) =>
-  initThemeHistoryHud(),
-);
-load("./themes/upside-down.js", ({ initUpsideDown }) => initUpsideDown());
-load("./themes/frozen.js", ({ initFrozen }) => initFrozen());
-load("./themes/deep-sea.js", ({ initDeepSea }) => initDeepSea());
-load("./themes/blocky.js", ({ initBlocky }) =>
-  initBlocky(document.querySelector(".appearance-toggle")),
-);
-load("./themes/rainy.js", ({ initRainy }) => initRainy());
-load("./themes/paper.js", ({ initPaper }) => initPaper());
-load("./themes/vhs.js", ({ initVhs }) => initVhs());
-load("./achievements/index.js", ({ initAchievements }) => initAchievements());
-
 const PARALLAX_LAYERS = [
   { selector: ".hero-tag", rate: 0.12 },
   { selector: ".hero-title .line-1", rate: 0.06 },
@@ -89,11 +24,38 @@ const PARALLAX_LAYERS = [
 ];
 const SCROLL_HINT_FADE_AT = 60;
 
+const appearance = window.__cloudbreezeAppearance;
+if (!appearance) {
+  throw new Error(
+    "[bootstrap] window.__cloudbreezeAppearance missing — critical-boot.js must run first",
+  );
+}
+
+function load(path, init) {
+  import(path)
+    .then(init)
+    .catch((err) => console.warn(`[bootstrap] ${path} failed:`, err));
+}
+
+// Strict production gate: only the prod hostname sends to PostHog.
+// Other hostnames (localhost, IPs, preview subdomains) fall through
+// to the default console adapter so stats stay clean.
+async function wireAnalytics({ initAnalytics }) {
+  const isProd = location.hostname === PROD_HOSTNAME;
+  if (!isProd) {
+    initAnalytics();
+    return;
+  }
+  const { createPostHogAdapter } =
+    await import("./analytics/adapters/posthog.js");
+  initAnalytics({ adapter: createPostHogAdapter({ apiKey: POSTHOG_API_KEY }) });
+}
+
 // `subscribe()` only delivers on subsequent native scrolls — if the
 // user already scrolled before this loader resolved (slow network),
 // each handler runs once for the current position so parallax and
 // the scroll-hint catch up to the page state.
-load("./scroll-bus.js", async ({ subscribe: subscribeScroll, getScrollY }) => {
+async function wireScrollBus({ subscribe: subscribeScroll, getScrollY }) {
   const { mirrorYWhenInverted } = await import("./viewport.js");
 
   const parallaxEls = PARALLAX_LAYERS.map(({ selector, rate }) => ({
@@ -132,9 +94,9 @@ load("./scroll-bus.js", async ({ subscribe: subscribeScroll, getScrollY }) => {
       });
     }
   }
-});
+}
 
-load("./keyboard.js", async ({ onKey }) => {
+async function wireKeyboardHotkeys({ onKey }) {
   const [{ toggleDevConsole, openDevConsole }, { toggleFps }] =
     await Promise.all([import("./dev/console.js"), import("./dev/fps.js")]);
 
@@ -144,4 +106,64 @@ load("./keyboard.js", async ({ onKey }) => {
   });
   onKey(".", toggleDevConsole, { ctrl: true, shift: true, allowInInput: true });
   onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
-});
+}
+
+// Registry of every module loaded after the critical phase.  Adding a
+// new theme, effect, or feature is one entry: { path, init }.  Each
+// entry's `init` receives the imported module's exports and may
+// itself be async (resolved through the same load() error handler).
+const MODULES = [
+  // Analytics
+  { path: "./analytics/index.js", init: wireAnalytics },
+
+  // Page chrome
+  {
+    path: "./nav.js",
+    init: (m) => m.initNav(document.querySelector("nav"), appearance),
+  },
+  { path: "./service-cards.js", init: (m) => m.initTilt() },
+
+  // Effects
+  { path: "./effects/button-ripple.js", init: (m) => m.initButtonRipple() },
+  { path: "./effects/nav-sparkle.js", init: (m) => m.initNavSparkle() },
+  { path: "./effects/logo-breathing.js", init: (m) => m.initLogoBreathing() },
+  { path: "./effects/logo-parallax.js", init: (m) => m.initLogoParallax() },
+  {
+    path: "./effects/cursor-idle.js",
+    init: (m) =>
+      m.initCursorIdle(
+        document.getElementById("cursor"),
+        document.getElementById("cursor-ring"),
+      ),
+  },
+  { path: "./effects/footer-hint.js", init: (m) => m.initFooterHint() },
+  {
+    path: "./effects/first-paint-mote.js",
+    init: (m) => m.initFirstPaintMote(),
+  },
+  {
+    path: "./effects/theme-history-hud.js",
+    init: (m) => m.initThemeHistoryHud(),
+  },
+
+  // Themes
+  { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
+  { path: "./themes/frozen.js", init: (m) => m.initFrozen() },
+  { path: "./themes/deep-sea.js", init: (m) => m.initDeepSea() },
+  {
+    path: "./themes/blocky.js",
+    init: (m) => m.initBlocky(document.querySelector(".appearance-toggle")),
+  },
+  { path: "./themes/rainy.js", init: (m) => m.initRainy() },
+  { path: "./themes/paper.js", init: (m) => m.initPaper() },
+  { path: "./themes/vhs.js", init: (m) => m.initVhs() },
+
+  // Achievements
+  { path: "./achievements/index.js", init: (m) => m.initAchievements() },
+
+  // Wired modules with multi-step setup
+  { path: "./scroll-bus.js", init: wireScrollBus },
+  { path: "./keyboard.js", init: wireKeyboardHotkeys },
+];
+
+for (const { path, init } of MODULES) load(path, init);
