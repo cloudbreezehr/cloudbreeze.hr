@@ -3,10 +3,16 @@
 // Two APIs:
 //   burstFireworks(x, y, opts)         — one-shot overlay mode (self-cleaning)
 //   createFireworksRenderer()          — shared-canvas mode for render loops
+//
+// Coordinate contract: the renderer draws in plain canvas-pixel coords
+// (top-left origin, +y is down).  Public entry points accept visual
+// viewport coords (the form returned by `getBoundingClientRect`/`client*`)
+// and translate at the boundary.
 
 import { Z_FIREWORKS } from "../layers.js";
 import { drawHaloParticle } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
+import { mirrorYWhenInverted } from "../viewport.js";
 
 // ── Constants ──
 
@@ -536,12 +542,10 @@ function createRendererCore() {
     return true;
   }
 
-  // Launches `count` rockets from the visual bottom of the viewport.  Each
-  // rises for ROCKET_LIFE_FRAMES then detonates into a standard burst at its
-  // target.  Rockets are staggered by ROCKET_STAGGER_FRAMES so they don't
-  // launch as a perfect line.  In upside-down theme the page is flipped via
-  // CSS scaleY(-1) but the overlay canvas isn't, so we mirror the y coords
-  // here to keep rockets launching from what the user sees as the bottom.
+  // Launches `count` rockets from just below the canvas, each rising for
+  // ROCKET_LIFE_FRAMES toward a target in the upper third before detonating
+  // into a standard burst.  Rockets are staggered by ROCKET_STAGGER_FRAMES
+  // so they don't launch as a perfect line.
   function launchRockets(viewportWidth, viewportHeight, opts = {}) {
     const count = Math.max(1, opts.count || 1);
     const baseRgb = opts.color
@@ -551,9 +555,6 @@ function createRendererCore() {
       : null;
     const rgb = baseRgb || FALLBACK_RGB;
 
-    const upsideDown = document.body.classList.contains("upside-down");
-    const mirrorY = (y) => (upsideDown ? viewportHeight - y : y);
-
     let launched = 0;
     for (let i = 0; i < count; i++) {
       const r = acquireRocket();
@@ -561,12 +562,11 @@ function createRendererCore() {
       const targetX =
         viewportWidth *
         (FW.ROCKET_TARGET_X_MIN + Math.random() * FW.ROCKET_TARGET_X_RANGE);
-      const targetY = mirrorY(
+      const targetY =
         viewportHeight *
-          (FW.ROCKET_TARGET_Y_MIN + Math.random() * FW.ROCKET_TARGET_Y_RANGE),
-      );
+        (FW.ROCKET_TARGET_Y_MIN + Math.random() * FW.ROCKET_TARGET_Y_RANGE);
       const startX = targetX + (Math.random() - 0.5) * viewportWidth * 0.15;
-      const startY = mirrorY(viewportHeight + FW.ROCKET_RADIUS);
+      const startY = viewportHeight + FW.ROCKET_RADIUS;
       const delay = i * FW.ROCKET_STAGGER_FRAMES;
       r.spawn(startX, startY, targetX, targetY, rgb, delay);
       launched++;
@@ -648,6 +648,7 @@ let overlayResizeHandler = null;
 
 function createOverlay() {
   overlayCanvas = document.createElement("canvas");
+  overlayCanvas.className = "flips-with-page";
   overlayCanvas.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:${FW.OVERLAY_Z_INDEX}`;
   overlayCanvas.width = window.innerWidth;
   overlayCanvas.height = window.innerHeight;
@@ -699,6 +700,9 @@ function overlayLoop() {
  * Fire a one-shot fireworks burst at (x, y) using a temporary overlay canvas.
  * The overlay self-destructs when all particles have faded.
  *
+ * Coordinates are visual viewport pixels — the form returned by
+ * `Element.getBoundingClientRect()` and `MouseEvent.client*`.
+ *
  * @param {number} x - Viewport X coordinate
  * @param {number} y - Viewport Y coordinate
  * @param {object} [opts]
@@ -709,7 +713,11 @@ export function burstFireworks(x, y, opts = {}) {
     createOverlay();
   }
 
-  overlayRenderer.burst(x, y, opts);
+  // Translate from visual viewport coords (caller) to canvas-pixel coords
+  // (renderer) so the burst lands where the caller asked, regardless of
+  // any flip applied to the overlay element.
+  const cy = mirrorYWhenInverted(y, overlayCanvas.height);
+  overlayRenderer.burst(x, cy, opts);
 
   // Start animation loop if not running
   if (!overlayRafId) {
@@ -734,7 +742,8 @@ export function rocketCountForTier(tier) {
 
 /**
  * Launch one or more rockets from the bottom of the viewport.  Each rises for
- * ~1s and detonates into a standard burst at a randomized target position.
+ * ~1s and detonates into a standard burst at a randomized target position
+ * in the upper third of the visible viewport.
  *
  * @param {object} [opts]
  * @param {number}         [opts.count=1]  Number of rockets to launch.

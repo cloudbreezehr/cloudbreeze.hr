@@ -2112,7 +2112,13 @@ body.upside-down > nav {
   transform: scaleY(-1);
 }
 
-body.upside-down #bg-canvas {
+/* Opt-in flip for elements that sit outside `.page` (fixed overlays, the
+   shared canvas) and need to mirror with the page when upside-down is
+   active.  Adding this class to a new overlay is preferred over reading
+   `body.upside-down` from JS or doing manual y-axis math at draw time —
+   the renderer stays in plain canvas-pixel coords and CSS handles the
+   visual inversion. */
+body.upside-down .flips-with-page {
   transform: scaleY(-1);
 }
 
