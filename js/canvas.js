@@ -263,7 +263,7 @@ export function initCanvas(canvasEl, appearance, options) {
     // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
     scrollVelocity *= SCROLL.VEL_DECAY;
     const drawVelocity = reducedMotion ? 0 : scrollVelocity;
-    interactions.updateHold(forces, performance.now());
+    interactions.updateHold(forces, now);
     if (!suppressAtmosphere) {
       atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
     }
