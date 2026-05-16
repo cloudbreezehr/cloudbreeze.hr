@@ -4,6 +4,7 @@ import { createSky } from "./sky.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
+import { mirrorYWhenInverted } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
@@ -165,9 +166,7 @@ export function initCanvas(canvasEl, appearance, options) {
   const fury = createFury();
   let currentPal = resolvePalette(isDark ? "dark" : "light", null);
 
-  // In upside-down theme the page is flipped via scaleY(-1), so canvas Y must mirror
-  const isUpside = () => document.body.classList.contains("upside-down");
-  const canvasY = (y) => (isUpside() ? canvas.height - y : y);
+  const canvasY = (y) => mirrorYWhenInverted(y, canvas.height);
 
   let lastFrameTime = performance.now();
 
