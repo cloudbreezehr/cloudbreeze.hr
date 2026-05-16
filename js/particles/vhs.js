@@ -125,7 +125,7 @@ export function drawCursorTrail(ctx, history, pal) {
       if (a <= 0 || w <= 0) continue;
       const p0 = history[i];
       const p1 = history[i + 1];
-      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${a.toFixed(3)})`;
+      ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${a})`;
       ctx.lineWidth = w;
       ctx.beginPath();
       ctx.moveTo(p0.x + ch.dx, p0.y);

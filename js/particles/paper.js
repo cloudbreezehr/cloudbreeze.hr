@@ -371,7 +371,7 @@ class Flick {
         : FLICK.ALPHA_PEAK * (1 - (t - FLICK.FADE_AT) / (1 - FLICK.FADE_AT));
     const x1 = this.x0 + this.dx * drawT;
     const y1 = this.y0 + this.dy * drawT;
-    ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha.toFixed(3)})`;
+    ctx.strokeStyle = `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
     ctx.lineWidth = FLICK.WIDTH;
     ctx.lineCap = "round";
     ctx.beginPath();

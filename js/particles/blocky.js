@@ -372,7 +372,7 @@ class Firefly {
     else if (this.colorVariant > 0.85) c = [255, 180, 50]; // orange
 
     // Bright pixel core
-    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op.toFixed(3)})`;
+    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op})`;
     targetCtx.fillRect(
       Math.round(this.x) - 1,
       Math.round(this.y) - 1,
@@ -383,7 +383,7 @@ class Firefly {
     // Trail — dim pixel at previous position
     const trailOp = op * FLY.TRAIL_ALPHA;
     if (trailOp > 0.02) {
-      targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${trailOp.toFixed(3)})`;
+      targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${trailOp})`;
       targetCtx.fillRect(
         Math.round(this.prevX) - 1,
         Math.round(this.prevY) - 1,
@@ -400,7 +400,7 @@ class Firefly {
     const py = Math.round(this.y);
     const s = FLY.WING_PIXEL;
 
-    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op.toFixed(3)})`;
+    targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op})`;
     // Body
     targetCtx.fillRect(px, py, s, s);
     // Wings — spread depends on flap phase

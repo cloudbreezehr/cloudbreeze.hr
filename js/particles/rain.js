@@ -208,7 +208,7 @@ class GlassDrop {
         ctx.lineTo(this.trail[i].x + hw, this.trail[i].y);
       }
       ctx.closePath();
-      ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${(a * GLASS.TRAIL_TIP_ALPHA).toFixed(3)})`;
+      ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${a * GLASS.TRAIL_TIP_ALPHA})`;
       ctx.fill();
     }
 
@@ -216,7 +216,7 @@ class GlassDrop {
     const r = this.size / 2;
     ctx.beginPath();
     ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${(a * GLASS.TRAIL_BODY_ALPHA).toFixed(3)})`;
+    ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${a * GLASS.TRAIL_BODY_ALPHA})`;
     ctx.fill();
 
     // Specular highlight — offset circle
@@ -228,13 +228,13 @@ class GlassDrop {
       0,
       Math.PI * 2,
     );
-    ctx.fillStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${(a * GLASS.SPECULAR_ALPHA).toFixed(3)})`;
+    ctx.fillStyle = `rgba(${spec[0]},${spec[1]},${spec[2]},${a * GLASS.SPECULAR_ALPHA})`;
     ctx.fill();
 
     // Rim outline
     ctx.beginPath();
     ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
-    ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${(a * GLASS.RIM_ALPHA).toFixed(3)})`;
+    ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${a * GLASS.RIM_ALPHA})`;
     ctx.lineWidth = GLASS.RIM_WIDTH;
     ctx.stroke();
   }

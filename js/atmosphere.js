@@ -375,7 +375,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         );
         hg.addColorStop(
           0,
-          `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity.toFixed(3)})`,
+          `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity})`,
         );
         hg.addColorStop(1, "transparent");
         _ctx.fillStyle = hg;
