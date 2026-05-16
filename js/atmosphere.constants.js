@@ -235,6 +235,15 @@ export const CLOUD = defineConstants("atmosphere.clouds", {
     step: 0.01,
     description: "Mid gradient opacity multiplier",
   },
+  OP_BUCKET_RESOLUTION: {
+    value: 256,
+    min: 16,
+    max: 4096,
+    step: 16,
+    description:
+      "How finely cloud opacity is bucketed for the gradient cache. " +
+      "Higher = closer match to the float opacity but more cache misses.",
+  },
   Y_PIVOT: {
     value: 0.38,
     min: 0,

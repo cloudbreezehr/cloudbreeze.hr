@@ -91,29 +91,52 @@ class Cloud {
       _ctx.scale(1, stretch);
       _ctx.translate(-this.x, -y);
     }
+    // op is the same for every blob in this cloud — depends only on the
+    // cloud's scale, scroll-fade, and stretch fade.  Compute once.
+    const op =
+      (CLOUD.OPACITY_BASE + CLOUD.OPACITY_DEPTH * this.scale) * vis * opFade;
+    // Bucket op so small changes from frame to frame don't invalidate
+    // the gradient cache; the visual difference between adjacent buckets
+    // is below the threshold of perception against a sky gradient.
+    const opBucket = Math.round(op * CLOUD.OP_BUCKET_RESOLUTION);
     this.blobs.forEach((b) => {
       const bx = this.x + b.ox;
       const by = y + b.oy;
-      const op =
-        (CLOUD.OPACITY_BASE + CLOUD.OPACITY_DEPTH * this.scale) * vis * opFade;
-      const grad = _ctx.createRadialGradient(
-        bx,
-        by,
-        b.r * CLOUD.GRAD_INNER,
-        bx,
-        by,
-        b.r,
-      );
-      grad.addColorStop(0, `rgba(${cw[0]},${cw[1]},${cw[2]},${op})`);
-      grad.addColorStop(
-        CLOUD.GRAD_MID,
-        `rgba(${cm[0]},${cm[1]},${cm[2]},${op * CLOUD.GRAD_MID_OPACITY})`,
-      );
-      grad.addColorStop(1, "transparent");
-      _ctx.fillStyle = grad;
+      // Cache the gradient on the blob itself.  Invalidates on op
+      // bucket change or palette swap; otherwise the same gradient
+      // reference is reused frame after frame.  Drawn at origin under
+      // a translate so position changes don't invalidate the cache.
+      if (
+        b._gradOpBucket !== opBucket ||
+        b._gradCw !== cw ||
+        b._gradCm !== cm
+      ) {
+        const grad = _ctx.createRadialGradient(
+          0,
+          0,
+          b.r * CLOUD.GRAD_INNER,
+          0,
+          0,
+          b.r,
+        );
+        grad.addColorStop(0, `rgba(${cw[0]},${cw[1]},${cw[2]},${op})`);
+        grad.addColorStop(
+          CLOUD.GRAD_MID,
+          `rgba(${cm[0]},${cm[1]},${cm[2]},${op * CLOUD.GRAD_MID_OPACITY})`,
+        );
+        grad.addColorStop(1, "transparent");
+        b._grad = grad;
+        b._gradOpBucket = opBucket;
+        b._gradCw = cw;
+        b._gradCm = cm;
+      }
+      _ctx.save();
+      _ctx.translate(bx, by);
+      _ctx.fillStyle = b._grad;
       _ctx.beginPath();
-      _ctx.arc(bx, by, b.r, 0, Math.PI * 2);
+      _ctx.arc(0, 0, b.r, 0, Math.PI * 2);
       _ctx.fill();
+      _ctx.restore();
     });
     if (hasStretch) {
       _ctx.restore();
