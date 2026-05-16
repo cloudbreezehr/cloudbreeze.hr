@@ -1,19 +1,19 @@
 // ── Page Bootstrap ──
-// Wires every module up in a specific order.  External module so the
+// Wires the page up in a specific order.  External module so the
 // page can ship with a strict script-src 'self' CSP — inline scripts
 // would force 'unsafe-inline' and undo most of the policy's value.
+//
+// First-paint critical inits run from js/critical-boot.js (loaded as
+// a separate module ahead of this one).  This file picks up the
+// appearance singleton from there.
 //
 // Order matters in a few places and is called out where it does.
 // Otherwise the initializers are independent and could run in any
 // order.
 
-import { initAppearance } from "./appearance.js";
-import { injectLayerVars } from "./layers.js";
 import { mirrorYWhenInverted } from "./viewport.js";
 import { initNav } from "./nav.js";
-import { initCanvas } from "./canvas.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
-import { initCursor } from "./cursor.js";
 import { initReveal } from "./reveal.js";
 import { initTilt } from "./service-cards.js";
 import { initButtonRipple } from "./effects/button-ripple.js";
@@ -50,24 +50,6 @@ const SCROLL_HINT_FADE_AT = 60;
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
-// CSS layer variables — must run before any DOM-creating init below,
-// because every later module that appends an overlay reads
-// `var(--z-...)` from its CSS rules.
-//
-// First-paint window: this module is deferred (ES modules are
-// evaluated after document parse).  The stylesheet has already been
-// applied to the document by the time this runs, so any
-// `z-index: var(--z-foo)` rule on an element present in the initial
-// HTML (#bg-canvas, .page, nav, body::after grain) resolves to `auto`
-// for one paint frame before injection lands.  In practice the
-// initial set of fixed/positioned elements stack correctly under
-// `auto` (document order matches the intended order); fixed overlays
-// that *would* depend on these values (toasts, panels, theme wipes)
-// don't exist in the DOM yet.  If injection is ever skipped or
-// throws, every var() falls through to `auto` — a louder failure
-// than the prior hard-coded values, which is intentional.
-injectLayerVars();
-
 // Analytics first — bridges attach listeners before other modules
 // start dispatching events, so session_start, early scroll_depth, and
 // the initial theme-buildup all land in the stream.  Wrapped so a
@@ -87,13 +69,8 @@ try {
   console.warn("[analytics] init failed:", err);
 }
 
-const appearance = initAppearance(document.querySelector(".appearance-toggle"));
+const appearance = window.__cloudbreezeAppearance;
 initNav(document.querySelector("nav"), appearance);
-initCanvas(document.getElementById("bg-canvas"), appearance);
-initCursor(
-  document.getElementById("cursor"),
-  document.getElementById("cursor-ring"),
-);
 initReveal();
 initTilt();
 initButtonRipple();

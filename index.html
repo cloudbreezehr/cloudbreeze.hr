@@ -115,6 +115,12 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="css/main.css" />
+
+    <!--
+      Start fetching the first-paint module during HTML parse instead
+      of waiting until the deferred <script> tag near the end of <body>.
+    -->
+    <link rel="modulepreload" href="./js/critical-boot.js" />
   </head>
   <body>
     <!--
@@ -522,6 +528,11 @@
       </footer>
     </div>
 
+    <!--
+      Module scripts are deferred and execute in document order — the
+      first-paint subset evaluates before the rest of the graph.
+    -->
+    <script type="module" src="./js/critical-boot.js"></script>
     <script type="module" src="./js/bootstrap.js"></script>
   </body>
 </html>
