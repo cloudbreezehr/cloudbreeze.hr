@@ -89,14 +89,18 @@ const PARALLAX_LAYERS = [
 ];
 const SCROLL_HINT_FADE_AT = 60;
 
-load("./scroll-bus.js", async ({ subscribe: subscribeScroll }) => {
+// `subscribe()` only delivers on subsequent native scrolls — if the
+// user already scrolled before this loader resolved (slow network),
+// each handler runs once for the current position so parallax and
+// the scroll-hint catch up to the page state.
+load("./scroll-bus.js", async ({ subscribe: subscribeScroll, getScrollY }) => {
   const { mirrorYWhenInverted } = await import("./viewport.js");
 
   const parallaxEls = PARALLAX_LAYERS.map(({ selector, rate }) => ({
     el: document.querySelector(selector),
     rate,
   }));
-  subscribeScroll(({ scrollY }) => {
+  function applyParallax(scrollY) {
     const maxScroll =
       document.documentElement.scrollHeight - window.innerHeight;
     const y = mirrorYWhenInverted(scrollY, maxScroll);
@@ -104,20 +108,29 @@ load("./scroll-bus.js", async ({ subscribe: subscribeScroll }) => {
     for (const p of parallaxEls) {
       if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
     }
-  });
+  }
+  applyParallax(getScrollY());
+  subscribeScroll(({ scrollY }) => applyParallax(scrollY));
 
   const scrollHint = document.querySelector(".scroll-hint");
   if (scrollHint) {
-    const unsub = subscribeScroll(({ scrollY }) => {
-      if (scrollY > SCROLL_HINT_FADE_AT) {
-        scrollHint.style.animation = "none";
-        scrollHint.style.opacity = "1";
-        void scrollHint.offsetHeight;
-        scrollHint.style.transition = "opacity 0.6s";
-        scrollHint.style.opacity = "0";
-        unsub();
-      }
-    });
+    function fadeScrollHint() {
+      scrollHint.style.animation = "none";
+      scrollHint.style.opacity = "1";
+      void scrollHint.offsetHeight;
+      scrollHint.style.transition = "opacity 0.6s";
+      scrollHint.style.opacity = "0";
+    }
+    if (getScrollY() > SCROLL_HINT_FADE_AT) {
+      fadeScrollHint();
+    } else {
+      const unsub = subscribeScroll(({ scrollY }) => {
+        if (scrollY > SCROLL_HINT_FADE_AT) {
+          fadeScrollHint();
+          unsub();
+        }
+      });
+    }
   }
 });
 
