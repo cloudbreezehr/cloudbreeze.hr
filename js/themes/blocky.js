@@ -153,6 +153,10 @@ export function initBlocky(toggleEl) {
   // fragments.  Runs as drawPost so the entire scene below has been
   // composited before the post-process kicks in.
   const blocky = createBlocky(canvasEl, canvasCtx, COUNTS.FIREFLY);
+  // Invariant: the main canvas's resize handler runs before this one, so
+  // canvasEl already has its new dimensions when resizePixelCanvas reads
+  // them.  Browser resize listeners fire in registration order, and the
+  // canvas listener registers earlier in the bootstrap path.
   window.addEventListener("resize", () => {
     blocky.resizePixelCanvas();
   });
