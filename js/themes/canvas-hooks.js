@@ -30,7 +30,7 @@
 // Programmatic toggles, user gestures, and theme-stacking all flow
 // through the same path.
 
-import { getThemeIds } from "./registry.js";
+import { getThemeIds, isThemeRegistered } from "./registry.js";
 
 /**
  * @typedef {Object} FrameState
@@ -123,7 +123,7 @@ function activeSignature() {
  * @param {CanvasHooks} hooks
  */
 export function registerCanvasHooks(id, hooks) {
-  if (!getThemeIds().includes(id)) {
+  if (!isThemeRegistered(id)) {
     throw new Error(`registerCanvasHooks: unknown theme "${id}"`);
   }
   _hooks.set(id, hooks);

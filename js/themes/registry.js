@@ -106,7 +106,9 @@ const _themeIds = Object.freeze(THEMES.map((m) => m.id));
  * `init()` after local state (isFrozen, etc.) exists.
  */
 export function registerToggle(id, toggle) {
-  if (!_byId.has(id)) throw new Error(`registerToggle: unknown theme "${id}"`);
+  if (!isThemeRegistered(id)) {
+    throw new Error(`registerToggle: unknown theme "${id}"`);
+  }
   _toggles.set(id, toggle);
 }
 
@@ -142,6 +144,13 @@ export function toggleTheme(id, opts) {
   if (typeof fn === "function") fn(opts);
 }
 
+/**
+ * True if `id` matches a known theme.  The shared validation seam:
+ * `registerToggle` and the canvas-hooks registry both call this so that
+ * "what counts as a theme" lives in exactly one place.
+ *
+ * @param {string} id
+ */
 export function isThemeRegistered(id) {
   return _byId.has(id);
 }
