@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { scrollFade, drawTrail } from "../../js/canvas-utils.js";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { scrollFade, drawTrail, getCanvasCtx } from "../../js/canvas-utils.js";
 
 describe("scrollFade", () => {
   // Canonical trapezoid: fade in 0.1→0.2, hold to 0.8, fade out 0.8→0.9.
@@ -112,5 +112,37 @@ describe("drawTrail", () => {
     drawTrail(ctx, 1, 1, 0, 0, colors, 0.2, 1);
     expect(ctx.save).toHaveBeenCalledOnce();
     expect(ctx.restore).toHaveBeenCalledOnce();
+  });
+});
+
+describe("getCanvasCtx", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  afterEach(() => {
+    document.body.innerHTML = "";
+  });
+
+  it("returns the #bg-canvas element and its 2D context", () => {
+    const canvas = document.createElement("canvas");
+    canvas.id = "bg-canvas";
+    document.body.appendChild(canvas);
+    const { canvasEl, ctx } = getCanvasCtx();
+    expect(canvasEl).toBe(canvas);
+    expect(ctx).toBe(canvas.getContext("2d"));
+  });
+
+  it("returns the same context across calls (no re-initialization)", () => {
+    const canvas = document.createElement("canvas");
+    canvas.id = "bg-canvas";
+    document.body.appendChild(canvas);
+    const a = getCanvasCtx();
+    const b = getCanvasCtx();
+    expect(a.ctx).toBe(b.ctx);
+  });
+
+  it("throws when #bg-canvas is missing", () => {
+    expect(() => getCanvasCtx()).toThrow(/bg-canvas/);
   });
 });

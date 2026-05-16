@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createBlocky } from "../particles/blocky.js";
 import { createTheme } from "./factory.js";
@@ -64,7 +65,7 @@ const BV = defineConstants(
 );
 
 export function initBlocky(toggleEl) {
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
 
   // ── Scanline overlay ──
   const scanlineOverlay = document.createElement("div");
@@ -151,11 +152,7 @@ export function initBlocky(toggleEl) {
   // Canvas-side hooks — pixelation post-process + fireflies, click block
   // fragments.  Runs as drawPost so the entire scene below has been
   // composited before the post-process kicks in.
-  const blocky = createBlocky(
-    canvasEl,
-    canvasEl.getContext("2d"),
-    COUNTS.FIREFLY,
-  );
+  const blocky = createBlocky(canvasEl, canvasCtx, COUNTS.FIREFLY);
   window.addEventListener("resize", () => {
     blocky.resizePixelCanvas();
   });

@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
 import { createVhs } from "../particles/vhs.js";
@@ -237,7 +238,7 @@ export function initVhs() {
   // Canvas-side phosphor-decay layer.  Runs as drawPost so every other
   // layer is committed before the phosphor captures into its buffer —
   // anything painting after this would be lost from the trail.
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl } = getCanvasCtx();
   const vhs = createVhs(canvasEl);
   registerCanvasHooks("vhs", {
     drawPost({ ctx, palFor, forces }) {

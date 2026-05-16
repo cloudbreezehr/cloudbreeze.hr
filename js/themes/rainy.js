@@ -1,5 +1,6 @@
 import { Z_THEME_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
@@ -68,7 +69,7 @@ const RV = defineConstants(
 
 export function initRainy() {
   const heroTagEl = document.querySelector(".hero-tag");
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
   const cloudSvg = document.querySelector(".cloud-svg");
   if (!heroTagEl) return;
 
@@ -169,7 +170,7 @@ export function initRainy() {
 
   // Canvas-side hooks — rain streaks + glass droplets render layer,
   // splash bursts on click, well burst on drag-release.
-  const rain = createRain(canvasEl, canvasEl.getContext("2d"));
+  const rain = createRain(canvasEl, canvasCtx);
   registerCanvasHooks("rainy", {
     drawAmbient({ scrollVelocity, dt, palFor, forces }) {
       rain.draw(forces, scrollVelocity, dt, palFor("rainy"));

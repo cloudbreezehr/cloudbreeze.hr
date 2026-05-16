@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createSnow } from "../particles/frozen.js";
@@ -112,7 +113,7 @@ const FV = defineConstants(
 export function initFrozen() {
   const logoEl = document.querySelector(".nav-logo");
   const cloudSvg = document.querySelector(".cloud-svg");
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
 
   // ── Frost overlay (corner creep) ──
   const frostOverlay = document.createElement("div");
@@ -174,7 +175,7 @@ export function initFrozen() {
 
   // Canvas-side hooks — ambient snow with pointer interaction + the snow
   // globe gesture (rapid scroll-direction reversals burst the flakes).
-  const snow = createSnow(canvasEl, canvasEl.getContext("2d"), COUNTS.SNOW);
+  const snow = createSnow(canvasEl, canvasCtx, COUNTS.SNOW);
   // Snow globe turbulence — set to 1 on a successful shake, decayed by
   // the snow factory each draw call.
   const snowTurbulence = { value: 0 };

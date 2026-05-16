@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createDeepSea } from "../particles/deep-sea.js";
@@ -71,7 +72,7 @@ const DV = defineConstants(
 );
 
 export function initDeepSea() {
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
   const footerEl = document.querySelector("footer");
 
   // ── Water creep overlay ──
@@ -129,7 +130,7 @@ export function initDeepSea() {
   // bubble spawning while dragging.
   const deepSea = createDeepSea(
     canvasEl,
-    canvasEl.getContext("2d"),
+    canvasCtx,
     COUNTS.BUBBLE,
     COUNTS.JELLY,
   );

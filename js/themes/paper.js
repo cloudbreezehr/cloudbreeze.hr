@@ -1,4 +1,5 @@
 import { defineConstants } from "../dev/registry.js";
+import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion } from "../motion.js";
 import { createPaper } from "../particles/paper.js";
@@ -70,7 +71,7 @@ const ACTIVATION_WORDS = ["SKETCH", "DRAW"];
 const DEACTIVATION_WORDS = ["ERASE"];
 
 export function initPaper() {
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
   const cloudSvg = document.querySelector(".cloud-svg");
   const pageEl = document.querySelector(".page");
 
@@ -235,7 +236,7 @@ export function initPaper() {
   // for ink splats and strokes. The paper theme replaces the sky and
   // atmosphere entirely (its background is CSS), and substitutes its own
   // ink splat for the default click burst.
-  const paper = createPaper(canvasEl, canvasEl.getContext("2d"));
+  const paper = createPaper(canvasEl, canvasCtx);
   registerCanvasHooks("paper", {
     suppressSky: true,
     suppressAtmosphere: true,

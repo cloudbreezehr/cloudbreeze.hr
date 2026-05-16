@@ -5,6 +5,20 @@ export function rgbaStr(c, a) {
   return `rgba(${c[0]},${c[1]},${c[2]},${a})`;
 }
 
+// Return the shared #bg-canvas element and its 2D context.  Safe to call
+// from any number of callers: getContext("2d") on the same canvas always
+// returns the same context, and the only cost is one DOM lookup.
+//
+// Throws if #bg-canvas isn't present — initialization order in
+// bootstrap.js puts the canvas first, so a missing element means the
+// caller is running before bootstrap, in a stripped-down test DOM, or
+// against the wrong page.
+export function getCanvasCtx() {
+  const canvasEl = document.getElementById("bg-canvas");
+  if (!canvasEl) throw new Error("getCanvasCtx: #bg-canvas not found");
+  return { canvasEl, ctx: canvasEl.getContext("2d") };
+}
+
 // Trapezoidal scroll-visibility fade: 0 → fade in → 1 → fade out → 0.
 // For fade-out-only (e.g. stars), pass inStart = inEnd = 0.
 export function scrollFade(sp, inStart, inEnd, outStart, outEnd) {
