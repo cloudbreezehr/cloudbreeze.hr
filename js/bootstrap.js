@@ -1,43 +1,75 @@
 // ── Page Bootstrap ──
-// Wires the page up in a specific order.  External module so the
-// page can ship with a strict script-src 'self' CSP — inline scripts
-// would force 'unsafe-inline' and undo most of the policy's value.
+// Wires the page up using dynamic imports — each module fetches and
+// inits independently as its own promise resolves.  Failures in one
+// module don't block the others.
 //
-// First-paint critical inits run from js/critical-boot.js (loaded as
-// a separate module ahead of this one).  This file picks up the
-// appearance singleton from there.
-//
-// Order matters in a few places and is called out where it does.
-// Otherwise the initializers are independent and could run in any
-// order.
+// External module so the page can ship with a strict script-src
+// 'self' CSP — inline scripts would force 'unsafe-inline' and undo
+// most of the policy's value.
 
-import { mirrorYWhenInverted } from "./viewport.js";
-import { initNav } from "./nav.js";
-import { subscribe as subscribeScroll } from "./scroll-bus.js";
-import { initTilt } from "./service-cards.js";
-import { initButtonRipple } from "./effects/button-ripple.js";
-import { initNavSparkle } from "./effects/nav-sparkle.js";
-import { initLogoBreathing } from "./effects/logo-breathing.js";
-import { initLogoParallax } from "./effects/logo-parallax.js";
-import { initThemeHistoryHud } from "./effects/theme-history-hud.js";
-import { initCursorIdle } from "./effects/cursor-idle.js";
-import { initFooterHint } from "./effects/footer-hint.js";
-import { initFirstPaintMote } from "./effects/first-paint-mote.js";
-import { initUpsideDown } from "./themes/upside-down.js";
-import { initFrozen } from "./themes/frozen.js";
-import { initDeepSea } from "./themes/deep-sea.js";
-import { initBlocky } from "./themes/blocky.js";
-import { initRainy } from "./themes/rainy.js";
-import { initPaper } from "./themes/paper.js";
-import { initVhs } from "./themes/vhs.js";
-import { toggleDevConsole, openDevConsole } from "./dev/console.js";
-import { toggleFps } from "./dev/fps.js";
-import { onKey } from "./keyboard.js";
-import { initAchievements } from "./achievements/index.js";
-import { initAnalytics } from "./analytics/index.js";
-import { createPostHogAdapter } from "./analytics/adapters/posthog.js";
+const PROD_HOSTNAME = "cloudbreeze.hr";
+const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
-// ── Hero parallax tunables ──
+const appearance = window.__cloudbreezeAppearance;
+
+function load(path, run) {
+  import(path)
+    .then(run)
+    .catch((err) => console.warn(`[bootstrap] ${path} failed:`, err));
+}
+
+// Strict production gate: only the prod hostname sends to PostHog.
+// Other hostnames (localhost, IPs, preview subdomains) fall through
+// to the default console adapter so stats stay clean.
+load("./analytics/index.js", async ({ initAnalytics }) => {
+  const isProd = location.hostname === PROD_HOSTNAME;
+  if (!isProd) {
+    initAnalytics();
+    return;
+  }
+  const { createPostHogAdapter } =
+    await import("./analytics/adapters/posthog.js");
+  initAnalytics({ adapter: createPostHogAdapter({ apiKey: POSTHOG_API_KEY }) });
+});
+
+load("./nav.js", ({ initNav }) =>
+  initNav(document.querySelector("nav"), appearance),
+);
+load("./service-cards.js", ({ initTilt }) => initTilt());
+load("./effects/button-ripple.js", ({ initButtonRipple }) =>
+  initButtonRipple(),
+);
+load("./effects/nav-sparkle.js", ({ initNavSparkle }) => initNavSparkle());
+load("./effects/logo-breathing.js", ({ initLogoBreathing }) =>
+  initLogoBreathing(),
+);
+load("./effects/logo-parallax.js", ({ initLogoParallax }) =>
+  initLogoParallax(),
+);
+load("./effects/cursor-idle.js", ({ initCursorIdle }) =>
+  initCursorIdle(
+    document.getElementById("cursor"),
+    document.getElementById("cursor-ring"),
+  ),
+);
+load("./effects/footer-hint.js", ({ initFooterHint }) => initFooterHint());
+load("./effects/first-paint-mote.js", ({ initFirstPaintMote }) =>
+  initFirstPaintMote(),
+);
+load("./effects/theme-history-hud.js", ({ initThemeHistoryHud }) =>
+  initThemeHistoryHud(),
+);
+load("./themes/upside-down.js", ({ initUpsideDown }) => initUpsideDown());
+load("./themes/frozen.js", ({ initFrozen }) => initFrozen());
+load("./themes/deep-sea.js", ({ initDeepSea }) => initDeepSea());
+load("./themes/blocky.js", ({ initBlocky }) =>
+  initBlocky(document.querySelector(".appearance-toggle")),
+);
+load("./themes/rainy.js", ({ initRainy }) => initRainy());
+load("./themes/paper.js", ({ initPaper }) => initPaper());
+load("./themes/vhs.js", ({ initVhs }) => initVhs());
+load("./achievements/index.js", ({ initAchievements }) => initAchievements());
+
 const PARALLAX_LAYERS = [
   { selector: ".hero-tag", rate: 0.12 },
   { selector: ".hero-title .line-1", rate: 0.06 },
@@ -46,90 +78,47 @@ const PARALLAX_LAYERS = [
   { selector: ".hero-actions", rate: 0.18 },
 ];
 const SCROLL_HINT_FADE_AT = 60;
-const PROD_HOSTNAME = "cloudbreeze.hr";
-const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
-// Analytics first — bridges attach listeners before other modules
-// start dispatching events, so session_start, early scroll_depth, and
-// the initial theme-buildup all land in the stream.  Wrapped so a
-// broken adapter or context lookup can never break page load.
-//
-// Strict production gate: only cloudbreeze.hr sends to PostHog.  Any
-// other hostname (localhost, IP, preview subdomain) falls through to
-// the default console adapter so stats aren't polluted.
-try {
-  const isProd = location.hostname === PROD_HOSTNAME;
-  initAnalytics(
-    isProd
-      ? { adapter: createPostHogAdapter({ apiKey: POSTHOG_API_KEY }) }
-      : undefined,
-  );
-} catch (err) {
-  console.warn("[analytics] init failed:", err);
-}
+load("./scroll-bus.js", async ({ subscribe: subscribeScroll }) => {
+  const { mirrorYWhenInverted } = await import("./viewport.js");
 
-const appearance = window.__cloudbreezeAppearance;
-initNav(document.querySelector("nav"), appearance);
-initTilt();
-initButtonRipple();
-initNavSparkle();
-initLogoBreathing();
-initLogoParallax();
-initCursorIdle(
-  document.getElementById("cursor"),
-  document.getElementById("cursor-ring"),
-);
-initFooterHint();
-initFirstPaintMote();
-initUpsideDown();
-initFrozen();
-initDeepSea();
-initBlocky(document.querySelector(".appearance-toggle"));
-initRainy();
-initPaper();
-initVhs();
-initThemeHistoryHud();
-initAchievements();
+  const parallaxEls = PARALLAX_LAYERS.map(({ selector, rate }) => ({
+    el: document.querySelector(selector),
+    rate,
+  }));
+  subscribeScroll(({ scrollY }) => {
+    const maxScroll =
+      document.documentElement.scrollHeight - window.innerHeight;
+    const y = mirrorYWhenInverted(scrollY, maxScroll);
+    if (y > window.innerHeight) return;
+    for (const p of parallaxEls) {
+      if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
+    }
+  });
 
-// Subtle parallax on hero elements — each layer drifts at a different
-// rate.  Uses the CSS `translate` property (not `transform`) so it
-// composes with fadeUp animation.
-const parallaxEls = PARALLAX_LAYERS.map(({ selector, rate }) => ({
-  el: document.querySelector(selector),
-  rate,
-}));
-subscribeScroll(({ scrollY }) => {
-  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  const y = mirrorYWhenInverted(scrollY, maxScroll);
-  if (y > window.innerHeight) return;
-  for (const p of parallaxEls) {
-    if (p.el) p.el.style.translate = `0 ${y * p.rate}px`;
+  const scrollHint = document.querySelector(".scroll-hint");
+  if (scrollHint) {
+    const unsub = subscribeScroll(({ scrollY }) => {
+      if (scrollY > SCROLL_HINT_FADE_AT) {
+        scrollHint.style.animation = "none";
+        scrollHint.style.opacity = "1";
+        void scrollHint.offsetHeight;
+        scrollHint.style.transition = "opacity 0.6s";
+        scrollHint.style.opacity = "0";
+        unsub();
+      }
+    });
   }
 });
 
-// Fade out scroll hint once the user starts scrolling
-const scrollHint = document.querySelector(".scroll-hint");
-if (scrollHint) {
-  const unsub = subscribeScroll(({ scrollY }) => {
-    if (scrollY > SCROLL_HINT_FADE_AT) {
-      scrollHint.style.animation = "none";
-      scrollHint.style.opacity = "1";
-      void scrollHint.offsetHeight;
-      scrollHint.style.transition = "opacity 0.6s";
-      scrollHint.style.opacity = "0";
-      unsub();
-    }
-  });
-}
+load("./keyboard.js", async ({ onKey }) => {
+  const [{ toggleDevConsole, openDevConsole }, { toggleFps }] =
+    await Promise.all([import("./dev/console.js"), import("./dev/fps.js")]);
 
-// Dev console — triggered via URL hash #dev or Ctrl+Shift+.
-if (window.location.hash === "#dev") openDevConsole();
-window.addEventListener("hashchange", () => {
   if (window.location.hash === "#dev") openDevConsole();
+  window.addEventListener("hashchange", () => {
+    if (window.location.hash === "#dev") openDevConsole();
+  });
+  onKey(".", toggleDevConsole, { ctrl: true, shift: true, allowInInput: true });
+  onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
 });
-onKey(".", toggleDevConsole, {
-  ctrl: true,
-  shift: true,
-  allowInInput: true,
-});
-onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
