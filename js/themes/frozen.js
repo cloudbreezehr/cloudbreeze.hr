@@ -62,7 +62,7 @@ const SHAKE = defineConstants(
 
 // ── Force & Activation ──
 export const FF = defineConstants(
-  "themes.frozenForce",
+  "themes.frozen.force",
   {
     CLICKS_TO_FREEZE: 25,
     CLICKS_TO_THAW: 13,
@@ -80,7 +80,7 @@ export const FF = defineConstants(
 
 // ── Visual Effects ──
 const FV = defineConstants(
-  "themes.frozenVisuals",
+  "themes.frozen.visuals",
   {
     BREATH_COUNT_MIN: 3,
     BREATH_COUNT_RANGE: 4,

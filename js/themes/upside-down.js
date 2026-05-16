@@ -8,7 +8,7 @@ import { createOverscrollTrigger } from "./triggers.js";
 
 // ── Force & Activation ──
 const UD_FORCE = defineConstants(
-  "themes.upsideForce",
+  "themes.upsideDown.force",
   {
     COOLDOWN: {
       value: 300,
@@ -86,7 +86,7 @@ const UD_FORCE = defineConstants(
 
 // ── Visual Effects ──
 const UD_VFX = defineConstants(
-  "themes.upsideVisuals",
+  "themes.upsideDown.visuals",
   {
     SHAKE_THRESHOLD: {
       value: 0.2,

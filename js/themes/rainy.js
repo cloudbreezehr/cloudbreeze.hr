@@ -13,7 +13,7 @@ import { createClickCountTrigger } from "./triggers.js";
 
 // ── Force & Activation ──
 const RF = defineConstants(
-  "themes.rainyForce",
+  "themes.rainy.force",
   {
     CLICKS_TO_RAIN: 15,
     CLICKS_TO_CLEAR: 8,
@@ -32,7 +32,7 @@ const RF = defineConstants(
 
 // ── Visual Effects ──
 const RV = defineConstants(
-  "themes.rainyVisuals",
+  "themes.rainy.visuals",
   {
     TAG_GLOW_SPREAD_MIN: 2,
     TAG_GLOW_SPREAD_RANGE: 10,

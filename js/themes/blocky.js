@@ -25,7 +25,7 @@ const COUNTS = defineConstants(
 
 // ── Force & Activation ──
 const BF = defineConstants(
-  "themes.blockyForce",
+  "themes.blocky.force",
   {
     PRESSES_TO_ACTIVATE: 20,
     PRESSES_TO_DEACTIVATE: 10,
@@ -45,7 +45,7 @@ const BF = defineConstants(
 
 // ── Visual Effects ──
 const BV = defineConstants(
-  "themes.blockyVisuals",
+  "themes.blocky.visuals",
   {
     ICON_SHRINK_FACTOR: 0.4,
     ICON_CONTRAST_THRESHOLD: 0.3,

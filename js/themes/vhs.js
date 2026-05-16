@@ -12,7 +12,7 @@ import { createKeyChordTrigger } from "./triggers.js";
 
 // ── Force & Activation ──
 const VF = defineConstants(
-  "themes.vhsForce",
+  "themes.vhs.force",
   {
     // Fewer presses to deactivate than to activate so an accidental trip
     // is recoverable in a couple of seconds without a long unwind.
@@ -33,7 +33,7 @@ const VF = defineConstants(
 
 // ── Visual Effects ──
 const VV = defineConstants(
-  "themes.vhsVisuals",
+  "themes.vhs.visuals",
   {
     SCANLINE_OPACITY_BASE: 0.05,
     SCANLINE_OPACITY_PEAK: 0.25,

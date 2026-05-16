@@ -34,7 +34,7 @@ const COUNTS = defineConstants(
 
 // ── Force & Activation ──
 const DF = defineConstants(
-  "themes.deepSeaForce",
+  "themes.deepSea.force",
   {
     HOLD_TO_DIVE_MS: 10000,
     HOLD_TO_SURFACE_MS: 5000,
@@ -50,7 +50,7 @@ const DF = defineConstants(
 
 // ── Visual Effects ──
 const DV = defineConstants(
-  "themes.deepSeaVisuals",
+  "themes.deepSea.visuals",
   {
     RIPPLE_INTERVAL_MS: 400,
     RIPPLE_COUNT: 3,

@@ -12,7 +12,7 @@ import { createKeySequenceTrigger } from "./triggers.js";
 
 // ── Force & Activation ──
 const PF = defineConstants(
-  "themes.paperForce",
+  "themes.paper.force",
   {
     MAX_GAP_MS: 600,
     DECAY_TIMEOUT_MS: 2000,
@@ -29,7 +29,7 @@ const PF = defineConstants(
 
 // ── Visual Effects ──
 const PV = defineConstants(
-  "themes.paperVisuals",
+  "themes.paper.visuals",
   {
     GRAIN_OPACITY_BASE: 0.025,
     GRAIN_OPACITY_PEAK: 0.14,
