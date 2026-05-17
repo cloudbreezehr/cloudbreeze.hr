@@ -22,6 +22,7 @@
 // afterglow on top — the model that matches actual phosphor decay.
 
 import { defineConstants } from "../dev/registry.js";
+import { chance } from "../motion.js";
 
 const PHOSPHOR = defineConstants(
   "particles.vhs",
@@ -85,6 +86,115 @@ export const TRAIL = defineConstants(
   },
   { theme: "vhs" },
 );
+
+// ── Phosphor Fizz ──
+// Occasional 1-pixel cyan/magenta specks that pop along the recent
+// cursor-trail history and fade fast.  Suggests a CRT phosphor pop-fizz
+// artifact — meant to be just barely noticeable, not a deliberate effect.
+// Pure visual flash: no motion, no integration, just a fade timer.  Spawn
+// is gated by chance() at the cursor-record site so reduced-motion users
+// see a clean trail with no fizz.
+export const FIZZ = defineConstants(
+  "particles.vhs.fizz",
+  {
+    POOL: {
+      value: 64,
+      min: 16,
+      max: 256,
+      step: 8,
+      description: "Total fizz slots",
+    },
+    SPAWN_PER_SAMPLE: {
+      value: 0.45,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Per-cursor-sample probability of spawning a fizz speck",
+    },
+    JITTER_PX: {
+      value: 6,
+      min: 0,
+      max: 20,
+      step: 0.5,
+      description: "Max random offset from the chosen history point",
+    },
+    HEAD_BIAS: {
+      value: 0.6,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Bias toward the head of the history buffer when picking an anchor (0 = uniform, 1 = always the head)",
+    },
+    LIFE_MIN: {
+      value: 4,
+      min: 1,
+      max: 60,
+      step: 1,
+      description: "Min lifetime (frames)",
+    },
+    LIFE_RANGE: {
+      value: 8,
+      min: 0,
+      max: 60,
+      step: 1,
+      description: "Lifetime variation",
+    },
+    SIZE_PX: {
+      value: 1,
+      min: 1,
+      max: 4,
+      step: 1,
+      description: "Fizz speck size in px",
+    },
+    ALPHA_PEAK: {
+      value: 0.9,
+      min: 0.1,
+      max: 1,
+      step: 0.05,
+      description: "Peak speck opacity",
+    },
+  },
+  { theme: "vhs" },
+);
+
+// Phosphor fizz speck.  Pure life timer — no motion, no integration,
+// no friction.  Spawn picks a history point + random jitter + a
+// chromatic channel; draw lays a 1px rect with linear alpha fade.
+export class Fizz {
+  constructor() {
+    this.active = false;
+  }
+  spawn(x, y, isCyan) {
+    this.x = x;
+    this.y = y;
+    this.isCyan = isCyan;
+    this.life = 0;
+    this.maxLife = FIZZ.LIFE_MIN + Math.random() * FIZZ.LIFE_RANGE;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.life++;
+    if (this.life > this.maxLife) {
+      this.active = false;
+    }
+  }
+  draw(ctx, pal) {
+    if (!this.active || !pal) return;
+    const t = this.life / this.maxLife;
+    const alpha = FIZZ.ALPHA_PEAK * (1 - t);
+    const c = this.isCyan ? pal.cursorPhosphorCyan : pal.cursorPhosphorMagenta;
+    if (!c) return;
+    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+    ctx.fillRect(
+      Math.round(this.x),
+      Math.round(this.y),
+      FIZZ.SIZE_PX,
+      FIZZ.SIZE_PX,
+    );
+  }
+}
 
 // Render the cursor afterimage as three chromatic-fringed polylines on
 // `ctx`.  History is an array of {x, y} positions oldest → newest.
@@ -176,6 +286,9 @@ export function createVhs(canvasEl) {
   // module is constructed once per canvas init).
   let cursorHistory = [];
 
+  // ── Phosphor fizz pool ──
+  const fizzes = Array.from({ length: FIZZ.POOL }, () => new Fizz());
+
   // ── Click-glitch DOM pool ──
   // Tracked in a FIFO array so a sustained click mash doesn't unbound the
   // DOM. Each element self-removes via animationend; the array entry is
@@ -247,6 +360,14 @@ export function createVhs(canvasEl) {
       //    by its own history buffer and doesn't compound with the
       //    phosphor's recursive decay.
       drawCursorTrail(ctx, cursorHistory, pal);
+
+      // 5. Phosphor fizz — laid on top of the trail so cyan/magenta
+      //    specks read as scanline pop-fizz crossing the afterimage.
+      //    Spawn happens in recordCursor; here we only update + draw.
+      for (const f of fizzes) {
+        f.update();
+        f.draw(ctx, pal);
+      }
     },
 
     // Stamp the live cursor position into the trail history.  Skips the
@@ -264,6 +385,22 @@ export function createVhs(canvasEl) {
       cursorHistory.push({ x, y });
       if (cursorHistory.length > TRAIL.HISTORY_LEN) {
         cursorHistory.shift();
+      }
+      // Phosphor fizz — chance() folds in the motion budget so reduced-
+      // motion users see a clean trail.  Anchor to a recent history
+      // point with head-bias (newer trail noise reads better than old).
+      if (chance(FIZZ.SPAWN_PER_SAMPLE)) {
+        const len = cursorHistory.length;
+        // u in [0..1) skewed toward 1 (head) by HEAD_BIAS.  bias=0 →
+        // uniform (exp=1); bias=1 → always 1 (exp=0).  Math.pow with
+        // exp<1 pushes the distribution toward 1.
+        const u = Math.pow(Math.random(), 1 - FIZZ.HEAD_BIAS);
+        const idx = Math.min(len - 1, Math.floor(u * len));
+        const anchor = cursorHistory[idx];
+        const fx = anchor.x + (Math.random() - 0.5) * 2 * FIZZ.JITTER_PX;
+        const fy = anchor.y + (Math.random() - 0.5) * 2 * FIZZ.JITTER_PX;
+        const f = fizzes.find((f) => !f.active);
+        if (f) f.spawn(fx, fy, Math.random() < 0.5);
       }
     },
 
@@ -286,6 +423,7 @@ export function createVhs(canvasEl) {
         el.remove();
       }
       cursorHistory = [];
+      for (const f of fizzes) f.active = false;
     },
   };
 }

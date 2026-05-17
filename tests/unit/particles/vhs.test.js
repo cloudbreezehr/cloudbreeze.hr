@@ -371,3 +371,104 @@ describe("createVhs.drawAfter — phosphor + trail integration", () => {
     expect(ctx._calls.filter((c) => c.name === "stroke")).toHaveLength(0);
   });
 });
+
+describe("Fizz — phosphor speck", () => {
+  let mqlListeners;
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlListeners = [];
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: (type, listener) => {
+        if (type === "change") mqlListeners.push(listener);
+      },
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  it("active flag flips to false after maxLife update calls", async () => {
+    mqlMatches = false;
+    const { Fizz } = await import("../../../js/particles/vhs.js");
+    const f = new Fizz();
+    f.spawn(10, 20, true);
+    const maxFrames = Math.ceil(f.maxLife) + 1;
+    for (let i = 0; i < maxFrames; i++) f.update();
+    expect(f.active).toBe(false);
+  });
+
+  it("draw selects the cyan channel when isCyan is true, magenta otherwise", async () => {
+    mqlMatches = false;
+    const { Fizz } = await import("../../../js/particles/vhs.js");
+    const cyan = new Fizz();
+    const mag = new Fizz();
+    cyan.spawn(0, 0, true);
+    mag.spawn(0, 0, false);
+
+    function makeFillStyleSpy() {
+      const calls = [];
+      return {
+        set fillStyle(v) {
+          calls.push(v);
+        },
+        fillRect: () => {},
+        calls,
+      };
+    }
+    const cyanCtx = makeFillStyleSpy();
+    const magCtx = makeFillStyleSpy();
+    cyan.draw(cyanCtx, PAL);
+    mag.draw(magCtx, PAL);
+    expect(cyanCtx.calls[0]).toContain(`${PAL.cursorPhosphorCyan[0]},`);
+    expect(magCtx.calls[0]).toContain(`${PAL.cursorPhosphorMagenta[0]},`);
+  });
+
+  it("draw is a no-op when pal is omitted", async () => {
+    mqlMatches = false;
+    const { Fizz } = await import("../../../js/particles/vhs.js");
+    const f = new Fizz();
+    f.spawn(0, 0, true);
+    let touched = false;
+    const ctx = {
+      set fillStyle(v) {
+        touched = true;
+      },
+      fillRect: () => {
+        touched = true;
+      },
+    };
+    f.draw(ctx);
+    expect(touched).toBe(false);
+  });
+
+  it("recordCursor never spawns fizz under reduced motion", async () => {
+    mqlMatches = true;
+    const { createVhs } = await import("../../../js/particles/vhs.js");
+    const restore = patchOffscreenCanvas();
+    try {
+      const fakeCanvas = makeFakeCanvas();
+      const vhs = createVhs(fakeCanvas);
+      // Run enough samples that, at default 0.45 spawn chance, we'd
+      // statistically expect dozens of fizzes if reduced-motion didn't
+      // gate them.  Probability of zero spawns over 60 trials at p=0.45
+      // is ≈ 1e-15, so any spawn is a regression.
+      for (let i = 0; i < 60; i++) vhs.recordCursor(i * 4, i * 4);
+      const ctx = makeSpyCtx();
+      vhs.drawAfter(ctx, PAL);
+      // Fizz draw sets fillStyle; the trail uses strokeStyle.  No
+      // fillRect call here would mean fizz didn't draw — assert that.
+      const fillRectCalls = ctx._calls.filter((c) => c.name === "fillRect");
+      expect(fillRectCalls).toHaveLength(0);
+    } finally {
+      restore();
+    }
+  });
+});
