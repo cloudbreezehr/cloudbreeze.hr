@@ -5,8 +5,9 @@ import {
   applyWellForce,
 } from "../interactions.js";
 import { spawnBolt, renderBolt } from "../fury.js";
-import { scaled } from "../motion.js";
-import { RAIN, WIND, SPLASH, GLASS, THUNDER } from "./rain.constants.js";
+import { drawHaloParticle } from "../canvas-utils.js";
+import { scaled, step, prefersReducedMotion } from "../motion.js";
+import { RAIN, WIND, SPLASH, GLASS, THUNDER, EMBER } from "./rain.constants.js";
 
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
@@ -104,6 +105,71 @@ class SplashParticle {
     this.x += scaled(this.vx);
     this.y += scaled(this.vy);
     this.vy += scaled(SPLASH.GRAVITY);
+  }
+}
+
+// ── Strike ember ──
+// Ballistic spark scattered from a lightning strike's endpoint.  Pure
+// vx/vy with friction — exactly the shape `step()` from motion.js
+// integrates, so the per-frame update is one call.  No gravity: embers
+// ride the heat plume upward (UPWARD_BIAS biases vy negative on spawn)
+// and friction kills them.
+
+export class Ember {
+  constructor() {
+    this.active = false;
+  }
+  spawn(x, y) {
+    this.x = x;
+    this.y = y;
+    // Radial scatter — full 2π, then add an upward bias so the cloud
+    // tends to rise even though individual sparks fly any direction.
+    const angle = Math.random() * Math.PI * 2;
+    const speed = EMBER.SPEED_MIN + Math.random() * EMBER.SPEED_RANGE;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed - speed * EMBER.UPWARD_BIAS;
+    this.life = 0;
+    this.maxLife = EMBER.LIFE_MIN + Math.random() * EMBER.LIFE_RANGE;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.life++;
+    if (this.life > this.maxLife) {
+      this.active = false;
+      return;
+    }
+    step(this, 1, EMBER.FRICTION);
+  }
+  draw(ctx) {
+    if (!this.active) return;
+    const t = this.life / this.maxLife;
+    // Hold at peak alpha for the first FADE_HOLD fraction, then fade
+    // linearly to zero — keeps embers bright long enough to register
+    // visually on high-refresh displays where frame-counted life is fast.
+    const alpha =
+      t < EMBER.FADE_HOLD
+        ? EMBER.ALPHA_PEAK
+        : EMBER.ALPHA_PEAK *
+          (1 - (t - EMBER.FADE_HOLD) / (1 - EMBER.FADE_HOLD));
+    // Outer warm halo
+    drawHaloParticle(
+      ctx,
+      this.x,
+      this.y,
+      EMBER.RADIUS * EMBER.GLOW_RADIUS,
+      alpha,
+      EMBER.COLOR,
+    );
+    // Hot inner core — small bright dot inside the halo so the ember
+    // reads as a point of light against busy rain texture.
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = `rgb(${EMBER.COLOR_HOT[0]},${EMBER.COLOR_HOT[1]},${EMBER.COLOR_HOT[2]})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, EMBER.RADIUS, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -281,6 +347,9 @@ export function createRain(canvasEl, ctxEl) {
   const glassDrops = Array.from({ length: GLASS.MAX }, () => new GlassDrop());
   let glassSpawnAccum = 0;
 
+  // Ember pool — embers from lightning strike endpoints
+  const embers = Array.from({ length: EMBER.POOL }, () => new Ember());
+
   // Wind state
   let nextGustTime =
     performance.now() +
@@ -372,6 +441,10 @@ export function createRain(canvasEl, ctxEl) {
       const count =
         THUNDER.BOLT_COUNT_MIN +
         Math.floor(Math.random() * THUNDER.BOLT_COUNT_RANGE);
+      // Embers are a discrete burst, not ambient motion — gate on
+      // prefersReducedMotion() so reduced-motion users get the bolt
+      // and flash but no spark shower.
+      const spawnEmbers = !prefersReducedMotion();
       for (let i = 0; i < count; i++) {
         if (ambientBolts.length >= THUNDER.BOLT_MAX) break;
         const x1 = Math.random() * _canvas.width;
@@ -383,6 +456,15 @@ export function createRain(canvasEl, ctxEl) {
           (THUNDER.START_Y_FRAC +
             Math.random() * (THUNDER.END_Y_FRAC - THUNDER.START_Y_FRAC));
         spawnBolt(ambientBolts, x1, y1, x2, y2, 0);
+        if (spawnEmbers) {
+          const emberCount =
+            EMBER.COUNT_MIN + Math.floor(Math.random() * EMBER.COUNT_RANGE);
+          for (let k = 0; k < emberCount; k++) {
+            const e = embers.find((e) => !e.active);
+            if (!e) break;
+            e.spawn(x2, y2);
+          }
+        }
       }
       thunderBoostEnd = now + THUNDER.BOOST_MS;
       rumbleEnd = now + THUNDER.RUMBLE_MS;
@@ -424,6 +506,13 @@ export function createRain(canvasEl, ctxEl) {
       now < rumbleEnd + THUNDER.RUMBLE_RESET_MS
     ) {
       pageEl.style.translate = "";
+    }
+
+    // Embers — pure ballistic, friction-only.  Update integrates via
+    // step() which already absorbs the motion budget.
+    for (const e of embers) {
+      e.update();
+      e.draw(_ctx);
     }
 
     return now < thunderBoostEnd ? THUNDER.SPEED_BOOST : 0;
@@ -592,6 +681,8 @@ export function createRain(canvasEl, ctxEl) {
         g.remove();
       }
       glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
+      // Drop in-flight embers so they don't reappear when the theme returns
+      for (const e of embers) e.active = false;
     },
   };
 }

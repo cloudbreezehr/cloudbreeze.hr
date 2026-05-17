@@ -815,3 +815,116 @@ export const THUNDER = defineConstants(
   },
   { theme: "rainy" },
 );
+
+// ── Strike Embers ──
+// Glowing sparks scattered radially from the endpoint of each ambient
+// lightning strike.  Pure ballistic — spawn with random velocity,
+// friction kills them.  No gravity (heat plume carries them).  Pool
+// sized for worst case: BOLT_MAX strikes simultaneous × max-count
+// embers each.
+//
+// Frame-counted lifetime: at 60Hz LIFE values are seconds × 60; at
+// 120Hz the fade is half real-time.  Same as SplashParticle.LIFE.
+//
+// Color is warm orange-yellow against the cool stormy palette — the
+// strike's own bolt + flash carry the cool blue, embers carry the heat.
+export const EMBER = defineConstants(
+  "particles.rainEmber",
+  {
+    POOL: {
+      value: 256,
+      min: 16,
+      max: 512,
+      step: 8,
+      description: "Total ember slots (shared across all strikes)",
+    },
+    COUNT_MIN: {
+      value: 14,
+      min: 1,
+      max: 60,
+      step: 1,
+      description: "Min embers per strike",
+    },
+    COUNT_RANGE: {
+      value: 10,
+      min: 0,
+      max: 40,
+      step: 1,
+      description: "Ember count variation",
+    },
+    SPEED_MIN: {
+      value: 3,
+      min: 0.2,
+      max: 12,
+      step: 0.1,
+      description: "Min spawn speed (px/frame)",
+    },
+    SPEED_RANGE: {
+      value: 5,
+      min: 0,
+      max: 12,
+      step: 0.1,
+      description: "Spawn speed variation",
+    },
+    UPWARD_BIAS: {
+      value: 0.35,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Fraction of speed added as upward velocity (heat plume rise)",
+    },
+    LIFE_MIN: {
+      value: 70,
+      min: 10,
+      max: 240,
+      step: 1,
+      description: "Min lifetime (frames)",
+    },
+    LIFE_RANGE: {
+      value: 50,
+      min: 0,
+      max: 240,
+      step: 1,
+      description: "Lifetime variation",
+    },
+    FRICTION: {
+      value: 0.96,
+      min: 0.5,
+      max: 1,
+      step: 0.005,
+      description: "Per-frame velocity damping",
+    },
+    RADIUS: {
+      value: 2.2,
+      min: 0.5,
+      max: 6,
+      step: 0.1,
+      description: "Ember dot radius (px)",
+    },
+    GLOW_RADIUS: {
+      value: 6,
+      min: 1,
+      max: 16,
+      step: 0.5,
+      description: "Halo radius multiplier",
+    },
+    ALPHA_PEAK: {
+      value: 1,
+      min: 0.1,
+      max: 1,
+      step: 0.05,
+      description: "Peak ember opacity",
+    },
+    FADE_HOLD: {
+      value: 0.4,
+      min: 0,
+      max: 0.9,
+      step: 0.05,
+      description: "Lifetime fraction at full alpha before fading begins",
+    },
+    COLOR: [255, 180, 70],
+    COLOR_HOT: [255, 230, 160],
+  },
+  { theme: "rainy" },
+);

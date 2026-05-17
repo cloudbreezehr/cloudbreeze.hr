@@ -210,6 +210,101 @@ describe("motion — chance", () => {
   });
 });
 
+describe("motion — step", () => {
+  let mqlListeners;
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlListeners = [];
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: (type, listener) => {
+        if (type === "change") mqlListeners.push(listener);
+      },
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  it("integrates position by velocity * dt under full motion", async () => {
+    mqlMatches = false;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 10, y: 20, vx: 2, vy: -3 };
+    step(s, 0.5);
+    expect(s.x).toBe(11);
+    expect(s.y).toBe(18.5);
+    // No friction → velocity unchanged
+    expect(s.vx).toBe(2);
+    expect(s.vy).toBe(-3);
+  });
+
+  it("defaults dt to 1", async () => {
+    mqlMatches = false;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 0, y: 0, vx: 4, vy: -1 };
+    step(s);
+    expect(s.x).toBe(4);
+    expect(s.y).toBe(-1);
+  });
+
+  it("freezes position when motion is reduced", async () => {
+    mqlMatches = true;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 10, y: 20, vx: 2, vy: -3 };
+    step(s, 0.5);
+    expect(s.x).toBe(10);
+    expect(s.y).toBe(20);
+  });
+
+  it("applies friction unconditionally", async () => {
+    // Friction is damping decay, not motion budget — coasting velocity
+    // bleeds off even when scale is zero so a particle doesn't keep its
+    // momentum across a reduced-motion toggle.
+    mqlMatches = true;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 0, y: 0, vx: 10, vy: -10 };
+    step(s, 1, 0.5);
+    expect(s.x).toBe(0);
+    expect(s.y).toBe(0);
+    expect(s.vx).toBe(5);
+    expect(s.vy).toBe(-5);
+  });
+
+  it("applies friction after position update", async () => {
+    // Order matters: position uses pre-friction velocity, then velocity
+    // decays.  A particle with vx=10 and friction=0.5 should move 10 px
+    // this frame and have vx=5 next frame, not move 5 px.
+    mqlMatches = false;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 0, y: 0, vx: 10, vy: 0 };
+    step(s, 1, 0.5);
+    expect(s.x).toBe(10);
+    expect(s.vx).toBe(5);
+  });
+
+  it("tracks mid-session toggles without caching", async () => {
+    mqlMatches = false;
+    const { step } = await import("../../js/motion.js");
+    const s = { x: 0, y: 0, vx: 1, vy: 1 };
+    step(s);
+    expect(s.x).toBe(1);
+    mqlListeners.forEach((fn) => fn({ matches: true }));
+    step(s);
+    // Position unchanged from the previous step; reduced-motion freezes it.
+    expect(s.x).toBe(1);
+    mqlListeners.forEach((fn) => fn({ matches: false }));
+    step(s);
+    expect(s.x).toBe(2);
+  });
+});
+
 describe("motion — reducedDuration", () => {
   let mqlListeners;
   let mqlMatches;

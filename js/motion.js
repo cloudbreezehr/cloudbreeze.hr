@@ -11,16 +11,17 @@
 // Three questions, three answers.  Pick the helper that matches what
 // your code is actually asking:
 //
-//   "Apply motion to this number / spawn."          → scaled() / chance()
+//   "Apply motion to this number / spawn / integration step."
+//                                          → scaled() / chance() / step()
 //   "Does the user want me to not move things?"     → prefersReducedMotion()
 //   "How long should this animation last?"          → reducedDuration()
 //
-// Default: reach for `scaled` / `chance` first.  These two absorb the
-// multiplication so call sites no longer thread a parameter or branch
-// on the preference.  A particle that does its motion math through
-// them is automatically tier-aware — when a future "lighter motion"
-// preference returns e.g. 0.3, every animation dampens uniformly
-// without auditing call sites.
+// Default: reach for `scaled` / `chance` / `step` first.  These three
+// absorb the multiplication so call sites no longer thread a parameter
+// or branch on the preference.  A particle that does its motion math
+// through them is automatically tier-aware — when a future "lighter
+// motion" preference returns e.g. 0.3, every animation dampens
+// uniformly without auditing call sites.
 //
 //   - scaled(value)      Continuous scalar applied to a single value.
 //                        Use for per-frame deltas, phase advances,
@@ -32,6 +33,16 @@
 //                        (`Math.random() < p` semantically, but with
 //                        motion budget folded in).  Returns false
 //                        unconditionally when motion is reduced.
+//
+//   - step(state, dt, friction)  Standard particle integration over
+//                                { x, y, vx, vy }: position += velocity,
+//                                followed by friction decay if provided.
+//                                Use when a particle's motion fits the
+//                                vx/vy + friction shape; particles with
+//                                bespoke math (intrinsic forces,
+//                                friction-before-position, custom
+//                                ordering) wrap motion-bearing values
+//                                in scaled() instead.
 //
 //   - prefersReducedMotion()  Boolean OS preference.  Use this for
 //                             "skip entirely" gates — discrete bursts,
@@ -104,4 +115,19 @@ export function scaled(value) {
 // star flashes) so spawn rate dampens with the rest of motion.
 export function chance(p) {
   return Math.random() < p * motionScale();
+}
+
+// Integrate a particle whose motion fits the standard vx/vy + friction
+// shape.  Mutates `state.x`, `state.y`, and (if `friction` is provided)
+// `state.vx` / `state.vy`.  Friction is applied unconditionally — it's
+// damping decay, not motion budget — so coasting particles bleed off
+// velocity even when scale is zero.
+export function step(state, dt = 1, friction) {
+  const s = motionScale();
+  state.x += state.vx * dt * s;
+  state.y += state.vy * dt * s;
+  if (friction !== undefined) {
+    state.vx *= friction;
+    state.vy *= friction;
+  }
 }
