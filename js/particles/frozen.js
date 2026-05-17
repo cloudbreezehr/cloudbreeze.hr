@@ -239,11 +239,11 @@ class Snowflake {
     this.rotation = Math.random() * Math.PI * 2;
     this.rotSpeed = (Math.random() - 0.5) * 0.01;
   }
-  update() {
-    this.sway += this.swaySpeed;
-    this.rotation += this.rotSpeed;
-    this.x += Math.sin(this.sway) * this.swayAmp + this.vx;
-    this.y += this.fallSpeed + this.vy;
+  update(motionScale = 1) {
+    this.sway += this.swaySpeed * motionScale;
+    this.rotation += this.rotSpeed * motionScale;
+    this.x += (Math.sin(this.sway) * this.swayAmp + this.vx) * motionScale;
+    this.y += (this.fallSpeed + this.vy) * motionScale;
     this.vx *= SNOW.FRICTION;
     this.vy *= SNOW.FRICTION;
     if (this.y > _canvas.height + 10) this.reset(false);
@@ -313,7 +313,7 @@ export function createSnow(canvasEl, ctxEl, count) {
   const snowflakes = Array.from({ length: count }, () => new Snowflake());
 
   return {
-    draw(forces, scrollVelocity, snowTurbulence) {
+    draw(forces, scrollVelocity, snowTurbulence, motionScale = 1) {
       // Snow globe turbulence — burst then decay
       if (snowTurbulence.value > 0.01) {
         snowflakes.forEach((s) => {
@@ -329,7 +329,7 @@ export function createSnow(canvasEl, ctxEl, count) {
         snowTurbulence.value *= SHAKE.DECAY;
       }
       snowflakes.forEach((s) => {
-        s.update();
+        s.update(motionScale);
         applyRepulsion(forces, s, SNOW.REPEL_RADIUS, SNOW.REPEL_DAMPEN);
         applyAttraction(
           forces,

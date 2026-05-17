@@ -67,10 +67,10 @@ class Raindrop {
     this.vy = 0;
   }
 
-  update(windOffset, speedBoost) {
+  update(windOffset, speedBoost, motionScale = 1) {
     const cfg = LAYER_CONFIGS[this.layer]();
-    this.x += windOffset * cfg.windScale + this.vx;
-    this.y += this.fallSpeed * (1 + speedBoost) + this.vy;
+    this.x += (windOffset * cfg.windScale + this.vx) * motionScale;
+    this.y += (this.fallSpeed * (1 + speedBoost) + this.vy) * motionScale;
     // High friction so forces cause brief deflections, not sustained drift
     this.vx *= RAIN.FRICTION;
     this.vy *= RAIN.FRICTION;
@@ -93,16 +93,16 @@ class SplashParticle {
     this.active = true;
   }
 
-  update() {
+  update(motionScale = 1) {
     if (!this.active) return;
     this.life++;
     if (this.life > SPLASH.LIFE) {
       this.active = false;
       return;
     }
-    this.x += this.vx;
-    this.y += this.vy;
-    this.vy += SPLASH.GRAVITY;
+    this.x += this.vx * motionScale;
+    this.y += this.vy * motionScale;
+    this.vy += SPLASH.GRAVITY * motionScale;
   }
 }
 
@@ -144,7 +144,7 @@ class GlassDrop {
     this.fadeIn = true;
   }
 
-  update(dt, scrollVel) {
+  update(dt, scrollVel, motionScale = 1) {
     if (!this.active) return;
 
     // Fade in
@@ -165,11 +165,11 @@ class GlassDrop {
     const frameSpeed = Math.max(0, this.speed + scrollPush);
 
     // Wobble — organic lateral drift like real glass imperfections
-    this.wobblePhase += this.wobbleFreq * dt;
+    this.wobblePhase += this.wobbleFreq * dt * motionScale;
     const wobble = Math.sin(this.wobblePhase) * this.wobbleAmp;
 
-    this.y += frameSpeed;
-    this.x += wobble;
+    this.y += frameSpeed * motionScale;
+    this.x += wobble * motionScale;
 
     // Record position; cap history length
     this.trail.push({ x: this.x, y: this.y });
@@ -429,7 +429,7 @@ export function createRain(canvasEl, ctxEl) {
   }
 
   return {
-    draw(forces, scrollVelocity, dt, pal) {
+    draw(forces, scrollVelocity, dt, pal, motionScale = 1) {
       const now = performance.now();
       const dtMs = dt * 1000;
       const windOffset = getWindOffset(now);
@@ -452,7 +452,7 @@ export function createRain(canvasEl, ctxEl) {
 
         for (let i = 0; i < pool.length; i++) {
           const d = pool[i];
-          d.update(windOffset, speedBoost);
+          d.update(windOffset, speedBoost, motionScale);
 
           // Force interactions
           applyRepulsion(forces, d, RAIN.REPEL_RADIUS, RAIN.REPEL_DAMPEN);
@@ -507,7 +507,7 @@ export function createRain(canvasEl, ctxEl) {
       _ctx.fillStyle = `rgba(${sc[0]},${sc[1]},${sc[2]},${SPLASH.DRAW_ALPHA})`;
       for (let i = 0; i < splashes.length; i++) {
         const s = splashes[i];
-        s.update();
+        s.update(motionScale);
         if (!s.active) continue;
         const fade = 1 - s.life / SPLASH.LIFE;
         _ctx.globalAlpha = fade * SPLASH.DRAW_ALPHA;
@@ -517,9 +517,9 @@ export function createRain(canvasEl, ctxEl) {
       }
       _ctx.restore();
 
-      // Glass drops (overlay canvas)
+      // Glass drops (overlay canvas) — spawn rate scaled with motion.
       const spawnRate = isGusting ? GLASS.GUST_SPAWN_RATE : GLASS.SPAWN_RATE;
-      glassSpawnAccum += spawnRate * dt;
+      glassSpawnAccum += spawnRate * dt * motionScale;
       while (glassSpawnAccum >= 1) {
         glassSpawnAccum--;
         const x = Math.random() * window.innerWidth;
@@ -529,7 +529,7 @@ export function createRain(canvasEl, ctxEl) {
 
       glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
       for (let i = 0; i < glassDrops.length; i++) {
-        glassDrops[i].update(dtMs, scrollVelocity);
+        glassDrops[i].update(dtMs, scrollVelocity, motionScale);
         glassDrops[i].draw(glassCtx, pal);
       }
       checkGlassMerge();

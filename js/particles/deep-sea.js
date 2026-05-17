@@ -643,7 +643,7 @@ class Bubble {
     this.popFrame = 0;
     this.active = init;
   }
-  update() {
+  update(motionScale = 1) {
     if (this.popping) {
       this.popFrame++;
       if (this.popFrame > BUB.POP_FRAMES) {
@@ -657,10 +657,10 @@ class Bubble {
         (1 - this.popFrame / BUB.POP_FRAMES);
       return;
     }
-    this.wobble += this.wobbleSpeed;
-    this.r += BUB.GROWTH_RATE;
-    this.x += Math.sin(this.wobble) * this.wobbleAmp + this.vx;
-    this.y += -this.riseSpeed + this.vy;
+    this.wobble += this.wobbleSpeed * motionScale;
+    this.r += BUB.GROWTH_RATE * motionScale;
+    this.x += (Math.sin(this.wobble) * this.wobbleAmp + this.vx) * motionScale;
+    this.y += (-this.riseSpeed + this.vy) * motionScale;
     this.vx *= BUB.FRICTION;
     this.vy *= BUB.FRICTION;
     // Pop at top
@@ -769,14 +769,14 @@ class Jellyfish {
       () => Math.random() * Math.PI * 2,
     );
   }
-  update() {
-    this.pulse += this.pulseSpeed;
-    this.glowPhase += JELLY.GLOW_PULSE_SPEED;
+  update(motionScale = 1) {
+    this.pulse += this.pulseSpeed * motionScale;
+    this.glowPhase += JELLY.GLOW_PULSE_SPEED * motionScale;
 
     // Pulsing swim — sharp upward kick on pulse peak, slow drift down otherwise
     const pulseVal = Math.sin(this.pulse);
     if (pulseVal > 0.95) {
-      this.vy -= JELLY.PULSE_STRENGTH;
+      this.vy -= JELLY.PULSE_STRENGTH * motionScale;
       if (!this._pulsedThisCycle) {
         this._pulsedThisCycle = true;
         window.dispatchEvent(
@@ -788,17 +788,17 @@ class Jellyfish {
     } else {
       this._pulsedThisCycle = false;
     }
-    this.vy += JELLY.DRIFT_VY; // gentle downward drift
+    this.vy += JELLY.DRIFT_VY * motionScale; // gentle downward drift
 
     // Occasional direction change
-    if (Math.random() < JELLY.DIRECTION_CHANGE) {
+    if (Math.random() < JELLY.DIRECTION_CHANGE * motionScale) {
       this.vx = (Math.random() - 0.5) * JELLY.DRIFT_VX * 2;
     }
 
     this.vx *= JELLY.FRICTION;
     this.vy *= JELLY.FRICTION;
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vx * motionScale;
+    this.y += this.vy * motionScale;
 
     // Wrap around edges
     if (this.y < -this.bellR * 3) this.y = _canvas.height + this.bellR * 2;
@@ -810,7 +810,8 @@ class Jellyfish {
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
       this.tentaclePhases[i] +=
-        JELLY.TENTACLE_WAVE_SPEED + i * JELLY.TENTACLE_PHASE_PER_INDEX;
+        (JELLY.TENTACLE_WAVE_SPEED + i * JELLY.TENTACLE_PHASE_PER_INDEX) *
+        motionScale;
     }
   }
   draw() {
@@ -948,9 +949,9 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
   let bubbleSpawnAccum = 0;
 
   return {
-    draw(forces, scrollVelocity, dt, pal) {
-      // Ambient bubble spawning
-      bubbleSpawnAccum += BUB.AMBIENT_RATE * dt;
+    draw(forces, scrollVelocity, dt, pal, motionScale = 1) {
+      // Ambient bubble spawning — at motionScale=0, no new spawns.
+      bubbleSpawnAccum += BUB.AMBIENT_RATE * dt * motionScale;
       while (bubbleSpawnAccum >= 1) {
         bubbleSpawnAccum--;
         const b = bubbles.find((b) => !b.active);
@@ -962,7 +963,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
 
       bubbles.forEach((b) => {
         if (!b.active) return;
-        b.update();
+        b.update(motionScale);
         applyRepulsion(forces, b, BUB.REPEL_RADIUS, BUB.REPEL_DAMPEN);
         applyAttraction(
           forces,
@@ -980,7 +981,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       });
 
       jellyfish.forEach((j) => {
-        j.update();
+        j.update(motionScale);
         applyRepulsion(forces, j, JELLY.REPEL_RADIUS, JELLY.REPEL_DAMPEN);
         applyAttraction(
           forces,

@@ -1,7 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
-import { prefersReducedMotion } from "../motion.js";
+import { motionScale } from "../motion.js";
 import { createVhs } from "../particles/vhs.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
@@ -121,7 +121,7 @@ export function initVhs() {
   let driftRaf = null;
 
   function driftTick() {
-    if (prefersReducedMotion() || !pageEl) {
+    if (!pageEl) {
       driftRaf = null;
       return;
     }
@@ -144,8 +144,9 @@ export function initVhs() {
   function onScroll({ deltaY }) {
     if (!pageEl) return;
     // Drift in the opposite direction of scroll so it feels like a
-    // tracking error chasing the playhead.
-    driftTargetX += -deltaY * VV.SCROLL_NORM_FACTOR;
+    // tracking error chasing the playhead.  Scaled by motionScale so a
+    // reduced-motion user sees a still page even on aggressive scroll.
+    driftTargetX += -deltaY * VV.SCROLL_NORM_FACTOR * motionScale();
     // Clamp so a frantic scroll doesn't jolt the page off-screen.
     driftTargetX = Math.max(
       -VV.DRIFT_AMP_PX,
@@ -155,7 +156,7 @@ export function initVhs() {
   }
 
   function startDrift() {
-    if (prefersReducedMotion() || driftUnsub) return;
+    if (driftUnsub) return;
     driftUnsub = subscribeScroll(onScroll);
   }
 
@@ -241,19 +242,23 @@ export function initVhs() {
   const { canvasEl } = getCanvasCtx();
   const vhs = createVhs(canvasEl);
   registerCanvasHooks("vhs", {
-    drawPost({ ctx, palFor, forces }) {
+    drawPost({ ctx, palFor, forces, reducedMotion }) {
       // The DOM cursor is not part of the canvas, so the trail history
       // has to be fed manually for the cursor to leave a phosphor
       // afterimage. clearCursor on hover-out so a stale trail doesn't
-      // hang in mid-air after the pointer leaves.
-      if (forces.hover.active) {
+      // hang in mid-air after the pointer leaves.  Under reduced
+      // motion the cursor trail is suppressed (it's a motion-reactive
+      // visual) but the phosphor decay over a static frame keeps
+      // running — without it, vhs reads as just a color cast.
+      if (forces.hover.active && !reducedMotion) {
         vhs.recordCursor(forces.hover.x, forces.hover.y);
       } else {
         vhs.clearCursor();
       }
       vhs.drawAfter(ctx, palFor("vhs"));
     },
-    onClick({ cx, cy }) {
+    onClick({ cx, cy, reducedMotion }) {
+      if (reducedMotion) return;
       vhs.clickGlitch(cx, cy);
     },
     onDeactivate() {
@@ -330,7 +335,6 @@ export function initVhs() {
       {
         threshold: VF.CHROMATIC_FLASH_AT,
         apply(progress) {
-          if (prefersReducedMotion()) return;
           const above = progress >= VF.CHROMATIC_FLASH_AT;
           const now = Date.now();
           if (above && chromaticFlashFiredAt === 0) {
@@ -351,7 +355,6 @@ export function initVhs() {
       {
         threshold: VF.STATIC_INTERRUPT_AT,
         apply(progress) {
-          if (prefersReducedMotion()) return;
           const above = progress >= VF.STATIC_INTERRUPT_AT;
           if (above && staticInterruptFiredAt === 0) {
             staticInterruptFiredAt = Date.now();

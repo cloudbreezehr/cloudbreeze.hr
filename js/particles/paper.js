@@ -1,6 +1,6 @@
 import { Z_PAPER_INK } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
-import { prefersReducedMotion } from "../motion.js";
+import { reducedDuration, motionScale } from "../motion.js";
 
 // ── Ink SVG filter id — shared by splats and strokes ──
 const INK_FILTER_ID = "paper-ink-wobble";
@@ -234,13 +234,6 @@ const SPLAT = defineConstants(
       max: 4000,
       step: 50,
       description: "Splat lifetime (ms)",
-    },
-    REDUCED_LIFE_MS: {
-      value: 500,
-      min: 100,
-      max: 2000,
-      step: 50,
-      description: "Splat lifetime under reduced-motion (no fade)",
     },
     START_ALPHA: {
       value: 0.8,
@@ -499,15 +492,16 @@ export function createPaper(canvasEl, ctxEl) {
     ctx.stroke();
   }
 
-  function updateFlicks(ctx, now, rgb) {
-    if (prefersReducedMotion()) return;
-    // Spawn
-    if (now >= nextFlickTime) {
+  function updateFlicks(ctx, now, rgb, reducedMotion) {
+    // Suspend new flick spawns under reduced motion; in-flight flicks
+    // fade out naturally on their own below.
+    if (!reducedMotion && now >= nextFlickTime) {
       const slot = flicks.find((f) => !f.active);
       if (slot) slot.spawn(canvasEl.width, canvasEl.height, now);
       nextFlickTime =
-        now + FLICK.INTERVAL_MIN + Math.random() * FLICK.INTERVAL_RANGE;
+        now + (FLICK.INTERVAL_MIN + Math.random() * FLICK.INTERVAL_RANGE);
     }
+    // In-flight flicks fade out naturally on their own; let them finish.
     for (const f of flicks) f.draw(ctx, now, rgb);
   }
 
@@ -531,14 +525,14 @@ export function createPaper(canvasEl, ctxEl) {
   }
 
   return {
-    draw(pal) {
+    draw(pal, reducedMotion = false) {
       // Regenerate static geometry if canvas resized
       if (canvasEl.width !== lastW || canvasEl.height !== lastH) regenerate();
       const rgb = rgbFromPal(pal);
       ctxEl.save();
       drawDots(ctxEl, rgb);
       drawHorizon(ctxEl, rgb);
-      updateFlicks(ctxEl, performance.now(), rgb);
+      updateFlicks(ctxEl, performance.now(), rgb, reducedMotion);
       ctxEl.restore();
     },
 
@@ -556,28 +550,22 @@ export function createPaper(canvasEl, ctxEl) {
       splats.push(el);
       cleanupEvicted();
 
-      const reduced = prefersReducedMotion();
-      const life = reduced ? SPLAT.REDUCED_LIFE_MS : SPLAT.LIFE_MS;
-      if (reduced) {
-        setTimeout(() => {
-          if (el.parentNode) el.parentNode.removeChild(el);
-          const idx = splats.indexOf(el);
-          if (idx !== -1) splats.splice(idx, 1);
-        }, life);
-      } else {
-        const anim = el.animate(
-          [
-            { opacity: SPLAT.START_ALPHA, transform: "scale(1)" },
-            { opacity: 0, transform: "scale(1.25)" },
-          ],
-          { duration: life, easing: "ease-out", fill: "forwards" },
-        );
-        anim.onfinish = () => {
-          if (el.parentNode) el.parentNode.removeChild(el);
-          const idx = splats.indexOf(el);
-          if (idx !== -1) splats.splice(idx, 1);
-        };
-      }
+      const anim = el.animate(
+        [
+          { opacity: SPLAT.START_ALPHA, transform: "scale(1)" },
+          { opacity: 0, transform: "scale(1.25)" },
+        ],
+        {
+          duration: reducedDuration(SPLAT.LIFE_MS),
+          easing: "ease-out",
+          fill: "forwards",
+        },
+      );
+      anim.onfinish = () => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        const idx = splats.indexOf(el);
+        if (idx !== -1) splats.splice(idx, 1);
+      };
     },
 
     startStroke(x, y) {
@@ -588,9 +576,7 @@ export function createPaper(canvasEl, ctxEl) {
       path.setAttribute("stroke-width", String(STROKE.WIDTH));
       path.setAttribute("stroke-linecap", "round");
       path.setAttribute("stroke-linejoin", "round");
-      if (!prefersReducedMotion()) {
-        path.setAttribute("filter", `url(#${INK_FILTER_ID})`);
-      }
+      path.setAttribute("filter", `url(#${INK_FILTER_ID})`);
       path.setAttribute("d", `M ${x.toFixed(1)} ${y.toFixed(1)}`);
       inkRoot.appendChild(path);
       const stroke = {
@@ -612,18 +598,17 @@ export function createPaper(canvasEl, ctxEl) {
       const dy = y - stroke.lastY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < STROKE.MIN_SAMPLE_DIST) return;
-      // Perpendicular sine wobble — "pen isn't perfectly steady"
-      let wx = x;
-      let wy = y;
-      if (!prefersReducedMotion()) {
-        const nx = -dy / (dist || 1);
-        const ny = dx / (dist || 1);
-        stroke.sampleCount++;
-        const w =
-          Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) * STROKE.WOBBLE_AMP;
-        wx = x + nx * w;
-        wy = y + ny * w;
-      }
+      // Perpendicular sine wobble — "pen isn't perfectly steady".  Amp
+      // scales with motionScale so reduced motion produces a clean line.
+      const nx = -dy / (dist || 1);
+      const ny = dx / (dist || 1);
+      stroke.sampleCount++;
+      const w =
+        Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) *
+        STROKE.WOBBLE_AMP *
+        motionScale();
+      const wx = x + nx * w;
+      const wy = y + ny * w;
       stroke.d += ` L ${wx.toFixed(1)} ${wy.toFixed(1)}`;
       stroke.el.setAttribute("d", stroke.d);
       stroke.lastX = x;
@@ -634,23 +619,17 @@ export function createPaper(canvasEl, ctxEl) {
       const stroke = strokes[strokes.length - 1];
       if (!stroke) return false;
       const hadContent = stroke.sampleCount > 0;
-      const reduced = prefersReducedMotion();
       const el = stroke.el;
-      const finishRemove = () => {
+      const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: reducedDuration(STROKE.FADE_MS),
+        easing: "ease-out",
+        fill: "forwards",
+      });
+      anim.onfinish = () => {
         if (el.parentNode) el.parentNode.removeChild(el);
         const idx = strokes.indexOf(stroke);
         if (idx !== -1) strokes.splice(idx, 1);
       };
-      if (reduced) {
-        setTimeout(finishRemove, STROKE.FADE_MS);
-      } else {
-        const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
-          duration: STROKE.FADE_MS,
-          easing: "ease-out",
-          fill: "forwards",
-        });
-        anim.onfinish = finishRemove;
-      }
       return hadContent;
     },
 

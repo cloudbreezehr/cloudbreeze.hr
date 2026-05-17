@@ -3,8 +3,9 @@ import { MOTE } from "../../../js/effects/first-paint-mote.js";
 
 // first-paint-mote arms a one-shot pointermove listener on init and
 // spawns a single drifting mote on the first qualifying movement.
-// Gated by sessionStorage and prefers-reduced-motion.  Tests stub
-// matchMedia to control the reduced-motion gate.
+// Gated by sessionStorage; reduced-motion collapses the animation
+// duration to 0 (via reducedDuration) rather than skipping the spawn.
+// Tests stub matchMedia to control the reduced-motion path.
 
 // Small epsilon so vi.advanceTimersByTime lands just past the arming
 // boundary rather than on it.
@@ -88,7 +89,7 @@ describe("effects/first-paint-mote", () => {
     expect(getMote()).not.toBeNull();
   });
 
-  it("does not spawn a mote when prefers-reduced-motion is set", async () => {
+  it("uses a zero-duration animation when prefers-reduced-motion is set", async () => {
     // motion.js snapshots matchMedia at import time, so the flag must
     // be in place before the module imports.  Re-import after flipping.
     reducedMotion = true;
@@ -99,7 +100,12 @@ describe("effects/first-paint-mote", () => {
     vi.advanceTimersByTime(PAST_ARMING_MS);
     dispatchPointerMove(SEED_X, SEED_Y);
     dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
-    expect(getMote()).toBeNull();
+    // The mote element is created so the session-once contract still
+    // holds, but its animation duration collapses to 0 so the visitor
+    // never sees a sustained drift.
+    const animateCalls = Element.prototype.animate.mock.calls;
+    expect(animateCalls.length).toEqual(1);
+    expect(animateCalls[0][1].duration).toEqual(0);
   });
 
   it("does not spawn a mote when the session flag is already set", () => {

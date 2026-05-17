@@ -375,7 +375,7 @@ export function createSky(starCount) {
   let t = 0;
 
   return {
-    draw(ctx, canvas, sp, pal, forces) {
+    draw(ctx, canvas, sp, pal, forces, motionScale = 1) {
       const starVis = scrollFade(
         sp,
         0,
@@ -385,19 +385,20 @@ export function createSky(starCount) {
       );
       if (starVis <= 0) return;
 
-      t += STARS.TIME_STEP;
+      t += STARS.TIME_STEP * motionScale;
       // Hoisted halo opts shared across every glow-tier star this frame.
       const haloOpts = {
         midStop: STARS.GLOW_MID,
         midAlpha: STARS.GLOW_MID_ALPHA,
       };
       stars.forEach((s) => {
-        s.twinkle += s.twinkleSpeed;
-        // Random bright flash — rare, brief spike
+        s.twinkle += s.twinkleSpeed * motionScale;
+        // Random bright flash — rare, brief spike.  Spawn probability
+        // dampens with motionScale so it never fires when motion is off.
         if (s.flash > 0) {
           s.flash *= STARS.FLASH_DECAY;
           if (s.flash < STARS.FLASH_THRESHOLD) s.flash = 0;
-        } else if (Math.random() < STARS.FLASH_CHANCE) {
+        } else if (Math.random() < STARS.FLASH_CHANCE * motionScale) {
           s.flash = STARS.FLASH_MIN + Math.random() * STARS.FLASH_RANGE;
           s.glare =
             s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
@@ -471,8 +472,10 @@ export function createSky(starCount) {
         }
       });
 
-      // Shooting stars — rare fast arcs across the sky
-      if (Math.random() < SHOOTING.SPAWN_CHANCE) {
+      // Shooting stars — rare fast arcs across the sky.  Spawn rate
+      // dampens with motionScale, so under reduced-motion no new arcs
+      // appear (in-flight ones still complete and fade out cleanly).
+      if (Math.random() < SHOOTING.SPAWN_CHANCE * motionScale) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =

@@ -1,5 +1,6 @@
 import { drawHaloParticle, rgbaStr } from "./canvas-utils.js";
 import { notifySectionActivate } from "./dev/registry.js";
+import { motionScale, prefersReducedMotion } from "./motion.js";
 import {
   CLICK,
   ORBIT,
@@ -159,7 +160,8 @@ export function createInteractions() {
           (forces.wellStrength > 0
             ? Math.floor(forces.wellStrength * WELL.ORBIT_MAX_BOOST)
             : 0);
-        const spawnChance = forces.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul;
+        const spawnChance =
+          forces.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul * motionScale();
         if (Math.random() < spawnChance && orbitParticles.length < maxOrbit) {
           const angle = Math.random() * Math.PI * 2;
           const dist =
@@ -268,8 +270,9 @@ export function createInteractions() {
       }
     },
 
-    // Spawn click burst particles at (x, y). Skipped in blocky theme.
+    // Spawn click burst particles at (x, y).
     click(x, y, pal) {
+      if (prefersReducedMotion()) return;
       const count =
         CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);
       for (let i = 0; i < count; i++) {
@@ -297,6 +300,7 @@ export function createInteractions() {
     // Spawn directional burst particles along a vertical edge (dock snap / undock release).
     // `centerAngle` points inward from the edge; particles scatter within a cone.
     edgeBurst(edgeX, top, height, type, pal) {
+      if (prefersReducedMotion()) return;
       const isSnap = type === "snap";
       const count = isSnap ? EDGE.SNAP_COUNT : EDGE.RELEASE_COUNT;
       const speedMin = isSnap ? EDGE.SNAP_SPEED_MIN : EDGE.RELEASE_SPEED_MIN;
@@ -414,6 +418,18 @@ export function createInteractions() {
     // End the drag: convert orbits to burst, apply well blast, reset state.
     releaseDrag(forces, pal) {
       if (!forces.isDragging) return;
+      if (prefersReducedMotion()) {
+        // Quietly tear down the drag state without any particle burst.
+        forces.isDragging = false;
+        forces.wellStrength = 0;
+        forces.holdStrength = 0;
+        orbitParticles.length = 0;
+        cursorDot?.classList.remove("gravity-well");
+        cursorRing?.classList.remove("gravity-well");
+        cursorDot?.style.removeProperty("--well-strength");
+        cursorRing?.style.removeProperty("--well-strength");
+        return;
+      }
       const heldSec = (performance.now() - holdStart) / 1000;
       const normalBlast = Math.min(
         HOLD.BLAST_BASE + heldSec * HOLD.BLAST_PER_SEC,
@@ -546,6 +562,7 @@ export function createInteractions() {
     addTrail(forces, x, y) {
       forces.dragPos.x = x;
       forces.dragPos.y = y;
+      if (prefersReducedMotion()) return;
       const dx = x - lastTrail.x;
       const dy = y - lastTrail.y;
       trailDist += Math.sqrt(dx * dx + dy * dy);

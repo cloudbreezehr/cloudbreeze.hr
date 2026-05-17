@@ -8,7 +8,7 @@ import { mirrorYWhenInverted } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
-import { prefersReducedMotion } from "./motion.js";
+import { motionScale, prefersReducedMotion } from "./motion.js";
 import { getThemeIds } from "./themes/registry.js";
 
 // ── Scroll Velocity ──
@@ -249,21 +249,25 @@ export function initCanvas(canvasEl, appearance, options) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces);
-
+    // Per-frame motion scalar (continuous: 0..1) and the boolean OS
+    // preference.  Threaded through the frame so feature modules can
+    // pick the right shape without reading the preference directly:
+    // particle dampening multiplies by mScale; gates that "skip
+    // entirely" branch on reducedMotion.
+    const mScale = motionScale();
     const reducedMotion = prefersReducedMotion();
 
-    // Click fury — lightning, aurora, meteors.  Skipped under reduced-motion:
-    // flashing/sweeping effects are the riskiest for vestibular sensitivity.
+    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces, mScale);
+
+    // Click fury — lightning, aurora, meteors.
     if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
-    // Under reduced-motion, pass zero velocity so scroll doesn't push particles.
     scrollVelocity *= SCROLL.VEL_DECAY;
-    const drawVelocity = reducedMotion ? 0 : scrollVelocity;
+    const drawVelocity = scrollVelocity * mScale;
     interactions.updateHold(forces, now);
     if (!suppressAtmosphere) {
-      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
+      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky, mScale);
     }
 
     // Theme-owned ambient particles. Each registered theme decides what
@@ -275,10 +279,11 @@ export function initCanvas(canvasEl, appearance, options) {
       dt,
       scrollVelocity,
       drawVelocity,
+      motionScale: mScale,
+      reducedMotion,
       pal,
       palFor,
       isDark,
-      reducedMotion,
       forces,
       ctx,
       canvas,
@@ -348,7 +353,16 @@ export function initCanvas(canvasEl, appearance, options) {
 
     fury.click(cx, cy, canvas, scrollProgress);
 
-    const ptr = { x: e.clientX, y: e.clientY, cx, cy, forces, palFor };
+    const ptr = {
+      x: e.clientX,
+      y: e.clientY,
+      cx,
+      cy,
+      forces,
+      palFor,
+      motionScale: motionScale(),
+      reducedMotion: prefersReducedMotion(),
+    };
     for (const { hooks } of activeHooks) hooks.onClick?.(ptr);
 
     // Default click burst particles — themes that paint their own click
@@ -372,7 +386,16 @@ export function initCanvas(canvasEl, appearance, options) {
       const cx = x,
         cy = canvasY(y);
       interactions.startDrag(forces, cx, cy);
-      const ptr = { x, y, cx, cy, forces, palFor };
+      const ptr = {
+        x,
+        y,
+        cx,
+        cy,
+        forces,
+        palFor,
+        motionScale: motionScale(),
+        reducedMotion: prefersReducedMotion(),
+      };
       for (const { hooks } of syncActiveHooks()) hooks.onDragStart?.(ptr);
     },
     onMove(x, y) {
@@ -385,7 +408,17 @@ export function initCanvas(canvasEl, appearance, options) {
             detail: { type: "drag", x: cx, y: cy },
           }),
         );
-      const ptr = { x, y, cx, cy, trailAdded, forces, palFor };
+      const ptr = {
+        x,
+        y,
+        cx,
+        cy,
+        trailAdded,
+        forces,
+        palFor,
+        motionScale: motionScale(),
+        reducedMotion: prefersReducedMotion(),
+      };
       for (const { hooks } of syncActiveHooks()) hooks.onDragMove?.(ptr);
     },
     onUp() {

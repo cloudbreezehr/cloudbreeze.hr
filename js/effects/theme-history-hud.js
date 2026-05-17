@@ -11,9 +11,9 @@
 
 import { Z_THEME_HISTORY_HUD } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
-import { prefersReducedMotion } from "../motion.js";
 import { getThemes, getThemeIds, toggleTheme } from "../themes/registry.js";
 import { formatRelativeTime } from "../time-ago.js";
+import { reducedDuration } from "../motion.js";
 
 // Placeholder silhouette for undiscovered themes — a generic "???" glyph so
 // the HUD hints there's more without spoiling which themes exist or how to
@@ -223,7 +223,7 @@ function rebuildSlots() {
       slot.classList.add("just-discovered");
       setTimeout(
         () => slot.classList.remove("just-discovered"),
-        HUD.NEW_DISCOVERY_HIGHLIGHT_MS,
+        reducedDuration(HUD.NEW_DISCOVERY_HIGHLIGHT_MS),
       );
     }
 
@@ -233,18 +233,20 @@ function rebuildSlots() {
 }
 
 function pulse(themeId, firstDiscovery) {
-  if (prefersReducedMotion()) return;
   const slot = slotsByTheme.get(themeId);
   if (!slot) return;
   if (firstDiscovery) {
     slot.classList.add("just-discovered");
     setTimeout(
       () => slot.classList.remove("just-discovered"),
-      HUD.NEW_DISCOVERY_HIGHLIGHT_MS,
+      reducedDuration(HUD.NEW_DISCOVERY_HIGHLIGHT_MS),
     );
   }
   slot.classList.add("pulse");
-  setTimeout(() => slot.classList.remove("pulse"), HUD.ACTIVE_PULSE_MS);
+  setTimeout(
+    () => slot.classList.remove("pulse"),
+    reducedDuration(HUD.ACTIVE_PULSE_MS),
+  );
 }
 
 // Three user intents, tracked as explicit state (clearer than a pile of

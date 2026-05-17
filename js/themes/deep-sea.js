@@ -135,13 +135,15 @@ export function initDeepSea() {
     COUNTS.JELLY,
   );
   registerCanvasHooks("deep-sea", {
-    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
-      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"));
+    drawAmbient({ scrollVelocity, dt, palFor, forces, motionScale }) {
+      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"), motionScale);
     },
-    onClick({ cx, cy }) {
+    onClick({ cx, cy, reducedMotion }) {
+      if (reducedMotion) return;
       deepSea.clickBurst(cx, cy);
     },
-    onDragMove({ cx, cy, trailAdded }) {
+    onDragMove({ cx, cy, trailAdded, reducedMotion }) {
+      if (reducedMotion) return;
       // Trail rate-limits to one point per frame; skipping non-trail
       // moves keeps the bubble count bounded.
       if (trailAdded) deepSea.dragBubble(cx, cy);

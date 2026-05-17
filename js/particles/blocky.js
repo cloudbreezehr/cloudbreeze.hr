@@ -336,22 +336,22 @@ class Firefly {
     this.butterflyColor =
       BUTTERFLY_COLORS[Math.floor(Math.random() * BUTTERFLY_COLORS.length)];
   }
-  update() {
+  update(motionScale = 1) {
     this.prevX = this.x;
     this.prevY = this.y;
-    this.phase += this.pulseSpeed;
-    this.flapPhase += BFLY.FLAP_SPEED;
+    this.phase += this.pulseSpeed * motionScale;
+    this.flapPhase += BFLY.FLAP_SPEED * motionScale;
     // Random walk
-    this.vx += (Math.random() - 0.5) * FLY.DRIFT;
-    this.vy += (Math.random() - 0.5) * FLY.DRIFT;
+    this.vx += (Math.random() - 0.5) * FLY.DRIFT * motionScale;
+    this.vy += (Math.random() - 0.5) * FLY.DRIFT * motionScale;
     // Slight upward bias near bottom of canvas
     if (this.y > _canvas.height * FLY.BIAS_THRESHOLD) {
-      this.vy -= FLY.BIAS_STRENGTH;
+      this.vy -= FLY.BIAS_STRENGTH * motionScale;
     }
     this.vx *= FLY.FRICTION;
     this.vy *= FLY.FRICTION;
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vx * motionScale;
+    this.y += this.vy * motionScale;
     // Wrap
     if (this.x < -FLY.WRAP_MARGIN)
       this.x += _canvas.width + FLY.WRAP_MARGIN * 2;
@@ -435,7 +435,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
   resizePixelCanvas();
 
   return {
-    draw(forces, scrollVelocity, isDark) {
+    draw(forces, scrollVelocity, isDark, motionScale = 1) {
       // Pixelation post-process: downsample then scale back up
       const pw = pixelCanvas.width;
       const ph = pixelCanvas.height;
@@ -470,7 +470,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
 
       // Fireflies / Butterflies — rendered crisp post-pixelation
       fireflies.forEach((f) => {
-        f.update();
+        f.update(motionScale);
         applyRepulsion(forces, f, FLY.REPEL_RADIUS, FLY.REPEL_DAMPEN);
         applyAttraction(
           forces,

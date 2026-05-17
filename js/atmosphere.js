@@ -66,8 +66,8 @@ class Cloud {
       });
     }
   }
-  update() {
-    this.x += this.speedX;
+  update(motionScale = 1) {
+    this.x += this.speedX * motionScale;
     const m = CLOUD.WRAP_MARGIN * this.scale;
     if (this.x < -m) this.x += _canvas.width + m * 2;
     if (this.x > _canvas.width + m) this.x -= _canvas.width + m * 2;
@@ -169,9 +169,9 @@ class Streak {
     this.width = STREAK.WIDTH_MIN + Math.random() * STREAK.WIDTH_RANGE;
     this.angle = STREAK.ANGLE_MIN + Math.random() * STREAK.ANGLE_RANGE;
   }
-  update(sp) {
-    this.y += this.speed * sp.speedMul;
-    this.x += this.angle;
+  update(sp, motionScale = 1) {
+    this.y += this.speed * sp.speedMul * motionScale;
+    this.x += this.angle * motionScale;
     if (this.y > _canvas.height + this.len) this.reset(false);
   }
   draw(sp, pal) {
@@ -201,9 +201,9 @@ class BreezeWisp {
     this.width = WISP.WIDTH_MIN + Math.random() * WISP.WIDTH_RANGE;
     this.phase = Math.random() * Math.PI * 2;
   }
-  update() {
-    this.x += this.speed;
-    this.phase += WISP.PHASE_SPEED;
+  update(motionScale = 1) {
+    this.x += this.speed * motionScale;
+    this.phase += WISP.PHASE_SPEED * motionScale;
     if (this.x > _canvas.width + this.len) this.reset(false);
   }
   draw(vis, pal, yOffset) {
@@ -314,12 +314,12 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
     : [];
 
   return {
-    draw(sp, scrollVelocity, pal, forces, blocky) {
+    draw(sp, scrollVelocity, pal, forces, blocky, motionScale = 1) {
       // Streaks — evolve with scroll
       if (opts.streaks) {
         const streakP = getStreakParams(sp);
         streaks.forEach((s) => {
-          s.update(streakP);
+          s.update(streakP, motionScale);
           s.draw(streakP, pal);
         });
       }
@@ -345,7 +345,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
               )
             : 1;
         clouds.forEach((c) => {
-          c.update();
+          c.update(motionScale);
           // Click gently pushes nearby clouds sideways
           if (forces.clickImpulse.strength > 0.1) {
             const cy = c.baseY + cloudYOffset;
@@ -354,7 +354,10 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < CLOUD.PUSH_RADIUS && dist > 1) {
               c.x +=
-                (dx / dist) * forces.clickImpulse.strength * CLOUD.PUSH_FORCE;
+                (dx / dist) *
+                forces.clickImpulse.strength *
+                CLOUD.PUSH_FORCE *
+                motionScale;
             }
           }
           // Drag gently pulls nearby clouds
@@ -364,7 +367,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
             const dy = forces.dragPos.y - cy;
             const dist = Math.sqrt(dx * dx + dy * dy);
             if (dist < CLOUD.PULL_RADIUS && dist > 1) {
-              c.x += (dx / dist) * CLOUD.PULL_FORCE;
+              c.x += (dx / dist) * CLOUD.PULL_FORCE * motionScale;
             }
           }
           c.draw(cloudYOffset, cloudVis, pal, cloudStretch);
@@ -383,7 +386,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           WISP.FADE_OUT_END,
         );
         wisps.forEach((w) => {
-          w.update();
+          w.update(motionScale);
           w.draw(wispVis, pal, wispYOffset);
         });
       }
@@ -495,7 +498,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           midColor: pal.moteGlow,
         };
         motes.forEach((m) => {
-          m.update(scrollVelocity);
+          m.update(scrollVelocity * motionScale);
           if (forces.clickImpulse.strength > 0.05) {
             const dx = m.x - forces.clickImpulse.x;
             const dy = m.y - forces.clickImpulse.y;

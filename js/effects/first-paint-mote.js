@@ -3,11 +3,11 @@
 // summon a single drifting glow at the cursor that fades over a short
 // lifetime.  The visitor learns "the canvas responds to me" without
 // giving away any of the discovery arc — just a tiny "oh, neat"
-// moment.  Skipped for users with prefers-reduced-motion and gated by
-// sessionStorage so refresh = silent, new tab = fresh mote.
+// moment.  Gated by sessionStorage so refresh = silent, new tab =
+// fresh mote.
 
 import { defineConstants } from "../dev/registry.js";
-import { prefersReducedMotion } from "../motion.js";
+import { reducedDuration } from "../motion.js";
 
 const SESSION_FLAG_KEY = "first-paint-mote-shown";
 
@@ -20,8 +20,6 @@ export const MOTE = defineConstants("onboarding.firstPaintMote", {
 });
 
 export function initFirstPaintMote() {
-  if (prefersReducedMotion()) return;
-
   let shown = false;
   try {
     shown = !!window.sessionStorage.getItem(SESSION_FLAG_KEY);
@@ -100,7 +98,7 @@ function spawnMote(x, y) {
       },
     ],
     {
-      duration: MOTE.FADE_MS,
+      duration: reducedDuration(MOTE.FADE_MS),
       easing: "ease-out",
     },
   );

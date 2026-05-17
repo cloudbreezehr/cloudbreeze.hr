@@ -3,6 +3,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createSnow } from "../particles/frozen.js";
+import { reducedDuration } from "../motion.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
@@ -153,7 +154,11 @@ export function initFrozen() {
             opacity: 0,
           },
         ],
-        { duration: dur, easing: "ease-out", fill: "forwards" },
+        {
+          duration: reducedDuration(dur),
+          easing: "ease-out",
+          fill: "forwards",
+        },
       ).onfinish = () => el.remove();
     }
   }
@@ -202,11 +207,10 @@ export function initFrozen() {
     lastScrollDir = dir;
   });
   registerCanvasHooks("frozen", {
-    drawAmbient({ drawVelocity, reducedMotion, forces }) {
-      // Under reduced-motion, suppress turbulence so reversals don't
-      // trigger a vestibular-unfriendly shake.
-      const turbulence = reducedMotion ? { value: 0 } : snowTurbulence;
-      snow.draw(forces, drawVelocity, turbulence);
+    drawAmbient({ drawVelocity, motionScale, reducedMotion, forces }) {
+      // Suppress the shake under reduced motion.
+      if (reducedMotion) snowTurbulence.value = 0;
+      snow.draw(forces, drawVelocity, snowTurbulence, motionScale);
     },
   });
 

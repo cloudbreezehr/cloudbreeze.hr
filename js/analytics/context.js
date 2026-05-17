@@ -13,6 +13,7 @@
 import * as identity from "./identity.js";
 import { KEYS, localGet, localSet } from "./storage.js";
 import { sumPoints } from "../achievements/registry.js";
+import { prefersReducedMotion } from "../motion.js";
 
 const APP_VERSION = "1.0.0";
 const UTM_KEYS = ["source", "medium", "campaign", "term", "content"];
@@ -84,9 +85,7 @@ function staticContext() {
   const standalone =
     typeof matchMedia !== "undefined" &&
     matchMedia("(display-mode: standalone)").matches;
-  const reducedMotion =
-    typeof matchMedia !== "undefined" &&
-    matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reducedMotion = prefersReducedMotion();
 
   _oncePerSession = {
     app_version: APP_VERSION,

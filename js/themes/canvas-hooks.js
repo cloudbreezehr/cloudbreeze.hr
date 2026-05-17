@@ -37,11 +37,14 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
  * @property {number} sp                Scroll progress 0..1.
  * @property {number} dt                Seconds since the previous frame.
  * @property {number} scrollVelocity    Already decayed for this frame.
- * @property {number} drawVelocity      0 under reduced motion, else scrollVelocity.
+ * @property {number} drawVelocity      scrollVelocity * motionScale.
+ * @property {number} motionScale       Continuous motion scalar (0..1).
+ *                                      Multiply per-frame deltas by it.
+ * @property {boolean} reducedMotion    Boolean OS preference.  Branch
+ *                                      on this for "skip entirely" gates.
  * @property {object} pal               Winning theme's palette (last-triggered-wins).
  * @property {(id: string) => object} palFor   Per-theme palette resolver.
  * @property {boolean} isDark
- * @property {boolean} reducedMotion
  * @property {object} forces            Shared interaction-force object.
  * @property {CanvasRenderingContext2D} ctx
  * @property {HTMLCanvasElement} canvas
@@ -64,6 +67,10 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
  * @property {(id: string) => object} palFor   Per-theme palette resolver
  *                                              (for themes drawing themed
  *                                              click visuals).
+ * @property {number} motionScale   Continuous motion scalar (0..1).
+ *                                  Multiply spawn-side velocities by it.
+ * @property {boolean} reducedMotion Boolean OS preference.  Branch on
+ *                                   this for "skip entirely" gates.
  */
 
 /**

@@ -13,6 +13,7 @@ import { Z_FIREWORKS } from "../layers.js";
 import { drawHaloParticle } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 import { mirrorYWhenInverted } from "../viewport.js";
+import { prefersReducedMotion } from "../motion.js";
 
 // ── Constants ──
 
@@ -709,6 +710,7 @@ function overlayLoop() {
  * @param {string|number[]} [opts.color] - Hex string or [r,g,b] array
  */
 export function burstFireworks(x, y, opts = {}) {
+  if (prefersReducedMotion()) return;
   if (!overlayCanvas) {
     createOverlay();
   }
@@ -750,6 +752,7 @@ export function rocketCountForTier(tier) {
  * @param {string|number[]} [opts.color]   Hex string or [r,g,b] array.
  */
 export function launchRocketFireworks(opts = {}) {
+  if (prefersReducedMotion()) return;
   if (!overlayCanvas) {
     createOverlay();
   }

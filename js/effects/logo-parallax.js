@@ -1,10 +1,10 @@
 // ── Logo Letter Parallax ──
 // Per-letter drift on the nav logo: each letter leans toward the cursor by a
 // small, per-letter weight.  Motion is eased each frame so the logo feels
-// physical.  Skipped entirely under prefers-reduced-motion.
+// physical.
 
 import { defineConstants } from "../dev/registry.js";
-import { prefersReducedMotion } from "../motion.js";
+import { motionScale } from "../motion.js";
 
 // ── Constants ──
 const LP = defineConstants("effects.logoParallax", {
@@ -61,18 +61,7 @@ export function initLogoParallax() {
   let achievementFired = false;
 
   function tick() {
-    if (prefersReducedMotion()) {
-      // Drift letters back to home — honors a mid-session setting flip.
-      for (let i = 0; i < letters.length; i++) {
-        if (currentX[i] === 0 && currentY[i] === 0) continue;
-        currentX[i] *= 1 - LP.EASE;
-        currentY[i] *= 1 - LP.EASE;
-        letters[i].style.translate =
-          `${currentX[i].toFixed(2)}px ${currentY[i].toFixed(2)}px`;
-      }
-      requestAnimationFrame(tick);
-      return;
-    }
+    const mScale = motionScale();
     if (cursorKnown) {
       // Activation gate: only pull letters when the cursor is inside the nav
       // bounding rect.  Outside the nav, letters ease back to home — keeps
@@ -98,8 +87,8 @@ export function initLogoParallax() {
             dist < LP.INFLUENCE_PX ? 1 - dist / LP.INFLUENCE_PX : 0;
           const pull = influence * weights[i] * LP.MAX_OFFSET_PX;
           const norm = dist > 0 ? 1 / dist : 0;
-          targetX = dx * norm * pull;
-          targetY = dy * norm * pull;
+          targetX = dx * norm * pull * mScale;
+          targetY = dy * norm * pull * mScale;
         }
         currentX[i] += (targetX - currentX[i]) * LP.EASE;
         currentY[i] += (targetY - currentY[i]) * LP.EASE;

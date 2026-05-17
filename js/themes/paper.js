@@ -1,7 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
-import { prefersReducedMotion } from "../motion.js";
+import { motionScale, prefersReducedMotion } from "../motion.js";
 import { createPaper } from "../particles/paper.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
@@ -92,12 +92,13 @@ export function initPaper() {
   let pageTurnRaf = null;
 
   function pageTurnTick() {
-    if (prefersReducedMotion() || !pageEl) {
+    if (!pageEl) {
       pageTurnRaf = null;
       return;
     }
-    pageTargetX *= PV.PAGE_TURN_TARGET_DECAY;
-    pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY;
+    const mScale = motionScale();
+    pageTargetX *= PV.PAGE_TURN_TARGET_DECAY * mScale;
+    pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY * mScale;
     pageCurrentX += (pageTargetX - pageCurrentX) * PV.PAGE_TURN_LERP;
     pageCurrentRot += (pageTargetRot - pageCurrentRot) * PV.PAGE_TURN_LERP;
     if (
@@ -168,10 +169,23 @@ export function initPaper() {
   function hoverPointer(e) {
     hoverCursorX = e.clientX;
     hoverCursorY = e.clientY;
+    // Re-arm the loop if it suspended itself under reduced motion and
+    // the OS preference has since flipped back.
+    if (hoverRaf === null && !prefersReducedMotion()) {
+      hoverRaf = requestAnimationFrame(hoverTick);
+    }
   }
 
   function hoverTick() {
     if (prefersReducedMotion()) {
+      // Suspend the loop entirely — hoverPointer will re-arm it if
+      // the OS preference flips back.  Clear lingering proximity so a
+      // half-thickened text-shadow doesn't sit forever on whichever
+      // element was being hovered when the toggle flipped.
+      for (const el of hoverEls) {
+        el.style.removeProperty("--paper-ink-proximity");
+      }
+      hoverCurrents.fill(0);
       hoverRaf = null;
       return;
     }
@@ -236,8 +250,8 @@ export function initPaper() {
     suppressAtmosphere: true,
     suppressDefaultClickBurst: true,
 
-    drawAmbient({ palFor }) {
-      paper.draw(palFor("paper"));
+    drawAmbient({ palFor, reducedMotion }) {
+      paper.draw(palFor("paper"), reducedMotion);
     },
 
     onClick({ x, y }) {

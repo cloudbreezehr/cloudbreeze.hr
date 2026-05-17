@@ -4,6 +4,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
+import { reducedDuration } from "../motion.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -116,7 +117,11 @@ export function initRainy() {
             opacity: 0,
           },
         ],
-        { duration: dur, easing: "ease-out", fill: "forwards" },
+        {
+          duration: reducedDuration(dur),
+          easing: "ease-out",
+          fill: "forwards",
+        },
       ).onfinish = () => el.remove();
     }
   }
@@ -131,7 +136,7 @@ export function initRainy() {
       RV.FLASH_Z_INDEX;
     document.body.appendChild(flash);
     flash.animate([{ opacity: 1 }, { opacity: 0 }], {
-      duration: RV.FLASH_DURATION_MS,
+      duration: reducedDuration(RV.FLASH_DURATION_MS),
       fill: "forwards",
     }).onfinish = () => flash.remove();
 
@@ -172,10 +177,11 @@ export function initRainy() {
   // splash bursts on click, well burst on drag-release.
   const rain = createRain(canvasEl, canvasCtx);
   registerCanvasHooks("rainy", {
-    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
-      rain.draw(forces, scrollVelocity, dt, palFor("rainy"));
+    drawAmbient({ scrollVelocity, dt, palFor, forces, motionScale }) {
+      rain.draw(forces, scrollVelocity, dt, palFor("rainy"), motionScale);
     },
-    onClick({ cx, cy }) {
+    onClick({ cx, cy, reducedMotion }) {
+      if (reducedMotion) return;
       rain.clickBurst(cx, cy);
     },
     onDragEnd({ forces }) {
