@@ -5412,10 +5412,12 @@ body.light-appearance[data-active-theme="vhs"] .hero-title {
   }
 }
 
-/* Tracking-drift wobble — applied to .page via JS-driven custom property */
+/* Tracking-drift wobble — applied to .page via JS-driven custom property.
+   Uses the standalone `translate` property so it composes with upside-down's
+   `transform: scaleY(-1)` instead of clobbering it. */
 body[data-active-theme="vhs"] .page {
-  transform: translateX(var(--vhs-drift-x, 0));
-  transition: transform 60ms linear;
+  translate: var(--vhs-drift-x, 0) 0;
+  transition: translate 60ms linear;
 }
 
 /* Color-cast filter ramps via custom property as force grows.  Indicator
