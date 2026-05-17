@@ -194,8 +194,8 @@ export function initUpsideDown() {
   // visual inversion.
   const ud = createUpsideDown(canvasEl, canvasCtx);
   registerCanvasHooks("upside-down", {
-    drawAmbient({ forces }) {
-      ud.draw(forces);
+    drawAmbient({ forces, scrollVelocity }) {
+      ud.draw(forces, scrollVelocity);
     },
   });
 
