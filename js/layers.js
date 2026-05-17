@@ -49,6 +49,7 @@ const LAYERS = Object.freeze({
   Z_THEME_BUILDUP: 50,
   Z_THEME_BUILDUP_FLASH: 51,
   Z_THEME_CLICK_GLITCH: 60,
+  Z_FROZEN_CRACKLE: 65,
 
   // ── Theme effects (100–199) ──
   Z_THEME_EFFECT: 100,
@@ -83,6 +84,7 @@ const LAYERS = Object.freeze({
 // any value off the frozen map.
 export const Z_RAIN_GLASS = LAYERS.Z_RAIN_GLASS;
 export const Z_PAPER_INK = LAYERS.Z_PAPER_INK;
+export const Z_FROZEN_CRACKLE = LAYERS.Z_FROZEN_CRACKLE;
 export const Z_THEME_FLASH = LAYERS.Z_THEME_FLASH;
 export const Z_THEME_HISTORY_HUD = LAYERS.Z_THEME_HISTORY_HUD;
 export const Z_DEV_CONSOLE = LAYERS.Z_DEV_CONSOLE;

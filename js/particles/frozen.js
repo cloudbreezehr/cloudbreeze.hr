@@ -5,13 +5,20 @@ import {
 } from "../interactions.js";
 import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
-import { scaled } from "../motion.js";
+import { scaled, step, prefersReducedMotion } from "../motion.js";
+import { Z_FROZEN_CRACKLE } from "../layers.js";
 
 // Snowflake colors — frozen theme is the only place snow renders, so the
 // palette has no dedicated entries. Kept as named tuples so the helper
 // callers don't carry [r,g,b] literals inline.
 const SNOW_GLOW_RGB = [200, 230, 255];
 const SNOW_DOT_RGB = [220, 240, 255];
+
+// Crackle shard colors — same source-of-truth pattern.  Cool palette
+// (ice) by default, warm tint on thaw clicks where the click is fighting
+// the freeze rather than feeding it.
+const CRACKLE_COOL_RGB = [200, 235, 255];
+const CRACKLE_WARM_RGB = [255, 220, 180];
 
 // ── Snowflakes ──
 const SNOW = defineConstants(
@@ -218,6 +225,131 @@ const SHAKE = defineConstants(
   { theme: "frozen" },
 );
 
+// ── Frost Crackle ──
+// Sharp ice shards radiating outward from each logo click during the
+// freeze/thaw activation sequence.  Pure ballistic + friction → step()
+// integrates them; rotation is a per-frame angular delta wrapped in
+// scaled() so reduced-motion users see static shards (or, since spawn
+// is gated, none at all).
+const CRACKLE = defineConstants(
+  "particles.frozenCrackle",
+  {
+    POOL: {
+      value: 96,
+      min: 16,
+      max: 256,
+      step: 8,
+      description: "Total crackle slots (shared across all clicks)",
+    },
+    COUNT_MIN: {
+      value: 5,
+      min: 1,
+      max: 20,
+      step: 1,
+      description: "Min shards per click",
+    },
+    COUNT_RANGE: {
+      value: 4,
+      min: 0,
+      max: 20,
+      step: 1,
+      description: "Shard count variation",
+    },
+    SPEED_MIN: {
+      value: 2.5,
+      min: 0.2,
+      max: 10,
+      step: 0.1,
+      description: "Min spawn speed (px/frame)",
+    },
+    SPEED_RANGE: {
+      value: 4,
+      min: 0,
+      max: 10,
+      step: 0.1,
+      description: "Spawn speed variation",
+    },
+    LIFE_MIN: {
+      value: 50,
+      min: 10,
+      max: 200,
+      step: 1,
+      description: "Min lifetime (frames)",
+    },
+    LIFE_RANGE: {
+      value: 30,
+      min: 0,
+      max: 200,
+      step: 1,
+      description: "Lifetime variation",
+    },
+    FRICTION: {
+      value: 0.93,
+      min: 0.5,
+      max: 1,
+      step: 0.005,
+      description: "Per-frame velocity damping",
+    },
+    LEN_MIN: {
+      value: 4,
+      min: 1,
+      max: 16,
+      step: 0.5,
+      description: "Min shard length (px)",
+    },
+    LEN_RANGE: {
+      value: 4,
+      min: 0,
+      max: 16,
+      step: 0.5,
+      description: "Shard length variation",
+    },
+    WIDTH_FRAC: {
+      value: 0.35,
+      min: 0.05,
+      max: 1,
+      step: 0.05,
+      description: "Shard half-width as fraction of length",
+    },
+    ROT_SPEED_MIN: {
+      value: 0.04,
+      min: 0,
+      max: 0.5,
+      step: 0.005,
+      description: "Min angular spin (radians/frame)",
+    },
+    ROT_SPEED_RANGE: {
+      value: 0.06,
+      min: 0,
+      max: 0.5,
+      step: 0.005,
+      description: "Spin variation",
+    },
+    ALPHA_PEAK: {
+      value: 0.95,
+      min: 0.1,
+      max: 1,
+      step: 0.05,
+      description: "Peak shard opacity",
+    },
+    FADE_HOLD: {
+      value: 0.45,
+      min: 0,
+      max: 0.9,
+      step: 0.05,
+      description: "Lifetime fraction at full alpha before fading begins",
+    },
+    GLINT_AT: {
+      value: 0.15,
+      min: 0,
+      max: 0.5,
+      step: 0.05,
+      description: "Lifetime fraction at which a brief specular glint flashes",
+    },
+  },
+  { theme: "frozen" },
+);
+
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
 
@@ -305,6 +437,86 @@ class Snowflake {
   }
 }
 
+// ── Frost shard ──
+// Slim triangular ice splinter flung outward from a logo click.  Pure
+// vx/vy + friction is exactly the shape step() integrates.  Rotation
+// is a separate angular delta — also motion, also wrapped via scaled().
+
+export class Crackle {
+  constructor() {
+    this.active = false;
+  }
+  spawn(x, y, warm) {
+    this.x = x;
+    this.y = y;
+    // Radial scatter — full 2π.  No upward bias: shards fly the way
+    // physics flings them, not toward any narrative direction.
+    const angle = Math.random() * Math.PI * 2;
+    const speed = CRACKLE.SPEED_MIN + Math.random() * CRACKLE.SPEED_RANGE;
+    this.vx = Math.cos(angle) * speed;
+    this.vy = Math.sin(angle) * speed;
+    // Shard orientation tracks travel direction at spawn — looks like
+    // it was flung from the impact rather than randomly oriented.
+    this.rotation = angle;
+    this.rotSpeed =
+      (Math.random() < 0.5 ? -1 : 1) *
+      (CRACKLE.ROT_SPEED_MIN + Math.random() * CRACKLE.ROT_SPEED_RANGE);
+    this.len = CRACKLE.LEN_MIN + Math.random() * CRACKLE.LEN_RANGE;
+    this.life = 0;
+    this.maxLife = CRACKLE.LIFE_MIN + Math.random() * CRACKLE.LIFE_RANGE;
+    this.warm = warm;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.life++;
+    if (this.life > this.maxLife) {
+      this.active = false;
+      return;
+    }
+    step(this, 1, CRACKLE.FRICTION);
+    this.rotation += scaled(this.rotSpeed);
+  }
+  draw(ctx) {
+    if (!this.active) return;
+    const t = this.life / this.maxLife;
+    const alpha =
+      t < CRACKLE.FADE_HOLD
+        ? CRACKLE.ALPHA_PEAK
+        : CRACKLE.ALPHA_PEAK *
+          (1 - (t - CRACKLE.FADE_HOLD) / (1 - CRACKLE.FADE_HOLD));
+    const rgb = this.warm ? CRACKLE_WARM_RGB : CRACKLE_COOL_RGB;
+    const halfW = this.len * CRACKLE.WIDTH_FRAC;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = rgbaStr(rgb, 1);
+    // Slim diamond — point forward at +len/2, point back at -len/2,
+    // narrow waist at the centre.  Reads as "shard" rather than "dot".
+    ctx.beginPath();
+    ctx.moveTo(this.len / 2, 0);
+    ctx.lineTo(0, halfW);
+    ctx.lineTo(-this.len / 2, 0);
+    ctx.lineTo(0, -halfW);
+    ctx.closePath();
+    ctx.fill();
+    // Brief specular glint near spawn — a thin white highlight along
+    // the leading edge that fades quickly.  Sells "ice catches the light".
+    if (t < CRACKLE.GLINT_AT) {
+      const glintAlpha = alpha * (1 - t / CRACKLE.GLINT_AT);
+      ctx.globalAlpha = glintAlpha;
+      ctx.strokeStyle = "rgba(255,255,255,1)";
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(this.len / 2, 0);
+      ctx.lineTo(0, halfW);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+}
+
 // ── Factory ──
 
 export function createSnow(canvasEl, ctxEl, count) {
@@ -312,6 +524,48 @@ export function createSnow(canvasEl, ctxEl, count) {
   _ctx = ctxEl;
 
   const snowflakes = Array.from({ length: count }, () => new Snowflake());
+  const crackles = Array.from({ length: CRACKLE.POOL }, () => new Crackle());
+
+  // Crackles must render during the click-count build-up sequence, not
+  // just while the theme is active — that's the whole point of the
+  // per-click feedback.  The canvas hook only fires while body.frozen
+  // is set, so crackles get their own overlay canvas + rAF that runs
+  // independent of the main render loop.  rAF self-suspends when the
+  // pool is empty and re-arms on the next spawn.
+  //
+  // If getContext("2d") returns null in any environment, the rest of
+  // the crackle path becomes a no-op: spawn skips, the rAF never runs,
+  // cleanup leaves nothing to clear.
+  const crackleCanvas = document.createElement("canvas");
+  crackleCanvas.style.cssText = `position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:${Z_FROZEN_CRACKLE}`;
+  crackleCanvas.width = window.innerWidth;
+  crackleCanvas.height = window.innerHeight;
+  document.body.appendChild(crackleCanvas);
+  const crackleCtx = crackleCanvas.getContext("2d");
+  if (crackleCtx) {
+    window.addEventListener("resize", () => {
+      crackleCanvas.width = window.innerWidth;
+      crackleCanvas.height = window.innerHeight;
+    });
+  }
+
+  let crackleRaf = null;
+  function crackleTick() {
+    crackleCtx.clearRect(0, 0, crackleCanvas.width, crackleCanvas.height);
+    let anyActive = false;
+    for (const c of crackles) {
+      c.update();
+      c.draw(crackleCtx);
+      if (c.active) anyActive = true;
+    }
+    crackleRaf = anyActive ? requestAnimationFrame(crackleTick) : null;
+  }
+  function ensureCrackleRunning() {
+    if (!crackleCtx) return;
+    if (crackleRaf === null) {
+      crackleRaf = requestAnimationFrame(crackleTick);
+    }
+  }
 
   return {
     draw(forces, scrollVelocity, snowTurbulence) {
@@ -348,6 +602,33 @@ export function createSnow(canvasEl, ctxEl, count) {
         }
         s.draw();
       });
+    },
+
+    clickCrackle(x, y, warm) {
+      // Discrete burst — gated on the OS preference rather than dampened.
+      if (prefersReducedMotion()) return;
+      // Skip the spawn entirely when the overlay can't render — there's
+      // no point filling the pool with particles that will never be drawn.
+      if (!crackleCtx) return;
+      const count =
+        CRACKLE.COUNT_MIN + Math.floor(Math.random() * CRACKLE.COUNT_RANGE);
+      for (let i = 0; i < count; i++) {
+        const c = crackles.find((c) => !c.active);
+        if (!c) break;
+        c.spawn(x, y, warm);
+      }
+      ensureCrackleRunning();
+    },
+
+    cleanup() {
+      for (const c of crackles) c.active = false;
+      if (crackleRaf !== null) {
+        cancelAnimationFrame(crackleRaf);
+        crackleRaf = null;
+      }
+      if (crackleCtx) {
+        crackleCtx.clearRect(0, 0, crackleCanvas.width, crackleCanvas.height);
+      }
     },
   };
 }

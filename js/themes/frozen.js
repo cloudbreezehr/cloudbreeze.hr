@@ -231,6 +231,11 @@ export function initFrozen() {
       onClick(e, { isActive }) {
         // Always spawn breath — the indicator applies regardless of thaw/freeze direction
         spawnBreath(isActive);
+        // Crackle shards on every click so each press of the activation
+        // sequence has impact, not just the final wipe.  Warm tint when
+        // the click is fighting the freeze (thaw direction), cool when
+        // it's feeding it.
+        snow.clickCrackle(e.clientX, e.clientY, isActive);
         if (isActive)
           window.dispatchEvent(
             new CustomEvent("achievement", {
@@ -350,6 +355,7 @@ export function initFrozen() {
     },
     onDeactivate() {
       if (disableCardFrost) disableCardFrost("card-frozen");
+      snow.cleanup();
     },
   });
 }
