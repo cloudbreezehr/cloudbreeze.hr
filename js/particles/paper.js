@@ -1,6 +1,6 @@
 import { Z_PAPER_INK } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
-import { reducedDuration, scaled } from "../motion.js";
+import { reducedDuration, scaled, prefersReducedMotion } from "../motion.js";
 
 // ── Ink SVG filter id — shared by splats and strokes ──
 const INK_FILTER_ID = "paper-ink-wobble";
@@ -303,6 +303,138 @@ const STROKE = defineConstants(
   { theme: "paper" },
 );
 
+// ── Pencil shavings ──
+// Tiny graphite specks that fall when the cursor crosses a hovered text
+// element's proximity threshold.  Gravity is part of the integration so
+// step() doesn't fit — but per-frame motion math still goes through
+// scaled() (and stochastic spawn through chance() at the call site).
+const SHAVING = defineConstants(
+  "particles.paperShaving",
+  {
+    POOL: {
+      value: 96,
+      min: 16,
+      max: 256,
+      step: 8,
+      description: "Total shaving slots",
+    },
+    COUNT_MIN: {
+      value: 2,
+      min: 1,
+      max: 10,
+      step: 1,
+      description: "Min shavings per crossing",
+    },
+    COUNT_RANGE: {
+      value: 3,
+      min: 0,
+      max: 10,
+      step: 1,
+      description: "Shaving count variation",
+    },
+    SPEED_MIN: {
+      value: 0.6,
+      min: 0,
+      max: 4,
+      step: 0.1,
+      description: "Min sideways scatter speed (px/frame)",
+    },
+    SPEED_RANGE: {
+      value: 1.2,
+      min: 0,
+      max: 4,
+      step: 0.1,
+      description: "Sideways scatter variation",
+    },
+    VY_INITIAL: {
+      value: -0.4,
+      min: -3,
+      max: 1,
+      step: 0.1,
+      description: "Initial vertical velocity (negative = a slight pop up)",
+    },
+    GRAVITY: {
+      value: 0.06,
+      min: 0,
+      max: 0.5,
+      step: 0.005,
+      description: "Per-frame gravity acceleration",
+    },
+    LIFE_MIN: {
+      value: 60,
+      min: 10,
+      max: 240,
+      step: 1,
+      description: "Min lifetime (frames)",
+    },
+    LIFE_RANGE: {
+      value: 30,
+      min: 0,
+      max: 240,
+      step: 1,
+      description: "Lifetime variation",
+    },
+    LEN_MIN: {
+      value: 1.4,
+      min: 0.5,
+      max: 6,
+      step: 0.1,
+      description: "Min shaving length (px)",
+    },
+    LEN_RANGE: {
+      value: 1.6,
+      min: 0,
+      max: 6,
+      step: 0.1,
+      description: "Shaving length variation",
+    },
+    WIDTH_FRAC: {
+      value: 0.3,
+      min: 0.05,
+      max: 1,
+      step: 0.05,
+      description: "Shaving half-width as fraction of length",
+    },
+    VY_SCATTER_FRAC: {
+      value: 0.4,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Vertical-component scale on the random scatter at spawn (lower = flatter outward fan)",
+    },
+    ROT_SPEED_MIN: {
+      value: 0.02,
+      min: 0,
+      max: 0.3,
+      step: 0.005,
+      description: "Min angular spin (radians/frame)",
+    },
+    ROT_SPEED_RANGE: {
+      value: 0.05,
+      min: 0,
+      max: 0.3,
+      step: 0.005,
+      description: "Spin variation",
+    },
+    ALPHA_PEAK: {
+      value: 0.7,
+      min: 0.1,
+      max: 1,
+      step: 0.05,
+      description: "Peak shaving opacity",
+    },
+    FADE_HOLD: {
+      value: 0.5,
+      min: 0,
+      max: 0.95,
+      step: 0.05,
+      description: "Lifetime fraction at full alpha before fading begins",
+    },
+  },
+  { theme: "paper" },
+);
+
 const SVG_NS = "http://www.w3.org/2000/svg";
 
 // ── Ink-filter singleton — one <defs> for the whole page ──
@@ -374,6 +506,77 @@ class Flick {
   }
 }
 
+// ── Pencil shaving particle ──
+// Slim graphite sliver that falls under gravity when the cursor crosses
+// a hovered text element's proximity threshold.  Pure ballistic + gravity
+// + friction-free motion — gravity rules out step() (which only handles
+// the vx/vy + friction shape), so vx/vy and the gravity impulse all run
+// through scaled() instead.
+
+export class Shaving {
+  constructor() {
+    this.active = false;
+  }
+  spawn(x, y, inkRgb) {
+    this.x = x;
+    this.y = y;
+    // Sideways scatter — full radial in the horizontal plane, then a
+    // small upward kick to look "popped off" before gravity takes over.
+    const angle = Math.random() * Math.PI * 2;
+    const speed = SHAVING.SPEED_MIN + Math.random() * SHAVING.SPEED_RANGE;
+    this.vx = Math.cos(angle) * speed;
+    this.vy =
+      Math.sin(angle) * speed * SHAVING.VY_SCATTER_FRAC + SHAVING.VY_INITIAL;
+    this.rotation = Math.random() * Math.PI * 2;
+    this.rotSpeed =
+      (Math.random() < 0.5 ? -1 : 1) *
+      (SHAVING.ROT_SPEED_MIN + Math.random() * SHAVING.ROT_SPEED_RANGE);
+    this.len = SHAVING.LEN_MIN + Math.random() * SHAVING.LEN_RANGE;
+    this.life = 0;
+    this.maxLife = SHAVING.LIFE_MIN + Math.random() * SHAVING.LIFE_RANGE;
+    this.color = inkRgb;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.life++;
+    if (this.life > this.maxLife) {
+      this.active = false;
+      return;
+    }
+    // Gravity is a force, applied as a velocity delta each frame.  Wrap
+    // it in scaled() so reduced-motion users see frozen shavings rather
+    // than ones that accumulate downward velocity invisibly.
+    this.vy += scaled(SHAVING.GRAVITY);
+    this.x += scaled(this.vx);
+    this.y += scaled(this.vy);
+    this.rotation += scaled(this.rotSpeed);
+  }
+  draw(ctx) {
+    if (!this.active) return;
+    const t = this.life / this.maxLife;
+    const alpha =
+      t < SHAVING.FADE_HOLD
+        ? SHAVING.ALPHA_PEAK
+        : SHAVING.ALPHA_PEAK *
+          (1 - (t - SHAVING.FADE_HOLD) / (1 - SHAVING.FADE_HOLD));
+    const halfW = this.len * SHAVING.WIDTH_FRAC;
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.rotation);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = `rgb(${this.color[0]},${this.color[1]},${this.color[2]})`;
+    ctx.beginPath();
+    ctx.moveTo(this.len / 2, 0);
+    ctx.lineTo(0, halfW);
+    ctx.lineTo(-this.len / 2, 0);
+    ctx.lineTo(0, -halfW);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 // ── Factory ──
 export function createPaper(canvasEl, ctxEl) {
   ensureInkFilter();
@@ -422,6 +625,8 @@ export function createPaper(canvasEl, ctxEl) {
   const splats = [];
   // Strokes — one record per active stroke
   const strokes = [];
+  // Shavings — graphite slivers from cursor crossings on hover targets
+  const shavings = Array.from({ length: SHAVING.POOL }, () => new Shaving());
   // Shared SVG root for strokes and splats
   const inkRoot = document.createElementNS(SVG_NS, "svg");
   inkRoot.setAttribute("aria-hidden", "true");
@@ -533,7 +738,27 @@ export function createPaper(canvasEl, ctxEl) {
       drawDots(ctxEl, rgb);
       drawHorizon(ctxEl, rgb);
       updateFlicks(ctxEl, performance.now(), rgb, reducedMotion);
+      // Shavings — pure ballistic + gravity, integrated by scaled().
+      // Drawn in the same canvas pass as the static sketch; the ink
+      // color of shavings matches the current palette's pen.
+      for (const s of shavings) {
+        s.update();
+        s.draw(ctxEl);
+      }
       ctxEl.restore();
+    },
+
+    spawnShaving(cx, cy) {
+      // Discrete burst — gated on the OS preference rather than dampened.
+      if (prefersReducedMotion()) return;
+      const rgb = lastInkRgb;
+      const count =
+        SHAVING.COUNT_MIN + Math.floor(Math.random() * SHAVING.COUNT_RANGE);
+      for (let i = 0; i < count; i++) {
+        const s = shavings.find((s) => !s.active);
+        if (!s) break;
+        s.spawn(cx, cy, rgb);
+      }
     },
 
     clickBurst(cx, cy) {
@@ -642,6 +867,7 @@ export function createPaper(canvasEl, ctxEl) {
       }
       strokes.length = 0;
       for (const f of flicks) f.active = false;
+      for (const s of shavings) s.active = false;
     },
   };
 }

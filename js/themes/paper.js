@@ -56,6 +56,8 @@ const PV = defineConstants(
     HOVER_RADIUS_PX: 80,
     HOVER_LERP: 0.2,
     HOVER_SETTLE: 0.005,
+    SHAVING_TRIGGER_AT: 0.55,
+    SHAVING_RELEASE_AT: 0.4,
     TILT_INTENSITY: 2,
     TILT_SCALE: 1.005,
   },
@@ -161,6 +163,10 @@ export function initPaper() {
   // inner loop branch-free.
   let hoverTargets = [];
   let hoverCurrents = [];
+  // Per-letter latch: true once the cursor crossed SHAVING_TRIGGER_AT,
+  // resets when it falls back below SHAVING_RELEASE_AT.  Hysteresis so
+  // a cursor jitter at the threshold doesn't fire shavings every frame.
+  let hoverInside = [];
   let hoverCursorX = -Infinity;
   let hoverCursorY = -Infinity;
   let hoverRaf = null;
@@ -185,6 +191,7 @@ export function initPaper() {
         el.style.removeProperty("--paper-ink-proximity");
       }
       hoverCurrents.fill(0);
+      hoverInside.fill(false);
       hoverRaf = null;
       return;
     }
@@ -200,6 +207,15 @@ export function initPaper() {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const target = dist >= r ? 0 : 1 - dist / r;
       hoverTargets[i] = target;
+      // Spawn shavings on the rising-edge crossing of the trigger
+      // threshold — fires once per crossing, not continuously while
+      // the cursor sits inside.
+      if (!hoverInside[i] && target >= PV.SHAVING_TRIGGER_AT) {
+        hoverInside[i] = true;
+        paper.spawnShaving(hoverCursorX, hoverCursorY);
+      } else if (hoverInside[i] && target < PV.SHAVING_RELEASE_AT) {
+        hoverInside[i] = false;
+      }
       const next =
         hoverCurrents[i] + (target - hoverCurrents[i]) * PV.HOVER_LERP;
       // Snap close-to-zero back to exactly 0 so we can remove the property.
@@ -221,6 +237,7 @@ export function initPaper() {
     hoverEls = Array.from(document.querySelectorAll(HOVER_TARGETS));
     hoverTargets = new Array(hoverEls.length).fill(0);
     hoverCurrents = new Array(hoverEls.length).fill(0);
+    hoverInside = new Array(hoverEls.length).fill(false);
     window.addEventListener("pointermove", hoverPointer, { passive: true });
     hoverRaf = requestAnimationFrame(hoverTick);
   }
@@ -237,6 +254,7 @@ export function initPaper() {
     hoverEls = [];
     hoverTargets = [];
     hoverCurrents = [];
+    hoverInside = [];
   }
 
   // Canvas-side hooks — render layer, pointer effects, and DOM cleanup
