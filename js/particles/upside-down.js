@@ -13,7 +13,7 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
-import { drawHaloParticle } from "../canvas-utils.js";
+import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 import { scaled, chance, step } from "../motion.js";
 
@@ -354,6 +354,127 @@ export const DEBRIS = defineConstants(
   { theme: "upside-down" },
 );
 
+// ── Compass needles ──
+// Static field of small arrow marks scattered across the canvas.  Each
+// needle's *target* angle is "visually up" — in flipped presentation
+// that's the direction of decreasing canvas-data y, i.e. -π/2 in the
+// canvas's coordinate system.  Per-needle phase noise (sine wave on
+// time + per-needle offset) jitters the rendered angle around that
+// target, so the field reads as confused/uncertain.  A click pumps the
+// global alignment lock to 1 and decays back: while elevated, the noise
+// is suppressed and every needle snaps toward the target.
+//
+// No spawn/death cycle — needles are seeded once on factory init and
+// live for the lifetime of the theme.  Reduced motion freezes phase
+// advance and lock decay so the field is fully static.
+export const NEEDLE = defineConstants(
+  "particles.upsideDownNeedle",
+  {
+    COUNT: {
+      value: 36,
+      min: 4,
+      max: 120,
+      step: 1,
+      description: "Total needle count (seeded once at factory init)",
+    },
+    LEN_MIN: {
+      value: 7,
+      min: 2,
+      max: 30,
+      step: 0.5,
+      description: "Min needle length (px, tip-to-tail)",
+    },
+    LEN_RANGE: {
+      value: 6,
+      min: 0,
+      max: 30,
+      step: 0.5,
+      description: "Needle length variation",
+    },
+    NOISE_AMP: {
+      value: 0.8,
+      min: 0,
+      max: 3.14,
+      step: 0.05,
+      description: "Per-needle wobble amplitude (radians) around target angle",
+    },
+    NOISE_FREQ_MIN: {
+      value: 0.0008,
+      min: 0,
+      max: 0.01,
+      step: 0.0001,
+      description:
+        "Min noise oscillation frequency (radians/ms — multiplied by performance.now())",
+    },
+    NOISE_FREQ_RANGE: {
+      value: 0.0012,
+      min: 0,
+      max: 0.01,
+      step: 0.0001,
+      description: "Frequency variation across needles",
+    },
+    EASE: {
+      value: 0.12,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      description:
+        "Per-frame easing factor toward the rendered angle's target (higher = snappier)",
+    },
+    LOCK_DECAY: {
+      value: 0.04,
+      min: 0,
+      max: 0.5,
+      step: 0.005,
+      description: "Per-frame decay of the alignment lock toward 0",
+    },
+    ALPHA: {
+      value: 0.55,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Needle stroke opacity",
+    },
+    LINE_WIDTH: {
+      value: 1,
+      min: 0.3,
+      max: 4,
+      step: 0.1,
+      description: "Needle stroke width (px)",
+    },
+    ARROW_HEAD_FRAC: {
+      value: 0.3,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Arrowhead length as fraction of needle length",
+    },
+    ARROW_HEAD_ANGLE: {
+      value: 0.6,
+      min: 0.1,
+      max: 1.5,
+      step: 0.05,
+      description: "Arrowhead spread angle (radians)",
+    },
+    POSITION_MARGIN_PX: {
+      value: 30,
+      min: 0,
+      max: 100,
+      step: 5,
+      description: "Pixels from canvas edges to keep needles inside",
+    },
+  },
+  { theme: "upside-down" },
+);
+
+const NEEDLE_RGB = [200, 130, 100];
+
+// Target angle for the rendered arrow.  In canonical orientation the
+// shaft is horizontal (tip at -x); rotating by -π/2 puts the tip at
+// canvas-data (0, +halfLen), which is canvas-data DOWN, which the CSS
+// flip presents as visually UP to the user.
+export const NEEDLE_TARGET_ANGLE = -Math.PI / 2;
+
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
 
@@ -416,7 +537,7 @@ export class Dust {
       alpha,
       DUST_GLOW_RGB,
     );
-    _ctx.fillStyle = `rgba(${DUST_RGB[0]},${DUST_RGB[1]},${DUST_RGB[2]},${alpha})`;
+    _ctx.fillStyle = rgbaStr(DUST_RGB, alpha);
     _ctx.beginPath();
     _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
     _ctx.fill();
@@ -489,7 +610,7 @@ export class Debris {
     _ctx.save();
     _ctx.translate(this.x, this.y);
     _ctx.rotate(this.rotation);
-    _ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+    _ctx.fillStyle = rgbaStr(c, alpha);
     _ctx.beginPath();
     for (let i = 0; i < this.verts.length; i++) {
       const v = this.verts[i];
@@ -504,6 +625,66 @@ export class Debris {
   }
 }
 
+export class Needle {
+  constructor() {
+    this.x = 0;
+    this.y = 0;
+    this.len = NEEDLE.LEN_MIN + Math.random() * NEEDLE.LEN_RANGE;
+    this.noiseFreq =
+      NEEDLE.NOISE_FREQ_MIN + Math.random() * NEEDLE.NOISE_FREQ_RANGE;
+    this.noisePhase = Math.random() * Math.PI * 2;
+    // Rendered angle, eased toward (NEEDLE_TARGET_ANGLE + noise) each frame.
+    this.angle = NEEDLE_TARGET_ANGLE;
+  }
+  reset(x, y) {
+    this.x = x;
+    this.y = y;
+    this.angle = NEEDLE_TARGET_ANGLE;
+    this.noisePhase = Math.random() * Math.PI * 2;
+  }
+  update(now, alignmentLock) {
+    // Goal angle for this frame.  When alignmentLock is high, noise
+    // contribution is suppressed so the needle snaps to target.
+    const noiseScale = 1 - alignmentLock;
+    const noise =
+      Math.sin(now * this.noiseFreq + this.noisePhase) *
+      NEEDLE.NOISE_AMP *
+      noiseScale;
+    const goal = NEEDLE_TARGET_ANGLE + noise;
+    // Ease toward goal, scaled() so reduced motion freezes the easing
+    // (rendered angle stays at whatever it was when motion was paused).
+    this.angle += scaled((goal - this.angle) * NEEDLE.EASE);
+  }
+  draw() {
+    const c = NEEDLE_RGB;
+    const a = NEEDLE.ALPHA;
+    _ctx.save();
+    _ctx.translate(this.x, this.y);
+    _ctx.rotate(this.angle);
+    _ctx.strokeStyle = rgbaStr(c, a);
+    _ctx.lineWidth = NEEDLE.LINE_WIDTH;
+    _ctx.lineCap = "round";
+    _ctx.beginPath();
+    // Shaft: tail at canonical +x, tip at canonical -x.  Rotating the
+    // tip (-halfLen, 0) by NEEDLE_TARGET_ANGLE = -π/2 lands it at
+    // (0, +halfLen) — canvas-data DOWN, which the CSS flip presents as
+    // visually UP to the user.
+    const halfLen = this.len / 2;
+    _ctx.moveTo(halfLen, 0);
+    _ctx.lineTo(-halfLen, 0);
+    // Arrowhead at the tip.
+    const headLen = this.len * NEEDLE.ARROW_HEAD_FRAC;
+    const ang = NEEDLE.ARROW_HEAD_ANGLE;
+    const tipX = -halfLen;
+    _ctx.moveTo(tipX, 0);
+    _ctx.lineTo(tipX + Math.cos(ang) * headLen, Math.sin(ang) * headLen);
+    _ctx.moveTo(tipX, 0);
+    _ctx.lineTo(tipX + Math.cos(-ang) * headLen, Math.sin(-ang) * headLen);
+    _ctx.stroke();
+    _ctx.restore();
+  }
+}
+
 // ── Factory ──
 
 export function createUpsideDown(canvasEl, ctxEl) {
@@ -512,6 +693,25 @@ export function createUpsideDown(canvasEl, ctxEl) {
 
   const dust = Array.from({ length: DUST.POOL }, () => new Dust());
   const debris = Array.from({ length: DEBRIS.POOL }, () => new Debris());
+
+  // Compass-needle field — seeded once on init, never re-spawned.
+  // Positions are kept inside a margin so needles don't clip the
+  // canvas edges when their arrowheads rotate.
+  const needles = Array.from({ length: NEEDLE.COUNT }, () => new Needle());
+  function seedNeedles() {
+    const m = NEEDLE.POSITION_MARGIN_PX;
+    const w = Math.max(1, _canvas.width - 2 * m);
+    const h = Math.max(1, _canvas.height - 2 * m);
+    for (const n of needles) {
+      n.reset(m + Math.random() * w, m + Math.random() * h);
+    }
+  }
+  seedNeedles();
+
+  // Alignment lock — pumped to 1 by pulseAlignment(), decays each
+  // frame.  While > 0 the per-needle phase noise is suppressed so
+  // every needle snaps toward its target angle.
+  let alignmentLock = 0;
 
   return {
     draw(forces, scrollVelocity = 0) {
@@ -550,11 +750,32 @@ export function createUpsideDown(canvasEl, ctxEl) {
         d.update();
         d.draw();
       }
+
+      // Compass needles — static field, drawn last so they layer above
+      // dust/debris.  Lock decay is wrapped in scaled() so reduced
+      // motion freezes the lock at whatever value it had (in practice
+      // 0, since the click handler also gates on prefersReducedMotion).
+      alignmentLock = Math.max(0, alignmentLock - scaled(NEEDLE.LOCK_DECAY));
+      const now = performance.now();
+      for (const n of needles) {
+        n.update(now, alignmentLock);
+        n.draw();
+      }
     },
+
+    // Pump the alignment lock to 1 — needles snap toward target until
+    // the lock decays back.  Always pumps; callers gate reduced motion.
+    pulseAlignment() {
+      alignmentLock = 1;
+    },
+
+    // Re-seed needle positions to fit the current canvas dimensions.
+    resizeNeedles: seedNeedles,
 
     cleanup() {
       for (const d of dust) d.active = false;
       for (const d of debris) d.active = false;
+      alignmentLock = 0;
     },
   };
 }

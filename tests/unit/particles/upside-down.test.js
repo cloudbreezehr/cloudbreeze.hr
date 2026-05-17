@@ -22,6 +22,33 @@ function makeForces() {
   };
 }
 
+// Fake 2D context that swallows every method touched by the upside-down
+// particle draw paths.  Centralized here so adding a new particle type
+// doesn't require auditing each test's local fake.  Setters are
+// declared as no-op accessors because property assignments on a plain
+// object would otherwise be silently dropped by the strict-mode tests.
+function makeFakeCtx() {
+  return {
+    save: () => {},
+    restore: () => {},
+    beginPath: () => {},
+    arc: () => {},
+    fill: () => {},
+    stroke: () => {},
+    createRadialGradient: () => ({ addColorStop: () => {} }),
+    translate: () => {},
+    rotate: () => {},
+    moveTo: () => {},
+    lineTo: () => {},
+    closePath: () => {},
+    set fillStyle(v) {},
+    set strokeStyle(v) {},
+    set lineWidth(v) {},
+    set lineCap(v) {},
+    set globalAlpha(v) {},
+  };
+}
+
 describe("Dust — anti-gravity mote", () => {
   let mqlListeners;
   let mqlMatches;
@@ -129,23 +156,7 @@ describe("Dust — anti-gravity mote", () => {
     mqlMatches = false;
     const { createUpsideDown } =
       await import("../../../js/particles/upside-down.js");
-    // Fake ctx covering every method the draw path touches.
-    const ctx = {
-      save: () => {},
-      restore: () => {},
-      beginPath: () => {},
-      arc: () => {},
-      fill: () => {},
-      createRadialGradient: () => ({ addColorStop: () => {} }),
-      translate: () => {},
-      rotate: () => {},
-      moveTo: () => {},
-      lineTo: () => {},
-      closePath: () => {},
-      set fillStyle(v) {},
-      set globalAlpha(v) {},
-    };
-    const ud = createUpsideDown(makeFakeCanvas(), ctx);
+    const ud = createUpsideDown(makeFakeCanvas(), makeFakeCtx());
     const forces = makeForces();
     // Run enough frames that the chance() roll fires at least once
     // statistically.  P(no spawn in 200 frames at 0.15) ≈ 1e-14.
@@ -285,5 +296,103 @@ describe("Debris — scroll-driven scrap", () => {
     // hiding a sign error).
     expect(Math.sign(mean)).toBe(Math.sign(expected));
     expect(Math.abs(mean - expected)).toBeLessThan(DEBRIS.SCATTER_VY);
+  });
+});
+
+describe("Needle — compass-wobble field", () => {
+  let mqlListeners;
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlListeners = [];
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: (type, listener) => {
+        if (type === "change") mqlListeners.push(listener);
+      },
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  it("constructs with target angle pointing toward canvas-data top", async () => {
+    mqlMatches = false;
+    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    createUpsideDown(makeFakeCanvas(), {});
+    const n = new Needle();
+    // Initial rendered angle equals the target — needles spawn aligned
+    // before phase noise has had a chance to push them off.
+    expect(n.angle).toBe(NEEDLE_TARGET_ANGLE);
+  });
+
+  it("angle is invariant across update() when motion is reduced", async () => {
+    mqlMatches = true;
+    const { Needle, createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    createUpsideDown(makeFakeCanvas(), {});
+    const n = new Needle();
+    // Force the rendered angle off-target so easing would normally
+    // pull it back; reduced motion must freeze that easing.
+    n.angle = 0;
+    const a0 = n.angle;
+    n.update(performance.now(), 0);
+    expect(n.angle).toBe(a0);
+  });
+
+  it("eases toward target under full motion when noise is suppressed by lock", async () => {
+    mqlMatches = false;
+    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    createUpsideDown(makeFakeCanvas(), {});
+    const n = new Needle();
+    n.angle = 0; // off-target
+    // alignmentLock=1 zeros out the noise contribution → goal === target.
+    for (let i = 0; i < 60; i++) n.update(performance.now(), 1);
+    // After 60 frames of easing at EASE=0.12, the angle should have
+    // converged within a small tolerance of the target.
+    expect(Math.abs(n.angle - NEEDLE_TARGET_ANGLE)).toBeLessThan(0.01);
+  });
+
+  it("renders ambient noise when lock is zero", async () => {
+    // With lock=0, repeated update() calls at varying time should
+    // produce different angles (noise term is nonzero on average).
+    mqlMatches = false;
+    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    createUpsideDown(makeFakeCanvas(), {});
+    const n = new Needle();
+    // Pin the noise phase to a value that keeps sin(...) non-trivial
+    // across the test sweep; otherwise a randomly-seeded phase could
+    // align with multiples of π and produce all-zero noise.
+    n.noisePhase = 0;
+    n.noiseFreq = 0.01;
+    // Drive the angle through several frames; record samples.
+    const samples = [];
+    for (let i = 0; i < 10; i++) {
+      n.update(i * 100, 0);
+      samples.push(n.angle);
+    }
+    // At least one sample must differ from the initial target — noise
+    // had observable effect on the rendered angle.
+    const observedDeviation = samples.some(
+      (a) => Math.abs(a - NEEDLE_TARGET_ANGLE) > 0.001,
+    );
+    expect(observedDeviation).toBe(true);
+  });
+
+  it("factory.draw renders the needle field on a minimal ctx without throwing", async () => {
+    mqlMatches = false;
+    const { createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    const ud = createUpsideDown(makeFakeCanvas(), makeFakeCtx());
+    for (let i = 0; i < 20; i++) ud.draw(makeForces(), 0);
   });
 });

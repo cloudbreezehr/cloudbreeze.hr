@@ -189,13 +189,26 @@ export function initUpsideDown() {
   document.body.appendChild(overlay);
 
   // Canvas-side hooks — anti-gravity dust drifting from the visual
-  // floor toward the visual ceiling.  Coordinates are plain canvas
-  // pixels; the canvas's own .flips-with-page CSS class handles the
-  // visual inversion.
+  // floor toward the visual ceiling, scroll-driven debris scraps, and
+  // a static compass-needle field that points "up" with confused
+  // wobble.  Coordinates are plain canvas pixels; the canvas's own
+  // .flips-with-page CSS class handles the visual inversion.
   const ud = createUpsideDown(canvasEl, canvasCtx);
+  // Re-seed the needle field when the canvas resizes so positions stay
+  // inside the new bounds.  Relies on the canvas's own resize handler
+  // (registered earlier in the bootstrap path) firing first so
+  // canvasEl.width / .height are already updated when seedNeedles reads them.
+  window.addEventListener("resize", () => ud.resizeNeedles());
   registerCanvasHooks("upside-down", {
     drawAmbient({ forces, scrollVelocity }) {
       ud.draw(forces, scrollVelocity);
+    },
+    onClick({ reducedMotion }) {
+      // Click pulses the compass-needle alignment lock — needles snap
+      // toward "up" briefly, then drift back into wobble.  Discrete
+      // burst, gated on the OS preference rather than dampened.
+      if (reducedMotion) return;
+      ud.pulseAlignment();
     },
   });
 
