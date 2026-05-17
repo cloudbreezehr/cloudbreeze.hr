@@ -5,7 +5,7 @@ import {
 } from "../interactions.js";
 import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
-import { scaled, chance } from "../motion.js";
+import { scaled, chance, step, prefersReducedMotion } from "../motion.js";
 
 // ── Bubbles ──
 const BUB = defineConstants(
@@ -618,6 +618,132 @@ const JELLY_COLORS = [
   [0, 230, 200], // cyan-green
 ];
 
+// ── Plankton ──
+// Bioluminescent specks scattered from a jellyfish bell while the user
+// drags it.  Pure ballistic + friction → step() integrates them.  Spawn
+// is gated on the jelly's velocity *gain* per frame so idle jellies don't
+// trail plankton; only ones being meaningfully accelerated do.
+const PLANKTON = defineConstants(
+  "particles.deepSeaPlankton",
+  {
+    POOL: {
+      value: 160,
+      min: 32,
+      max: 512,
+      step: 8,
+      description: "Total plankton slots (shared across all jellies)",
+    },
+    SPAWN_VEL_THRESHOLD: {
+      value: 0.15,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description:
+        "Minimum |Δvelocity| per frame on a jelly to trigger plankton spawn",
+    },
+    SPAWN_CHANCE: {
+      value: 0.55,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Per-frame spawn probability when threshold is met",
+    },
+    COUNT_MIN: {
+      value: 1,
+      min: 0,
+      max: 6,
+      step: 1,
+      description: "Min specks emitted per spawn event",
+    },
+    COUNT_RANGE: {
+      value: 2,
+      min: 0,
+      max: 6,
+      step: 1,
+      description: "Speck count variation",
+    },
+    SPEED_MIN: {
+      value: 0.4,
+      min: 0,
+      max: 4,
+      step: 0.1,
+      description: "Min spawn speed (px/frame)",
+    },
+    SPEED_RANGE: {
+      value: 0.8,
+      min: 0,
+      max: 4,
+      step: 0.1,
+      description: "Spawn speed variation",
+    },
+    INHERIT_VEL: {
+      value: 0.35,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description:
+        "Fraction of jelly velocity carried into the plankton on spawn",
+    },
+    SPAWN_OFFSET: {
+      value: 0.5,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "Spawn position offset below jelly bell (in units of bellR)",
+    },
+    LIFE_MIN: {
+      value: 35,
+      min: 5,
+      max: 200,
+      step: 1,
+      description: "Min lifetime (frames)",
+    },
+    LIFE_RANGE: {
+      value: 30,
+      min: 0,
+      max: 200,
+      step: 1,
+      description: "Lifetime variation",
+    },
+    FRICTION: {
+      value: 0.94,
+      min: 0.5,
+      max: 1,
+      step: 0.005,
+      description: "Per-frame velocity damping",
+    },
+    RADIUS: {
+      value: 1,
+      min: 0.3,
+      max: 4,
+      step: 0.1,
+      description: "Speck dot radius (px)",
+    },
+    GLOW_RADIUS: {
+      value: 4,
+      min: 1,
+      max: 12,
+      step: 0.5,
+      description: "Halo radius multiplier",
+    },
+    ALPHA_PEAK: {
+      value: 0.85,
+      min: 0.1,
+      max: 1,
+      step: 0.05,
+      description: "Peak speck opacity",
+    },
+    FADE_HOLD: {
+      value: 0.3,
+      min: 0,
+      max: 0.9,
+      step: 0.05,
+      description: "Lifetime fraction at full alpha before fading begins",
+    },
+  },
+  { theme: "deep-sea" },
+);
+
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
 
@@ -939,6 +1065,56 @@ class Jellyfish {
   }
 }
 
+// ── Phosphorescent speck ──
+// Tiny bioluminescent grain shaken loose from a dragged jellyfish's
+// bell.  Ballistic + friction is the entire integration → step() does
+// the per-frame work.  Color is borrowed from the jelly that spawned
+// it so the wake reads as that specific jelly's, not generic plankton.
+
+export class Plankton {
+  constructor() {
+    this.active = false;
+  }
+  spawn(x, y, baseVx, baseVy, color) {
+    this.x = x;
+    this.y = y;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = PLANKTON.SPEED_MIN + Math.random() * PLANKTON.SPEED_RANGE;
+    this.vx = Math.cos(angle) * speed + baseVx * PLANKTON.INHERIT_VEL;
+    this.vy = Math.sin(angle) * speed + baseVy * PLANKTON.INHERIT_VEL;
+    this.life = 0;
+    this.maxLife = PLANKTON.LIFE_MIN + Math.random() * PLANKTON.LIFE_RANGE;
+    this.color = color;
+    this.active = true;
+  }
+  update() {
+    if (!this.active) return;
+    this.life++;
+    if (this.life > this.maxLife) {
+      this.active = false;
+      return;
+    }
+    step(this, 1, PLANKTON.FRICTION);
+  }
+  draw(ctx) {
+    if (!this.active) return;
+    const t = this.life / this.maxLife;
+    const alpha =
+      t < PLANKTON.FADE_HOLD
+        ? PLANKTON.ALPHA_PEAK
+        : PLANKTON.ALPHA_PEAK *
+          (1 - (t - PLANKTON.FADE_HOLD) / (1 - PLANKTON.FADE_HOLD));
+    drawHaloParticle(
+      ctx,
+      this.x,
+      this.y,
+      PLANKTON.RADIUS * PLANKTON.GLOW_RADIUS,
+      alpha,
+      this.color,
+    );
+  }
+}
+
 // ── Factory ──
 
 export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
@@ -947,6 +1123,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
 
   const bubbles = Array.from({ length: bubbleCount }, () => new Bubble());
   const jellyfish = Array.from({ length: jellyCount }, () => new Jellyfish());
+  const plankton = Array.from({ length: PLANKTON.POOL }, () => new Plankton());
   let bubbleSpawnAccum = 0;
 
   return {
@@ -982,9 +1159,17 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
         b.draw(pal);
       });
 
+      // Plankton spawn is gated on the OS preference rather than
+      // dampened — discrete bursts of light look jarring at low budget
+      // and the wake reads fine without them.
+      const plankActive = !prefersReducedMotion();
       jellyfish.forEach((j) => {
         j.update();
         applyRepulsion(forces, j, JELLY.REPEL_RADIUS, JELLY.REPEL_DAMPEN);
+        // Snapshot before drag-driven forces (attraction + well) so the
+        // dvMag below measures only their gain, not ambient drift.
+        const vx0 = j.vx;
+        const vy0 = j.vy;
         applyAttraction(
           forces,
           j,
@@ -993,8 +1178,34 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
           0,
         );
         applyWellForce(forces, j);
+        if (plankActive && forces.isDragging) {
+          const dvx = j.vx - vx0;
+          const dvy = j.vy - vy0;
+          const dvMag = Math.sqrt(dvx * dvx + dvy * dvy);
+          if (
+            dvMag > PLANKTON.SPAWN_VEL_THRESHOLD &&
+            Math.random() < PLANKTON.SPAWN_CHANCE
+          ) {
+            const count =
+              PLANKTON.COUNT_MIN +
+              Math.floor(Math.random() * PLANKTON.COUNT_RANGE);
+            const sx = j.x;
+            const sy = j.y + j.bellR * PLANKTON.SPAWN_OFFSET;
+            for (let i = 0; i < count; i++) {
+              const p = plankton.find((p) => !p.active);
+              if (!p) break;
+              p.spawn(sx, sy, j.vx, j.vy, j.color);
+            }
+          }
+        }
         j.draw();
       });
+      // Plankton — pure ballistic, friction-only, integrated by step().
+      // Drawn after jellies so wakes layer over the bell that produced them.
+      for (const p of plankton) {
+        p.update();
+        p.draw(_ctx);
+      }
     },
 
     clickBurst(cx, cy) {
