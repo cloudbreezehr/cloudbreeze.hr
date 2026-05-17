@@ -1,6 +1,6 @@
 import { Z_PAPER_INK } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
-import { reducedDuration, motionScale } from "../motion.js";
+import { reducedDuration, scaled } from "../motion.js";
 
 // ── Ink SVG filter id — shared by splats and strokes ──
 const INK_FILTER_ID = "paper-ink-wobble";
@@ -599,14 +599,13 @@ export function createPaper(canvasEl, ctxEl) {
       const dist = Math.sqrt(dx * dx + dy * dy);
       if (dist < STROKE.MIN_SAMPLE_DIST) return;
       // Perpendicular sine wobble — "pen isn't perfectly steady".  Amp
-      // scales with motionScale so reduced motion produces a clean line.
+      // dampens with motion budget so reduced motion produces a clean line.
       const nx = -dy / (dist || 1);
       const ny = dx / (dist || 1);
       stroke.sampleCount++;
-      const w =
-        Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) *
-        STROKE.WOBBLE_AMP *
-        motionScale();
+      const w = scaled(
+        Math.sin(stroke.sampleCount * STROKE.WOBBLE_FREQ) * STROKE.WOBBLE_AMP,
+      );
       const wx = x + nx * w;
       const wy = y + ny * w;
       stroke.d += ` L ${wx.toFixed(1)} ${wy.toFixed(1)}`;

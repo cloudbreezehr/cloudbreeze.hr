@@ -8,7 +8,7 @@ import { mirrorYWhenInverted } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
-import { motionScale, prefersReducedMotion } from "./motion.js";
+import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds } from "./themes/registry.js";
 
 // ── Scroll Velocity ──
@@ -249,25 +249,22 @@ export function initCanvas(canvasEl, appearance, options) {
       ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 
-    // Per-frame motion scalar (continuous: 0..1) and the boolean OS
-    // preference.  Threaded through the frame so feature modules can
-    // pick the right shape without reading the preference directly:
-    // particle dampening multiplies by mScale; gates that "skip
-    // entirely" branch on reducedMotion.
-    const mScale = motionScale();
+    // Boolean OS preference, threaded through the frame so effects can
+    // gate "skip entirely" effects without reading the preference
+    // directly.
     const reducedMotion = prefersReducedMotion();
 
-    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces, mScale);
+    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces);
 
     // Click fury — lightning, aurora, meteors.
     if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
     scrollVelocity *= SCROLL.VEL_DECAY;
-    const drawVelocity = scrollVelocity * mScale;
+    const drawVelocity = scaled(scrollVelocity);
     interactions.updateHold(forces, now);
     if (!suppressAtmosphere) {
-      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky, mScale);
+      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
     }
 
     // Theme-owned ambient particles. Each registered theme decides what
@@ -279,7 +276,6 @@ export function initCanvas(canvasEl, appearance, options) {
       dt,
       scrollVelocity,
       drawVelocity,
-      motionScale: mScale,
       reducedMotion,
       pal,
       palFor,
@@ -360,7 +356,6 @@ export function initCanvas(canvasEl, appearance, options) {
       cy,
       forces,
       palFor,
-      motionScale: motionScale(),
       reducedMotion: prefersReducedMotion(),
     };
     for (const { hooks } of activeHooks) hooks.onClick?.(ptr);
@@ -393,7 +388,6 @@ export function initCanvas(canvasEl, appearance, options) {
         cy,
         forces,
         palFor,
-        motionScale: motionScale(),
         reducedMotion: prefersReducedMotion(),
       };
       for (const { hooks } of syncActiveHooks()) hooks.onDragStart?.(ptr);
@@ -416,7 +410,6 @@ export function initCanvas(canvasEl, appearance, options) {
         trailAdded,
         forces,
         palFor,
-        motionScale: motionScale(),
         reducedMotion: prefersReducedMotion(),
       };
       for (const { hooks } of syncActiveHooks()) hooks.onDragMove?.(ptr);

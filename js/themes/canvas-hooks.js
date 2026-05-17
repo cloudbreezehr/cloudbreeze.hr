@@ -37,11 +37,18 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
  * @property {number} sp                Scroll progress 0..1.
  * @property {number} dt                Seconds since the previous frame.
  * @property {number} scrollVelocity    Already decayed for this frame.
- * @property {number} drawVelocity      scrollVelocity * motionScale.
- * @property {number} motionScale       Continuous motion scalar (0..1).
- *                                      Multiply per-frame deltas by it.
+ * @property {number} drawVelocity      scrollVelocity dampened by motion
+ *                                      scale; safe to feed into per-frame
+ *                                      velocity sums without further
+ *                                      reduced-motion handling.
  * @property {boolean} reducedMotion    Boolean OS preference.  Branch
- *                                      on this for "skip entirely" gates.
+ *                                      on this for "skip entirely" gates
+ *                                      (snow-globe burst, vhs cursor
+ *                                      trail, etc.).  For dampening per-
+ *                                      frame motion math, use scaled()
+ *                                      / chance() / step() from motion.js
+ *                                      directly — there's no frame-
+ *                                      scoped scalar to thread.
  * @property {object} pal               Winning theme's palette (last-triggered-wins).
  * @property {(id: string) => object} palFor   Per-theme palette resolver.
  * @property {boolean} isDark
@@ -67,10 +74,12 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
  * @property {(id: string) => object} palFor   Per-theme palette resolver
  *                                              (for themes drawing themed
  *                                              click visuals).
- * @property {number} motionScale   Continuous motion scalar (0..1).
- *                                  Multiply spawn-side velocities by it.
  * @property {boolean} reducedMotion Boolean OS preference.  Branch on
- *                                   this for "skip entirely" gates.
+ *                                   this for "skip entirely" gates
+ *                                   (one-shot bursts, glitches, sweeps).
+ *                                   For dampening per-frame motion math,
+ *                                   call scaled() / chance() / step()
+ *                                   from motion.js directly.
  */
 
 /**

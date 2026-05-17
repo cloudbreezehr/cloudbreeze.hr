@@ -5,6 +5,7 @@ import {
   scrollFade,
 } from "./canvas-utils.js";
 import { defineConstants } from "./dev/registry.js";
+import { scaled, chance } from "./motion.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -375,7 +376,7 @@ export function createSky(starCount) {
   let t = 0;
 
   return {
-    draw(ctx, canvas, sp, pal, forces, motionScale = 1) {
+    draw(ctx, canvas, sp, pal, forces) {
       const starVis = scrollFade(
         sp,
         0,
@@ -385,20 +386,20 @@ export function createSky(starCount) {
       );
       if (starVis <= 0) return;
 
-      t += STARS.TIME_STEP * motionScale;
+      t += scaled(STARS.TIME_STEP);
       // Hoisted halo opts shared across every glow-tier star this frame.
       const haloOpts = {
         midStop: STARS.GLOW_MID,
         midAlpha: STARS.GLOW_MID_ALPHA,
       };
       stars.forEach((s) => {
-        s.twinkle += s.twinkleSpeed * motionScale;
+        s.twinkle += scaled(s.twinkleSpeed);
         // Random bright flash — rare, brief spike.  Spawn probability
-        // dampens with motionScale so it never fires when motion is off.
+        // dampens with motion budget so no flash fires under reduced motion.
         if (s.flash > 0) {
           s.flash *= STARS.FLASH_DECAY;
           if (s.flash < STARS.FLASH_THRESHOLD) s.flash = 0;
-        } else if (Math.random() < STARS.FLASH_CHANCE * motionScale) {
+        } else if (chance(STARS.FLASH_CHANCE)) {
           s.flash = STARS.FLASH_MIN + Math.random() * STARS.FLASH_RANGE;
           s.glare =
             s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
@@ -473,9 +474,9 @@ export function createSky(starCount) {
       });
 
       // Shooting stars — rare fast arcs across the sky.  Spawn rate
-      // dampens with motionScale, so under reduced-motion no new arcs
+      // dampens with motion budget, so under reduced motion no new arcs
       // appear (in-flight ones still complete and fade out cleanly).
-      if (Math.random() < SHOOTING.SPAWN_CHANCE * motionScale) {
+      if (chance(SHOOTING.SPAWN_CHANCE)) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =
@@ -502,6 +503,10 @@ export function createSky(starCount) {
           return;
         }
         const p = ss.life / ss.maxLife;
+        // Position is intentionally unscaled — once an arc is in flight
+        // it must complete instead of freezing mid-trail if the user
+        // toggles reduced motion mid-flight.  Spawn is gated by chance()
+        // above; this branch only runs for already-spawned arcs.
         ss.x += Math.cos(ss.angle) * ss.speed;
         ss.y += Math.sin(ss.angle) * ss.speed;
         // Fade in quickly, fade out slowly

@@ -99,6 +99,117 @@ describe("motion — motionScale", () => {
   });
 });
 
+describe("motion — scaled", () => {
+  let mqlListeners;
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlListeners = [];
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: (type, listener) => {
+        if (type === "change") mqlListeners.push(listener);
+      },
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  it("returns the input value when motion is allowed", async () => {
+    mqlMatches = false;
+    const { scaled } = await import("../../js/motion.js");
+    expect(scaled(7)).toBe(7);
+    expect(scaled(0)).toBe(0);
+    expect(scaled(-3.5)).toBe(-3.5);
+  });
+
+  it("returns zero when motion is reduced", async () => {
+    mqlMatches = true;
+    const { scaled } = await import("../../js/motion.js");
+    expect(scaled(7)).toBe(0);
+    expect(scaled(-3.5)).toBe(-0);
+    expect(scaled(99999)).toBe(0);
+  });
+
+  it("tracks mid-session toggles without caching", async () => {
+    mqlMatches = false;
+    const { scaled } = await import("../../js/motion.js");
+    expect(scaled(10)).toBe(10);
+    mqlListeners.forEach((fn) => fn({ matches: true }));
+    expect(scaled(10)).toBe(0);
+    mqlListeners.forEach((fn) => fn({ matches: false }));
+    expect(scaled(10)).toBe(10);
+  });
+});
+
+describe("motion — chance", () => {
+  let mqlListeners;
+  let mqlMatches;
+  let randomSpy;
+
+  beforeEach(() => {
+    mqlListeners = [];
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: (type, listener) => {
+        if (type === "change") mqlListeners.push(listener);
+      },
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+    if (randomSpy) randomSpy.mockRestore();
+  });
+
+  it("returns true when Math.random() is below the threshold under full motion", async () => {
+    mqlMatches = false;
+    randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const { chance } = await import("../../js/motion.js");
+    expect(chance(0.5)).toBe(true);
+  });
+
+  it("returns false when Math.random() is at or above the threshold under full motion", async () => {
+    mqlMatches = false;
+    randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.6);
+    const { chance } = await import("../../js/motion.js");
+    expect(chance(0.5)).toBe(false);
+  });
+
+  it("returns false unconditionally when motion is reduced", async () => {
+    mqlMatches = true;
+    randomSpy = vi.spyOn(Math, "random").mockReturnValue(0);
+    const { chance } = await import("../../js/motion.js");
+    // Even Math.random() === 0 with a full-probability threshold returns
+    // false, because p * motionScale() collapses to 0.
+    expect(chance(1)).toBe(false);
+    expect(chance(0.5)).toBe(false);
+  });
+
+  it("tracks mid-session toggles without caching", async () => {
+    mqlMatches = false;
+    randomSpy = vi.spyOn(Math, "random").mockReturnValue(0.1);
+    const { chance } = await import("../../js/motion.js");
+    expect(chance(0.5)).toBe(true);
+    mqlListeners.forEach((fn) => fn({ matches: true }));
+    expect(chance(0.5)).toBe(false);
+    mqlListeners.forEach((fn) => fn({ matches: false }));
+    expect(chance(0.5)).toBe(true);
+  });
+});
+
 describe("motion — reducedDuration", () => {
   let mqlListeners;
   let mqlMatches;

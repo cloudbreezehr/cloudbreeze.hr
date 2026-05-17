@@ -5,6 +5,7 @@ import {
 } from "../interactions.js";
 import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
+import { scaled, chance } from "../motion.js";
 
 // ── Bubbles ──
 const BUB = defineConstants(
@@ -643,7 +644,7 @@ class Bubble {
     this.popFrame = 0;
     this.active = init;
   }
-  update(motionScale = 1) {
+  update() {
     if (this.popping) {
       this.popFrame++;
       if (this.popFrame > BUB.POP_FRAMES) {
@@ -657,10 +658,10 @@ class Bubble {
         (1 - this.popFrame / BUB.POP_FRAMES);
       return;
     }
-    this.wobble += this.wobbleSpeed * motionScale;
-    this.r += BUB.GROWTH_RATE * motionScale;
-    this.x += (Math.sin(this.wobble) * this.wobbleAmp + this.vx) * motionScale;
-    this.y += (-this.riseSpeed + this.vy) * motionScale;
+    this.wobble += scaled(this.wobbleSpeed);
+    this.r += scaled(BUB.GROWTH_RATE);
+    this.x += scaled(Math.sin(this.wobble) * this.wobbleAmp + this.vx);
+    this.y += scaled(-this.riseSpeed + this.vy);
     this.vx *= BUB.FRICTION;
     this.vy *= BUB.FRICTION;
     // Pop at top
@@ -769,14 +770,14 @@ class Jellyfish {
       () => Math.random() * Math.PI * 2,
     );
   }
-  update(motionScale = 1) {
-    this.pulse += this.pulseSpeed * motionScale;
-    this.glowPhase += JELLY.GLOW_PULSE_SPEED * motionScale;
+  update() {
+    this.pulse += scaled(this.pulseSpeed);
+    this.glowPhase += scaled(JELLY.GLOW_PULSE_SPEED);
 
     // Pulsing swim — sharp upward kick on pulse peak, slow drift down otherwise
     const pulseVal = Math.sin(this.pulse);
     if (pulseVal > 0.95) {
-      this.vy -= JELLY.PULSE_STRENGTH * motionScale;
+      this.vy -= scaled(JELLY.PULSE_STRENGTH);
       if (!this._pulsedThisCycle) {
         this._pulsedThisCycle = true;
         window.dispatchEvent(
@@ -788,17 +789,17 @@ class Jellyfish {
     } else {
       this._pulsedThisCycle = false;
     }
-    this.vy += JELLY.DRIFT_VY * motionScale; // gentle downward drift
+    this.vy += scaled(JELLY.DRIFT_VY); // gentle downward drift
 
     // Occasional direction change
-    if (Math.random() < JELLY.DIRECTION_CHANGE * motionScale) {
+    if (chance(JELLY.DIRECTION_CHANGE)) {
       this.vx = (Math.random() - 0.5) * JELLY.DRIFT_VX * 2;
     }
 
     this.vx *= JELLY.FRICTION;
     this.vy *= JELLY.FRICTION;
-    this.x += this.vx * motionScale;
-    this.y += this.vy * motionScale;
+    this.x += scaled(this.vx);
+    this.y += scaled(this.vy);
 
     // Wrap around edges
     if (this.y < -this.bellR * 3) this.y = _canvas.height + this.bellR * 2;
@@ -809,9 +810,9 @@ class Jellyfish {
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
-      this.tentaclePhases[i] +=
-        (JELLY.TENTACLE_WAVE_SPEED + i * JELLY.TENTACLE_PHASE_PER_INDEX) *
-        motionScale;
+      this.tentaclePhases[i] += scaled(
+        JELLY.TENTACLE_WAVE_SPEED + i * JELLY.TENTACLE_PHASE_PER_INDEX,
+      );
     }
   }
   draw() {
@@ -949,9 +950,10 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
   let bubbleSpawnAccum = 0;
 
   return {
-    draw(forces, scrollVelocity, dt, pal, motionScale = 1) {
-      // Ambient bubble spawning — at motionScale=0, no new spawns.
-      bubbleSpawnAccum += BUB.AMBIENT_RATE * dt * motionScale;
+    draw(forces, scrollVelocity, dt, pal) {
+      // Ambient bubble spawning — accumulator dampens with motion so
+      // no new spawns appear under reduced motion.
+      bubbleSpawnAccum += scaled(BUB.AMBIENT_RATE * dt);
       while (bubbleSpawnAccum >= 1) {
         bubbleSpawnAccum--;
         const b = bubbles.find((b) => !b.active);
@@ -963,7 +965,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
 
       bubbles.forEach((b) => {
         if (!b.active) return;
-        b.update(motionScale);
+        b.update();
         applyRepulsion(forces, b, BUB.REPEL_RADIUS, BUB.REPEL_DAMPEN);
         applyAttraction(
           forces,
@@ -981,7 +983,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       });
 
       jellyfish.forEach((j) => {
-        j.update(motionScale);
+        j.update();
         applyRepulsion(forces, j, JELLY.REPEL_RADIUS, JELLY.REPEL_DAMPEN);
         applyAttraction(
           forces,

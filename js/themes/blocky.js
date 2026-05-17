@@ -162,8 +162,8 @@ export function initBlocky(toggleEl) {
   });
   registerCanvasHooks("blocky", {
     suppressDefaultClickBurst: true,
-    drawPost({ scrollVelocity, isDark, forces, motionScale }) {
-      blocky.draw(forces, scrollVelocity, isDark, motionScale);
+    drawPost({ scrollVelocity, isDark, forces }) {
+      blocky.draw(forces, scrollVelocity, isDark);
     },
     onClick({ cx, cy, reducedMotion }) {
       if (reducedMotion) return;

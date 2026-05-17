@@ -1,6 +1,6 @@
 import { drawHaloParticle, rgbaStr } from "./canvas-utils.js";
 import { notifySectionActivate } from "./dev/registry.js";
-import { motionScale, prefersReducedMotion } from "./motion.js";
+import { chance, prefersReducedMotion } from "./motion.js";
 import {
   CLICK,
   ORBIT,
@@ -160,9 +160,8 @@ export function createInteractions() {
           (forces.wellStrength > 0
             ? Math.floor(forces.wellStrength * WELL.ORBIT_MAX_BOOST)
             : 0);
-        const spawnChance =
-          forces.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul * motionScale();
-        if (Math.random() < spawnChance && orbitParticles.length < maxOrbit) {
+        const spawnChance = forces.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul;
+        if (chance(spawnChance) && orbitParticles.length < maxOrbit) {
           const angle = Math.random() * Math.PI * 2;
           const dist =
             ORBIT.DIST_MIN +

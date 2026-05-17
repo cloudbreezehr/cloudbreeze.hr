@@ -207,10 +207,10 @@ export function initFrozen() {
     lastScrollDir = dir;
   });
   registerCanvasHooks("frozen", {
-    drawAmbient({ drawVelocity, motionScale, reducedMotion, forces }) {
+    drawAmbient({ drawVelocity, reducedMotion, forces }) {
       // Suppress the shake under reduced motion.
       if (reducedMotion) snowTurbulence.value = 0;
-      snow.draw(forces, drawVelocity, snowTurbulence, motionScale);
+      snow.draw(forces, drawVelocity, snowTurbulence);
     },
   });
 

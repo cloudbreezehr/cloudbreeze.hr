@@ -4,6 +4,7 @@ import {
   applyWellForce,
 } from "../interactions.js";
 import { defineConstants } from "../dev/registry.js";
+import { scaled } from "../motion.js";
 
 // ── Blocky Pixelation ──
 const PIXEL = defineConstants(
@@ -336,22 +337,22 @@ class Firefly {
     this.butterflyColor =
       BUTTERFLY_COLORS[Math.floor(Math.random() * BUTTERFLY_COLORS.length)];
   }
-  update(motionScale = 1) {
+  update() {
     this.prevX = this.x;
     this.prevY = this.y;
-    this.phase += this.pulseSpeed * motionScale;
-    this.flapPhase += BFLY.FLAP_SPEED * motionScale;
+    this.phase += scaled(this.pulseSpeed);
+    this.flapPhase += scaled(BFLY.FLAP_SPEED);
     // Random walk
-    this.vx += (Math.random() - 0.5) * FLY.DRIFT * motionScale;
-    this.vy += (Math.random() - 0.5) * FLY.DRIFT * motionScale;
+    this.vx += scaled((Math.random() - 0.5) * FLY.DRIFT);
+    this.vy += scaled((Math.random() - 0.5) * FLY.DRIFT);
     // Slight upward bias near bottom of canvas
     if (this.y > _canvas.height * FLY.BIAS_THRESHOLD) {
-      this.vy -= FLY.BIAS_STRENGTH * motionScale;
+      this.vy -= scaled(FLY.BIAS_STRENGTH);
     }
     this.vx *= FLY.FRICTION;
     this.vy *= FLY.FRICTION;
-    this.x += this.vx * motionScale;
-    this.y += this.vy * motionScale;
+    this.x += scaled(this.vx);
+    this.y += scaled(this.vy);
     // Wrap
     if (this.x < -FLY.WRAP_MARGIN)
       this.x += _canvas.width + FLY.WRAP_MARGIN * 2;
@@ -435,7 +436,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
   resizePixelCanvas();
 
   return {
-    draw(forces, scrollVelocity, isDark, motionScale = 1) {
+    draw(forces, scrollVelocity, isDark) {
       // Pixelation post-process: downsample then scale back up
       const pw = pixelCanvas.width;
       const ph = pixelCanvas.height;
@@ -470,7 +471,7 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
 
       // Fireflies / Butterflies — rendered crisp post-pixelation
       fireflies.forEach((f) => {
-        f.update(motionScale);
+        f.update();
         applyRepulsion(forces, f, FLY.REPEL_RADIUS, FLY.REPEL_DAMPEN);
         applyAttraction(
           forces,

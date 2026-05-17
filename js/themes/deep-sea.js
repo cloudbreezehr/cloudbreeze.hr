@@ -135,8 +135,8 @@ export function initDeepSea() {
     COUNTS.JELLY,
   );
   registerCanvasHooks("deep-sea", {
-    drawAmbient({ scrollVelocity, dt, palFor, forces, motionScale }) {
-      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"), motionScale);
+    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
+      deepSea.draw(forces, scrollVelocity, dt, palFor("deep-sea"));
     },
     onClick({ cx, cy, reducedMotion }) {
       if (reducedMotion) return;

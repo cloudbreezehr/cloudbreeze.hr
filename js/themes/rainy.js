@@ -177,8 +177,8 @@ export function initRainy() {
   // splash bursts on click, well burst on drag-release.
   const rain = createRain(canvasEl, canvasCtx);
   registerCanvasHooks("rainy", {
-    drawAmbient({ scrollVelocity, dt, palFor, forces, motionScale }) {
-      rain.draw(forces, scrollVelocity, dt, palFor("rainy"), motionScale);
+    drawAmbient({ scrollVelocity, dt, palFor, forces }) {
+      rain.draw(forces, scrollVelocity, dt, palFor("rainy"));
     },
     onClick({ cx, cy, reducedMotion }) {
       if (reducedMotion) return;

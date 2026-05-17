@@ -4,7 +4,7 @@
 // physical.
 
 import { defineConstants } from "../dev/registry.js";
-import { motionScale } from "../motion.js";
+import { scaled } from "../motion.js";
 
 // ── Constants ──
 const LP = defineConstants("effects.logoParallax", {
@@ -61,7 +61,6 @@ export function initLogoParallax() {
   let achievementFired = false;
 
   function tick() {
-    const mScale = motionScale();
     if (cursorKnown) {
       // Activation gate: only pull letters when the cursor is inside the nav
       // bounding rect.  Outside the nav, letters ease back to home — keeps
@@ -87,8 +86,8 @@ export function initLogoParallax() {
             dist < LP.INFLUENCE_PX ? 1 - dist / LP.INFLUENCE_PX : 0;
           const pull = influence * weights[i] * LP.MAX_OFFSET_PX;
           const norm = dist > 0 ? 1 / dist : 0;
-          targetX = dx * norm * pull * mScale;
-          targetY = dy * norm * pull * mScale;
+          targetX = scaled(dx * norm * pull);
+          targetY = scaled(dy * norm * pull);
         }
         currentX[i] += (targetX - currentX[i]) * LP.EASE;
         currentY[i] += (targetY - currentY[i]) * LP.EASE;

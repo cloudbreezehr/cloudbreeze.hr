@@ -1,7 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
-import { motionScale, prefersReducedMotion } from "../motion.js";
+import { prefersReducedMotion, scaled } from "../motion.js";
 import { createPaper } from "../particles/paper.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
@@ -96,9 +96,8 @@ export function initPaper() {
       pageTurnRaf = null;
       return;
     }
-    const mScale = motionScale();
-    pageTargetX *= PV.PAGE_TURN_TARGET_DECAY * mScale;
-    pageTargetRot *= PV.PAGE_TURN_TARGET_DECAY * mScale;
+    pageTargetX = scaled(pageTargetX * PV.PAGE_TURN_TARGET_DECAY);
+    pageTargetRot = scaled(pageTargetRot * PV.PAGE_TURN_TARGET_DECAY);
     pageCurrentX += (pageTargetX - pageCurrentX) * PV.PAGE_TURN_LERP;
     pageCurrentRot += (pageTargetRot - pageCurrentRot) * PV.PAGE_TURN_LERP;
     if (

@@ -1,7 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
-import { motionScale } from "../motion.js";
+import { scaled } from "../motion.js";
 import { createVhs } from "../particles/vhs.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
@@ -144,9 +144,10 @@ export function initVhs() {
   function onScroll({ deltaY }) {
     if (!pageEl) return;
     // Drift in the opposite direction of scroll so it feels like a
-    // tracking error chasing the playhead.  Scaled by motionScale so a
-    // reduced-motion user sees a still page even on aggressive scroll.
-    driftTargetX += -deltaY * VV.SCROLL_NORM_FACTOR * motionScale();
+    // tracking error chasing the playhead.  Reduced-motion users see a
+    // still page even on aggressive scroll because scaled() collapses
+    // the increment to zero.
+    driftTargetX += scaled(-deltaY * VV.SCROLL_NORM_FACTOR);
     // Clamp so a frantic scroll doesn't jolt the page off-screen.
     driftTargetX = Math.max(
       -VV.DRIFT_AMP_PX,

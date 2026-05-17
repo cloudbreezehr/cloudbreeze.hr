@@ -6,22 +6,47 @@
 //
 // CSS-keyframe animations and CSS transitions are handled globally by
 // the @media (prefers-reduced-motion: reduce) rule in main.css.  The
-// helpers here cover the gaps the CSS rule can't reach:
+// helpers here cover the gaps the CSS rule can't reach.
 //
-// Two questions, two answers.  Pick the one that matches what your
-// code is actually asking:
+// Three questions, three answers.  Pick the helper that matches what
+// your code is actually asking:
 //
-//   "How much motion budget do I have this frame?"  → motionScale()
+//   "Apply motion to this number / spawn."          → scaled() / chance()
 //   "Does the user want me to not move things?"     → prefersReducedMotion()
+//   "How long should this animation last?"          → reducedDuration()
 //
-//   - motionScale()      Continuous scalar for per-frame math.  Today
-//                        returns 0 or 1, but the scalar shape leaves
-//                        room for future intermediate tiers ("lighter
-//                        motion") to slot in without changing call
-//                        sites.  Multiply per-frame deltas, spawn
-//                        probabilities, and impulse strengths by it
-//                        so dampening composes downstream without
-//                        explicit branching.
+// Default: reach for `scaled` / `chance` first.  These two absorb the
+// multiplication so call sites no longer thread a parameter or branch
+// on the preference.  A particle that does its motion math through
+// them is automatically tier-aware — when a future "lighter motion"
+// preference returns e.g. 0.3, every animation dampens uniformly
+// without auditing call sites.
+//
+//   - scaled(value)      Continuous scalar applied to a single value.
+//                        Use for per-frame deltas, phase advances,
+//                        impulse forces — anything that *represents*
+//                        motion.  Reads motionScale() internally.
+//
+//   - chance(p)          Stochastic gate scaled by motion budget.
+//                        Use for spawn rolls and event probabilities
+//                        (`Math.random() < p` semantically, but with
+//                        motion budget folded in).  Returns false
+//                        unconditionally when motion is reduced.
+//
+//   - prefersReducedMotion()  Boolean OS preference.  Use this for
+//                             "skip entirely" gates — discrete bursts,
+//                             flashing/sweeping effects that dampening
+//                             can't make safe, layout-cost rAF loops
+//                             with nothing useful to do at zero budget.
+//                             Also recorded by analytics.
+//
+//   - motionScale()      Continuous scalar.  Today returns 0 or 1; the
+//                        scalar shape leaves room for intermediate
+//                        tiers later.  New code should reach for
+//                        scaled / chance / step instead of multiplying
+//                        by motionScale() directly — the helpers do
+//                        the right thing automatically and don't have
+//                        to be threaded through factory signatures.
 //
 //                        Do NOT use `motionScale() === 0` as a boolean
 //                        gate — that conflates "no budget right now"
@@ -29,17 +54,10 @@
 //                        regress if a future tier returned e.g. 0.3.
 //                        Branch on prefersReducedMotion() instead.
 //
-//   - prefersReducedMotion()  Boolean OS preference.  Use this to
-//                             gate effects that must be skipped
-//                             entirely rather than dampened — fireworks,
-//                             discrete bursts, layout-cost rAF loops
-//                             that have nothing useful to do at zero
-//                             budget.  Also recorded by analytics.
-//
-//   - reducedDuration()  Returns the input ms, or 0 when reduced.
-//                        Use for Element.animate() durations and
-//                        setTimeout-driven cosmetic delays — the
-//                        animation snaps to its end-state instantly.
+//   - reducedDuration(ms)  Returns the input ms, or 0 when reduced.
+//                          Use for Element.animate() durations and
+//                          setTimeout-driven cosmetic delays — the
+//                          animation snaps to its end-state instantly.
 //
 // All helpers read fresh on each call; do not cache the result.  The
 // matchMedia listener picks up OS-level toggles mid-session.
@@ -55,8 +73,10 @@ export function prefersReducedMotion() {
   return _prefersReducedMotion;
 }
 
-// 1 normally, 0 when reduced motion is requested.  Multiply per-frame
-// deltas, spawn probabilities, and impulse strengths by this scalar.
+// Continuous scalar.  Today returns 0 or 1; the scalar shape leaves
+// room for intermediate tiers later.  Prefer scaled / chance / step
+// over multiplying by this directly — the helpers absorb threading
+// at the call site.
 export function motionScale() {
   return _prefersReducedMotion ? 0 : 1;
 }
@@ -66,4 +86,22 @@ export function motionScale() {
 // periods) so the animation completes instantly without bespoke gating.
 export function reducedDuration(ms) {
   return _prefersReducedMotion ? 0 : ms;
+}
+
+// Multiply a per-frame value by the current motion scale.  Use for
+// any value that *represents* motion: position deltas, phase
+// advances, velocity-imparting forces, intrinsic gravity-like
+// contributions.  Reads motionScale() internally so callers don't
+// thread the scalar through factory or update signatures.
+export function scaled(value) {
+  return value * motionScale();
+}
+
+// Roll a probability gate scaled by motion budget.  Equivalent to
+// Math.random() < p when motion is allowed; returns false
+// unconditionally when motion is reduced.  Use for stochastic spawns
+// (shooting stars, jellyfish direction changes, glass-drop spawns,
+// star flashes) so spawn rate dampens with the rest of motion.
+export function chance(p) {
+  return Math.random() < p * motionScale();
 }

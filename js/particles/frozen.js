@@ -5,6 +5,7 @@ import {
 } from "../interactions.js";
 import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
+import { scaled } from "../motion.js";
 
 // Snowflake colors — frozen theme is the only place snow renders, so the
 // palette has no dedicated entries. Kept as named tuples so the helper
@@ -239,11 +240,11 @@ class Snowflake {
     this.rotation = Math.random() * Math.PI * 2;
     this.rotSpeed = (Math.random() - 0.5) * 0.01;
   }
-  update(motionScale = 1) {
-    this.sway += this.swaySpeed * motionScale;
-    this.rotation += this.rotSpeed * motionScale;
-    this.x += (Math.sin(this.sway) * this.swayAmp + this.vx) * motionScale;
-    this.y += (this.fallSpeed + this.vy) * motionScale;
+  update() {
+    this.sway += scaled(this.swaySpeed);
+    this.rotation += scaled(this.rotSpeed);
+    this.x += scaled(Math.sin(this.sway) * this.swayAmp + this.vx);
+    this.y += scaled(this.fallSpeed + this.vy);
     this.vx *= SNOW.FRICTION;
     this.vy *= SNOW.FRICTION;
     if (this.y > _canvas.height + 10) this.reset(false);
@@ -313,7 +314,7 @@ export function createSnow(canvasEl, ctxEl, count) {
   const snowflakes = Array.from({ length: count }, () => new Snowflake());
 
   return {
-    draw(forces, scrollVelocity, snowTurbulence, motionScale = 1) {
+    draw(forces, scrollVelocity, snowTurbulence) {
       // Snow globe turbulence — burst then decay
       if (snowTurbulence.value > 0.01) {
         snowflakes.forEach((s) => {
@@ -329,7 +330,7 @@ export function createSnow(canvasEl, ctxEl, count) {
         snowTurbulence.value *= SHAKE.DECAY;
       }
       snowflakes.forEach((s) => {
-        s.update(motionScale);
+        s.update();
         applyRepulsion(forces, s, SNOW.REPEL_RADIUS, SNOW.REPEL_DAMPEN);
         applyAttraction(
           forces,
