@@ -30,7 +30,7 @@ function stageDom() {
       <div class="service-card"></div>
       <div class="service-card"></div>
     </div>
-    <div id="bg-canvas"></div>
+    <canvas id="bg-canvas"></canvas>
   `;
 }
 

@@ -1,5 +1,8 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
+import { getCanvasCtx } from "../canvas-utils.js";
+import { createUpsideDown } from "../particles/upside-down.js";
+import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createTheme } from "./factory.js";
 import { createOverscrollTrigger } from "./triggers.js";
 
@@ -178,11 +181,23 @@ export function initUpsideDown() {
 
   const pageEl = document.querySelector(".page");
   const navEl = document.querySelector("nav");
+  const { canvasEl, ctx: canvasCtx } = getCanvasCtx();
 
   // Red vignette overlay
   const overlay = document.createElement("div");
   overlay.className = "ud-overlay";
   document.body.appendChild(overlay);
+
+  // Canvas-side hooks — anti-gravity dust drifting from the visual
+  // floor toward the visual ceiling.  Coordinates are plain canvas
+  // pixels; the canvas's own .flips-with-page CSS class handles the
+  // visual inversion.
+  const ud = createUpsideDown(canvasEl, canvasCtx);
+  registerCanvasHooks("upside-down", {
+    drawAmbient({ forces }) {
+      ud.draw(forces);
+    },
+  });
 
   function showWarning() {
     if (warningVisible) return;
@@ -385,6 +400,7 @@ export function initUpsideDown() {
     },
     onDeactivate() {
       if (disableCardUpside) disableCardUpside();
+      ud.cleanup();
     },
   });
 }
