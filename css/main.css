@@ -3463,6 +3463,16 @@ body[data-active-theme="paper"] .stat-label {
   color: var(--ink-color);
 }
 
+/* "Full-stack" emphasis — base rule applies a sky-blue gradient via
+   -webkit-text-fill-color: transparent.  Override both the gradient
+   and the fill so the emphasis reads as ink, matching the rest of the
+   heading rather than reverting to brand blue. */
+body[data-active-theme="paper"] .about-heading em {
+  background: none;
+  color: var(--ink-color);
+  -webkit-text-fill-color: var(--ink-color);
+}
+
 /* Light-appearance paper — brighter paper, darker ink */
 body.light-appearance[data-active-theme="paper"] {
   --paper-color: #fbf2dd;
