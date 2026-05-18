@@ -63,7 +63,7 @@ const THEMES = [
   {
     id: "paper",
     label: "Paper",
-    color: "#5a4030",
+    color: "#a89580",
     icon:
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M10 3l3 3-7 7H3v-3z"/>' +

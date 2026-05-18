@@ -3283,10 +3283,14 @@ body.paper .page {
 body[data-active-theme="paper"] {
   --ink-color: #1a1512;
   --paper-color: #f5efdc;
-  --theme-primary: #5a4030;
+  /* --theme-primary lightens the brown for readability on dark UI
+     surfaces (navbar, HUD, achievement panel).  --ink-color stays dark
+     for in-canvas text rendered on cream paper.  Logo text reads as a
+     mid-warm beige with the accent slightly more saturated. */
+  --theme-primary: #a89580;
   --cursor-glow: 60, 40, 30;
-  --logo-text-color: var(--ink-color);
-  --logo-accent-color: #5a4838;
+  --logo-text-color: #d4c0a8;
+  --logo-accent-color: #a89580;
   background: var(--paper-color);
 }
 body[data-active-theme="paper"] #bg-canvas {

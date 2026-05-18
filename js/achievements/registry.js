@@ -72,7 +72,7 @@ export const SETS = [
   {
     id: "paper",
     label: "Paper",
-    color: "#5a4030",
+    color: "#a89580",
     icon: getTheme("paper")?.icon,
   },
   {
