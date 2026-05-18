@@ -77,6 +77,13 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   --cursor-glow: 55, 138, 221;
+  /* Theme-color contract.  Every theme provides --theme-primary as its
+     identity color.  UI elements that should reflect the active theme
+     bind to var(--theme-primary).  Themes can still override individual
+     elements when they want a deliberate exception (blocky pairs an
+     orange chrome with green canvas accents — the chrome is --theme-
+     primary; the green elements override locally). */
+  --theme-primary: var(--sky-3);
   /* Logo theming knobs.  Themes that want a deliberate text-color
      override these; themes that don't get the brand defaults.  Some
      themes still rely on a desaturating `.nav-logo` filter for a
@@ -84,7 +91,7 @@ body {
      theme's identity better.  Direct color overrides are the simpler
      default. */
   --logo-text-color: #fff;
-  --logo-accent-color: var(--sky-3);
+  --logo-accent-color: var(--theme-primary);
 }
 
 /* OS cursor stays visible until cursor.js has both initialized and
@@ -941,7 +948,7 @@ nav {
   font-family: "DM Mono", monospace;
   font-size: 0.72rem;
   text-transform: uppercase;
-  color: var(--sky-3);
+  color: var(--theme-primary);
   border: 1px solid rgba(55, 138, 221, 0.4);
   padding: 0.55rem 1.2rem;
   border-radius: 100px;
@@ -954,7 +961,7 @@ nav {
 .nav-links a.nav-cta:hover,
 .nav-links a.nav-cta.active {
   background: rgba(55, 138, 221, 0.15);
-  border-color: var(--sky-3);
+  border-color: var(--theme-primary);
 }
 .nav-links a.nav-cta::after {
   display: none;
@@ -1544,7 +1551,7 @@ footer.footer-hinting::after {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--sky-3);
+  background: var(--theme-primary);
   animation: pulse 2s ease infinite;
 }
 
@@ -2142,6 +2149,7 @@ body[data-active-theme="upside-down"] {
   --sky-4: #dd3838;
   --sky-5: #a81a1a;
   --sky-6: #720c0c;
+  --theme-primary: #e04050;
   --cursor-glow: 232, 125, 125;
   --cursor-ring-style: dashed;
   --cursor-ring-width: 1.5px;
@@ -2249,10 +2257,6 @@ body[data-active-theme="upside-down"] .footer-info {
 body[data-active-theme="upside-down"] footer {
   border-top-color: rgba(255, 50, 50, 0.05);
 }
-body[data-active-theme="upside-down"] .footer-badge::before {
-  background: #dd3737;
-}
-
 body[data-active-theme="upside-down"]::after {
   opacity: 0.04;
 }
@@ -2358,6 +2362,7 @@ body[data-active-theme="frozen"] .cloud-svg {
 }
 
 body[data-active-theme="frozen"] {
+  --theme-primary: #88d4f7;
   --cursor-glow: 0, 200, 240;
   --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   --cursor-ring-width: 1.5px;
@@ -2592,6 +2597,7 @@ body[data-active-theme="deep-sea"] {
   --sky-4: #064050;
   --sky-5: #003040;
   --sky-6: #001a28;
+  --theme-primary: #00ffc8;
   --logo-text-color: #b8f5e0;
   --logo-accent-color: rgb(0, 200, 160);
   background: #001018;
@@ -2827,6 +2833,11 @@ body[data-active-theme="blocky"] .cloud-svg {
 }
 
 body[data-active-theme="blocky"] {
+  /* Blocky pairs an orange chrome with green canvas accents.
+     --theme-primary is the orange (HUD chip, achievement set, base
+     nav-cta).  Canvas-side elements (cursor, logo accent) override to
+     green explicitly. */
+  --theme-primary: #ffa040;
   --cursor-glow: 100, 255, 100;
   --logo-accent-color: rgb(100, 255, 100);
   --cursor-dot-radius: 0;
@@ -3016,6 +3027,7 @@ body.light-appearance[data-active-theme="blocky"] #cursor-ring {
 
 body[data-active-theme="rainy"] {
   --sky-3: #5a6a80;
+  --theme-primary: #6a9fc0;
   --cursor-glow: 160, 185, 210;
   --cursor-dot-radius: 0 50% 50% 50%;
   --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
@@ -3147,10 +3159,6 @@ body[data-active-theme="rainy"] footer {
 body[data-active-theme="rainy"] .footer-info {
   border-top-color: rgba(90, 122, 154, 0.08);
 }
-body[data-active-theme="rainy"] .footer-badge::before {
-  background: rgb(120, 150, 190);
-}
-
 body[data-active-theme="rainy"]::after {
   opacity: 0.03;
 }
@@ -3275,6 +3283,7 @@ body.paper .page {
 body[data-active-theme="paper"] {
   --ink-color: #1a1512;
   --paper-color: #f5efdc;
+  --theme-primary: #5a4030;
   --cursor-glow: 60, 40, 30;
   --logo-text-color: var(--ink-color);
   --logo-accent-color: #5a4838;
@@ -3393,14 +3402,16 @@ body.paper .paper-card:nth-child(3n + 3) {
   transform: rotate(-0.2deg);
 }
 
-/* Nav CTA */
+/* Nav CTA uses --theme-primary (paper's UI accent), not --ink-color
+   (the on-paper drawing color).  The chrome lightens to stay readable
+   on the dark navbar; ink stays dark for canvas text on cream paper. */
 body[data-active-theme="paper"] .nav-cta {
-  color: var(--ink-color);
-  border-color: var(--ink-color);
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
 }
 body[data-active-theme="paper"] .nav-cta:hover,
 body[data-active-theme="paper"] .nav-cta.active {
-  background: var(--ink-color);
+  background: var(--theme-primary);
   color: var(--paper-color);
 }
 
@@ -5056,6 +5067,7 @@ body.light-appearance .first-paint-mote {
 body[data-active-theme="vhs"] {
   --vhs-phosphor: #b4f0b4;
   --vhs-tape: #708ca0;
+  --theme-primary: var(--vhs-phosphor);
   --cursor-glow: 220, 255, 220;
   --logo-accent-color: var(--vhs-phosphor);
 }
