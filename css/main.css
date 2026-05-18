@@ -77,6 +77,14 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   --cursor-glow: 55, 138, 221;
+  /* Logo theming knobs.  Themes that want a deliberate text-color
+     override these; themes that don't get the brand defaults.  Some
+     themes still rely on a desaturating `.nav-logo` filter for a
+     bleached look — both approaches coexist; pick whichever fits the
+     theme's identity better.  Direct color overrides are the simpler
+     default. */
+  --logo-text-color: #fff;
+  --logo-accent-color: var(--sky-3);
 }
 
 /* OS cursor stays visible until cursor.js has both initialized and
@@ -869,10 +877,10 @@ nav {
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #fff;
+  color: var(--logo-text-color);
 }
 .logo-text > span:not(.logo-letter) {
-  color: var(--sky-3);
+  color: var(--logo-accent-color);
 }
 .logo-letter {
   display: inline-block;
@@ -2815,6 +2823,7 @@ body[data-active-theme="blocky"] .cloud-svg {
 
 body[data-active-theme="blocky"] {
   --cursor-glow: 100, 255, 100;
+  --logo-accent-color: rgb(100, 255, 100);
   --cursor-dot-radius: 0;
   --cursor-ring-radius: 0;
 }
@@ -3262,6 +3271,8 @@ body[data-active-theme="paper"] {
   --ink-color: #1a1512;
   --paper-color: #f5efdc;
   --cursor-glow: 60, 40, 30;
+  --logo-text-color: var(--ink-color);
+  --logo-accent-color: #5a4838;
   background: var(--paper-color);
 }
 body[data-active-theme="paper"] #bg-canvas {
@@ -5041,6 +5052,7 @@ body[data-active-theme="vhs"] {
   --vhs-phosphor: #b4f0b4;
   --vhs-tape: #708ca0;
   --cursor-glow: 220, 255, 220;
+  --logo-accent-color: var(--vhs-phosphor);
 }
 
 body[data-active-theme="vhs"] #bg-canvas {
