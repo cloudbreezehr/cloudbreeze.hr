@@ -2592,6 +2592,8 @@ body[data-active-theme="deep-sea"] {
   --sky-4: #064050;
   --sky-5: #003040;
   --sky-6: #001a28;
+  --logo-text-color: #b8f5e0;
+  --logo-accent-color: rgb(0, 200, 160);
   background: #001018;
 }
 
@@ -2599,11 +2601,14 @@ body[data-active-theme="deep-sea"] #bg-canvas {
   filter: hue-rotate(310deg) saturate(1.4) brightness(0.35);
 }
 
-body[data-active-theme="deep-sea"] .nav-logo {
-  filter: saturate(0.6) brightness(0.8);
-}
+/* Render the brand-blue SVG icon as a dark monochrome silhouette so it
+   reads as a logo-mark counterpart to the mint logo-type rather than
+   competing with it.  Filter lives on .cloud-svg directly (not the
+   .nav-logo wrapper) so explicit --logo-*-color overrides on the text
+   aren't dragged through it. */
 body[data-active-theme="deep-sea"] .cloud-svg {
-  filter: drop-shadow(0 0 14px rgba(0, 255, 180, 0.5));
+  filter: grayscale(1) brightness(0.55)
+    drop-shadow(0 0 14px rgba(0, 255, 180, 0.5));
 }
 
 body[data-active-theme="deep-sea"] {
