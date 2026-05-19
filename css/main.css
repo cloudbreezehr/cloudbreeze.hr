@@ -2143,7 +2143,7 @@ body[data-active-theme="upside-down"] {
   --sky-5: #a81a1a;
   --sky-6: #720c0c;
   --theme-primary: #e04050;
-  --theme-glow: 232, 125, 125;
+  --theme-glow: 221, 55, 55;
   --cursor-ring-style: dashed;
   --cursor-ring-width: 1.5px;
   --cursor-ring-animation: cursor-spin 6s linear infinite;
@@ -2160,14 +2160,6 @@ body[data-active-theme="upside-down"] #cursor {
     2px -1px 0 rgba(255, 50, 50, 0.5),
     -2px 1px 0 rgba(80, 120, 255, 0.4);
 }
-body[data-active-theme="upside-down"] #cursor-ring {
-  border-color: rgba(221, 55, 55, 0.5);
-}
-
-body[data-active-theme="upside-down"] .cloud-svg {
-  filter: drop-shadow(0 0 12px rgba(221, 55, 55, 0.6));
-}
-
 body[data-active-theme="upside-down"] .hero-title .line-2 {
   background: linear-gradient(
     135deg,
@@ -2181,13 +2173,9 @@ body[data-active-theme="upside-down"] .hero-title .line-2 {
 
 body[data-active-theme="upside-down"] .btn-primary {
   background: linear-gradient(135deg, var(--sky-4), var(--sky-5));
-  box-shadow: 0 0 30px rgba(221, 55, 55, 0.35);
 }
 body[data-active-theme="upside-down"] .btn-primary::before {
   background: linear-gradient(135deg, var(--sky-3), var(--sky-4));
-}
-body[data-active-theme="upside-down"] .btn-primary:hover {
-  box-shadow: 0 8px 40px rgba(221, 55, 55, 0.5);
 }
 
 body[data-active-theme="upside-down"] .about-heading em {
@@ -2200,18 +2188,6 @@ body[data-active-theme="upside-down"] .services-grid {
   background: rgba(255, 50, 50, 0.06);
   border-color: rgba(255, 50, 50, 0.06);
 }
-body[data-active-theme="upside-down"] .service-card:hover {
-  background: rgba(221, 55, 55, 0.05);
-}
-body[data-active-theme="upside-down"] .service-card::before {
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(221, 55, 55, 0.4),
-    transparent
-  );
-}
-
 /* Card gravity-defying hover — cards float up in the flipped world.
    The page is flipped via scaleY(-1), so positive translateY in CSS
    renders as upward motion on screen. Shadow offsets are also inverted. */
@@ -2224,29 +2200,23 @@ body[data-active-theme="upside-down"] .service-card {
 body[data-active-theme="upside-down"] .service-card:hover {
   translate: 0 8px;
   box-shadow:
-    0 -16px 40px rgba(221, 55, 55, 0.12),
+    0 -16px 40px rgba(var(--theme-glow), 0.12),
     0 -6px 16px rgba(0, 0, 0, 0.15);
 }
 
 body[data-active-theme="upside-down"] .nav-cta {
   color: var(--sky-3);
-  border-color: rgba(221, 55, 55, 0.4);
 }
 body[data-active-theme="upside-down"] .nav-cta:hover {
-  background: rgba(221, 55, 55, 0.15);
   border-color: var(--sky-3);
 }
 
 body[data-active-theme="upside-down"] .contact-card {
   background: linear-gradient(
     135deg,
-    rgba(221, 55, 55, 0.08) 0%,
+    rgba(var(--theme-glow), 0.08) 0%,
     rgba(40, 10, 10, 0.9) 100%
   );
-  border-color: rgba(221, 55, 55, 0.18);
-}
-body[data-active-theme="upside-down"] .contact-card::before {
-  background: radial-gradient(circle, rgba(221, 55, 55, 0.12), transparent 70%);
 }
 
 body[data-active-theme="upside-down"] .footer-info {
