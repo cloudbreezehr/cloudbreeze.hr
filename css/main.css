@@ -2259,7 +2259,7 @@ body[data-active-theme="upside-down"]::after {
   background: radial-gradient(
     circle,
     rgba(180, 230, 255, 0.9),
-    rgba(0, 220, 255, 0.3)
+    rgba(var(--frost-edge-rgb), 0.3)
   );
   pointer-events: none;
   z-index: var(--z-theme-effect);
@@ -2332,7 +2332,11 @@ body[data-active-theme="upside-down"]::after {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(0, 220, 255, 0.3), transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(var(--frost-edge-rgb), 0.3),
+    transparent 70%
+  );
   pointer-events: none;
 }
 
@@ -2345,18 +2349,19 @@ body[data-active-theme="frozen"] .nav-logo {
   filter: saturate(0.2) brightness(1.4);
 }
 body[data-active-theme="frozen"] .cloud-svg {
-  filter: drop-shadow(0 0 14px rgba(0, 220, 255, 0.7));
+  filter: drop-shadow(0 0 14px rgba(var(--frost-edge-rgb), 0.7));
 }
 
 body[data-active-theme="frozen"] {
   --theme-primary: #88d4f7;
   --theme-glow: 0, 200, 240;
+  --frost-edge-rgb: 0, 220, 255;
   --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   --cursor-ring-width: 1.5px;
 }
 body[data-active-theme="frozen"] #cursor-ring {
-  border-color: rgba(0, 220, 255, 0.5);
-  box-shadow: 0 0 8px rgba(0, 220, 255, 0.25);
+  border-color: rgba(var(--frost-edge-rgb), 0.5);
+  box-shadow: 0 0 8px rgba(var(--frost-edge-rgb), 0.25);
 }
 
 body[data-active-theme="frozen"] .hero-title .line-2 {
@@ -2386,13 +2391,29 @@ body.frozen .frost-card::after {
   background:
     radial-gradient(
       circle at var(--frost-x, 50%) var(--frost-y, 50%),
-      rgba(0, 220, 255, 0.12) 0%,
+      rgba(var(--frost-edge-rgb), 0.12) 0%,
       transparent 60%
     ),
-    linear-gradient(180deg, rgba(0, 220, 255, 0.08) 0%, transparent 15%),
-    linear-gradient(0deg, rgba(0, 220, 255, 0.06) 0%, transparent 12%),
-    linear-gradient(90deg, rgba(0, 220, 255, 0.05) 0%, transparent 10%),
-    linear-gradient(270deg, rgba(0, 220, 255, 0.05) 0%, transparent 10%);
+    linear-gradient(
+      180deg,
+      rgba(var(--frost-edge-rgb), 0.08) 0%,
+      transparent 15%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(var(--frost-edge-rgb), 0.06) 0%,
+      transparent 12%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(var(--frost-edge-rgb), 0.05) 0%,
+      transparent 10%
+    ),
+    linear-gradient(
+      270deg,
+      rgba(var(--frost-edge-rgb), 0.05) 0%,
+      transparent 10%
+    );
   background-size:
     100% 100%,
     100% 0%,
@@ -2420,14 +2441,14 @@ body.frozen .frost-card:hover::after {
 /* Frozen card state */
 body.frozen .service-card.card-frozen {
   background: rgba(var(--theme-glow), 0.08);
-  box-shadow: inset 0 0 20px rgba(0, 220, 255, 0.1);
+  box-shadow: inset 0 0 20px rgba(var(--frost-edge-rgb), 0.1);
 }
 body.frozen .service-card.card-frozen::before {
   transform: scaleX(1);
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(0, 220, 255, 0.6),
+    rgba(var(--frost-edge-rgb), 0.6),
     transparent
   );
 }
