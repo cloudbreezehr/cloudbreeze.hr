@@ -24,6 +24,7 @@
   --sky-5: #1a5fa8;
   --sky-6: #0c3d72;
   --ink: #0a1628;
+  --ink-rgb: 10, 22, 40;
   --ink-mid: #1e3a5f;
   --mist: rgba(255, 255, 255, 0.55);
   --glass: rgba(255, 255, 255, 0.18);
@@ -837,7 +838,7 @@ nav {
   position: sticky;
   top: 0;
   z-index: var(--z-nav);
-  background: rgba(10, 22, 40, 0.85);
+  background: rgba(var(--ink-rgb), 0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   will-change: translate;
@@ -1225,7 +1226,7 @@ section {
 }
 
 .service-card {
-  background: rgba(10, 22, 40, 0.7);
+  background: rgba(var(--ink-rgb), 0.7);
   padding: 2.5rem;
   position: relative;
   overflow: hidden;
@@ -1353,7 +1354,7 @@ section {
   background: linear-gradient(
     135deg,
     rgba(var(--theme-glow), 0.08) 0%,
-    rgba(10, 22, 40, 0.9) 100%
+    rgba(var(--ink-rgb), 0.9) 100%
   );
   border: 1px solid rgba(var(--theme-glow), 0.18);
   border-radius: 24px;
@@ -1650,7 +1651,7 @@ footer.footer-hinting::after {
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--nav-bg, rgba(10, 22, 40, 0.97));
+    background: var(--nav-bg, rgba(var(--ink-rgb), 0.97));
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
@@ -1741,7 +1742,7 @@ nav.nav-light .logo-text {
   color: var(--ink);
 }
 nav.nav-light .nav-links a {
-  color: rgba(10, 22, 40, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
 }
 nav.nav-light .nav-links a:hover {
   color: var(--ink);
@@ -1757,7 +1758,7 @@ nav.nav-light .nav-cta:hover {
   background: rgba(var(--theme-glow), 0.1);
 }
 nav.nav-light .nav-burger {
-  color: rgba(10, 22, 40, 0.6);
+  color: rgba(var(--ink-rgb), 0.6);
 }
 nav.nav-light .nav-burger:hover {
   color: var(--ink);
@@ -1810,7 +1811,7 @@ nav.nav-light .nav-burger:hover {
   letter-spacing: 0.04em;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.65);
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   padding: 4px 8px;
   border-radius: 4px;
   pointer-events: none;
@@ -1821,7 +1822,7 @@ nav.nav-light .nav-burger:hover {
   opacity: 1;
 }
 nav.nav-light .appearance-toggle {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   border-color: rgba(0, 0, 0, 0.1);
 }
 nav.nav-light .appearance-toggle:hover {
@@ -1830,7 +1831,7 @@ nav.nav-light .appearance-toggle:hover {
   background: rgba(var(--theme-glow), 0.08);
 }
 nav.nav-light .appearance-toggle::after {
-  color: rgba(10, 22, 40, 0.7);
+  color: rgba(var(--ink-rgb), 0.7);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -1876,20 +1877,20 @@ body.light-appearance .service-title {
   color: var(--ink);
 }
 body.light-appearance .service-desc {
-  color: rgba(10, 22, 40, 0.55);
+  color: rgba(var(--ink-rgb), 0.55);
 }
 
 body.light-appearance .about-heading {
   color: var(--ink);
 }
 body.light-appearance .about-body {
-  color: rgba(10, 22, 40, 0.6);
+  color: rgba(var(--ink-rgb), 0.6);
 }
 body.light-appearance .stat-num {
   color: var(--ink);
 }
 body.light-appearance .stat-label {
-  color: rgba(10, 22, 40, 0.45);
+  color: rgba(var(--ink-rgb), 0.45);
 }
 
 body.light-appearance .contact-card {
@@ -1911,10 +1912,10 @@ body.light-appearance .contact-heading {
   color: var(--ink);
 }
 body.light-appearance .contact-sub {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 body.light-appearance .contact-link {
-  color: rgba(10, 22, 40, 0.65);
+  color: rgba(var(--ink-rgb), 0.65);
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.6);
 }
@@ -1937,10 +1938,10 @@ body.light-appearance .footer-col-title {
   color: var(--sky-5);
 }
 body.light-appearance .footer-text {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 body.light-appearance .footer-link {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 body.light-appearance .footer-link:hover {
   color: var(--sky-5);
@@ -1950,7 +1951,7 @@ body.light-appearance footer {
   border-top-color: rgba(0, 0, 0, 0.05);
 }
 body.light-appearance .footer-copy {
-  color: rgba(10, 22, 40, 0.3);
+  color: rgba(var(--ink-rgb), 0.3);
 }
 body.light-appearance .footer-badge {
   color: rgba(var(--theme-glow), 0.5);
@@ -3338,7 +3339,7 @@ body.light-appearance[data-active-theme="paper"] #bg-canvas {
 
 /* Nav-light variant */
 nav.nav-light .achievement-btn {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
   border-color: rgba(0, 0, 0, 0.1);
 }
 nav.nav-light .achievement-btn:hover,
@@ -3365,7 +3366,7 @@ nav.nav-light .achievement-btn.active {
   letter-spacing: 0.04em;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.65);
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   padding: 4px 8px;
   border-radius: 4px;
   pointer-events: none;
@@ -3376,7 +3377,7 @@ nav.nav-light .achievement-btn.active {
   opacity: 1;
 }
 nav.nav-light .achievement-btn::after {
-  color: rgba(10, 22, 40, 0.7);
+  color: rgba(var(--ink-rgb), 0.7);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
@@ -3430,7 +3431,7 @@ nav.nav-light .achievement-btn::after {
   max-width: 100vw;
   height: 100vh;
   height: 100dvh;
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
@@ -3896,7 +3897,7 @@ nav.nav-light .achievement-btn::after {
   letter-spacing: 0.04em;
   white-space: nowrap;
   color: rgba(255, 255, 255, 0.65);
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   padding: 4px 8px;
   border-radius: 4px;
   pointer-events: none;
@@ -4361,7 +4362,7 @@ nav.nav-light .achievement-btn::after {
   z-index: var(--z-tooltip);
   max-width: 320px;
   padding: 0.4rem 0.65rem;
-  background: rgba(10, 22, 40, 0.95);
+  background: rgba(var(--ink-rgb), 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -4386,7 +4387,7 @@ nav.nav-light .achievement-btn::after {
 body.light-appearance .achievement-tooltip {
   background: rgba(240, 247, 255, 0.96);
   border-color: rgba(0, 0, 0, 0.1);
-  color: rgba(10, 22, 40, 0.65);
+  color: rgba(var(--ink-rgb), 0.65);
 }
 
 /* ── Toast Notifications ── */
@@ -4410,7 +4411,7 @@ body.light-appearance .achievement-tooltip {
   gap: 0.6rem;
   padding: 0.65rem 0.9rem;
   cursor: pointer;
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -4490,7 +4491,7 @@ body.light-appearance .achievement-tooltip {
   align-items: center;
   gap: 0.5rem;
   padding: 0.55rem 1rem;
-  background: rgba(10, 22, 40, 0.92);
+  background: rgba(var(--ink-rgb), 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -5334,7 +5335,7 @@ body.light-appearance .achievement-toast-title {
   color: var(--ink);
 }
 body.light-appearance .achievement-toast-desc {
-  color: rgba(10, 22, 40, 0.5);
+  color: rgba(var(--ink-rgb), 0.5);
 }
 body.light-appearance .achievement-activation-toast {
   background: rgba(240, 247, 255, 0.95);
