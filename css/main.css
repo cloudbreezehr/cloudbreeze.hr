@@ -52,17 +52,17 @@
 
 /* ── Keyboard Focus Rings ── */
 :focus-visible {
-  outline-color: rgb(var(--cursor-glow));
+  outline-color: rgb(var(--theme-glow));
   outline-offset: 2px;
   animation: focusPulse 2s ease-in-out infinite;
 }
 @keyframes focusPulse {
   0%,
   100% {
-    outline-color: rgba(var(--cursor-glow), 0.4);
+    outline-color: rgba(var(--theme-glow), 0.4);
   }
   50% {
-    outline-color: rgba(var(--cursor-glow), 0.9);
+    outline-color: rgba(var(--theme-glow), 0.9);
   }
 }
 
@@ -76,14 +76,24 @@ body {
   color: #fff;
   min-height: 100vh;
   overflow-x: hidden;
-  --cursor-glow: 55, 138, 221;
-  /* Theme-color contract.  Every theme provides --theme-primary as its
-     identity color.  UI elements that should reflect the active theme
-     bind to var(--theme-primary).  Themes can still override individual
-     elements when they want a deliberate exception (blocky pairs an
-     orange chrome with green canvas accents — the chrome is --theme-
-     primary; the green elements override locally). */
+  /* Theme-color contract.  Every theme provides two identity colors:
+     - --theme-primary: solid hex form, used directly for chrome that
+       takes a flat color (HUD chip, achievement set header, nav-cta
+       text, logo accent, footer-badge dot).
+     - --theme-glow: RGB-triplet form, used inside rgba(...) for halos
+       and glows (button-hover box-shadow, footer-badge color in light
+       appearance, the cursor and its idle animations).  Triplet form
+       so callers can pick their own alpha.
+     Themes can still override individual elements when they want a
+     deliberate exception (blocky pairs an orange chrome with green
+     canvas accents — the chrome uses --theme-primary; the green
+     elements override locally). */
   --theme-primary: var(--sky-3);
+  --theme-glow: 55, 138, 221;
+  /* Cursor follows --theme-glow unless a theme explicitly tunes the
+     cursor to a different color (none currently do — every theme's
+     cursor is its --theme-glow). */
+  --cursor-glow: var(--theme-glow);
   /* Logo theming knobs.  Themes that want a deliberate text-color
      override these; themes that don't get the brand defaults.  Some
      themes still rely on a desaturating `.nav-logo` filter for a
@@ -940,7 +950,7 @@ nav {
 .nav-sparkle {
   position: absolute;
   border-radius: 50%;
-  background: rgb(var(--cursor-glow));
+  background: rgb(var(--theme-glow));
   pointer-events: none;
 }
 
@@ -1104,7 +1114,7 @@ nav {
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 40px rgba(55, 138, 221, 0.5);
+  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.5);
 }
 .btn-primary:hover::before {
   opacity: 1;
@@ -1959,7 +1969,7 @@ body.light-appearance .footer-copy {
   color: rgba(10, 22, 40, 0.3);
 }
 body.light-appearance .footer-badge {
-  color: rgba(55, 138, 221, 0.5);
+  color: rgba(var(--theme-glow), 0.5);
 }
 
 body.light-appearance::after {
@@ -2054,7 +2064,7 @@ body.light-appearance #cursor-ring {
 .ud-wipe-return {
   background: radial-gradient(
     ellipse at center,
-    rgba(55, 138, 221, 0.3) 0%,
+    rgba(var(--theme-glow), 0.3) 0%,
     #051020 60%
   );
 }
@@ -2150,7 +2160,7 @@ body[data-active-theme="upside-down"] {
   --sky-5: #a81a1a;
   --sky-6: #720c0c;
   --theme-primary: #e04050;
-  --cursor-glow: 232, 125, 125;
+  --theme-glow: 232, 125, 125;
   --cursor-ring-style: dashed;
   --cursor-ring-width: 1.5px;
   --cursor-ring-animation: cursor-spin 6s linear infinite;
@@ -2363,7 +2373,7 @@ body[data-active-theme="frozen"] .cloud-svg {
 
 body[data-active-theme="frozen"] {
   --theme-primary: #88d4f7;
-  --cursor-glow: 0, 200, 240;
+  --theme-glow: 0, 200, 240;
   --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   --cursor-ring-width: 1.5px;
 }
@@ -2618,7 +2628,7 @@ body[data-active-theme="deep-sea"] .cloud-svg {
 }
 
 body[data-active-theme="deep-sea"] {
-  --cursor-glow: 0, 200, 160;
+  --theme-glow: 0, 200, 160;
   --cursor-ring-animation: cursor-wobble 3s ease-in-out infinite;
 }
 body[data-active-theme="deep-sea"] #cursor {
@@ -2833,12 +2843,14 @@ body[data-active-theme="blocky"] .cloud-svg {
 }
 
 body[data-active-theme="blocky"] {
-  /* Blocky pairs an orange chrome with green canvas accents.
-     --theme-primary is the orange (HUD chip, achievement set, base
-     nav-cta).  Canvas-side elements (cursor, logo accent) override to
-     green explicitly. */
+  /* Blocky deliberately splits its identity: --theme-primary is the
+     orange (HUD chip, achievement set, base nav-cta — anywhere chrome
+     wants a flat accent), --theme-glow is the lime green (cursor,
+     button-hover halo, anywhere a glow color is needed).  Logo accent
+     overrides locally to use the green so the logo matches the
+     canvas-vs-chrome split visually. */
   --theme-primary: #ffa040;
-  --cursor-glow: 100, 255, 100;
+  --theme-glow: 100, 255, 100;
   --logo-accent-color: rgb(100, 255, 100);
   --cursor-dot-radius: 0;
   --cursor-ring-radius: 0;
@@ -3028,7 +3040,7 @@ body.light-appearance[data-active-theme="blocky"] #cursor-ring {
 body[data-active-theme="rainy"] {
   --sky-3: #5a6a80;
   --theme-primary: #6a9fc0;
-  --cursor-glow: 160, 185, 210;
+  --theme-glow: 160, 185, 210;
   --cursor-dot-radius: 0 50% 50% 50%;
   --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
   background: #101820;
@@ -3288,7 +3300,7 @@ body[data-active-theme="paper"] {
      for in-canvas text rendered on cream paper.  Logo text reads as a
      mid-warm beige with the accent slightly more saturated. */
   --theme-primary: #a89580;
-  --cursor-glow: 60, 40, 30;
+  --theme-glow: 60, 40, 30;
   --logo-text-color: #d4c0a8;
   --logo-accent-color: #a89580;
   background: var(--paper-color);
@@ -5082,7 +5094,7 @@ body[data-active-theme="vhs"] {
   --vhs-phosphor: #b4f0b4;
   --vhs-tape: #708ca0;
   --theme-primary: var(--vhs-phosphor);
-  --cursor-glow: 220, 255, 220;
+  --theme-glow: 220, 255, 220;
   --logo-accent-color: var(--vhs-phosphor);
 }
 
