@@ -72,12 +72,13 @@ html {
 
 body {
   font-family: "Syne", sans-serif;
-  background: var(--ink);
+  background: var(--theme-bg);
   color: #fff;
   min-height: 100vh;
   overflow-x: hidden;
   --theme-primary: var(--sky-3);
   --theme-glow: 55, 138, 221;
+  --theme-bg: var(--ink);
   --cursor-glow: var(--theme-glow);
   --logo-text-color: #fff;
   --logo-accent-color: var(--theme-primary);
@@ -1841,7 +1842,7 @@ nav.nav-light .appearance-toggle::after {
 
 /* LIGHT APPEARANCE (class-based for manual toggle support) */
 body.light-appearance {
-  background: #f0f7ff;
+  --theme-bg: #f0f7ff;
 }
 
 body.light-appearance .section-label {
@@ -2147,7 +2148,7 @@ body[data-active-theme="upside-down"] {
   --cursor-ring-style: dashed;
   --cursor-ring-width: 1.5px;
   --cursor-ring-animation: cursor-spin 6s linear infinite;
-  background: #280a0a;
+  --theme-bg: #280a0a;
 }
 
 body[data-active-theme="upside-down"] #bg-canvas {
@@ -2503,7 +2504,7 @@ body[data-active-theme="deep-sea"] {
   --theme-primary: #00ffc8;
   --logo-text-color: #b8f5e0;
   --logo-accent-color: rgb(var(--theme-glow));
-  background: #001018;
+  --theme-bg: #001018;
 }
 
 body[data-active-theme="deep-sea"] #bg-canvas {
@@ -2679,7 +2680,7 @@ body[data-active-theme="deep-sea"]::after {
 
 /* ── Blocky — visual theme (only when active theme) ── */
 body[data-active-theme="blocky"] {
-  background: #0a1230;
+  --theme-bg: #0a1230;
 }
 
 body[data-active-theme="blocky"] #bg-canvas {
@@ -2792,7 +2793,7 @@ body[data-active-theme="blocky"]::after {
 
 /* ── Light appearance overrides for blocky ── */
 body.light-appearance[data-active-theme="blocky"] {
-  background: #e8f0ff;
+  --theme-bg: #e8f0ff;
 }
 body.light-appearance[data-active-theme="blocky"] #bg-canvas {
   filter: contrast(1.1) saturate(1.2);
@@ -2842,7 +2843,7 @@ body[data-active-theme="rainy"] {
   --theme-glow: 160, 185, 210;
   --cursor-dot-radius: 0 50% 50% 50%;
   --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
-  background: #101820;
+  --theme-bg: #101820;
 }
 body[data-active-theme="rainy"] #bg-canvas {
   filter: saturate(0.6) brightness(0.7) hue-rotate(10deg);
@@ -3000,7 +3001,7 @@ body[data-active-theme="rainy"] #cursor-ring {
 
 /* ── Light appearance overrides for rainy ── */
 body.light-appearance[data-active-theme="rainy"] {
-  background: #d0d8e4;
+  --theme-bg: #d0d8e4;
 }
 body.light-appearance[data-active-theme="rainy"] #bg-canvas {
   filter: saturate(0.55) brightness(0.85) hue-rotate(5deg);
@@ -3087,7 +3088,7 @@ body[data-active-theme="paper"] {
   --theme-primary: #a89580;
   --theme-glow: 60, 40, 30;
   --logo-text-color: #d4c0a8;
-  background: var(--paper-color);
+  --theme-bg: var(--paper-color);
 }
 body[data-active-theme="paper"] #bg-canvas {
   /* Canvas still runs (fury + ink), but sky/atmosphere are skipped in JS.
