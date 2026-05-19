@@ -155,6 +155,11 @@ body.has-custom-cursor {
   opacity: 0;
   transition: opacity 0.3s;
 }
+/* Brand-default keeps the lighter sky dot for higher contrast on the dark
+   canvas; themes follow the cascade through --cursor-glow. */
+body:not([data-active-theme]) #cursor {
+  background: var(--sky-3);
+}
 #cursor-ring {
   position: fixed;
   left: 0;
