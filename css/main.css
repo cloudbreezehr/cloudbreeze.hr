@@ -2588,7 +2588,7 @@ body[data-active-theme="deep-sea"] {
   --sky-6: #001a28;
   --theme-primary: #00ffc8;
   --logo-text-color: #b8f5e0;
-  --logo-accent-color: rgb(0, 200, 160);
+  --logo-accent-color: rgb(var(--theme-glow));
   background: #001018;
 }
 
@@ -2819,7 +2819,7 @@ body[data-active-theme="blocky"] .cloud-svg {
 body[data-active-theme="blocky"] {
   --theme-primary: #ffa040;
   --theme-glow: 100, 255, 100;
-  --logo-accent-color: rgb(100, 255, 100);
+  --logo-accent-color: rgb(var(--theme-glow));
   --cursor-dot-radius: 0;
   --cursor-ring-radius: 0;
 }
@@ -3266,7 +3266,6 @@ body[data-active-theme="paper"] {
   --theme-primary: #a89580;
   --theme-glow: 60, 40, 30;
   --logo-text-color: #d4c0a8;
-  --logo-accent-color: #a89580;
   background: var(--paper-color);
 }
 body[data-active-theme="paper"] #bg-canvas {
@@ -5056,7 +5055,6 @@ body[data-active-theme="vhs"] {
   --vhs-tape: #708ca0;
   --theme-primary: var(--vhs-phosphor);
   --theme-glow: 220, 255, 220;
-  --logo-accent-color: var(--vhs-phosphor);
 }
 
 body[data-active-theme="vhs"] #bg-canvas {
