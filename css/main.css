@@ -854,7 +854,7 @@ nav {
 .cloud-svg {
   width: 44px;
   height: 32px;
-  filter: drop-shadow(0 0 12px rgba(55, 138, 221, 0.6));
+  filter: drop-shadow(0 0 12px rgba(var(--theme-glow), 0.6));
 }
 .cloud-svg.logo-breathing {
   animation: logoBreath 3s ease-in-out infinite;
@@ -938,7 +938,7 @@ nav {
   font-size: 0.72rem;
   text-transform: uppercase;
   color: var(--theme-primary);
-  border: 1px solid rgba(55, 138, 221, 0.4);
+  border: 1px solid rgba(var(--theme-glow), 0.4);
   padding: 0.55rem 1.2rem;
   border-radius: 100px;
   position: relative;
@@ -949,7 +949,7 @@ nav {
 }
 .nav-links a.nav-cta:hover,
 .nav-links a.nav-cta.active {
-  background: rgba(55, 138, 221, 0.15);
+  background: rgba(var(--theme-glow), 0.15);
   border-color: var(--theme-primary);
 }
 .nav-links a.nav-cta::after {
@@ -1081,7 +1081,7 @@ nav {
   transition:
     transform 0.3s,
     box-shadow 0.3s;
-  box-shadow: 0 0 30px rgba(55, 138, 221, 0.35);
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.35);
 }
 .btn-primary::before {
   content: "";
@@ -1173,7 +1173,11 @@ nav {
 .scroll-line {
   width: 1px;
   height: 40px;
-  background: linear-gradient(to bottom, rgba(55, 138, 221, 0.6), transparent);
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--theme-glow), 0.6),
+    transparent
+  );
   animation: scrollPulse 2s ease infinite;
 }
 
@@ -1237,14 +1241,14 @@ section {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(55, 138, 221, 0.4),
+    rgba(var(--theme-glow), 0.4),
     transparent
   );
   transform: scaleX(0);
   transition: transform 0.5s;
 }
 .service-card:hover {
-  background: rgba(55, 138, 221, 0.05);
+  background: rgba(var(--theme-glow), 0.05);
 }
 .service-card:hover::before {
   transform: scaleX(1);
@@ -1262,7 +1266,7 @@ section {
   font-family: "DM Mono", monospace;
   font-size: 0.6rem;
   letter-spacing: 0.15em;
-  color: rgba(55, 138, 221, 0.4);
+  color: rgba(var(--theme-glow), 0.4);
   margin-bottom: 1rem;
 }
 
@@ -1347,10 +1351,10 @@ section {
 .contact-card {
   background: linear-gradient(
     135deg,
-    rgba(55, 138, 221, 0.08) 0%,
+    rgba(var(--theme-glow), 0.08) 0%,
     rgba(10, 22, 40, 0.9) 100%
   );
-  border: 1px solid rgba(55, 138, 221, 0.18);
+  border: 1px solid rgba(var(--theme-glow), 0.18);
   border-radius: 24px;
   padding: 4rem;
   display: grid;
@@ -1369,7 +1373,7 @@ section {
   height: 300px;
   background: radial-gradient(
     circle,
-    rgba(55, 138, 221, 0.12),
+    rgba(var(--theme-glow), 0.12),
     transparent 70%
   );
   pointer-events: none;
@@ -1414,8 +1418,8 @@ section {
 }
 .contact-link:hover {
   color: #fff;
-  border-color: rgba(55, 138, 221, 0.3);
-  background: rgba(55, 138, 221, 0.08);
+  border-color: rgba(var(--theme-glow), 0.3);
+  background: rgba(var(--theme-glow), 0.08);
 }
 .contact-link svg {
   flex-shrink: 0;
@@ -1495,10 +1499,10 @@ footer::after {
   height: 1px;
   background: radial-gradient(
     ellipse at center,
-    rgba(55, 138, 221, 0.4) 0%,
+    rgba(var(--theme-glow), 0.4) 0%,
     transparent 70%
   );
-  box-shadow: 0 0 6px 1px rgba(55, 138, 221, 0.15);
+  box-shadow: 0 0 6px 1px rgba(var(--theme-glow), 0.15);
   opacity: 0;
   transition: opacity 2.5s ease;
   pointer-events: none;
@@ -1510,10 +1514,10 @@ footer.footer-hinting::after {
 @keyframes footerHintGlow {
   0%,
   100% {
-    box-shadow: 0 0 6px 1px rgba(55, 138, 221, 0.15);
+    box-shadow: 0 0 6px 1px rgba(var(--theme-glow), 0.15);
   }
   50% {
-    box-shadow: 0 0 10px 2px rgba(55, 138, 221, 0.35);
+    box-shadow: 0 0 10px 2px rgba(var(--theme-glow), 0.35);
   }
 }
 
@@ -1529,7 +1533,7 @@ footer.footer-hinting::after {
   font-size: 0.6rem;
   letter-spacing: 0.15em;
   text-transform: uppercase;
-  color: rgba(55, 138, 221, 0.4);
+  color: rgba(var(--theme-glow), 0.4);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1749,7 +1753,7 @@ nav.nav-light .nav-cta {
   border-color: rgba(26, 95, 168, 0.4);
 }
 nav.nav-light .nav-cta:hover {
-  background: rgba(55, 138, 221, 0.1);
+  background: rgba(var(--theme-glow), 0.1);
 }
 nav.nav-light .nav-burger {
   color: rgba(10, 22, 40, 0.6);
@@ -1777,8 +1781,8 @@ nav.nav-light .nav-burger:hover {
 }
 .appearance-toggle:hover {
   color: #fff;
-  border-color: rgba(55, 138, 221, 0.4);
-  background: rgba(55, 138, 221, 0.08);
+  border-color: rgba(var(--theme-glow), 0.4);
+  background: rgba(var(--theme-glow), 0.08);
 }
 .appearance-toggle svg {
   width: 14px;
@@ -1822,7 +1826,7 @@ nav.nav-light .appearance-toggle {
 nav.nav-light .appearance-toggle:hover {
   color: var(--ink);
   border-color: rgba(26, 95, 168, 0.4);
-  background: rgba(55, 138, 221, 0.08);
+  background: rgba(var(--theme-glow), 0.08);
 }
 nav.nav-light .appearance-toggle::after {
   color: rgba(10, 22, 40, 0.7);
@@ -1860,7 +1864,7 @@ body.light-appearance .service-card::before {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(55, 138, 221, 0.3),
+    rgba(var(--theme-glow), 0.3),
     transparent
   );
 }
@@ -1893,12 +1897,12 @@ body.light-appearance .contact-card {
     rgba(255, 255, 255, 0.8) 0%,
     rgba(240, 247, 255, 0.9) 100%
   );
-  border-color: rgba(55, 138, 221, 0.2);
+  border-color: rgba(var(--theme-glow), 0.2);
 }
 body.light-appearance .contact-card::before {
   background: radial-gradient(
     circle,
-    rgba(55, 138, 221, 0.08),
+    rgba(var(--theme-glow), 0.08),
     transparent 70%
   );
 }
@@ -1915,7 +1919,7 @@ body.light-appearance .contact-link {
 }
 body.light-appearance .contact-link:hover {
   color: var(--ink);
-  border-color: rgba(55, 138, 221, 0.3);
+  border-color: rgba(var(--theme-glow), 0.3);
   background: rgba(255, 255, 255, 0.85);
 }
 body.light-appearance .contact-link svg {
@@ -3497,8 +3501,8 @@ body.light-appearance[data-active-theme="paper"] #bg-canvas {
 .achievement-btn:hover,
 .achievement-btn.active {
   color: #fff;
-  border-color: rgba(55, 138, 221, 0.4);
-  background: rgba(55, 138, 221, 0.08);
+  border-color: rgba(var(--theme-glow), 0.4);
+  background: rgba(var(--theme-glow), 0.08);
 }
 .achievement-btn svg {
   width: 14px;
@@ -3514,7 +3518,7 @@ nav.nav-light .achievement-btn:hover,
 nav.nav-light .achievement-btn.active {
   color: var(--ink);
   border-color: rgba(26, 95, 168, 0.4);
-  background: rgba(55, 138, 221, 0.08);
+  background: rgba(var(--theme-glow), 0.08);
 }
 @media (hover: none), (pointer: coarse) {
   .achievement-btn {
@@ -3849,8 +3853,8 @@ nav.nav-light .achievement-btn::after {
   padding: 0.5rem 0.65rem;
   background: linear-gradient(
     135deg,
-    rgba(55, 138, 221, 0.1) 0%,
-    rgba(55, 138, 221, 0.03) 100%
+    rgba(var(--theme-glow), 0.1) 0%,
+    rgba(var(--theme-glow), 0.03) 100%
   );
   border-left: 2px solid var(--achievement-default-accent);
   border-radius: 0 6px 6px 0;
@@ -4475,8 +4479,8 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
   background: linear-gradient(
     135deg,
-    rgba(55, 138, 221, 0.12) 0%,
-    rgba(55, 138, 221, 0.04) 100%
+    rgba(var(--theme-glow), 0.12) 0%,
+    rgba(var(--theme-glow), 0.04) 100%
   );
   border-left: 2px solid var(--achievement-default-accent);
   padding-left: calc(0.5rem - 2px);
@@ -4489,7 +4493,7 @@ nav.nav-light .achievement-btn::after {
   border-radius: inherit;
   box-shadow:
     inset 0 0 24px -8px rgba(125, 191, 232, 0.3),
-    0 0 12px -4px rgba(55, 138, 221, 0.2);
+    0 0 12px -4px rgba(var(--theme-glow), 0.2);
   pointer-events: none;
   animation: achievement-intro-pulse 4s ease-in-out infinite;
 }
@@ -4504,7 +4508,7 @@ nav.nav-light .achievement-btn::after {
 }
 .achievement-intro-icon {
   color: var(--achievement-default-accent);
-  filter: drop-shadow(0 0 6px rgba(55, 138, 221, 0.6));
+  filter: drop-shadow(0 0 6px rgba(var(--theme-glow), 0.6));
 }
 .achievement-card.achievement-intro-card .achievement-card-title {
   color: rgba(255, 255, 255, 0.95);
@@ -4741,13 +4745,13 @@ body.light-appearance .achievement-tooltip {
 body.light-appearance .first-paint-mote {
   background: radial-gradient(
     circle at center,
-    rgba(55, 138, 221, 0.9) 0%,
-    rgba(55, 138, 221, 0.4) 40%,
+    rgba(var(--theme-glow), 0.9) 0%,
+    rgba(var(--theme-glow), 0.4) 40%,
     transparent 75%
   );
   box-shadow:
-    0 0 8px rgba(55, 138, 221, 0.7),
-    0 0 16px rgba(55, 138, 221, 0.3);
+    0 0 8px rgba(var(--theme-glow), 0.7),
+    0 0 16px rgba(var(--theme-glow), 0.3);
 }
 
 /* ── Theme History HUD ── */
