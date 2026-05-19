@@ -2890,6 +2890,7 @@ body[data-active-theme="rainy"] {
   --sky-3: #5a6a80;
   --theme-primary: #6a9fc0;
   --theme-glow: 160, 185, 210;
+  --rainy-deep-rgb: 90, 122, 154;
   --cursor-dot-radius: 0 50% 50% 50%;
   --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
   --theme-bg: #101820;
@@ -2916,10 +2917,10 @@ body[data-active-theme="rainy"] .hero-sub {
 
 body[data-active-theme="rainy"] .btn-primary {
   background: linear-gradient(135deg, #5a7a9a, #3a5a7a);
-  box-shadow: 0 0 20px rgba(90, 122, 154, 0.3);
+  box-shadow: 0 0 20px rgba(var(--rainy-deep-rgb), 0.3);
 }
 body[data-active-theme="rainy"] .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(90, 122, 154, 0.5);
+  box-shadow: 0 0 30px rgba(var(--rainy-deep-rgb), 0.5);
 }
 body[data-active-theme="rainy"] .btn-outline {
   border-color: rgba(140, 170, 200, 0.35);
@@ -2991,7 +2992,7 @@ body.rainy .rain-card::before {
 }
 
 body[data-active-theme="rainy"] #contact {
-  border-color: rgba(90, 122, 154, 0.2);
+  border-color: rgba(var(--rainy-deep-rgb), 0.2);
 }
 body[data-active-theme="rainy"] .contact-heading {
   color: rgba(190, 210, 230, 0.95);
@@ -3006,10 +3007,10 @@ body[data-active-theme="rainy"] .contact-link {
 }
 
 body[data-active-theme="rainy"] footer {
-  border-top-color: rgba(90, 122, 154, 0.1);
+  border-top-color: rgba(var(--rainy-deep-rgb), 0.1);
 }
 body[data-active-theme="rainy"] .footer-info {
-  border-top-color: rgba(90, 122, 154, 0.08);
+  border-top-color: rgba(var(--rainy-deep-rgb), 0.08);
 }
 body[data-active-theme="rainy"]::after {
   opacity: 0.03;
