@@ -2137,6 +2137,33 @@ body.upside-down .flips-with-page {
   transform: scaleY(-1);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   Theme contract
+   ══════════════════════════════════════════════════════════════
+   A theme sets these tokens on body[data-active-theme="<name>"];
+   everything else cascades from base.
+
+   Required:
+     --theme-primary   Solid accent color, used where chrome wants a flat
+                       color that may diverge from --theme-glow (logo
+                       accent default, paper's chrome).
+     --theme-glow      RGB triplet for halos, cursor, chrome accent.
+                       Used inside rgba(...) by any-alpha consumers.
+
+   Optional:
+     --theme-bg        Page background.
+     --logo-text-color, --logo-accent-color
+     --sky-3, --sky-4, --sky-5, --sky-6   Override brand palette stops
+     --cursor-dot-clip, --cursor-dot-radius
+     --cursor-ring-radius, --cursor-ring-style,
+       --cursor-ring-width, --cursor-ring-animation
+
+   Beyond tokens, themes are free to override any selector for theme-
+   defining art (hero gradients, button gradients, feature blocks like
+   .frost-card or .pixel-card, custom cursor shapes).  Don't override
+   what the cascade already provides.
+   ══════════════════════════════════════════════════════════════ */
+
 /* Upside Down — visual theme (only when active theme) */
 body[data-active-theme="upside-down"] {
   --sky-3: #e87d7d;
