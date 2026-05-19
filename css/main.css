@@ -2639,7 +2639,7 @@ body[data-active-theme="deep-sea"] .about-heading em {
 }
 
 body[data-active-theme="deep-sea"] .services-grid {
-  background: rgba(0, 200, 160, 0.04);
+  background: rgba(0, 200, 160, 0.06);
   border-color: rgba(0, 200, 160, 0.06);
 }
 
@@ -2650,7 +2650,7 @@ body[data-active-theme="deep-sea"] .service-card::before {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(0, 200, 160, 0.35),
+    rgba(0, 200, 160, 0.4),
     transparent
   );
 }
@@ -2706,13 +2706,13 @@ body[data-active-theme="deep-sea"] .nav-cta:hover {
 body[data-active-theme="deep-sea"] .contact-card {
   background: linear-gradient(
     135deg,
-    rgba(0, 200, 160, 0.06) 0%,
+    rgba(0, 200, 160, 0.08) 0%,
     rgba(0, 16, 24, 0.92) 100%
   );
-  border-color: rgba(0, 200, 160, 0.15);
+  border-color: rgba(0, 200, 160, 0.18);
 }
 body[data-active-theme="deep-sea"] .contact-card::before {
-  background: radial-gradient(circle, rgba(0, 200, 160, 0.1), transparent 70%);
+  background: radial-gradient(circle, rgba(0, 200, 160, 0.12), transparent 70%);
 }
 
 body[data-active-theme="deep-sea"] .footer-info {
@@ -2854,7 +2854,7 @@ body[data-active-theme="blocky"] .about-heading em {
 }
 
 body[data-active-theme="blocky"] .services-grid {
-  background: rgba(var(--theme-glow), 0.04);
+  background: rgba(var(--theme-glow), 0.06);
   border-color: rgba(var(--theme-glow), 0.06);
 }
 
@@ -2865,7 +2865,7 @@ body[data-active-theme="blocky"] .service-card::before {
   background: linear-gradient(
     90deg,
     transparent,
-    rgba(var(--theme-glow), 0.3),
+    rgba(var(--theme-glow), 0.4),
     transparent
   );
 }
@@ -2932,15 +2932,15 @@ body[data-active-theme="blocky"] .nav-cta:hover {
 body[data-active-theme="blocky"] .contact-card {
   background: linear-gradient(
     135deg,
-    rgba(var(--theme-glow), 0.06) 0%,
+    rgba(var(--theme-glow), 0.08) 0%,
     rgba(10, 18, 48, 0.92) 100%
   );
-  border-color: rgba(var(--theme-glow), 0.12);
+  border-color: rgba(var(--theme-glow), 0.18);
 }
 body[data-active-theme="blocky"] .contact-card::before {
   background: radial-gradient(
     circle,
-    rgba(var(--theme-glow), 0.08),
+    rgba(var(--theme-glow), 0.12),
     transparent 70%
   );
 }
