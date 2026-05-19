@@ -937,7 +937,7 @@ nav {
   font-family: "DM Mono", monospace;
   font-size: 0.72rem;
   text-transform: uppercase;
-  color: var(--theme-primary);
+  color: rgb(var(--theme-glow));
   border: 1px solid rgba(var(--theme-glow), 0.4);
   padding: 0.55rem 1.2rem;
   border-radius: 100px;
@@ -950,7 +950,7 @@ nav {
 .nav-links a.nav-cta:hover,
 .nav-links a.nav-cta.active {
   background: rgba(var(--theme-glow), 0.15);
-  border-color: var(--theme-primary);
+  border-color: rgb(var(--theme-glow));
 }
 .nav-links a.nav-cta::after {
   display: none;
@@ -1544,7 +1544,7 @@ footer.footer-hinting::after {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--theme-primary);
+  background: rgb(var(--theme-glow));
   animation: pulse 2s ease infinite;
 }
 
@@ -2406,17 +2406,6 @@ body.frozen .service-card.card-frozen::before {
   );
 }
 
-body[data-active-theme="frozen"] .nav-cta {
-  color: rgb(var(--theme-glow));
-}
-body[data-active-theme="frozen"] .nav-cta:hover {
-  border-color: rgb(var(--theme-glow));
-}
-
-body[data-active-theme="frozen"] .footer-badge::before {
-  background: rgb(var(--theme-glow));
-}
-
 body[data-active-theme="frozen"]::after {
   opacity: 0.04;
 }
@@ -2610,23 +2599,12 @@ body.deep-sea .caustic-card:hover::after {
   }
 }
 
-body[data-active-theme="deep-sea"] .nav-cta {
-  color: rgb(var(--theme-glow));
-}
-body[data-active-theme="deep-sea"] .nav-cta:hover {
-  border-color: rgb(var(--theme-glow));
-}
-
 body[data-active-theme="deep-sea"] .contact-card {
   background: linear-gradient(
     135deg,
     rgba(var(--theme-glow), 0.08) 0%,
     rgba(0, 16, 24, 0.92) 100%
   );
-}
-
-body[data-active-theme="deep-sea"] .footer-badge::before {
-  background: rgb(var(--theme-glow));
 }
 
 body[data-active-theme="deep-sea"]::after {
@@ -2807,23 +2785,12 @@ body.blocky .pixel-card:hover::after {
   }
 }
 
-body[data-active-theme="blocky"] .nav-cta {
-  color: rgb(var(--theme-glow));
-}
-body[data-active-theme="blocky"] .nav-cta:hover {
-  border-color: rgb(var(--theme-glow));
-}
-
 body[data-active-theme="blocky"] .contact-card {
   background: linear-gradient(
     135deg,
     rgba(var(--theme-glow), 0.08) 0%,
     rgba(10, 18, 48, 0.92) 100%
   );
-}
-
-body[data-active-theme="blocky"] .footer-badge::before {
-  background: rgb(var(--theme-glow));
 }
 
 body[data-active-theme="blocky"]::after {
@@ -2978,13 +2945,6 @@ body.rainy .rain-card::before {
   border: 2px solid rgba(var(--theme-glow), 0.3);
   pointer-events: none;
   z-index: 2;
-}
-
-body[data-active-theme="rainy"] .nav-cta {
-  color: rgb(var(--theme-glow));
-}
-body[data-active-theme="rainy"] .nav-cta:hover {
-  border-color: rgb(var(--theme-glow));
 }
 
 body[data-active-theme="rainy"] #contact {
@@ -3251,6 +3211,7 @@ body.paper .paper-card:nth-child(3n + 3) {
 }
 
 body[data-active-theme="paper"] .nav-cta {
+  color: var(--theme-primary);
   border-color: var(--theme-primary);
 }
 body[data-active-theme="paper"] .nav-cta:hover,
