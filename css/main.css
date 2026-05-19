@@ -143,7 +143,7 @@ body.has-custom-cursor {
   top: 0;
   width: var(--cursor-dot-size);
   height: var(--cursor-dot-size);
-  background: var(--sky-3);
+  background: rgb(var(--cursor-glow));
   border-radius: var(--cursor-dot-radius, 50%);
   clip-path: var(--cursor-dot-clip, none);
   pointer-events: none;
@@ -2325,9 +2325,6 @@ body[data-active-theme="frozen"] {
   --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   --cursor-ring-width: 1.5px;
 }
-body[data-active-theme="frozen"] #cursor {
-  background: rgb(var(--theme-glow));
-}
 body[data-active-theme="frozen"] #cursor-ring {
   border-color: rgba(0, 220, 255, 0.5);
   box-shadow: 0 0 8px rgba(0, 220, 255, 0.25);
@@ -2523,7 +2520,6 @@ body[data-active-theme="deep-sea"] {
   --cursor-ring-animation: cursor-wobble 3s ease-in-out infinite;
 }
 body[data-active-theme="deep-sea"] #cursor {
-  background: rgb(var(--theme-glow));
   box-shadow:
     -3px -3px 4px rgba(180, 255, 230, 0.35) inset,
     1px 1px 2px rgba(0, 60, 50, 0.25) inset;
@@ -2704,9 +2700,6 @@ body[data-active-theme="blocky"] {
   --logo-accent-color: rgb(var(--theme-glow));
   --cursor-dot-radius: 0;
   --cursor-ring-radius: 0;
-}
-body[data-active-theme="blocky"] #cursor {
-  background: rgb(var(--theme-glow));
 }
 body[data-active-theme="blocky"] #cursor-ring {
   border-color: rgba(var(--theme-glow), 0.4);
@@ -2973,7 +2966,6 @@ body[data-active-theme="rainy"]::after {
 }
 
 body[data-active-theme="rainy"] #cursor {
-  background: rgb(var(--theme-glow));
   transform: rotate(45deg);
 }
 body[data-active-theme="rainy"] #cursor-ring {
