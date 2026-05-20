@@ -52,16 +52,26 @@ let _seenTimers = new Map();
 // Panel-facing hooks injected by the facade.  getPanelEl lets us read
 // the live panel element without importing the parent (which would
 // circular-import), isPanelOpen lets refreshCard skip work when the
-// panel isn't visible, and refreshPanel lets a card change request a
-// whole-panel re-render when section counts need updating.
+// panel isn't visible, refreshPanel lets a card change request a
+// whole-panel re-render when section counts need updating, and
+// scrollToActivityEntryFor lets a card click route to its activity-log
+// entry.
 let _getPanelEl = () => null;
 let _isPanelOpen = () => false;
 let _refreshPanel = () => {};
+let _scrollToActivityEntryFor = () => {};
 
-export function configureCards({ getPanelEl, isPanelOpen, refreshPanel } = {}) {
+export function configureCards({
+  getPanelEl,
+  isPanelOpen,
+  refreshPanel,
+  scrollToActivityEntryFor,
+} = {}) {
   if (getPanelEl) _getPanelEl = getPanelEl;
   if (isPanelOpen) _isPanelOpen = isPanelOpen;
   if (refreshPanel) _refreshPanel = refreshPanel;
+  if (scrollToActivityEntryFor)
+    _scrollToActivityEntryFor = scrollToActivityEntryFor;
   bindThemeStackListener();
 }
 
@@ -298,7 +308,12 @@ function buildCardTimeBlock(ach) {
   timeEl.className = "achievement-card-time";
   timeEl.dataset.ts = String(ts);
   timeEl.textContent = formatTimestamp(ts);
-  bindClickable(timeEl, () => toggleTimestampMode(_getPanelEl()));
+  bindClickable(timeEl, (e) => {
+    // Card itself is also clickable (scroll-to-activity); stop the
+    // bubble so toggling the timestamp doesn't also jump tabs.
+    e.stopPropagation();
+    toggleTimestampMode(_getPanelEl());
+  });
 
   if (ach.progressKey) {
     const total = resolveProgressTotal(ach.progressKey);
@@ -512,9 +527,11 @@ export function renderSections(container) {
         if (bar) card.appendChild(bar);
       }
 
-      // Click pop on unlocked cards
+      // Unlocked cards route to their activity-log entry — the click
+      // jumps to the Activity tab and scrolls the matching row into
+      // view.
       if (isUnlocked) {
-        bindClickable(card, onCardClick);
+        bindClickable(card, () => onCardClick(card, ach.id));
       }
 
       // Hint tooltip on hover. The text shown depends on lock/hidden state
@@ -534,8 +551,7 @@ export function renderSections(container) {
   }
 }
 
-function onCardClick(e) {
-  const card = e.currentTarget;
+function onCardClick(card, achievementId) {
   card.classList.remove("clicked");
   void card.offsetHeight;
   card.classList.add("clicked");
@@ -546,6 +562,7 @@ function onCardClick(e) {
       once: true,
     },
   );
+  _scrollToActivityEntryFor(achievementId, "achievement-unlocked");
 }
 
 // Refresh a single card in-place when it unlocks while panel is open
@@ -590,8 +607,8 @@ export function refreshCard(achievementId) {
     if (timeEl) textEl.appendChild(timeEl);
   }
 
-  // Click pop for newly unlocked card
-  bindClickable(card, onCardClick);
+  // Newly unlocked card joins the rest in routing to its activity entry.
+  bindClickable(card, () => onCardClick(card, achievementId));
 
   // Observe for seen tracking
   if (_seenObserver) _seenObserver.observe(card);
@@ -611,6 +628,7 @@ export function _resetForTests() {
   _getPanelEl = () => null;
   _isPanelOpen = () => false;
   _refreshPanel = () => {};
+  _scrollToActivityEntryFor = () => {};
   if (_themeStackListener) {
     window.removeEventListener("achievement", _themeStackListener);
     _themeStackListener = null;

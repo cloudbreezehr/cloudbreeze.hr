@@ -64,6 +64,7 @@ configureCards({
   getPanelEl: () => panelEl,
   isPanelOpen,
   refreshPanel,
+  scrollToActivityEntryFor: scrollToLatestActivityFor,
 });
 configureTabs({ getPanelEl: () => panelEl });
 configureActivity({ getPanelEl: () => panelEl });

@@ -24,6 +24,7 @@ describe("achievements/ui/cards", () => {
   let panelEl;
   let panelOpen;
   let refreshPanelStub;
+  let scrollToActivityEntryForStub;
   let observerInstances;
 
   let origScrollIntoView;
@@ -81,6 +82,7 @@ describe("achievements/ui/cards", () => {
 
     panelOpen = true;
     refreshPanelStub = vi.fn();
+    scrollToActivityEntryForStub = vi.fn();
 
     mod = await import("../../../../js/achievements/ui/cards.js");
     storage = await import("../../../../js/achievements/storage.js");
@@ -90,6 +92,7 @@ describe("achievements/ui/cards", () => {
       getPanelEl: () => panelEl,
       isPanelOpen: () => panelOpen,
       refreshPanel: refreshPanelStub,
+      scrollToActivityEntryFor: scrollToActivityEntryForStub,
     });
   });
 
@@ -444,6 +447,19 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("clicked")).toBe(true);
     });
 
+    it("routes to the matching activity-log entry", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      card.dispatchEvent(new Event("click", { bubbles: true }));
+      expect(scrollToActivityEntryForStub).toHaveBeenCalledWith(
+        "first-light",
+        "achievement-unlocked",
+      );
+    });
+
     it("does not tag locked cards as clickable", () => {
       mod.renderSections(container);
       const locked = container.querySelector(
@@ -451,6 +467,19 @@ describe("achievements/ui/cards", () => {
       );
       expect(locked).not.toBeNull();
       expect(locked.getAttribute("role")).toBeNull();
+    });
+
+    it("timestamp click toggles mode without bubbling to the card", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      const timeEl = card.querySelector(".achievement-card-time");
+      timeEl.dispatchEvent(new Event("click", { bubbles: true }));
+      // Timestamp toggle is the only effect — the card's
+      // scroll-to-activity must NOT fire from the same click.
+      expect(scrollToActivityEntryForStub).not.toHaveBeenCalled();
     });
   });
 
