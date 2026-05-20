@@ -171,6 +171,37 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("unseen")).toBe(true);
     });
 
+    it("brightens every theme set whose theme is active when themes stack", () => {
+      // Two theme sets present, both with at least one unlock so they
+      // render.  Both themes active → neither set should carry
+      // .dimmed (any one-of-N stacked theme keeps its set bright).
+      storage.unlock("the-depths");
+      storage.unlock("first-frost");
+      document.body.classList.add("deep-sea", "frozen");
+
+      mod.renderSections(container);
+
+      const sections = container.querySelectorAll(".achievement-set");
+      const findSection = (label) =>
+        Array.from(sections).find((s) => s.textContent.includes(label));
+      expect(findSection("Deep Sea").classList.contains("dimmed")).toBe(false);
+      expect(findSection("Frozen").classList.contains("dimmed")).toBe(false);
+    });
+
+    it("dims a theme set whose theme is not in the active stack", () => {
+      storage.unlock("the-depths");
+      storage.unlock("first-frost");
+      document.body.classList.add("deep-sea");
+
+      mod.renderSections(container);
+
+      const sections = container.querySelectorAll(".achievement-set");
+      const findSection = (label) =>
+        Array.from(sections).find((s) => s.textContent.includes(label));
+      expect(findSection("Deep Sea").classList.contains("dimmed")).toBe(false);
+      expect(findSection("Frozen").classList.contains("dimmed")).toBe(true);
+    });
+
     it("turning on revealHints re-renders hidden cards with real titles", () => {
       mod.renderSections(container);
       mod.setRevealHints(true);

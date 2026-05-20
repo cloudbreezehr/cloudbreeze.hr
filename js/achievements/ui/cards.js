@@ -104,6 +104,13 @@ function hasAnyInSet(setId) {
   return ACHIEVEMENTS.some((a) => a.set === setId && storage.isUnlocked(a.id));
 }
 
+// Themes stack via body.classList — each theme adds its id as a class
+// on activation — so containment is the correct any-of-N check when
+// multiple themes can be on at once.
+function isThemeActive(themeId) {
+  return document.body.classList.contains(themeId);
+}
+
 // ── Unseen Observer ──
 
 export function createSeenObserver() {
@@ -317,8 +324,6 @@ function buildProgressBar(progressKey) {
 // ── Section renderer ──
 
 export function renderSections(container) {
-  const currentTheme = document.body.dataset.activeTheme || null;
-
   if (storage.getUnlocked().length <= INTRO_CARD_THRESHOLD) {
     container.appendChild(buildIntroCard());
   }
@@ -331,7 +336,9 @@ export function renderSections(container) {
     section.className = "achievement-set";
 
     if (set.color) section.style.setProperty("--set-color", set.color);
-    const isDimmed = isThemeSet(set.id) && currentTheme !== set.id;
+    // A theme set is bright if its own theme is currently in the
+    // active stack; non-theme sets never dim.
+    const isDimmed = isThemeSet(set.id) && !isThemeActive(set.id);
     if (isDimmed) section.classList.add("dimmed");
 
     // Section header
