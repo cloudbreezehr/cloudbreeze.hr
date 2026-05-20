@@ -241,25 +241,6 @@ describe("achievements/ui/toast", () => {
     });
   });
 
-  describe("toastContainerContains", () => {
-    it("returns false before the container exists", () => {
-      expect(mod.toastContainerContains(document.body)).toBe(false);
-    });
-
-    it("returns true for a toast element inside the container", () => {
-      mod.showToast(makeAchievement());
-      const toast = getContainer().querySelector(".achievement-toast");
-      expect(mod.toastContainerContains(toast)).toBe(true);
-    });
-
-    it("returns false for a node outside the container", () => {
-      mod.showToast(makeAchievement());
-      const orphan = document.createElement("div");
-      document.body.appendChild(orphan);
-      expect(mod.toastContainerContains(orphan)).toBe(false);
-    });
-  });
-
   describe("destroyToastContainer", () => {
     it("removes the container, clears timers, and resets queue state", () => {
       for (let i = 0; i < PAST_CAP_FILL; i++) {

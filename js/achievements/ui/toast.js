@@ -332,14 +332,6 @@ export function showActivationPulse(x, y) {
   setTimeout(() => ring.remove(), PULSE_RING_MS);
 }
 
-// Whether the given event target is inside the live toast container.
-// Lets outside-click handlers exempt toast clicks from "click outside"
-// dismissal — without this, clicking a toast would close the very
-// panel the toast just opened.
-export function toastContainerContains(node) {
-  return !!(toastContainer && toastContainer.contains(node));
-}
-
 // Drop the container and any queued/active toasts.  Use during full UI
 // teardown so no DOM or pending timers are left behind.
 export function destroyToastContainer() {

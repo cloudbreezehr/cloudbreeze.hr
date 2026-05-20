@@ -1,5 +1,4 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { OUTSIDE_CLICK_DELAY_MS } from "../../../../js/achievements/ui/panel.js";
 
 // panel.js is the biggest extracted module — it builds the Cloudlog
 // panel DOM, wires escape/outside-click/focus-trap handlers, and owns
@@ -13,9 +12,6 @@ vi.mock("../../../../js/effects/fireworks.js", () => ({
   launchRocketFireworks: vi.fn(),
   rocketCountForTier: vi.fn(() => 1),
 }));
-
-const SLACK_MS = 10;
-const PAST_OUTSIDE_CLICK_DELAY_MS = OUTSIDE_CLICK_DELAY_MS + SLACK_MS;
 
 describe("achievements/ui/panel", () => {
   let mod;
@@ -167,7 +163,7 @@ describe("achievements/ui/panel", () => {
     });
   });
 
-  describe("keyboard + pointer dismissal", () => {
+  describe("dismissal", () => {
     it("Escape closes the panel", () => {
       mod.openPanel();
       expect(mod.isPanelOpen()).toBe(true);
@@ -177,23 +173,19 @@ describe("achievements/ui/panel", () => {
       expect(mod.isPanelOpen()).toBe(false);
     });
 
-    it("outside pointer click closes the panel", () => {
+    it("pointer click outside the panel does NOT close it", () => {
       mod.openPanel();
-      // The outside-click handler arms after a delay so the opening
-      // click doesn't catch it — step past that window.
-      vi.advanceTimersByTime(PAST_OUTSIDE_CLICK_DELAY_MS);
       const orphan = document.createElement("div");
       document.body.appendChild(orphan);
       orphan.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-      expect(mod.isPanelOpen()).toBe(false);
+      expect(mod.isPanelOpen()).toBe(true);
     });
 
-    it("pointer click inside the panel does NOT close it", () => {
+    it("the close button closes the panel", () => {
       mod.openPanel();
-      vi.advanceTimersByTime(PAST_OUTSIDE_CLICK_DELAY_MS);
-      const panel = getPanel();
-      panel.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
-      expect(mod.isPanelOpen()).toBe(true);
+      const closeBtn = document.querySelector(".achievement-close");
+      closeBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(mod.isPanelOpen()).toBe(false);
     });
   });
 

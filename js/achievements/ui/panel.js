@@ -2,9 +2,9 @@
 // Slide-in panel shell: header (title, points, hint toggle, mark-read),
 // tab switcher (delegated to tabs.js), body containing the two views
 // (achievements via cards.js, activity via activity.js), and footer.
-// Also owns panel lifecycle — open/close, escape + outside-click
-// dismissal, focus-trap wiring — and the configure* calls that wire
-// sibling submodules to the live panel element.
+// Also owns panel lifecycle — open/close, escape dismissal, focus-trap
+// wiring — and the configure* calls that wire sibling submodules to
+// the live panel element.
 
 import { ACHIEVEMENTS, sumPoints } from "../registry.js";
 import * as storage from "../storage.js";
@@ -13,8 +13,8 @@ import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
 import { hideHintTooltip } from "./tooltip.js";
-import { getNavBtnEl, setActive as setNavActive } from "./nav-button.js";
-import { configureToasts, toastContainerContains } from "./toast.js";
+import { setActive as setNavActive } from "./nav-button.js";
+import { configureToasts } from "./toast.js";
 import {
   configureCards,
   getRevealHints,
@@ -41,16 +41,11 @@ import {
 
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
-// Delay before the outside-click handler arms after openPanel — long
-// enough that the click that triggered the open doesn't immediately
-// close it.
-export const OUTSIDE_CLICK_DELAY_MS = 50;
 
 // ── State ──
 let panelEl = null;
 let panelOpen = false;
 let _escHandler = null;
-let _outsideHandler = null;
 let _releaseFocusTrap = null;
 let _overlayHandle = null;
 
@@ -169,22 +164,6 @@ function openPanelUI(onHide) {
     if (e.key === "Escape") closePanel();
   };
   document.addEventListener("keydown", _escHandler);
-
-  // Close on outside click (delayed to avoid catching the opening click)
-  setTimeout(() => {
-    _outsideHandler = (e) => {
-      const navEl = getNavBtnEl();
-      if (
-        panelEl &&
-        !panelEl.contains(e.target) &&
-        !(navEl && navEl.contains(e.target)) &&
-        !toastContainerContains(e.target)
-      ) {
-        closePanel();
-      }
-    };
-    document.addEventListener("pointerdown", _outsideHandler);
-  }, OUTSIDE_CLICK_DELAY_MS);
 }
 
 export function closePanel() {
@@ -210,10 +189,6 @@ export function closePanel() {
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
     _escHandler = null;
-  }
-  if (_outsideHandler) {
-    document.removeEventListener("pointerdown", _outsideHandler);
-    _outsideHandler = null;
   }
 }
 
@@ -397,9 +372,9 @@ export function refreshPanel() {
 }
 
 // Drop panel-owned state — DOM, open flag, and the global handlers
-// (escape, outside-click, focus trap) that openPanel installs.  The
-// facade's destroy() calls this alongside each sibling module's own
-// reset so full UI teardown is a chain of module-owned cleanups.
+// (escape, focus trap, etc.) that openPanel installs.  The facade's
+// destroy() calls this alongside each sibling module's own reset so
+// full UI teardown is a chain of module-owned cleanups.
 export function destroyPanel() {
   if (panelEl && panelEl.parentNode) panelEl.remove();
   panelEl = null;
@@ -419,10 +394,6 @@ export function destroyPanel() {
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
     _escHandler = null;
-  }
-  if (_outsideHandler) {
-    document.removeEventListener("pointerdown", _outsideHandler);
-    _outsideHandler = null;
   }
 }
 
