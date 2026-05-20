@@ -61,6 +61,7 @@ export function configureCards({ getPanelEl, isPanelOpen, refreshPanel } = {}) {
   if (getPanelEl) _getPanelEl = getPanelEl;
   if (isPanelOpen) _isPanelOpen = isPanelOpen;
   if (refreshPanel) _refreshPanel = refreshPanel;
+  bindThemeStackListener();
 }
 
 // ── Reveal hints toggle ──
@@ -109,6 +110,34 @@ function hasAnyInSet(setId) {
 // multiple themes can be on at once.
 function isThemeActive(themeId) {
   return document.body.classList.contains(themeId);
+}
+
+// ── Live theme-stack dimming ──
+// Invariant: every rendered theme section carries `.dimmed` if its
+// theme isn't in the current stack.  Stack changes flip the class on
+// the existing nodes — no re-render — so the panel stays in sync
+// whether it's open or closed at the moment the stack changes.
+
+function refreshThemeSetDimming() {
+  const panel = _getPanelEl();
+  if (!panel) return;
+  const sections = panel.querySelectorAll(".achievement-set[data-set-id]");
+  for (const section of sections) {
+    section.classList.toggle("dimmed", !isThemeActive(section.dataset.setId));
+  }
+}
+
+let _themeStackListener = null;
+
+function bindThemeStackListener() {
+  if (_themeStackListener) return;
+  _themeStackListener = (e) => {
+    const t = e.detail?.type;
+    if (t === "theme-activate" || t === "theme-deactivate") {
+      refreshThemeSetDimming();
+    }
+  };
+  window.addEventListener("achievement", _themeStackListener);
 }
 
 // ── Unseen Observer ──
@@ -334,6 +363,9 @@ export function renderSections(container) {
 
     const section = document.createElement("div");
     section.className = "achievement-set";
+    // Tag theme sections so live theme-stack updates can find them
+    // without re-rendering.
+    if (isThemeSet(set.id)) section.dataset.setId = set.id;
 
     if (set.color) section.style.setProperty("--set-color", set.color);
     // A theme set is bright if its own theme is currently in the
@@ -578,4 +610,8 @@ export function _resetForTests() {
   _getPanelEl = () => null;
   _isPanelOpen = () => false;
   _refreshPanel = () => {};
+  if (_themeStackListener) {
+    window.removeEventListener("achievement", _themeStackListener);
+    _themeStackListener = null;
+  }
 }

@@ -202,6 +202,84 @@ describe("achievements/ui/cards", () => {
       expect(findSection("Frozen").classList.contains("dimmed")).toBe(true);
     });
 
+    it("tags theme sections with data-set-id", () => {
+      storage.unlock("the-depths");
+      mod.renderSections(container);
+      const themed = container.querySelector(
+        '.achievement-set[data-set-id="deep-sea"]',
+      );
+      expect(themed).not.toBeNull();
+    });
+
+    it("live-updates dimming on theme-activate without re-rendering", () => {
+      storage.unlock("the-depths");
+      storage.unlock("first-frost");
+      mod.renderSections(container);
+
+      const findSection = (label) =>
+        Array.from(container.querySelectorAll(".achievement-set")).find((s) =>
+          s.textContent.includes(label),
+        );
+      const deepSea = findSection("Deep Sea");
+      const frozen = findSection("Frozen");
+      expect(deepSea.classList.contains("dimmed")).toBe(true);
+      expect(frozen.classList.contains("dimmed")).toBe(true);
+
+      document.body.classList.add("frozen");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "theme-activate", theme: "frozen" },
+        }),
+      );
+
+      // Same nodes (no re-render) — frozen flipped bright, deep-sea
+      // stays dimmed.
+      expect(findSection("Frozen")).toBe(frozen);
+      expect(frozen.classList.contains("dimmed")).toBe(false);
+      expect(deepSea.classList.contains("dimmed")).toBe(true);
+    });
+
+    it("live-updates dimming on theme-deactivate", () => {
+      storage.unlock("the-depths");
+      document.body.classList.add("deep-sea");
+      mod.renderSections(container);
+
+      const deepSea = container.querySelector(
+        '.achievement-set[data-set-id="deep-sea"]',
+      );
+      expect(deepSea.classList.contains("dimmed")).toBe(false);
+
+      document.body.classList.remove("deep-sea");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "theme-deactivate", theme: "deep-sea" },
+        }),
+      );
+
+      expect(deepSea.classList.contains("dimmed")).toBe(true);
+    });
+
+    it("ignores non-theme achievement events when refreshing dimming", () => {
+      storage.unlock("the-depths");
+      document.body.classList.add("deep-sea");
+      mod.renderSections(container);
+
+      const deepSea = container.querySelector(
+        '.achievement-set[data-set-id="deep-sea"]',
+      );
+      expect(deepSea.classList.contains("dimmed")).toBe(false);
+
+      // Remove the class but dispatch an unrelated event — dimming
+      // should NOT update until a real theme event fires.
+      document.body.classList.remove("deep-sea");
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "panel-open" },
+        }),
+      );
+      expect(deepSea.classList.contains("dimmed")).toBe(false);
+    });
+
     it("turning on revealHints re-renders hidden cards with real titles", () => {
       mod.renderSections(container);
       mod.setRevealHints(true);
