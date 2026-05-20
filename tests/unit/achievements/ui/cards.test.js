@@ -424,6 +424,36 @@ describe("achievements/ui/cards", () => {
     });
   });
 
+  describe("unlocked card click", () => {
+    it('tags unlocked cards with role="button" so the custom cursor expands over them', () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.getAttribute("role")).toEqual("button");
+    });
+
+    it("triggers the pop animation by adding the .clicked class", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      card.dispatchEvent(new Event("click", { bubbles: true }));
+      expect(card.classList.contains("clicked")).toBe(true);
+    });
+
+    it("does not tag locked cards as clickable", () => {
+      mod.renderSections(container);
+      const locked = container.querySelector(
+        ".achievement-card.locked[data-id]",
+      );
+      expect(locked).not.toBeNull();
+      expect(locked.getAttribute("role")).toBeNull();
+    });
+  });
+
   describe("scrollToCard", () => {
     it("adds the shine class to the matching card", () => {
       mod.renderSections(container);

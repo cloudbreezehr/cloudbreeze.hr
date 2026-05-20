@@ -15,6 +15,7 @@ import {
 } from "../../effects/fireworks.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG } from "./icons.js";
+import { bindClickable } from "../../clickable.js";
 
 // ── Toast Constants ──
 export const TOAST_SLIDE_IN_MS = 400;
@@ -135,7 +136,7 @@ export function buildAchievementToast(achievement) {
 // Standard click handler for any rendered toast: pulse the toast, then
 // open the panel and scroll to the achievement's card.
 export function wireToastClick(toast, achievement) {
-  toast.addEventListener("click", () => {
+  bindClickable(toast, () => {
     toast.classList.remove("clicked");
     void toast.offsetHeight;
     toast.classList.add("clicked");
@@ -265,7 +266,7 @@ export function buildRelockToast(achievement) {
 // (timestamp, dismiss/restore actions).  The activity-scroll target
 // owns the tab switch itself, so this only has to delegate.
 export function wireRelockToastClick(toast, achievement) {
-  toast.addEventListener("click", () => {
+  bindClickable(toast, () => {
     function go() {
       if (_scrollToActivityEntryFor)
         _scrollToActivityEntryFor(achievement.id, "achievement-relocked");

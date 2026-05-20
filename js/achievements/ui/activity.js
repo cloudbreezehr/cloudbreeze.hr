@@ -18,6 +18,7 @@ import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
 import { setActiveTab } from "./tabs.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
+import { bindClickable } from "../../clickable.js";
 
 // ── Intro hint ──
 // Onboarding tip prepended to the active list during the discovery phase.
@@ -227,7 +228,7 @@ function buildThemeSwitchRow(payload) {
   el.appendChild(icon);
   el.appendChild(text);
 
-  el.addEventListener("click", () => toggleTheme(themeId));
+  bindClickable(el, () => toggleTheme(themeId));
   return el;
 }
 

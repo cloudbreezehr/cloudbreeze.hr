@@ -14,6 +14,10 @@ const C = defineConstants("cursor", {
 });
 
 const NATIVE_CURSOR_SELECTOR = ".dev-console";
+// Anything the user can click — native button/anchor semantics plus
+// `role="button"` so non-button clickable elements join the set without
+// a per-element opt-in here.
+const CLICKABLE_SELECTOR = 'a, button, [role="button"]';
 
 export function initCursor(dotEl, ringEl) {
   if (!dotEl || !ringEl) return;
@@ -82,7 +86,7 @@ export function initCursor(dotEl, ringEl) {
   }
 
   document.addEventListener("mouseover", (e) => {
-    if (e.target.closest("a, button")) {
+    if (e.target.closest(CLICKABLE_SELECTOR)) {
       hovering = true;
       applySizes();
     }
@@ -92,7 +96,7 @@ export function initCursor(dotEl, ringEl) {
     }
   });
   document.addEventListener("mouseout", (e) => {
-    if (e.target.closest("a, button")) {
+    if (e.target.closest(CLICKABLE_SELECTOR)) {
       hovering = false;
       applySizes();
     }
@@ -130,7 +134,7 @@ export function initCursor(dotEl, ringEl) {
     () => {
       requestAnimationFrame(() => {
         const el = document.elementFromPoint(mx, my);
-        const nowHovering = !!el?.closest("a, button");
+        const nowHovering = !!el?.closest(CLICKABLE_SELECTOR);
         if (nowHovering !== hovering) {
           hovering = nowHovering;
           applySizes();

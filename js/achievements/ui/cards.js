@@ -17,6 +17,7 @@ import { setActiveTab } from "./tabs.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
+import { bindClickable } from "../../clickable.js";
 
 // ── Tooltip Constants ──
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
@@ -297,7 +298,7 @@ function buildCardTimeBlock(ach) {
   timeEl.className = "achievement-card-time";
   timeEl.dataset.ts = String(ts);
   timeEl.textContent = formatTimestamp(ts);
-  timeEl.addEventListener("click", () => toggleTimestampMode(_getPanelEl()));
+  bindClickable(timeEl, () => toggleTimestampMode(_getPanelEl()));
 
   if (ach.progressKey) {
     const total = resolveProgressTotal(ach.progressKey);
@@ -513,7 +514,7 @@ export function renderSections(container) {
 
       // Click pop on unlocked cards
       if (isUnlocked) {
-        card.addEventListener("click", onCardClick);
+        bindClickable(card, onCardClick);
       }
 
       // Hint tooltip on hover. The text shown depends on lock/hidden state
@@ -590,7 +591,7 @@ export function refreshCard(achievementId) {
   }
 
   // Click pop for newly unlocked card
-  card.addEventListener("click", onCardClick);
+  bindClickable(card, onCardClick);
 
   // Observe for seen tracking
   if (_seenObserver) _seenObserver.observe(card);
