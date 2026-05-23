@@ -124,6 +124,10 @@ export const PROGRESS_COUNTS = {
     current: () => countSetUnlocked("upside-down"),
     total: () => getSetPrereqs("upside-down").length,
   },
+  "constellation-set": {
+    current: () => countSetUnlocked("constellation"),
+    total: () => getSetPrereqs("constellation").length,
+  },
 };
 
 export function isCollectionProgress(progressKey) {

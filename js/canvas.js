@@ -1,10 +1,11 @@
 import { lerpColor, multiLerp, toRgba, resolvePalette } from "./colors.js";
 import { bindPointer } from "./pointer.js";
+import { UI_OVERLAY_SELECTOR } from "./selectors.js";
 import { createSky } from "./sky.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
-import { mirrorYWhenInverted } from "./viewport.js";
+import { mirrorYWhenInverted, getViewportHeight } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
@@ -103,32 +104,21 @@ export function initCanvas(canvasEl, appearance, options) {
   let scrollProgress = 0;
   let scrollVelocity = 0;
 
-  // Stable viewport height that ignores the mobile browser toolbar.
-  // CSS `lvh` resolves to the large viewport (toolbar hidden).
-  // Using it prevents particles from teleporting when the toolbar
-  // collapses/expands on scroll.
-  const lvhProbe = document.createElement("div");
-  lvhProbe.style.cssText =
-    "position:fixed;height:100lvh;pointer-events:none;visibility:hidden";
-  document.body.appendChild(lvhProbe);
-  function stableHeight() {
-    return lvhProbe.offsetHeight || window.innerHeight;
-  }
-
   appearance.onChange((dark) => {
     isDark = dark;
   });
 
   function resize() {
     canvas.width = window.innerWidth;
-    canvas.height = stableHeight();
+    canvas.height = getViewportHeight();
   }
 
   function updateScroll(snapshot) {
     const scrollY =
       snapshot?.scrollY ?? window.scrollY ?? document.documentElement.scrollTop;
     const deltaY = snapshot?.deltaY ?? 0;
-    const docHeight = document.documentElement.scrollHeight - stableHeight();
+    const docHeight =
+      document.documentElement.scrollHeight - getViewportHeight();
     scrollProgress =
       docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
     window.dispatchEvent(
@@ -307,9 +297,7 @@ export function initCanvas(canvasEl, appearance, options) {
     }
   }
 
-  // UI overlays that should not trigger canvas fury or click-burst effects
-  const UI_OVERLAY =
-    "nav, .achievement-panel, .achievement-toast-container, .dev-console";
+  const UI_OVERLAY = UI_OVERLAY_SELECTOR;
 
   // Per-theme palette resolver matching the current appearance.  Reads
   // `isDark` on each call so changes from `appearance.onChange` apply

@@ -19,6 +19,7 @@ describe("themes/registry — metadata", () => {
       "paper",
       "vhs",
       "upside-down",
+      "constellation",
     ]);
   });
 

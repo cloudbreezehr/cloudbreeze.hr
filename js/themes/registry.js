@@ -91,6 +91,19 @@ const THEMES = [
       '<path d="M3 10l5 4 5-4"/>' +
       "</svg>",
   },
+  {
+    id: "constellation",
+    label: "Constellation",
+    color: "#c0c8ff",
+    icon:
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 12l4-7 3 4 3-2"/>' +
+      '<circle cx="3" cy="12" r="1" fill="currentColor"/>' +
+      '<circle cx="7" cy="5" r="1" fill="currentColor"/>' +
+      '<circle cx="10" cy="9" r="1" fill="currentColor"/>' +
+      '<circle cx="13" cy="7" r="1" fill="currentColor"/>' +
+      "</svg>",
+  },
 ];
 
 const _byId = new Map(THEMES.map((m) => [m.id, m]));

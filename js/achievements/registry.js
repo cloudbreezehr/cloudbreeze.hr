@@ -87,6 +87,12 @@ export const SETS = [
     color: "#e04050",
     icon: getTheme("upside-down")?.icon,
   },
+  {
+    id: "constellation",
+    label: "Constellation",
+    color: "#c0c8ff",
+    icon: getTheme("constellation")?.icon,
+  },
   { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
 
@@ -948,6 +954,81 @@ export const ACHIEVEMENTS = [
     progressKey: "upside-down-set",
   },
 
+  // ── Constellation ──
+  {
+    id: "lone-star",
+    title: "Lone Star",
+    description: "One bright dot, lit by a click.",
+    hint: "Click a star in the sky",
+    set: "constellation",
+    points: TRIVIAL,
+    hidden: true,
+  },
+  {
+    id: "belt-of-orion",
+    title: "The Hunter's Belt",
+    description: "Three stars clasped together.",
+    hint: "Trace Orion's Belt by clicking the right stars",
+    set: "constellation",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "the-queens-chair",
+    title: "The Queen's Chair",
+    description: "Cassiopeia traced in the dark.",
+    hint: "Trace Cassiopeia by clicking the right stars",
+    set: "constellation",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "the-great-bear",
+    title: "The Great Bear",
+    description: "Ursa Major drawn in light.",
+    hint: "Trace Ursa Major by clicking the right stars",
+    set: "constellation",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "the-lyre",
+    title: "The Lyre",
+    description: "Strings of starlight, plucked.",
+    hint: "Trace Lyra by clicking the right stars",
+    set: "constellation",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "night-sky-mapped",
+    title: "Night Sky Mapped",
+    description: "The cosmos shifts into focus.",
+    hint: "Activate constellation theme",
+    set: "constellation",
+    points: EPIC,
+    hidden: true,
+  },
+  {
+    id: "celestial-cartographer",
+    title: "Celestial Cartographer",
+    description: "All four asterisms, traced in one night.",
+    hint: "Trace every constellation in one session",
+    set: "constellation",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "dark-skies",
+    title: "Dark Skies",
+    description: "Every constellation honored.",
+    hint: "Unlock all other constellation achievements",
+    set: "constellation",
+    points: LEGENDARY,
+    hidden: true,
+    progressKey: "constellation-set",
+  },
+
   // ── Meta / Milestones ──
   {
     id: "curious-mind",
@@ -1087,6 +1168,7 @@ export const THEME_SETS = [
   "paper",
   "vhs",
   "upside-down",
+  "constellation",
 ];
 
 // Map from theme set id to its "unlock all" achievement id
@@ -1098,6 +1180,7 @@ export const SET_MASTERY_MAP = {
   paper: "sketchbook-full",
   vhs: "analog-mastery",
   "upside-down": "world-turner",
+  constellation: "dark-skies",
 };
 
 /**

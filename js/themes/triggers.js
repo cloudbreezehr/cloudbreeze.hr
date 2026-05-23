@@ -10,8 +10,14 @@
 //   createKeySequenceTrigger— type a word within per-letter gap.
 //   createKeyChordTrigger   — N rapid presses of one named key.
 //   createOverscrollTrigger — N overscroll events at the scroll edge.
+//   createConstellationTrigger — click tagged sky stars to draw a pattern.
 
 import { bindPointer } from "../pointer.js";
+import { getConstellation } from "../constellations.js";
+import { mirrorYWhenInverted, getViewportHeight } from "../viewport.js";
+import { getScrollY } from "../scroll-bus.js";
+import { getStarsParallaxScale } from "../sky.js";
+import { UI_OVERLAY_SELECTOR } from "../selectors.js";
 
 // ── Shared decay primitive ──
 // Most strategies share the same "idle decay" shape: after N ms of idle,
@@ -412,6 +418,185 @@ export function createKeyChordTrigger({
         idleThresholdMs: timeoutMs,
         isBlocked: () => ctx.isTransitioning(),
       });
+    },
+  };
+}
+
+// ── Constellation trigger ──
+// Force = uniqueTaggedHits / N, where N is the length of the constellation
+// locked on the first hit.  Captures the document click before the canvas
+// bubble-phase handler so fury / click-burst skip for star hits; a click
+// achievement event is re-dispatched with intercepted: true so milestone
+// counts still tally.
+
+function readScrollProgress() {
+  // Same viewport-height source as the canvas renderer's scrollProgress,
+  // so the trigger's sp tracks the renderer's even when the mobile URL
+  // bar shows/hides (otherwise hit-tests land off their stars).
+  const scrollY = getScrollY();
+  const maxScroll = document.documentElement.scrollHeight - getViewportHeight();
+  return maxScroll > 0 ? Math.min(1, Math.max(0, scrollY / maxScroll)) : 0;
+}
+
+export function createConstellationTrigger({
+  getStars,
+  getCanvas,
+  hitRadius,
+  onChainChange,
+  onWrongHit,
+  onCorrectHit,
+}) {
+  let chain = [];
+  let candidateId = null;
+  let activatedConstellationId = null;
+  let ctx = null;
+
+  function target() {
+    const id = ctx.isActive() ? activatedConstellationId : candidateId;
+    const c = id ? getConstellation(id) : null;
+    return c ? c.points.length : 0;
+  }
+
+  function emit() {
+    if (onChainChange)
+      onChainChange({
+        chain: chain.slice(),
+        candidateId: ctx.isActive() ? activatedConstellationId : candidateId,
+        isActive: ctx.isActive(),
+      });
+  }
+
+  function refreshForce() {
+    const t = target();
+    if (t === 0) {
+      ctx.setForce(0);
+      return;
+    }
+    if (ctx.isActive()) {
+      const removed = t - chain.length;
+      const f = removed / t;
+      ctx.setForce(f);
+      if (chain.length === 0) {
+        const completedId = activatedConstellationId;
+        activatedConstellationId = null;
+        candidateId = null;
+        ctx.complete({ constellationId: completedId });
+      }
+    } else {
+      const f = chain.length / t;
+      ctx.setForce(f);
+      if (chain.length === t) {
+        const completedId = candidateId;
+        activatedConstellationId = completedId;
+        candidateId = null;
+        ctx.complete({ constellationId: completedId });
+      }
+    }
+  }
+
+  function hitTest(cx, cy) {
+    const stars = getStars();
+    const canvas = getCanvas();
+    if (!stars || !canvas) return null;
+    const sp = readScrollProgress();
+    const parallaxScale = getStarsParallaxScale();
+    let best = null;
+    let bestDistSq = hitRadius * hitRadius;
+    for (let i = 0; i < stars.length; i++) {
+      const s = stars[i];
+      if (!s.constellationId) continue;
+      const shift = s.depth * sp * canvas.height * parallaxScale;
+      const sx = s.x % canvas.width;
+      const py =
+        (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
+      const dx = cx - sx;
+      const dy = cy - py;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < bestDistSq) {
+        bestDistSq = distSq;
+        best = { star: s, index: i };
+      }
+    }
+    return best;
+  }
+
+  function onClick(e) {
+    if (ctx.isTransitioning()) return;
+    if (e.target.closest(UI_OVERLAY_SELECTOR)) return;
+    const canvas = getCanvas();
+    if (!canvas) return;
+    const cx = e.clientX;
+    const cy = mirrorYWhenInverted(e.clientY, canvas.height);
+    const hit = hitTest(cx, cy);
+    if (!hit) return;
+    const locked = ctx.isActive() ? activatedConstellationId : candidateId;
+    const isOwnConstellation =
+      locked === null || hit.star.constellationId === locked;
+    if (!isOwnConstellation) {
+      if (onWrongHit) onWrongHit({ star: hit.star });
+      return;
+    }
+    e.stopPropagation();
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: {
+          type: "click",
+          x: e.clientX,
+          y: e.clientY,
+          intercepted: true,
+        },
+      }),
+    );
+
+    const existing = chain.findIndex((c) => c.index === hit.index);
+    if (ctx.isActive()) {
+      // Deactivation shrinks the persistent chain; readding is forbidden
+      // (re-completing re-enters via the activation path).
+      if (existing >= 0) chain.splice(existing, 1);
+    } else if (existing >= 0) {
+      chain.splice(existing, 1);
+      if (chain.length === 0) candidateId = null;
+    } else {
+      if (candidateId === null) candidateId = hit.star.constellationId;
+      chain.push({ index: hit.index });
+    }
+    if (onCorrectHit) {
+      onCorrectHit({
+        star: hit.star,
+        constellationId: hit.star.constellationId,
+        chainLength: chain.length,
+      });
+    }
+    emit();
+    refreshForce();
+  }
+
+  return {
+    start(_ctx) {
+      ctx = _ctx;
+      document.addEventListener("click", onClick, true);
+    },
+    stop() {
+      document.removeEventListener("click", onClick, true);
+    },
+    /** Drop chain + locked ids and notify visualization layers.  Used by
+     *  the theme's onDeactivate hook so an external toggle (HUD button,
+     *  programmatic `toggleTheme`) leaves the trigger in the same clean
+     *  state a full gesture-based deactivation would. */
+    reset() {
+      chain = [];
+      candidateId = null;
+      activatedConstellationId = null;
+      emit();
+    },
+    /** Snapshot of current chain for visualization layers. */
+    getState() {
+      return {
+        chain: chain.slice(),
+        candidateId:
+          ctx && ctx.isActive() ? activatedConstellationId : candidateId,
+        isActive: ctx ? ctx.isActive() : false,
+      };
     },
   };
 }

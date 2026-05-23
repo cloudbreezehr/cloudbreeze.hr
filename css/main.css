@@ -5304,6 +5304,177 @@ body.vhs[data-vhs-buildup="true"] #bg-canvas {
   }
 }
 
+/* ═══════════════════════════════════════════════
+   Constellation Theme
+   ═══════════════════════════════════════════════ */
+
+/* ── Progressive indicator overlays ── */
+
+/* Indigo nebula tint — fades up at the first force threshold */
+.constellation-nebula {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background:
+    radial-gradient(
+      ellipse at 30% 20%,
+      rgba(120, 100, 220, 0.45) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 80%,
+      rgba(80, 90, 200, 0.4) 0%,
+      transparent 55%
+    );
+}
+
+/* Pre-wipe pressure vignette — darkens periphery at the upper thresholds */
+.constellation-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 35%,
+    rgba(10, 12, 30, 0.9) 100%
+  );
+}
+
+/* Constellation wipe transition */
+.constellation-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: linear-gradient(
+    180deg,
+    rgba(15, 18, 40, 0.98),
+    rgba(35, 40, 80, 0.95),
+    rgba(15, 18, 40, 0.98)
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+  pointer-events: none;
+}
+.constellation-wipe.reverse {
+  background: linear-gradient(
+    180deg,
+    rgba(200, 210, 245, 0.95),
+    rgba(150, 170, 230, 0.95),
+    rgba(200, 210, 245, 0.95)
+  );
+}
+
+/* ── Constellation — visual theme (only when active theme) ── */
+body[data-active-theme="constellation"] {
+  --sky-3: #14183c;
+  --sky-4: #0d1030;
+  --sky-5: #08092a;
+  --sky-6: #04051a;
+  --theme-primary: #c0c8ff;
+  --theme-glow: 180, 200, 245;
+  --logo-text-color: #d8e0ff;
+  --logo-accent-color: rgb(var(--theme-glow));
+  --theme-bg: #07091a;
+}
+
+body[data-active-theme="constellation"] #bg-canvas {
+  filter: hue-rotate(220deg) saturate(1.3) brightness(0.55);
+}
+
+body[data-active-theme="constellation"] .cloud-svg {
+  filter: grayscale(0.7) brightness(0.7)
+    drop-shadow(0 0 14px rgba(var(--theme-glow), 0.5));
+}
+
+body[data-active-theme="constellation"] #cursor {
+  box-shadow:
+    -3px -3px 4px rgba(220, 230, 255, 0.4) inset,
+    1px 1px 2px rgba(20, 25, 60, 0.3) inset;
+}
+body[data-active-theme="constellation"] #cursor-ring {
+  border-color: rgba(var(--theme-glow), 0.45);
+}
+
+body[data-active-theme="constellation"] .hero-title .line-2 {
+  background: linear-gradient(
+    135deg,
+    #e8eeff 0%,
+    rgb(var(--theme-glow)) 50%,
+    #6878d0 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="constellation"] .btn-primary {
+  background: linear-gradient(135deg, #4858a8, #2a3270);
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
+}
+body[data-active-theme="constellation"] .btn-primary::before {
+  background: linear-gradient(135deg, #5868c0, #3a4290);
+}
+body[data-active-theme="constellation"] .btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
+}
+
+body[data-active-theme="constellation"] .about-heading em {
+  background: linear-gradient(135deg, #e8eeff, rgb(var(--theme-glow)));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Service-card constellation accent — a thin star-line divider that
+   reveals on hover.  No JS event wiring; pure CSS like the rainy theme's
+   glass-card hover. */
+body.constellation .service-card {
+  transition:
+    background 0.4s,
+    box-shadow 0.6s ease;
+}
+body.constellation .service-card:hover {
+  box-shadow:
+    inset 0 0 30px rgba(var(--theme-glow), 0.06),
+    0 0 20px rgba(var(--theme-glow), 0.1);
+}
+body.constellation .service-card::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 12px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--theme-glow), 0.5) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+body.constellation .service-card:hover::after {
+  opacity: 1;
+}
+
+body[data-active-theme="constellation"] .contact-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.08) 0%,
+    rgba(8, 10, 30, 0.92) 100%
+  );
+}
+
+body[data-active-theme="constellation"]::after {
+  opacity: 0.04;
+}
+
 /* ── Upside-down theme adjustments ── */
 
 body.upside-down .achievement-toast-container {

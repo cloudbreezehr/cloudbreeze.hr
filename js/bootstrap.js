@@ -157,6 +157,7 @@ const MODULES = [
   { path: "./themes/rainy.js", init: (m) => m.initRainy() },
   { path: "./themes/paper.js", init: (m) => m.initPaper() },
   { path: "./themes/vhs.js", init: (m) => m.initVhs() },
+  { path: "./themes/constellation.js", init: (m) => m.initConstellation() },
 
   // Achievements
   { path: "./achievements/index.js", init: (m) => m.initAchievements() },

@@ -46,3 +46,26 @@ export function isFlipped() {
 export function mirrorYWhenInverted(y, height) {
   return isFlipped() ? height - y : y;
 }
+
+// Stable viewport height.  CSS `lvh` resolves to the large viewport
+// (toolbar hidden on mobile), so the probe ignores URL-bar collapse
+// jitter that `window.innerHeight` would expose.  Lazily appended on
+// first call; persists for the page's lifetime.
+let _lvhProbe = null;
+function ensureLvhProbe() {
+  if (_lvhProbe) return _lvhProbe;
+  _lvhProbe = document.createElement("div");
+  _lvhProbe.style.cssText =
+    "position:fixed;height:100lvh;pointer-events:none;visibility:hidden";
+  document.body.appendChild(_lvhProbe);
+  return _lvhProbe;
+}
+
+/**
+ * Viewport height in CSS pixels, stable across mobile toolbar transitions.
+ * Falls back to `window.innerHeight` if the probe's `offsetHeight` is 0
+ * (happy-dom and some non-Chromium environments don't lay out `lvh`).
+ */
+export function getViewportHeight() {
+  return ensureLvhProbe().offsetHeight || window.innerHeight;
+}

@@ -90,6 +90,16 @@ import { getThemeIds, isThemeRegistered } from "./registry.js";
  *   Skip atmosphere.draw (clouds, wisps, motes, gusts, horizon).
  * @property {boolean} [suppressDefaultClickBurst]
  *   Skip the default interactions click-burst — the theme draws its own.
+ * @property {boolean} [alwaysActive]
+ *   Run the hooks every frame regardless of body-class state.  Use for
+ *   visualizations that participate in buildup (pre-activation feedback)
+ *   and persist through activation: skipping when the class isn't set
+ *   would leave the buildup invisible.  The hook's draw fns must
+ *   self-gate on whatever state they care about (force, chain length).
+ *   An alwaysActive hook cannot rely on canvas-hooks' onActivate /
+ *   onDeactivate — those only fire on body-class diff and behave
+ *   inconsistently when combined with alwaysActive.  Use the theme
+ *   factory's onActivate / onDeactivate hooks instead.
  *
  * @property {(s: FrameState) => void} [drawAmbient]
  * @property {(s: FrameState) => void} [drawForeground]
@@ -116,16 +126,21 @@ const _hooks = new Map();
 let _cachedActive = null;
 let _cachedSig = -1;
 
-// Compute a bitfield signature of which theme ids currently have their
-// body class set.  7 themes fit in a single integer; comparison is O(1).
-// classList.contains is a cheap hash lookup on the live token list, so
-// the per-call cost is bounded by theme count even on cache miss.
+// Compute a bitfield signature capturing every input that affects the
+// cached result of getActiveHooks: which themes have their body class
+// set, and which registered hooks are alwaysActive.  Comparison is O(1);
+// folding both inputs in keeps the cache self-validating — no caller
+// needs to remember to invalidate when alwaysActive membership changes.
 function activeSignature() {
   const cl = document.body.classList;
   let sig = 0;
   let bit = 1;
   for (const id of getThemeIds()) {
     if (cl.contains(id)) sig |= bit;
+    bit <<= 1;
+  }
+  for (const id of getThemeIds()) {
+    if (_hooks.get(id)?.alwaysActive) sig |= bit;
     bit <<= 1;
   }
   return sig;
@@ -148,6 +163,11 @@ export function registerCanvasHooks(id, hooks) {
     throw new Error(`registerCanvasHooks: unknown theme "${id}"`);
   }
   _hooks.set(id, hooks);
+  // The signature catches body-class flips and alwaysActive membership
+  // changes, but not same-id replacement with a new hooks object — the
+  // cached {id, hooks} pair would point at the old object until the
+  // signature happens to change.  Drop the cache here so the next call
+  // rebuilds against the current hooks map.
   _cachedActive = null;
   _cachedSig = -1;
 }
@@ -166,12 +186,22 @@ export function getActiveHooks() {
   const sig = activeSignature();
   if (sig === _cachedSig && _cachedActive !== null) return _cachedActive;
   const out = [];
+  const included = new Set();
   let bit = 1;
   for (const id of getThemeIds()) {
     if (sig & bit && _hooks.has(id)) {
       out.push({ id, hooks: _hooks.get(id) });
+      included.add(id);
     }
     bit <<= 1;
+  }
+  // alwaysActive hooks participate every frame, even when their theme
+  // class isn't set — they own their own gating.  Iterated in
+  // registration order so behavior stays deterministic.
+  for (const [id, hooks] of _hooks) {
+    if (hooks.alwaysActive && !included.has(id)) {
+      out.push({ id, hooks });
+    }
   }
   _cachedActive = out;
   _cachedSig = sig;

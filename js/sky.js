@@ -4,6 +4,11 @@ import {
   rgbaStr,
   scrollFade,
 } from "./canvas-utils.js";
+import {
+  CONSTELLATIONS,
+  PLANTED_SCALE,
+  PLANTED_JITTER,
+} from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance } from "./motion.js";
 
@@ -212,6 +217,42 @@ const STARS = defineConstants("sky.stars", {
     step: 0.05,
     description: "Max opacity boost at cursor center",
   },
+  TAGGED_HOVER_BOOST_FACTOR: {
+    value: 0.8,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description:
+      "Extra hover boost applied only to planted constellation stars",
+  },
+  HINT_PULSE_RATE: {
+    value: 5,
+    min: 0,
+    max: 30,
+    step: 0.1,
+    description: "Angular rate of the hint-pulse sine wave per t-unit",
+  },
+  TAGGED_RING_RADIUS_MULT: {
+    value: 1.5,
+    min: 0.5,
+    max: 5,
+    step: 0.1,
+    description: "Tagged-star marker ring radius as a multiple of star radius",
+  },
+  TAGGED_RING_OPACITY: {
+    value: 0.18,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Tagged-star marker ring opacity at full scroll visibility",
+  },
+  TAGGED_RING_WIDTH: {
+    value: 0.4,
+    min: 0.1,
+    max: 3,
+    step: 0.1,
+    description: "Tagged-star marker ring stroke width in pixels",
+  },
 });
 
 // ── Shooting Stars ──
@@ -344,22 +385,99 @@ export const SKY_SHARED = defineConstants("sky.shared", {
 
 // ── Factory ──
 
+// Anchor positions in raw 1920x1080 space, one per quadrant. Constellations
+// are planted relative to these; stars of a single constellation share an
+// anchor and a parallax depth so they shift together on scroll and keep
+// their visual shape.
+const CONSTELLATION_ANCHORS = [
+  { x: 480, y: 240 },
+  { x: 1480, y: 320 },
+  { x: 380, y: 780 },
+  { x: 1520, y: 700 },
+];
+
+function jitter() {
+  return (Math.random() - 0.5) * 2 * PLANTED_JITTER;
+}
+
+function makeStar(x, y, sharedDepth) {
+  const r = STARS.RADIUS_MIN + Math.random() * STARS.RADIUS_RANGE;
+  return {
+    x,
+    y,
+    r,
+    opacity: STARS.OPACITY_MIN + Math.random() * STARS.OPACITY_RANGE,
+    twinkle: Math.random() * Math.PI * 2,
+    twinkleSpeed:
+      STARS.TWINKLE_SPEED_MIN + Math.random() * STARS.TWINKLE_SPEED_RANGE,
+    flash: 0,
+    depth: sharedDepth ?? STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE,
+    glarePhase: Math.random() * Math.PI,
+    constellationId: null,
+    constellationIndex: -1,
+    hintPulse: 0,
+  };
+}
+
+function plantConstellations(stars, capacity) {
+  // Shuffle anchor → constellation assignment so a constellation isn't tied
+  // to a fixed quadrant across sessions.
+  const anchorOrder = CONSTELLATION_ANCHORS.slice().sort(
+    () => Math.random() - 0.5,
+  );
+  const planted = [];
+  for (let i = 0; i < CONSTELLATIONS.length; i++) {
+    const c = CONSTELLATIONS[i];
+    const anchor = anchorOrder[i % anchorOrder.length];
+    if (planted.length + c.points.length > capacity) break;
+    const sharedDepth = STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE;
+    for (let k = 0; k < c.points.length; k++) {
+      const [dx, dy] = c.points[k];
+      const x = anchor.x + dx * PLANTED_SCALE + jitter();
+      const y = anchor.y + dy * PLANTED_SCALE + jitter();
+      const star = makeStar(x, y, sharedDepth);
+      star.constellationId = c.id;
+      star.constellationIndex = k;
+      planted.push(star);
+    }
+  }
+  for (const s of planted) stars.push(s);
+}
+
+// Module-level accessor — themes that need to hit-test or highlight
+// individual stars (e.g. constellation) read from here instead of having
+// the canvas orchestrator thread `sky` through every theme init.  Holds
+// the most recently created sky's stars, or null before `createSky` runs.
+let _latestStars = null;
+
+export function getSkyStars() {
+  return _latestStars;
+}
+
+/** Live parallax-scale read for consumers that need to mirror sky.js's
+ *  star screen-position math (constellation chain hit-tests, chain line
+ *  rendering).  Reads the tunable constant fresh each call so dev-console
+ *  retunes propagate to all consumers in the same frame. */
+export function getStarsParallaxScale() {
+  return STARS.PARALLAX_SCALE;
+}
+
+/** Live scroll-fade read using the same window the star renderer uses.
+ *  Returns 1 above FADE_START, ramps to 0 at FADE_END.  Overlays that
+ *  anchor to star positions read this so they fade in lockstep — without
+ *  it they outlive the stars and end up floating over unrelated sections
+ *  of the page after a scroll. */
+export function getStarsFadeOpacity(sp) {
+  return scrollFade(sp, 0, 0, STARS.FADE_START, SKY_SHARED.FADE_END);
+}
+
 export function createSky(starCount) {
-  const stars = Array.from({ length: starCount }, () => {
-    const r = STARS.RADIUS_MIN + Math.random() * STARS.RADIUS_RANGE;
-    return {
-      x: Math.random() * 1920,
-      y: Math.random() * 1080,
-      r,
-      opacity: STARS.OPACITY_MIN + Math.random() * STARS.OPACITY_RANGE,
-      twinkle: Math.random() * Math.PI * 2,
-      twinkleSpeed:
-        STARS.TWINKLE_SPEED_MIN + Math.random() * STARS.TWINKLE_SPEED_RANGE,
-      flash: 0,
-      depth: STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE,
-      glarePhase: Math.random() * Math.PI,
-    };
-  });
+  const stars = [];
+  plantConstellations(stars, starCount);
+  while (stars.length < starCount) {
+    stars.push(makeStar(Math.random() * 1920, Math.random() * 1080));
+  }
+  _latestStars = stars;
 
   const shootingStars = Array.from({ length: SHOOTING.POOL_SIZE }, () => ({
     active: false,
@@ -412,17 +530,37 @@ export function createSky(starCount) {
         const base =
           s.opacity *
           (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
-        // Hover proximity — stars near the cursor glow brighter
+        // Hover proximity — stars near the cursor glow brighter.
+        // Planted constellation stars get a small extra boost so they
+        // become noticeably brighter under the cursor without standing
+        // out at rest.
         let hoverBoost = 0;
         if (forces && forces.hover.active) {
           const hdx = sx - forces.hover.x;
           const hdy = py - forces.hover.y;
           const hDist = Math.sqrt(hdx * hdx + hdy * hdy);
           if (hDist < STARS.HOVER_RADIUS) {
-            hoverBoost = STARS.HOVER_BOOST * (1 - hDist / STARS.HOVER_RADIUS);
+            const taggedFactor = s.constellationId
+              ? 1 + STARS.TAGGED_HOVER_BOOST_FACTOR
+              : 1;
+            hoverBoost =
+              STARS.HOVER_BOOST *
+              taggedFactor *
+              (1 - hDist / STARS.HOVER_RADIUS);
           }
         }
-        const op = Math.min(1, base + s.flash + hoverBoost) * starVis;
+        // `hintPulse` 0..1 is set externally to highlight stars the
+        // user should click next.  Wave uses the shared `t` clock so
+        // every hinted star breathes in sync but with an index-phased
+        // offset, and freezes under reduced motion because `t` does.
+        let hint = 0;
+        if (s.hintPulse > 0) {
+          const wave =
+            0.5 +
+            0.5 * Math.sin(t * STARS.HINT_PULSE_RATE + s.constellationIndex);
+          hint = s.hintPulse * wave * STARS.HOVER_BOOST;
+        }
+        const op = Math.min(1, base + s.flash + hoverBoost + hint) * starVis;
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {
@@ -440,6 +578,20 @@ export function createSky(starCount) {
           ctx.beginPath();
           ctx.arc(sx, py, s.r, 0, Math.PI * 2);
           ctx.fill();
+        }
+        // Planted-star discovery marker: a faint, always-on outline ring.
+        // Subtle enough not to spoil the puzzle at a glance, distinct
+        // enough that a curious user catches the difference when they
+        // sweep the cursor across the sky.
+        if (s.constellationId) {
+          ctx.save();
+          ctx.globalAlpha = STARS.TAGGED_RING_OPACITY * starVis;
+          ctx.strokeStyle = rgbaStr(sc, 1);
+          ctx.lineWidth = STARS.TAGGED_RING_WIDTH;
+          ctx.beginPath();
+          ctx.arc(sx, py, s.r * STARS.TAGGED_RING_RADIUS_MULT, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
         }
         // Cross-flare glare on rare bright flashing stars
         if (s.glare && s.flash > STARS.FLASH_THRESHOLD) {

@@ -102,6 +102,28 @@ describe("themes/canvas-hooks", () => {
     expect(second).not.toBe(first);
     expect(second[0].hooks).toBe(replacement);
   });
+
+  it("includes alwaysActive hooks regardless of body class", () => {
+    const hooks = { alwaysActive: true, drawAmbient() {} };
+    registerCanvasHooks("paper", hooks);
+    // No body class set — alwaysActive still participates.
+    expect(getActiveHooks()).toEqual([{ id: "paper", hooks }]);
+  });
+
+  it("invalidates the cache when an alwaysActive hook registers, with no body-class change", () => {
+    // Cache validity must include alwaysActive membership, not just body
+    // classes — otherwise the first stable-signature call returns an
+    // out-of-date snapshot.
+    const ambient = { drawAmbient() {} };
+    registerCanvasHooks("paper", ambient);
+    const first = getActiveHooks();
+    expect(first).toEqual([]);
+
+    const persistent = { alwaysActive: true, drawPost() {} };
+    registerCanvasHooks("vhs", persistent);
+    const second = getActiveHooks();
+    expect(second.map((a) => a.id)).toEqual(["vhs"]);
+  });
 });
 
 describe("themes/canvas-hooks — dispatchTransitions", () => {

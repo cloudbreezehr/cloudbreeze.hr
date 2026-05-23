@@ -75,6 +75,9 @@ export function createTracker(onUnlock, onRelock) {
     dragStartY: null,
     lastFuryTime: 0,
     longWatchTimer: null,
+    // Tracks which constellations have been formed in this session for
+    // the celestial-cartographer "all four in one session" achievement.
+    constellationsFound: new Set(),
   };
 
   // ── Unlock ──
@@ -374,6 +377,7 @@ export function createTracker(onUnlock, onRelock) {
         paper: "first-sketch",
         vhs: "tracking-lost",
         "upside-down": "the-flip",
+        constellation: "night-sky-mapped",
       };
       if (themeMap[data.theme]) tryUnlock(themeMap[data.theme]);
 
@@ -439,6 +443,32 @@ export function createTracker(onUnlock, onRelock) {
 
     "vhs-cursor-still"() {
       tryUnlock("phosphor-burn");
+    },
+
+    "star-clicked"() {
+      // Any tagged-star hit counts toward the trivial "click a star" tier.
+      tryUnlock("lone-star");
+    },
+
+    "constellation-formed"(data) {
+      if (!data || !data.constellationId) return;
+      const map = {
+        "orions-belt": "belt-of-orion",
+        cassiopeia: "the-queens-chair",
+        "ursa-major": "the-great-bear",
+        lyra: "the-lyre",
+      };
+      const id = map[data.constellationId];
+      if (id) tryUnlock(id);
+      // celestial-cartographer: all four asterisms in one session.
+      // Tracked against the known mapping above so unrecognized ids
+      // (future constellation entries) don't accidentally count.
+      if (id) {
+        session.constellationsFound.add(data.constellationId);
+        if (session.constellationsFound.size >= Object.keys(map).length) {
+          tryUnlock("celestial-cartographer");
+        }
+      }
     },
 
     "panel-open"(data) {
