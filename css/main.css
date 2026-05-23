@@ -4354,6 +4354,33 @@ nav.nav-light .achievement-btn::after {
 }
 .achievement-toast-relock-icon {
   opacity: 0.6;
+  transform-origin: center;
+}
+/* One-shot key-turn on entry gives re-locks a distinct signature.
+   Scoped to .enter so static renders of the same DOM don't replay it.
+   Delay matches the parent toast's slide-in so the rotation plays
+   against a settled position — running it concurrently with the
+   translateY masks the turn motion.  `backwards` pins the icon at
+   the initial keyframe (rotated, faint) during the slide-in.
+   The 0.4s delay is the JS TOAST_SLIDE_IN_MS in seconds; if that
+   constant moves, this value must follow. */
+.achievement-toast-relock.enter .achievement-toast-relock-icon {
+  animation: relock-key-turn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s
+    backwards;
+}
+@keyframes relock-key-turn {
+  0% {
+    transform: rotate(-90deg);
+    opacity: 0.15;
+  }
+  60% {
+    transform: rotate(12deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0);
+    opacity: 0.6;
+  }
 }
 
 /* ── Achievement Tooltip ── */

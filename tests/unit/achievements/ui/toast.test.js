@@ -216,6 +216,12 @@ describe("achievements/ui/toast", () => {
         toast.querySelector(".achievement-toast-title").textContent,
       ).toEqual("Re-locked: Ancient");
     });
+
+    it("adds the .enter class so the entry animation can run", () => {
+      mod.showRelockToast(makeAchievement());
+      const toast = getContainer().querySelector(".achievement-toast-relock");
+      expect(toast.classList.contains("enter")).toEqual(true);
+    });
   });
 
   describe("showActivationToast", () => {
