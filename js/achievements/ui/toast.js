@@ -44,6 +44,7 @@ let toastContainer = null;
 let toastQueue = [];
 let activeToasts = [];
 let toastsPaused = false;
+let queueCounterEl = null;
 
 // Panel-facing callbacks injected by the facade.  Kept behind a
 // configure function so this module doesn't import its parent and
@@ -113,6 +114,26 @@ function resumeToasts() {
       startProgressDrain(ref, delay, fromScale);
     }
   }
+}
+
+// Surfaces hidden queue depth.  Lazily created on overflow; removed
+// when the queue empties.  Visual anchoring at the top of the stack
+// is handled by CSS `order` — DOM position is irrelevant.
+function updateQueueCounter() {
+  if (!toastContainer) return;
+  if (toastQueue.length === 0) {
+    if (queueCounterEl) {
+      queueCounterEl.remove();
+      queueCounterEl = null;
+    }
+    return;
+  }
+  if (!queueCounterEl) {
+    queueCounterEl = document.createElement("div");
+    queueCounterEl.className = "achievement-toast-queue-counter";
+    toastContainer.appendChild(queueCounterEl);
+  }
+  queueCounterEl.textContent = `+${toastQueue.length} more`;
 }
 
 function appendProgressBar(toast) {
@@ -219,6 +240,7 @@ export function showToast(achievement) {
 
   if (activeToasts.length >= TOAST_MAX_VISIBLE) {
     toastQueue.push(achievement);
+    updateQueueCounter();
     return;
   }
 
@@ -294,6 +316,7 @@ function dismissToast(toastRef) {
     // Process queue
     if (toastQueue.length > 0 && activeToasts.length < TOAST_MAX_VISIBLE) {
       const next = toastQueue.shift();
+      updateQueueCounter();
       setTimeout(() => showToast(next), TOAST_STAGGER_MS);
     }
   }, TOAST_SLIDE_OUT_MS);
@@ -406,6 +429,7 @@ export function destroyToastContainer() {
   toastQueue = [];
   activeToasts = [];
   toastsPaused = false;
+  queueCounterEl = null;
 }
 
 // Test hook — full reset including injected callbacks.

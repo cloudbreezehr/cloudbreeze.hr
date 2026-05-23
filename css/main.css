@@ -4403,6 +4403,30 @@ body.light-appearance .achievement-tooltip {
   gap: 8px;
 }
 
+/* Surfaces queued-but-hidden unlocks.  `order` pins it past the
+   stack on the main axis, so column-reverse paints it at the visual
+   top regardless of when it was inserted in the DOM. */
+.achievement-toast-queue-counter {
+  order: 1;
+  align-self: flex-end;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(var(--ink-rgb), 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 3px 10px;
+  pointer-events: none;
+}
+body.light-appearance .achievement-toast-queue-counter {
+  color: rgba(var(--ink-rgb), 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
 .achievement-toast {
   --toast-accent: var(--achievement-default-accent);
   --set-color: var(--toast-accent);

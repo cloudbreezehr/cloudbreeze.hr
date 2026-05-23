@@ -98,7 +98,9 @@ describe("achievements/ui/toast", () => {
       for (let i = 0; i < QUEUE_OVERFLOW_COUNT; i++) {
         mod.showToast(makeAchievement({ id: `a${i}`, title: `T${i}` }));
       }
-      expect(getContainer().children).toHaveLength(TOAST_MAX_VISIBLE);
+      expect(
+        getContainer().querySelectorAll(".achievement-toast"),
+      ).toHaveLength(TOAST_MAX_VISIBLE);
 
       // Walk the dismiss → slide-out → stagger pipeline one stage at a
       // time so the next auto-dismiss cycle doesn't intrude before the
@@ -320,6 +322,60 @@ describe("achievements/ui/toast", () => {
       expect(fill.style.transition).toEqual(
         `transform ${TOAST_RESUME_DELAY_MS}ms linear`,
       );
+    });
+  });
+
+  describe("queue counter", () => {
+    function getCounter() {
+      return document.querySelector(".achievement-toast-queue-counter");
+    }
+
+    it("does not render the counter while the queue is empty", () => {
+      mod.showToast(makeAchievement({ id: "a0" }));
+      expect(getCounter()).toBeNull();
+    });
+
+    it("renders +N more once queued toasts exceed the visible cap", () => {
+      const QUEUED = 2;
+      for (let i = 0; i < TOAST_MAX_VISIBLE + QUEUED; i++) {
+        mod.showToast(makeAchievement({ id: `a${i}` }));
+      }
+      const counter = getCounter();
+      expect(counter).not.toBeNull();
+      expect(counter.textContent).toEqual(`+${QUEUED} more`);
+    });
+
+    it("clears the counter on destroyToastContainer", () => {
+      const QUEUED = 2;
+      for (let i = 0; i < TOAST_MAX_VISIBLE + QUEUED; i++) {
+        mod.showToast(makeAchievement({ id: `a${i}` }));
+      }
+      expect(getCounter()).not.toBeNull();
+      mod.destroyToastContainer();
+      expect(getCounter()).toBeNull();
+    });
+
+    it("decrements as the queue drains and removes itself on empty", () => {
+      // Queued past the cap so one drain cycle leaves at least one
+      // still pending — otherwise the counter goes 0 in a single step.
+      const QUEUED = TOAST_MAX_VISIBLE + 1;
+      for (let i = 0; i < TOAST_MAX_VISIBLE + QUEUED; i++) {
+        mod.showToast(makeAchievement({ id: `a${i}` }));
+      }
+      expect(getCounter().textContent).toEqual(`+${QUEUED} more`);
+
+      vi.advanceTimersByTime(TOAST_HOLD_MS);
+      vi.advanceTimersByTime(TOAST_SLIDE_OUT_MS);
+      vi.advanceTimersByTime(TOAST_STAGGER_MS);
+      const REMAINING_AFTER_ONE_CYCLE = QUEUED - TOAST_MAX_VISIBLE;
+      expect(getCounter().textContent).toEqual(
+        `+${REMAINING_AFTER_ONE_CYCLE} more`,
+      );
+
+      vi.advanceTimersByTime(TOAST_HOLD_MS);
+      vi.advanceTimersByTime(TOAST_SLIDE_OUT_MS);
+      vi.advanceTimersByTime(TOAST_STAGGER_MS);
+      expect(getCounter()).toBeNull();
     });
   });
 
