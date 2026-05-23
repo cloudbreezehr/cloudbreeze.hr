@@ -4480,6 +4480,38 @@ body.light-appearance .achievement-tooltip {
   text-align: right;
 }
 
+/* Countdown bar at the bottom of live toasts — drains over the dismiss
+   timer.  Hover freezes the fill via inline style (set by toast.js);
+   the transition resumes from that scale when the pointer leaves. */
+.achievement-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+.achievement-toast-progress-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--toast-accent);
+  opacity: 0.7;
+  transform: scaleX(1);
+  transform-origin: left center;
+  will-change: transform;
+}
+/* Global reduced-motion rule clamps transitions to ~0ms, which would
+   paint the bar empty on first frame.  Hide it instead so users who
+   opted out of motion don't see a misleading "expired" indicator. */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-toast-progress {
+    display: none;
+  }
+}
+
 /* ── Activation Toast ── */
 
 .achievement-activation-toast {

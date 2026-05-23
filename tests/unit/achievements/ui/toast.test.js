@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   TOAST_HOLD_MS,
+  TOAST_RESUME_DELAY_MS,
   TOAST_SLIDE_OUT_MS,
   TOAST_STAGGER_MS,
   TOAST_MAX_VISIBLE,
@@ -238,6 +239,87 @@ describe("achievements/ui/toast", () => {
       expect(ring.style.top).toEqual("80px");
       vi.runAllTimers();
       expect(document.querySelector(".achievement-pulse-ring")).toBeNull();
+    });
+  });
+
+  describe("progress bar", () => {
+    function getFill() {
+      return getContainer().querySelector(".achievement-toast-progress-fill");
+    }
+
+    it("appends a progress track + fill to live toasts and starts the drain transition", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      expect(fill).not.toBeNull();
+      expect(fill.style.transition).toEqual(
+        `transform ${TOAST_HOLD_MS}ms linear`,
+      );
+      expect(fill.style.transform).toEqual("scaleX(0)");
+    });
+
+    it("skips the progress bar on toasts rendered via buildAchievementToast alone", () => {
+      const toast = mod.buildAchievementToast(makeAchievement());
+      expect(toast.querySelector(".achievement-toast-progress")).toBeNull();
+    });
+
+    it("freezes the fill at the interpolated scale on hover", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      const ELAPSED = TOAST_HOLD_MS / 4;
+      vi.advanceTimersByTime(ELAPSED);
+
+      getContainer().dispatchEvent(new MouseEvent("mouseenter"));
+      // 1 - 0.25 = 0.75 remaining.
+      expect(fill.style.transform).toEqual("scaleX(0.75)");
+      expect(fill.style.transition).toEqual("none");
+    });
+
+    it("resumes drain from the frozen scale over the rescheduled delay", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      const ELAPSED = TOAST_HOLD_MS / 4;
+      vi.advanceTimersByTime(ELAPSED);
+
+      getContainer().dispatchEvent(new MouseEvent("mouseenter"));
+      getContainer().dispatchEvent(new MouseEvent("mouseleave"));
+
+      // Remaining is well past the resume floor, so the drain matches
+      // remaining exactly.
+      const REMAINING = TOAST_HOLD_MS - ELAPSED;
+      expect(fill.style.transition).toEqual(`transform ${REMAINING}ms linear`);
+      expect(fill.style.transform).toEqual("scaleX(0)");
+    });
+
+    it("starts a full-duration drain on resume for a toast created while paused", () => {
+      mod.showToast(makeAchievement({ id: "first" }));
+      getContainer().dispatchEvent(new MouseEvent("mouseenter"));
+
+      mod.showToast(makeAchievement({ id: "second" }));
+      const fills = getContainer().querySelectorAll(
+        ".achievement-toast-progress-fill",
+      );
+      const pausedFill = fills[fills.length - 1];
+      expect(pausedFill.style.transition).toEqual("");
+
+      getContainer().dispatchEvent(new MouseEvent("mouseleave"));
+      expect(pausedFill.style.transition).toEqual(
+        `transform ${TOAST_HOLD_MS}ms linear`,
+      );
+      expect(pausedFill.style.transform).toEqual("scaleX(0)");
+    });
+
+    it("extends the drain duration to the resume floor when hover lands near expiry", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      const NEAR_EXPIRY = TOAST_HOLD_MS - TOAST_RESUME_DELAY_MS / 2;
+      vi.advanceTimersByTime(NEAR_EXPIRY);
+
+      getContainer().dispatchEvent(new MouseEvent("mouseenter"));
+      getContainer().dispatchEvent(new MouseEvent("mouseleave"));
+
+      expect(fill.style.transition).toEqual(
+        `transform ${TOAST_RESUME_DELAY_MS}ms linear`,
+      );
     });
   });
 

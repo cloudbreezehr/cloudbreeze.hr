@@ -23,7 +23,11 @@ export const TOAST_HOLD_MS = 4000;
 export const TOAST_SLIDE_OUT_MS = 300;
 export const TOAST_STAGGER_MS = 200;
 export const TOAST_MAX_VISIBLE = 3;
-const TOAST_RESUME_DELAY_MS = 800;
+export const TOAST_RESUME_DELAY_MS = 800;
+
+// ── Progress Bar ──
+const PROGRESS_FULL = 1;
+const PROGRESS_EMPTY = 0;
 
 // ── Fireworks ──
 // Delay the fireworks burst until the toast has finished sliding in
@@ -91,6 +95,7 @@ function pauseToasts() {
       clearTimeout(ref.timer);
       ref.timer = null;
       ref.remaining = Math.max(0, ref.dismissAt - Date.now());
+      freezeProgressBar(ref);
     }
   }
 }
@@ -103,8 +108,60 @@ function resumeToasts() {
       ref.dismissAt = Date.now() + delay;
       ref.timer = setTimeout(() => dismissToast(ref), delay);
       ref.remaining = null;
+      const fromScale =
+        ref.progressFrozen != null ? ref.progressFrozen : PROGRESS_FULL;
+      startProgressDrain(ref, delay, fromScale);
     }
   }
+}
+
+function appendProgressBar(toast) {
+  const track = document.createElement("div");
+  track.className = "achievement-toast-progress";
+  const fill = document.createElement("div");
+  fill.className = "achievement-toast-progress-fill";
+  track.appendChild(fill);
+  toast.appendChild(track);
+  return fill;
+}
+
+// Current scale = remaining proportion of the active drain.  Returns
+// the frozen value while paused, and the live interpolation otherwise.
+function currentProgressScale(ref) {
+  if (ref.progressFrozen != null) return ref.progressFrozen;
+  if (ref.progressStart == null) return PROGRESS_FULL;
+  const elapsed = Date.now() - ref.progressStart;
+  return (
+    ref.progressFrom *
+    Math.max(PROGRESS_EMPTY, PROGRESS_FULL - elapsed / ref.progressDuration)
+  );
+}
+
+// Two-stage paint forces a layout flush so the starting scale is
+// committed before the transition rule changes.
+function startProgressDrain(ref, durationMs, fromScale = PROGRESS_FULL) {
+  ref.progressFrom = fromScale;
+  ref.progressStart = Date.now();
+  ref.progressDuration = durationMs;
+  ref.progressFrozen = null;
+  const fill = ref.progressFill;
+  if (!fill) return;
+  fill.style.transition = "none";
+  fill.style.transform = `scaleX(${fromScale})`;
+  void fill.offsetHeight;
+  fill.style.transition = `transform ${durationMs}ms linear`;
+  fill.style.transform = `scaleX(${PROGRESS_EMPTY})`;
+}
+
+// Freeze the bar at its currently-interpolated scale.  Records the
+// scale on the ref so resume can pick the drain up from the same point.
+function freezeProgressBar(ref) {
+  const scale = currentProgressScale(ref);
+  ref.progressFrozen = scale;
+  const fill = ref.progressFill;
+  if (!fill) return;
+  fill.style.transition = "none";
+  fill.style.transform = `scaleX(${scale})`;
 }
 
 // Build the achievement-toast DOM for a given achievement.  Canonical
@@ -199,15 +256,27 @@ export function showToast(achievement) {
     }
   }, FIREWORKS_DELAY_MS);
 
-  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
-  activeToasts.push(toastRef);
+  registerToast(toast);
+}
 
-  // Auto dismiss (skip timer if queue is paused — resumeToasts will start it)
+// Build the active-toast ref, wire it into the queue, and either start
+// the drain or stash a frozen-at-full state for resumeToasts to pick up.
+function registerToast(toast) {
+  const ref = {
+    el: toast,
+    dismissAt: Date.now() + TOAST_HOLD_MS,
+    progressFill: appendProgressBar(toast),
+  };
+  activeToasts.push(ref);
+
   if (!toastsPaused) {
-    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
+    ref.timer = setTimeout(() => dismissToast(ref), TOAST_HOLD_MS);
+    startProgressDrain(ref, TOAST_HOLD_MS);
   } else {
-    toastRef.remaining = TOAST_HOLD_MS;
+    ref.remaining = TOAST_HOLD_MS;
+    ref.progressFrozen = PROGRESS_FULL;
   }
+  return ref;
 }
 
 function dismissToast(toastRef) {
@@ -290,14 +359,7 @@ export function showRelockToast(achievement) {
   void toast.offsetHeight;
   toast.classList.add("enter");
 
-  const toastRef = { el: toast, dismissAt: Date.now() + TOAST_HOLD_MS };
-  activeToasts.push(toastRef);
-
-  if (!toastsPaused) {
-    toastRef.timer = setTimeout(() => dismissToast(toastRef), TOAST_HOLD_MS);
-  } else {
-    toastRef.remaining = TOAST_HOLD_MS;
-  }
+  registerToast(toast);
 }
 
 // ── Activation Toast ──
