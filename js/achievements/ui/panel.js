@@ -137,6 +137,9 @@ function openPanelUI(onHide) {
 
   if (!panelEl) {
     panelEl = buildPanel(onHide);
+    // Mount inert — Tab order should skip the panel until it's open.
+    // openPanelUI un-inerts below; closePanel sets it back.
+    panelEl.setAttribute("inert", "");
     document.body.appendChild(panelEl);
   } else {
     refreshPanel();
@@ -144,6 +147,7 @@ function openPanelUI(onHide) {
 
   // Force reflow then open
   void panelEl.offsetHeight;
+  panelEl.removeAttribute("inert");
   requestAnimationFrame(() => panelEl.classList.add("open"));
 
   // Start observing unseen cards
@@ -172,6 +176,11 @@ export function closePanel() {
   panelOpen = false;
   setNavActive(false);
   panelEl.classList.remove("open");
+  // Make the off-screen panel non-focusable so Tab order doesn't walk
+  // through the hidden cards.  Without this, after the visible page
+  // ends, focus continues into the panel's role=button cards which
+  // are mounted but slid off via transform: translateX(100%).
+  panelEl.setAttribute("inert", "");
   hideHintTooltip();
   destroySeenObserver();
 

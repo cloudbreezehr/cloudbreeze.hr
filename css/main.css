@@ -51,6 +51,44 @@
   }
 }
 
+/* ── Skip Link ── */
+/* Off-screen by default; slides into view when focused via Tab so
+   keyboard users can bypass the nav and theme overlays in one keystroke. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: var(--z-skip-link);
+  padding: 0.6rem 1rem;
+  background: rgba(var(--ink-rgb), 0.96);
+  color: #fff;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transform: translateY(-150%);
+  transition: transform 0.2s ease-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid rgb(var(--theme-glow));
+  outline-offset: 2px;
+}
+body.light-appearance .skip-link {
+  background: rgba(240, 247, 255, 0.97);
+  color: rgba(var(--ink-rgb), 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+/* #main is focused programmatically by the skip-link to redirect Tab
+   sequence into page content; the section itself isn't a focusable
+   control, so no focus ring should render on it. */
+#main:focus {
+  outline: none;
+}
+
 /* ── Keyboard Focus Rings ── */
 :focus-visible {
   outline-color: rgb(var(--theme-glow));

@@ -24,6 +24,7 @@
 //   400–499   Dev tools (console, tooltips)
 //   500–599   Toasts, fireworks & ephemeral overlays
 //   600–699   Tooltips & popovers
+//   700–799   Keyboard skip link (outranks every visual layer)
 //   9000+     Cursor (always on top)
 
 // Order is registration order.  Sorted by value to make drift visible —
@@ -73,6 +74,11 @@ const LAYERS = Object.freeze({
 
   // ── Tooltips & popovers (600–699) ──
   Z_TOOLTIP: 600,
+
+  // ── Skip link (700+) ──
+  // Keyboard-only affordance — must outrank every visual layer when
+  // focused so it's never occluded by an open panel or toast.
+  Z_SKIP_LINK: 700,
 
   // ── Cursor (9000+) ──
   Z_CURSOR_RING: 9998,

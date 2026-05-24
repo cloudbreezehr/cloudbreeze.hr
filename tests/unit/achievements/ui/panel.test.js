@@ -124,6 +124,17 @@ describe("achievements/ui/panel", () => {
       expect(getPanel()).toBe(first);
     });
 
+    it("removes the inert attribute on open and re-adds it on close", () => {
+      mod.openPanel();
+      const panel = getPanel();
+      expect(panel.hasAttribute("inert")).toBe(false);
+      mod.closePanel();
+      expect(panel.hasAttribute("inert")).toBe(true);
+      // Reopening drops it again.
+      mod.openPanel();
+      expect(panel.hasAttribute("inert")).toBe(false);
+    });
+
     it("renders the two tabs", () => {
       mod.openPanel();
       const tabButtons = document.querySelectorAll(".achievement-tab");

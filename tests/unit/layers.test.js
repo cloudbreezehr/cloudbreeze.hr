@@ -74,6 +74,7 @@ describe("z-index layer registry", () => {
       [400, 499],
       [500, 599],
       [600, 699],
+      [700, 799],
       [9000, 9999],
     ];
     for (const [name, value] of Object.entries(LAYERS)) {
