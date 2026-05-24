@@ -283,13 +283,26 @@ export function initCanvas(canvasEl, appearance, options) {
     for (const { hooks } of activeHooks) hooks.drawPost?.(frame);
   }
 
+  // Backgrounded tabs throttle rAF, but they still tick — skipping the
+  // expensive drawFrame work entirely saves CPU/battery for visitors
+  // who left the tab open.  The rAF chain stays unbroken so resume is
+  // automatic when the user returns.
+  let renderPaused = document.hidden;
+  document.addEventListener("visibilitychange", () => {
+    renderPaused = document.hidden;
+    // On resume, anchor the next dt to "now" — otherwise the first frame
+    // computes dt against a pre-pause timestamp and any dt-driven spawn
+    // accumulator bursts to flush the apparent backlog.
+    if (!renderPaused) lastFrameTime = performance.now();
+  });
+
   // Drive the render loop.  Invariant: the next frame is always
   // scheduled, even if drawFrame throws — otherwise a single bad frame
   // (e.g. a palette-key dereference on a stacked theme) would kill the
   // loop and freeze the canvas with no recovery short of a reload.
   function render() {
     try {
-      drawFrame();
+      if (!renderPaused) drawFrame();
     } catch (err) {
       console.error("[canvas] render frame failed:", err);
     } finally {
