@@ -48,6 +48,11 @@ export const INTRO_CARD_THRESHOLD = 10;
 let revealHints = false;
 let _seenObserver = null;
 let _seenTimers = new Map();
+// Last-rendered progress per key.  A subsequent render with a higher
+// value shines the newly-filled segments; first render of any key
+// silently establishes the baseline so the initial paint never flashes
+// already-filled segments.
+const lastProgressShineSnapshot = new Map();
 
 // Panel-facing hooks injected by the facade.  getPanelEl lets us read
 // the live panel element without importing the parent (which would
@@ -344,6 +349,8 @@ function buildProgressBar(progressKey) {
   const total = resolveProgressTotal(progressKey);
   if (total <= 0) return null;
   const collected = Math.min(resolveProgressCurrent(progressKey), total);
+  const prior = lastProgressShineSnapshot.get(progressKey) ?? collected;
+  lastProgressShineSnapshot.set(progressKey, collected);
 
   const wrap = document.createElement("div");
   wrap.className = "achievement-card-progress-bar-wrap";
@@ -354,6 +361,7 @@ function buildProgressBar(progressKey) {
       const seg = document.createElement("div");
       seg.className = "achievement-card-progress-bar-segment";
       if (i < collected) seg.classList.add("filled");
+      if (i >= prior && i < collected) seg.classList.add("just-filled");
       wrap.appendChild(seg);
     }
   } else {
@@ -629,6 +637,7 @@ export function _resetForTests() {
   _isPanelOpen = () => false;
   _refreshPanel = () => {};
   _scrollToActivityEntryFor = () => {};
+  lastProgressShineSnapshot.clear();
   if (_themeStackListener) {
     window.removeEventListener("achievement", _themeStackListener);
     _themeStackListener = null;

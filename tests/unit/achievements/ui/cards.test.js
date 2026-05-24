@@ -351,6 +351,70 @@ describe("achievements/ui/cards", () => {
         wrap.querySelector(".achievement-card-progress-bar-fill"),
       ).not.toBeNull();
     });
+
+    function curiousMindSegments() {
+      const card = container.querySelector(
+        '.achievement-card[data-id="curious-mind"]',
+      );
+      return card.querySelectorAll(".achievement-card-progress-bar-segment");
+    }
+
+    it("establishes the snapshot silently on first render (no just-filled)", () => {
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      mod.renderSections(container);
+      const justFilled = container.querySelectorAll(
+        '.achievement-card[data-id="curious-mind"] .achievement-card-progress-bar-segment.just-filled',
+      );
+      expect(justFilled.length).toEqual(0);
+    });
+
+    it("shines only the segment that ticks past the snapshot", () => {
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      mod.renderSections(container);
+
+      storage.unlock("a-stillness");
+      container.innerHTML = "";
+      mod.renderSections(container);
+
+      const segs = curiousMindSegments();
+      const justFilled = [...segs].map((s) =>
+        s.classList.contains("just-filled"),
+      );
+      expect(justFilled).toEqual([false, false, true, false, false]);
+    });
+
+    it("skips the shine when progress decreases (state reset)", () => {
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      storage.unlock("a-stillness");
+      mod.renderSections(container);
+      container.innerHTML = "";
+
+      // Simulate a partial state reset by relocking past the snapshot.
+      storage.relock("a-stillness");
+      storage.relock("cloud-reader");
+      mod.renderSections(container);
+
+      const segs = curiousMindSegments();
+      expect([...segs].some((s) => s.classList.contains("just-filled"))).toBe(
+        false,
+      );
+    });
+
+    it("does not re-shine on a render with unchanged progress", () => {
+      storage.unlock("first-light");
+      storage.unlock("cloud-reader");
+      mod.renderSections(container);
+      container.innerHTML = "";
+      mod.renderSections(container);
+
+      const segs = curiousMindSegments();
+      expect([...segs].some((s) => s.classList.contains("just-filled"))).toBe(
+        false,
+      );
+    });
   });
 
   describe("refreshCard", () => {

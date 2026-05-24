@@ -4270,6 +4270,26 @@ nav.nav-light .achievement-btn::after {
 .achievement-card-progress-bar-segment.filled {
   background: var(--set-color, var(--achievement-default-accent));
 }
+/* One-shot shine when a segment ticks from unfilled to filled on a
+   subsequent render.  Plays on initial paint of the new node — the
+   class is only applied to segments newly past the prior snapshot. */
+.achievement-card-progress-bar-segment.just-filled {
+  animation: progress-segment-shine 0.7s ease-out;
+}
+@keyframes progress-segment-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  }
+  60% {
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    background: var(--set-color, var(--achievement-default-accent));
+    box-shadow: none;
+  }
+}
 
 /* ── Relocked Card State ── */
 
