@@ -45,6 +45,10 @@ let toastQueue = [];
 let activeToasts = [];
 let toastsPaused = false;
 let queueCounterEl = null;
+// Hover and keyboard-focus are independent pause sources — the timer
+// only resumes when *both* are inactive.
+let hoverActive = false;
+let focusActive = false;
 
 // Panel-facing callbacks injected by the facade.  Kept behind a
 // configure function so this module doesn't import its parent and
@@ -77,16 +81,37 @@ function ensureToastContainer() {
   toastContainer.className = "achievement-toast-container";
   document.body.appendChild(toastContainer);
 
-  toastContainer.addEventListener("mouseenter", pauseToasts);
+  toastContainer.addEventListener("mouseenter", () => {
+    hoverActive = true;
+    reconcilePauseState();
+  });
   toastContainer.addEventListener("mouseleave", () => {
-    resumeToasts();
+    hoverActive = false;
+    reconcilePauseState();
     hideHintTooltip();
+  });
+  toastContainer.addEventListener("focusin", () => {
+    focusActive = true;
+    reconcilePauseState();
+  });
+  toastContainer.addEventListener("focusout", (e) => {
+    // focusout fires for child-to-child transitions too; only react
+    // when focus has actually left the container.
+    if (e.relatedTarget && toastContainer.contains(e.relatedTarget)) return;
+    focusActive = false;
+    reconcilePauseState();
   });
   toastContainer.addEventListener("mouseover", (e) => {
     const toast = e.target.closest(".achievement-toast");
     if (toast && toast.dataset.hint)
       showHintTooltip(toast, toast.dataset.hint, true);
   });
+}
+
+function reconcilePauseState() {
+  const shouldPause = hoverActive || focusActive;
+  if (shouldPause && !toastsPaused) pauseToasts();
+  else if (!shouldPause && toastsPaused) resumeToasts();
 }
 
 function pauseToasts() {
@@ -430,6 +455,8 @@ export function destroyToastContainer() {
   activeToasts = [];
   toastsPaused = false;
   queueCounterEl = null;
+  hoverActive = false;
+  focusActive = false;
 }
 
 // Test hook — full reset including injected callbacks.

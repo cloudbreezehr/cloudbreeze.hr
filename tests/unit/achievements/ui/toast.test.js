@@ -331,6 +331,66 @@ describe("achievements/ui/toast", () => {
     });
   });
 
+  describe("focus pause", () => {
+    function getFill() {
+      return getContainer().querySelector(".achievement-toast-progress-fill");
+    }
+
+    it("freezes the drain on focusin", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      const ELAPSED = TOAST_HOLD_MS / 4;
+      vi.advanceTimersByTime(ELAPSED);
+
+      getContainer().dispatchEvent(new FocusEvent("focusin"));
+      expect(fill.style.transition).toEqual("none");
+      expect(fill.style.transform).toEqual("scaleX(0.75)");
+    });
+
+    it("resumes the drain on focusout when no other source is holding", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      const ELAPSED = TOAST_HOLD_MS / 4;
+      vi.advanceTimersByTime(ELAPSED);
+
+      getContainer().dispatchEvent(new FocusEvent("focusin"));
+      getContainer().dispatchEvent(
+        new FocusEvent("focusout", { relatedTarget: null }),
+      );
+
+      const REMAINING = TOAST_HOLD_MS - ELAPSED;
+      expect(fill.style.transition).toEqual(`transform ${REMAINING}ms linear`);
+    });
+
+    it("stays paused when only one of hover/focus releases", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      vi.advanceTimersByTime(TOAST_HOLD_MS / 4);
+
+      getContainer().dispatchEvent(new MouseEvent("mouseenter"));
+      getContainer().dispatchEvent(new FocusEvent("focusin"));
+      // Releasing hover while focus is still in shouldn't restart drain.
+      getContainer().dispatchEvent(new MouseEvent("mouseleave"));
+
+      expect(fill.style.transition).toEqual("none");
+    });
+
+    it("ignores focusout when focus moves to a descendant", () => {
+      mod.showToast(makeAchievement());
+      const fill = getFill();
+      vi.advanceTimersByTime(TOAST_HOLD_MS / 4);
+
+      getContainer().dispatchEvent(new FocusEvent("focusin"));
+      // Synthesize focus moving from one toast to another inside.
+      const child = getContainer().querySelector(".achievement-toast");
+      getContainer().dispatchEvent(
+        new FocusEvent("focusout", { relatedTarget: child }),
+      );
+
+      expect(fill.style.transition).toEqual("none");
+    });
+  });
+
   describe("queue counter", () => {
     function getCounter() {
       return document.querySelector(".achievement-toast-queue-counter");
