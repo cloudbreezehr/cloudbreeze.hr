@@ -55,6 +55,23 @@ describe("achievements/ui/toast", () => {
     return document.querySelector(".achievement-toast-container");
   }
 
+  describe("rarityTierFor", () => {
+    it("returns null for sub-epic point counts", async () => {
+      const { POINT_TIERS } =
+        await import("../../../../js/achievements/registry.js");
+      expect(mod.rarityTierFor(POINT_TIERS.EPIC - 1)).toBeNull();
+      expect(mod.rarityTierFor(POINT_TIERS.RARE)).toBeNull();
+    });
+
+    it("returns epic at the epic threshold and legendary at the legendary threshold", async () => {
+      const { POINT_TIERS } =
+        await import("../../../../js/achievements/registry.js");
+      expect(mod.rarityTierFor(POINT_TIERS.EPIC)).toEqual("epic");
+      expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY - 1)).toEqual("epic");
+      expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY)).toEqual("legendary");
+    });
+  });
+
   describe("buildAchievementToast", () => {
     it("renders title, description, and points into toast structure", () => {
       const toast = mod.buildAchievementToast(
@@ -83,6 +100,23 @@ describe("achievements/ui/toast", () => {
         makeAchievement({ hint: undefined }),
       );
       expect(toast.dataset.hint).toBeUndefined();
+    });
+
+    it("tags the toast with dataset.rarity at the epic and legendary thresholds", async () => {
+      const { POINT_TIERS } =
+        await import("../../../../js/achievements/registry.js");
+      const epicToast = mod.buildAchievementToast(
+        makeAchievement({ points: POINT_TIERS.EPIC }),
+      );
+      const legendaryToast = mod.buildAchievementToast(
+        makeAchievement({ points: POINT_TIERS.LEGENDARY }),
+      );
+      const subToast = mod.buildAchievementToast(
+        makeAchievement({ points: POINT_TIERS.RARE }),
+      );
+      expect(epicToast.dataset.rarity).toEqual("epic");
+      expect(legendaryToast.dataset.rarity).toEqual("legendary");
+      expect(subToast.dataset.rarity).toBeUndefined();
     });
   });
 

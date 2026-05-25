@@ -210,6 +210,15 @@ function freezeProgressBar(ref) {
   fill.style.transform = `scaleX(${scale})`;
 }
 
+// Single source of truth for the rarity-from-points mapping.  Fireworks
+// and toast click-pulse both consult this so a tier change lands in one
+// place.
+export function rarityTierFor(points) {
+  if (points >= POINT_TIERS.LEGENDARY) return "legendary";
+  if (points >= POINT_TIERS.EPIC) return "epic";
+  return null;
+}
+
 // Build the achievement-toast DOM for a given achievement.  Canonical
 // toast renderer — persisted entries use this so they render identically
 // to the originating live toast.  Returns the element without attaching
@@ -222,6 +231,8 @@ export function buildAchievementToast(achievement) {
   if (set && set.color) {
     toast.style.setProperty("--toast-accent", set.color);
   }
+  const rarity = rarityTierFor(achievement.points);
+  if (rarity) toast.dataset.rarity = rarity;
 
   toast.innerHTML = `
     <div class="achievement-toast-icon">${CLOUD_CHECK_SVG}</div>
@@ -283,12 +294,7 @@ export function showToast(achievement) {
   // legendary achievements also launch rockets from the bottom of the viewport
   // — these rise for ~1s and detonate mid-air shortly after the toast burst.
   const accentColor = (set && set.color) || null;
-  const rarityTier =
-    achievement.points >= POINT_TIERS.LEGENDARY
-      ? "legendary"
-      : achievement.points >= POINT_TIERS.EPIC
-        ? "epic"
-        : null;
+  const rarityTier = rarityTierFor(achievement.points);
   setTimeout(() => {
     if (!toast.parentNode) return;
     const rect = toast.getBoundingClientRect();
