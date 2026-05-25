@@ -18,6 +18,7 @@ import {
   updateBadge,
   pulseBadge,
   getNavBtnEl,
+  markRevealPulseFired,
 } from "./ui/nav-button.js";
 import {
   buildAchievementToast,
@@ -46,7 +47,7 @@ export function createNavButton(onPanelToggle) {
   return _createNavButton(onPanelToggle, { onBadgeChange: updateTabBadges });
 }
 
-export { updateBadge, showNavButton, hideNavButton };
+export { updateBadge, showNavButton, hideNavButton, markRevealPulseFired };
 
 export { openPanel, closePanel, isPanelOpen };
 

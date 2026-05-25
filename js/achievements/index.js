@@ -13,6 +13,7 @@ import {
   isPanelOpen,
   showActivationToast,
   showActivationPulse,
+  markRevealPulseFired,
   onAchievementUnlocked,
   onAchievementRelocked,
 } from "./ui.js";
@@ -92,10 +93,18 @@ export function initAchievements() {
 
     if (storage.isHidden()) {
       hideNavButton();
+    } else {
+      showNavButton();
     }
   }
 
   function activate(x, y) {
+    // Either path below already announces with a click-site pulse and a
+    // toast; the nav-button reveal pulse would pile a third attention-
+    // grab on top.  Burn its latch up front so showNavButton lands
+    // silently for this gesture.
+    markRevealPulseFired();
+
     if (storage.isActive()) {
       // Already active — triple-click toggles visibility
       if (storage.isHidden()) {

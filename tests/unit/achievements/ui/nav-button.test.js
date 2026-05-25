@@ -123,4 +123,48 @@ describe("achievements/ui/nav-button", () => {
     mod.pulseBadge();
     expect(badge.classList.contains("pulse")).toBe(true);
   });
+
+  describe("reveal pulse", () => {
+    function countRings() {
+      return document.querySelectorAll(".achievement-pulse-ring").length;
+    }
+
+    it("does not fire on createNavButton alone — visibility is the caller's call", () => {
+      mod.createNavButton(() => {});
+      expect(countRings()).toEqual(0);
+    });
+
+    it("fires once on the first showNavButton call", () => {
+      mod.createNavButton(() => {});
+      mod.showNavButton();
+      expect(countRings()).toEqual(1);
+    });
+
+    it("does not re-fire on subsequent hide/show cycles within the same session", () => {
+      mod.createNavButton(() => {});
+      mod.showNavButton();
+      mod.hideNavButton();
+      mod.showNavButton();
+      mod.hideNavButton();
+      mod.showNavButton();
+      expect(countRings()).toEqual(1);
+    });
+
+    it("markRevealPulseFired suppresses the pulse for the rest of the session", () => {
+      mod.createNavButton(() => {});
+      mod.markRevealPulseFired();
+      mod.showNavButton();
+      expect(countRings()).toEqual(0);
+    });
+
+    it("markRevealPulseFired is safe to call before the button is created", () => {
+      mod.markRevealPulseFired();
+      // No throw, no ring, and the latch must still apply once the
+      // button does come up.
+      expect(countRings()).toEqual(0);
+      mod.createNavButton(() => {});
+      mod.showNavButton();
+      expect(countRings()).toEqual(0);
+    });
+  });
 });

@@ -5,10 +5,15 @@
 
 import * as storage from "../storage.js";
 import { CLOUD_CHECK_SVG } from "./icons.js";
+import { showActivationPulse } from "./toast.js";
 
 let navBtn = null;
 let badgeEl = null;
 let _onBadgeChange = null;
+// Per-session latch — flips true after the first time the button
+// enters a visible state, so subsequent hide/show cycles don't replay
+// the introductory pulse.
+let revealPulseFired = false;
 
 export function createNavButton(onPanelToggle, { onBadgeChange } = {}) {
   const actions = document.querySelector(".nav-actions");
@@ -42,8 +47,24 @@ export function createNavButton(onPanelToggle, { onBadgeChange } = {}) {
   return navBtn;
 }
 
+function maybeFireRevealPulse() {
+  if (revealPulseFired || !navBtn) return;
+  revealPulseFired = true;
+  const rect = navBtn.getBoundingClientRect();
+  showActivationPulse(rect.left + rect.width / 2, rect.top + rect.height / 2);
+}
+
+// Burn the latch without firing the pulse — callers that already have
+// a more meaningful announcement (the activation pulse at the click
+// site) use this so showNavButton doesn't double-announce.
+export function markRevealPulseFired() {
+  revealPulseFired = true;
+}
+
 export function showNavButton() {
-  if (navBtn) navBtn.style.display = "";
+  if (!navBtn) return;
+  navBtn.style.display = "";
+  maybeFireRevealPulse();
 }
 
 export function hideNavButton() {
@@ -93,4 +114,5 @@ export function _resetForTests() {
   navBtn = null;
   badgeEl = null;
   _onBadgeChange = null;
+  revealPulseFired = false;
 }
