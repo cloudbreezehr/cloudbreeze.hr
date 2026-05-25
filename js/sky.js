@@ -10,7 +10,7 @@ import {
   PLANTED_JITTER,
 } from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
-import { scaled, chance } from "./motion.js";
+import { scaled, chance, prefersReducedMotion } from "./motion.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -253,6 +253,39 @@ const STARS = defineConstants("sky.stars", {
     step: 0.1,
     description: "Tagged-star marker ring stroke width in pixels",
   },
+  // ── Dwell-discovery pulse ──
+  // When the cursor lingers near a tagged star without moving, that
+  // star briefly brightens.  Discoverability cue for the constellation
+  // puzzle — doesn't reveal where to click next, just hints that the
+  // star under the cursor is special.
+  IDLE_DWELL_MS: {
+    value: 1500,
+    min: 200,
+    max: 5000,
+    step: 100,
+    description: "Cursor-still time required to fire a dwell pulse (ms)",
+  },
+  IDLE_MOVE_NOISE: {
+    value: 2,
+    min: 0,
+    max: 20,
+    step: 0.5,
+    description: "Per-frame pointer movement counted as 'not moving' (px)",
+  },
+  IDLE_FLASH_STRENGTH: {
+    value: 1,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description: "Dwell-pulse initial intensity",
+  },
+  IDLE_FLASH_DECAY: {
+    value: 0.94,
+    min: 0.5,
+    max: 0.999,
+    step: 0.005,
+    description: "Per-frame decay of the dwell pulse",
+  },
 });
 
 // ── Shooting Stars ──
@@ -416,6 +449,7 @@ function makeStar(x, y, sharedDepth) {
     constellationId: null,
     constellationIndex: -1,
     hintPulse: 0,
+    idleFlash: 0,
   };
 }
 
@@ -492,6 +526,10 @@ export function createSky(starCount) {
   }));
 
   let t = 0;
+  let dwellLastX = NaN;
+  let dwellLastY = NaN;
+  let dwellStartMs = -1;
+  let dwellPulseFired = false;
 
   return {
     draw(ctx, canvas, sp, pal, forces) {
@@ -503,6 +541,40 @@ export function createSky(starCount) {
         SKY_SHARED.FADE_END,
       );
       if (starVis <= 0) return;
+
+      // ── Dwell-pulse detector ──
+      // Wall-clock timing (not `t`) so the threshold is honest under
+      // reduced motion's frozen frame budget — and one shot per dwell
+      // (latch flips at first cross, releases on the next real move).
+      let dwellTriggeredThisFrame = false;
+      if (!prefersReducedMotion() && forces && forces.hover.active) {
+        const hx = forces.hover.x;
+        const hy = forces.hover.y;
+        const moved =
+          Math.abs(hx - dwellLastX) > STARS.IDLE_MOVE_NOISE ||
+          Math.abs(hy - dwellLastY) > STARS.IDLE_MOVE_NOISE ||
+          Number.isNaN(dwellLastX);
+        const now = Date.now();
+        if (moved) {
+          dwellStartMs = now;
+          dwellPulseFired = false;
+        } else if (
+          !dwellPulseFired &&
+          now - dwellStartMs >= STARS.IDLE_DWELL_MS
+        ) {
+          dwellTriggeredThisFrame = true;
+          dwellPulseFired = true;
+        }
+        dwellLastX = hx;
+        dwellLastY = hy;
+      } else {
+        dwellStartMs = -1;
+        dwellPulseFired = false;
+        dwellLastX = NaN;
+        dwellLastY = NaN;
+      }
+      let dwellNearestStar = null;
+      let dwellNearestDistSq = Infinity;
 
       t += scaled(STARS.TIME_STEP);
       // Hoisted halo opts shared across every glow-tier star this frame.
@@ -538,7 +610,8 @@ export function createSky(starCount) {
         if (forces && forces.hover.active) {
           const hdx = sx - forces.hover.x;
           const hdy = py - forces.hover.y;
-          const hDist = Math.sqrt(hdx * hdx + hdy * hdy);
+          const distSq = hdx * hdx + hdy * hdy;
+          const hDist = Math.sqrt(distSq);
           if (hDist < STARS.HOVER_RADIUS) {
             const taggedFactor = s.constellationId
               ? 1 + STARS.TAGGED_HOVER_BOOST_FACTOR
@@ -547,6 +620,15 @@ export function createSky(starCount) {
               STARS.HOVER_BOOST *
               taggedFactor *
               (1 - hDist / STARS.HOVER_RADIUS);
+          }
+          if (
+            dwellTriggeredThisFrame &&
+            s.constellationId &&
+            hDist < STARS.HOVER_RADIUS &&
+            distSq < dwellNearestDistSq
+          ) {
+            dwellNearestStar = s;
+            dwellNearestDistSq = distSq;
           }
         }
         // `hintPulse` 0..1 is set externally to highlight stars the
@@ -560,7 +642,22 @@ export function createSky(starCount) {
             0.5 * Math.sin(t * STARS.HINT_PULSE_RATE + s.constellationIndex);
           hint = s.hintPulse * wave * STARS.HOVER_BOOST;
         }
-        const op = Math.min(1, base + s.flash + hoverBoost + hint) * starVis;
+        // Brief one-shot flash awarded when the cursor dwells near a
+        // tagged star — decays per frame; latch above prevents respawn
+        // until the cursor moves and returns.
+        if (s.idleFlash > 0) {
+          s.idleFlash *= STARS.IDLE_FLASH_DECAY;
+          if (s.idleFlash < 0.01) s.idleFlash = 0;
+        }
+        const op =
+          Math.min(
+            1,
+            base +
+              s.flash +
+              hoverBoost +
+              hint +
+              s.idleFlash * STARS.HOVER_BOOST,
+          ) * starVis;
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {
@@ -624,6 +721,13 @@ export function createSky(starCount) {
           ctx.restore();
         }
       });
+
+      // Awarded to the closest tagged star inside the hover radius for
+      // this dwell.  Captured during the per-star loop above; firing it
+      // after the loop keeps the per-star math simple.
+      if (dwellNearestStar) {
+        dwellNearestStar.idleFlash = STARS.IDLE_FLASH_STRENGTH;
+      }
 
       // Shooting stars — rare fast arcs across the sky.  Spawn rate
       // dampens with motion budget, so under reduced motion no new arcs
