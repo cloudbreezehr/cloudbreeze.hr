@@ -3,6 +3,8 @@
 // while obscured, then reveals the new state. The CSS class supplied by
 // the caller controls the visual appearance (gradient, color).
 
+import { prefersReducedMotion } from "../motion.js";
+
 /**
  * Play a full-screen opacity wipe transition.
  *
@@ -20,6 +22,21 @@ export function playWipe({
   onMidpoint,
   onComplete,
 }) {
+  if (prefersReducedMotion()) {
+    // Skip the cover/reveal element entirely — the wipe div IS the
+    // flash the user opted out of.  Callbacks still fire so theme
+    // application and post-wipe cleanup proceed; async hops preserve
+    // the "call returns, then midpoint, then complete" sequence that
+    // synchronous callers rely on.
+    setTimeout(() => {
+      if (onMidpoint) onMidpoint();
+      setTimeout(() => {
+        if (onComplete) onComplete();
+      }, 0);
+    }, 0);
+    return;
+  }
+
   const wipe = document.createElement("div");
   wipe.className = className;
   document.body.appendChild(wipe);
