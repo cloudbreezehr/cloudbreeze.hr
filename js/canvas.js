@@ -11,6 +11,7 @@ import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds } from "./themes/registry.js";
+import { getQualityTier, PARTICLE_SCALE } from "./quality.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -99,6 +100,21 @@ export function initCanvas(canvasEl, appearance, options) {
   canvas = canvasEl;
   ctx = canvas.getContext("2d");
   const opts = Object.assign({}, defaults, options);
+
+  // Scale every particle-count knob by the hardware tier in one pass.
+  // Caller-supplied counts (via `options`) flow through the same map
+  // so explicit overrides also get tier-adjusted.
+  const scale = PARTICLE_SCALE[getQualityTier()];
+  for (const key of [
+    "starCount",
+    "streakCount",
+    "cloudCount",
+    "wispCount",
+    "gustCount",
+    "moteCount",
+  ]) {
+    opts[key] = Math.max(1, Math.round(opts[key] * scale));
+  }
 
   let isDark = appearance.isDark();
   let scrollProgress = 0;

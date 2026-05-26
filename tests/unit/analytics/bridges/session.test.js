@@ -71,6 +71,12 @@ describe("analytics/bridges/session", () => {
       expect(starts[0].props.entry_path).toBeTruthy();
     });
 
+    it("carries the hardware quality tier as a dimension", () => {
+      core.flush();
+      const start = eventsNamed("session_start")[0];
+      expect(["low", "mid", "high"]).toContain(start.props.quality_tier);
+    });
+
     it("is_first_visit_ever becomes false on a second load", async () => {
       core.flush();
       // Simulate a page reload: new session, same origin.

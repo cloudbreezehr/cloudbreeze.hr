@@ -6,6 +6,7 @@
 
 import { track } from "../core.js";
 import * as identity from "../identity.js";
+import { getQualityTier } from "../../quality.js";
 
 export const HEARTBEAT_MS = 15000;
 
@@ -118,6 +119,7 @@ export function initSessionBridge() {
     screen_h: screen.height,
     hw_concurrency: navigator.hardwareConcurrency || null,
     device_memory: navigator.deviceMemory || null,
+    quality_tier: getQualityTier(),
     connection: conn ? conn.effectiveType || null : null,
   });
 
