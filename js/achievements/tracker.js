@@ -536,6 +536,10 @@ export function createTracker(onUnlock, onRelock) {
         tryProgressItem("idle-animations", data.animation);
       }
     },
+
+    "konami-cheat"() {
+      tryUnlock("cheat-code");
+    },
   };
 
   // ── Visibility tracking for night-owl ──

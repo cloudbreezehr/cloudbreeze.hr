@@ -4730,6 +4730,41 @@ body.light-appearance .achievement-toast-queue-counter {
   }
 }
 
+/* ── Konami Confirm Prompt ── */
+.konami-confirm-prompt {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.85rem 1.4rem;
+  background: rgba(var(--ink-rgb), 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: var(--z-toast);
+  pointer-events: none;
+  animation: konami-prompt-in 0.25s ease-out;
+}
+@keyframes konami-prompt-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+body.light-appearance .konami-confirm-prompt {
+  background: rgba(240, 247, 255, 0.96);
+  color: rgba(var(--ink-rgb), 0.85);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
 /* ── First-Paint Mote ── */
 
 /* Onboarding mote spawned at the visitor's first cursor movement.

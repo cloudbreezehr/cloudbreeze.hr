@@ -1137,6 +1137,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "non-meta-half",
   },
+  {
+    id: "cheat-code",
+    title: "Cheat Code",
+    description: "Up, up, down, down...",
+    hint: "Try a classic.",
+    set: "mastery",
+    points: EPIC,
+    hidden: true,
+  },
 ];
 
 // ── Lookup helpers ──
