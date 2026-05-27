@@ -9,9 +9,6 @@ import { drawHaloParticle } from "../canvas-utils.js";
 import { scaled, step, prefersReducedMotion } from "../motion.js";
 import { RAIN, WIND, SPLASH, GLASS, THUNDER, EMBER } from "./rain.constants.js";
 
-// ── Module-scoped canvas refs ──
-let _canvas, _ctx;
-
 // ── Layer config lookup ──
 const LAYER_CONFIGS = [
   () => ({
@@ -49,18 +46,19 @@ const LAYER_CONFIGS = [
 // ── Raindrop ──
 
 class Raindrop {
-  constructor(layer) {
+  constructor(canvas, layer) {
+    this.canvas = canvas;
     this.layer = layer;
     this.reset(true);
   }
 
   reset(init) {
     const cfg = LAYER_CONFIGS[this.layer]();
-    this.x = Math.random() * _canvas.width;
+    this.x = Math.random() * this.canvas.width;
     // Stagger initial positions; subsequent resets start above viewport
     this.y = init
-      ? Math.random() * _canvas.height
-      : -(Math.random() * _canvas.height * RAIN.STAGGER_Y_FRAC);
+      ? Math.random() * this.canvas.height
+      : -(Math.random() * this.canvas.height * RAIN.STAGGER_Y_FRAC);
     this.len = cfg.lenMin + Math.random() * cfg.lenRange;
     this.fallSpeed = cfg.speedMin + Math.random() * cfg.speedRange;
     this.opacity = cfg.opacityMin + Math.random() * cfg.opacityRange;
@@ -314,8 +312,8 @@ class GlassDrop {
 // ── Factory ──
 
 export function createRain(canvasEl, ctxEl) {
-  _canvas = canvasEl;
-  _ctx = ctxEl;
+  const canvas = canvasEl;
+  const ctx = ctxEl;
 
   // Overlay canvas for glass drops — sits on top of page content
   const glassCanvas = document.createElement("canvas");
@@ -332,9 +330,9 @@ export function createRain(canvasEl, ctxEl) {
 
   // Rain pools — one per layer (0=far, 1=mid, 2=near)
   const layers = [
-    Array.from({ length: RAIN.FAR_COUNT }, () => new Raindrop(0)),
-    Array.from({ length: RAIN.MID_COUNT }, () => new Raindrop(1)),
-    Array.from({ length: RAIN.NEAR_COUNT }, () => new Raindrop(2)),
+    Array.from({ length: RAIN.FAR_COUNT }, () => new Raindrop(canvas, 0)),
+    Array.from({ length: RAIN.MID_COUNT }, () => new Raindrop(canvas, 1)),
+    Array.from({ length: RAIN.NEAR_COUNT }, () => new Raindrop(canvas, 2)),
   ];
 
   // Splash pool
@@ -447,12 +445,12 @@ export function createRain(canvasEl, ctxEl) {
       const spawnEmbers = !prefersReducedMotion();
       for (let i = 0; i < count; i++) {
         if (ambientBolts.length >= THUNDER.BOLT_MAX) break;
-        const x1 = Math.random() * _canvas.width;
-        const y1 = Math.random() * _canvas.height * THUNDER.START_Y_FRAC;
+        const x1 = Math.random() * canvas.width;
+        const y1 = Math.random() * canvas.height * THUNDER.START_Y_FRAC;
         const x2 =
-          x1 + (Math.random() - 0.5) * _canvas.width * THUNDER.BOLT_SPREAD_X;
+          x1 + (Math.random() - 0.5) * canvas.width * THUNDER.BOLT_SPREAD_X;
         const y2 =
-          _canvas.height *
+          canvas.height *
           (THUNDER.START_Y_FRAC +
             Math.random() * (THUNDER.END_Y_FRAC - THUNDER.START_Y_FRAC));
         spawnBolt(ambientBolts, x1, y1, x2, y2, 0);
@@ -482,17 +480,17 @@ export function createRain(canvasEl, ctxEl) {
         continue;
       }
       if (bolt.life === 1) flashThisFrame = true;
-      renderBolt(_ctx, bolt, pal);
+      renderBolt(ctx, bolt, pal);
     }
 
     // Full-screen flash
     if (flashThisFrame) {
       const fc = pal.lightningFlash;
-      _ctx.save();
-      _ctx.globalAlpha = THUNDER.FLASH_ALPHA;
-      _ctx.fillStyle = `rgba(${fc[0]},${fc[1]},${fc[2]},1)`;
-      _ctx.fillRect(0, 0, _canvas.width, _canvas.height);
-      _ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = THUNDER.FLASH_ALPHA;
+      ctx.fillStyle = `rgba(${fc[0]},${fc[1]},${fc[2]},1)`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
     }
 
     // Screen rumble
@@ -512,7 +510,7 @@ export function createRain(canvasEl, ctxEl) {
     // step() which already absorbs the motion budget.
     for (const e of embers) {
       e.update();
-      e.draw(_ctx);
+      e.draw(ctx);
     }
 
     return now < thunderBoostEnd ? THUNDER.SPEED_BOOST : 0;
@@ -534,11 +532,11 @@ export function createRain(canvasEl, ctxEl) {
         const pool = layers[li];
         const cfg = LAYER_CONFIGS[li]();
 
-        _ctx.save();
-        _ctx.strokeStyle = `rgba(${rainStyle},${cfg.opacityMin + cfg.opacityRange * 0.5})`;
-        _ctx.lineWidth = cfg.width;
-        _ctx.lineCap = "round";
-        _ctx.beginPath();
+        ctx.save();
+        ctx.strokeStyle = `rgba(${rainStyle},${cfg.opacityMin + cfg.opacityRange * 0.5})`;
+        ctx.lineWidth = cfg.width;
+        ctx.lineCap = "round";
+        ctx.beginPath();
 
         for (let i = 0; i < pool.length; i++) {
           const d = pool[i];
@@ -569,43 +567,43 @@ export function createRain(canvasEl, ctxEl) {
           const tailX = d.x - nx * d.len;
           const tailY = d.y - ny * d.len;
 
-          _ctx.moveTo(d.x, d.y);
-          _ctx.lineTo(tailX, tailY);
+          ctx.moveTo(d.x, d.y);
+          ctx.lineTo(tailX, tailY);
 
           // Ground hit — reset + optional splash
-          if (d.y > _canvas.height + d.len) {
+          if (d.y > canvas.height + d.len) {
             if (li >= 1 && Math.random() < SPLASH.GROUND_CHANCE) {
-              spawnGroundSplash(d.x, _canvas.height);
+              spawnGroundSplash(d.x, canvas.height);
             }
             d.reset(false);
           }
 
           // Wrap horizontal
           if (d.x < -RAIN.WRAP_MARGIN)
-            d.x += _canvas.width + RAIN.WRAP_MARGIN * 2;
-          if (d.x > _canvas.width + RAIN.WRAP_MARGIN)
-            d.x -= _canvas.width + RAIN.WRAP_MARGIN * 2;
+            d.x += canvas.width + RAIN.WRAP_MARGIN * 2;
+          if (d.x > canvas.width + RAIN.WRAP_MARGIN)
+            d.x -= canvas.width + RAIN.WRAP_MARGIN * 2;
         }
 
-        _ctx.stroke();
-        _ctx.restore();
+        ctx.stroke();
+        ctx.restore();
       }
 
       // Splash particles
       const sc = pal.clickColor;
-      _ctx.save();
-      _ctx.fillStyle = `rgba(${sc[0]},${sc[1]},${sc[2]},${SPLASH.DRAW_ALPHA})`;
+      ctx.save();
+      ctx.fillStyle = `rgba(${sc[0]},${sc[1]},${sc[2]},${SPLASH.DRAW_ALPHA})`;
       for (let i = 0; i < splashes.length; i++) {
         const s = splashes[i];
         s.update();
         if (!s.active) continue;
         const fade = 1 - s.life / SPLASH.LIFE;
-        _ctx.globalAlpha = fade * SPLASH.DRAW_ALPHA;
-        _ctx.beginPath();
-        _ctx.arc(s.x, s.y, SPLASH.RADIUS, 0, Math.PI * 2);
-        _ctx.fill();
+        ctx.globalAlpha = fade * SPLASH.DRAW_ALPHA;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, SPLASH.RADIUS, 0, Math.PI * 2);
+        ctx.fill();
       }
-      _ctx.restore();
+      ctx.restore();
 
       // Glass drops (overlay canvas) — spawn rate dampens with motion
       // so no new drops appear under reduced motion.

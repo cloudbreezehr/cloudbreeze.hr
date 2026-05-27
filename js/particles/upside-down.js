@@ -475,19 +475,18 @@ const NEEDLE_RGB = [200, 130, 100];
 // flip presents as visually UP to the user.
 export const NEEDLE_TARGET_ANGLE = -Math.PI / 2;
 
-// ── Module-scoped canvas refs ──
-let _canvas, _ctx;
-
 export class Dust {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.active = false;
   }
   spawn() {
     // Spawn at canvas-data top (visual bottom) within a small band so
     // motes appear to be lifting off the floor rather than materializing
     // at a single y line.
-    this.x = Math.random() * _canvas.width;
-    this.y = Math.random() * _canvas.height * DUST.SPAWN_BAND_FRAC;
+    this.x = Math.random() * this.canvas.width;
+    this.y = Math.random() * this.canvas.height * DUST.SPAWN_BAND_FRAC;
     this.vx = 0;
     this.vy = 0;
     this.lift = DUST.LIFT_MIN + Math.random() * DUST.LIFT_RANGE;
@@ -515,13 +514,13 @@ export class Dust {
     this.vy *= DUST.FRICTION;
     // Cull when the mote drifts off the far side of the canvas (visual
     // top) — slot returns to the pool for re-spawn.
-    if (this.y > _canvas.height + DUST.CULL_MARGIN_PX) this.active = false;
+    if (this.y > this.canvas.height + DUST.CULL_MARGIN_PX) this.active = false;
   }
   draw() {
     if (!this.active) return;
     // Fade out as the mote approaches the far boundary so it dissolves
     // into the canvas edge rather than popping off-screen.
-    const cullY = _canvas.height;
+    const cullY = this.canvas.height;
     const fadeStart = cullY * (1 - DUST.FADE_OUT_FRAC);
     let alpha = this.opacity;
     if (this.y > fadeStart) {
@@ -530,30 +529,32 @@ export class Dust {
     }
     if (alpha <= 0) return;
     drawHaloParticle(
-      _ctx,
+      this.ctx,
       this.x,
       this.y,
       this.r * DUST.GLOW_RADIUS,
       alpha,
       DUST_GLOW_RGB,
     );
-    _ctx.fillStyle = rgbaStr(DUST_RGB, alpha);
-    _ctx.beginPath();
-    _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    _ctx.fill();
+    this.ctx.fillStyle = rgbaStr(DUST_RGB, alpha);
+    this.ctx.beginPath();
+    this.ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    this.ctx.fill();
   }
 }
 
 export class Debris {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.active = false;
   }
   spawn(scrollVelocity) {
     // Spawn anywhere across the canvas — the scroll-wind reads as
     // turbulent rather than emanating from a single edge, so debris
     // catching it can come from any height.
-    this.x = Math.random() * _canvas.width;
-    this.y = Math.random() * _canvas.height;
+    this.x = Math.random() * this.canvas.width;
+    this.y = Math.random() * this.canvas.height;
     // Wind impulse — vy follows -scrollVelocity (matches the existing
     // ScrollMote's atmosphere pattern: positive scroll → negative vy).
     // Positive vx scatter is uncorrelated with scroll direction so the
@@ -607,26 +608,28 @@ export class Debris {
         : DEBRIS.ALPHA_PEAK *
           (1 - (t - DEBRIS.FADE_HOLD) / (1 - DEBRIS.FADE_HOLD));
     const c = this.color;
-    _ctx.save();
-    _ctx.translate(this.x, this.y);
-    _ctx.rotate(this.rotation);
-    _ctx.fillStyle = rgbaStr(c, alpha);
-    _ctx.beginPath();
+    this.ctx.save();
+    this.ctx.translate(this.x, this.y);
+    this.ctx.rotate(this.rotation);
+    this.ctx.fillStyle = rgbaStr(c, alpha);
+    this.ctx.beginPath();
     for (let i = 0; i < this.verts.length; i++) {
       const v = this.verts[i];
       const px = v.cos * v.r;
       const py = v.sin * v.r;
-      if (i === 0) _ctx.moveTo(px, py);
-      else _ctx.lineTo(px, py);
+      if (i === 0) this.ctx.moveTo(px, py);
+      else this.ctx.lineTo(px, py);
     }
-    _ctx.closePath();
-    _ctx.fill();
-    _ctx.restore();
+    this.ctx.closePath();
+    this.ctx.fill();
+    this.ctx.restore();
   }
 }
 
 export class Needle {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.x = 0;
     this.y = 0;
     this.len = NEEDLE.LEN_MIN + Math.random() * NEEDLE.LEN_RANGE;
@@ -658,50 +661,56 @@ export class Needle {
   draw() {
     const c = NEEDLE_RGB;
     const a = NEEDLE.ALPHA;
-    _ctx.save();
-    _ctx.translate(this.x, this.y);
-    _ctx.rotate(this.angle);
-    _ctx.strokeStyle = rgbaStr(c, a);
-    _ctx.lineWidth = NEEDLE.LINE_WIDTH;
-    _ctx.lineCap = "round";
-    _ctx.beginPath();
+    this.ctx.save();
+    this.ctx.translate(this.x, this.y);
+    this.ctx.rotate(this.angle);
+    this.ctx.strokeStyle = rgbaStr(c, a);
+    this.ctx.lineWidth = NEEDLE.LINE_WIDTH;
+    this.ctx.lineCap = "round";
+    this.ctx.beginPath();
     // Shaft: tail at canonical +x, tip at canonical -x.  Rotating the
     // tip (-halfLen, 0) by NEEDLE_TARGET_ANGLE = -π/2 lands it at
     // (0, +halfLen) — canvas-data DOWN, which the CSS flip presents as
     // visually UP to the user.
     const halfLen = this.len / 2;
-    _ctx.moveTo(halfLen, 0);
-    _ctx.lineTo(-halfLen, 0);
+    this.ctx.moveTo(halfLen, 0);
+    this.ctx.lineTo(-halfLen, 0);
     // Arrowhead at the tip.
     const headLen = this.len * NEEDLE.ARROW_HEAD_FRAC;
     const ang = NEEDLE.ARROW_HEAD_ANGLE;
     const tipX = -halfLen;
-    _ctx.moveTo(tipX, 0);
-    _ctx.lineTo(tipX + Math.cos(ang) * headLen, Math.sin(ang) * headLen);
-    _ctx.moveTo(tipX, 0);
-    _ctx.lineTo(tipX + Math.cos(-ang) * headLen, Math.sin(-ang) * headLen);
-    _ctx.stroke();
-    _ctx.restore();
+    this.ctx.moveTo(tipX, 0);
+    this.ctx.lineTo(tipX + Math.cos(ang) * headLen, Math.sin(ang) * headLen);
+    this.ctx.moveTo(tipX, 0);
+    this.ctx.lineTo(tipX + Math.cos(-ang) * headLen, Math.sin(-ang) * headLen);
+    this.ctx.stroke();
+    this.ctx.restore();
   }
 }
 
 // ── Factory ──
 
 export function createUpsideDown(canvasEl, ctxEl) {
-  _canvas = canvasEl;
-  _ctx = ctxEl;
+  const canvas = canvasEl;
+  const ctx = ctxEl;
 
-  const dust = Array.from({ length: DUST.POOL }, () => new Dust());
-  const debris = Array.from({ length: DEBRIS.POOL }, () => new Debris());
+  const dust = Array.from({ length: DUST.POOL }, () => new Dust(canvas, ctx));
+  const debris = Array.from(
+    { length: DEBRIS.POOL },
+    () => new Debris(canvas, ctx),
+  );
 
   // Compass-needle field — seeded once on init, never re-spawned.
   // Positions are kept inside a margin so needles don't clip the
   // canvas edges when their arrowheads rotate.
-  const needles = Array.from({ length: NEEDLE.COUNT }, () => new Needle());
+  const needles = Array.from(
+    { length: NEEDLE.COUNT },
+    () => new Needle(canvas, ctx),
+  );
   function seedNeedles() {
     const m = NEEDLE.POSITION_MARGIN_PX;
-    const w = Math.max(1, _canvas.width - 2 * m);
-    const h = Math.max(1, _canvas.height - 2 * m);
+    const w = Math.max(1, canvas.width - 2 * m);
+    const h = Math.max(1, canvas.height - 2 * m);
     for (const n of needles) {
       n.reset(m + Math.random() * w, m + Math.random() * h);
     }

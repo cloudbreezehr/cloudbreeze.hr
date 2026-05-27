@@ -311,18 +311,16 @@ const BLOCK_FRAG_COLORS = [
   [60, 100, 180],
 ];
 
-// ── Module-scoped canvas refs ──
-let _canvas, _ctx;
-
 class Firefly {
-  constructor() {
+  constructor(canvas) {
+    this.canvas = canvas;
     this.reset(true);
   }
   reset(init) {
-    this.x = Math.random() * _canvas.width;
+    this.x = Math.random() * this.canvas.width;
     this.y = init
-      ? _canvas.height * (0.5 + Math.random() * 0.5)
-      : _canvas.height * (0.6 + Math.random() * 0.4);
+      ? this.canvas.height * (0.5 + Math.random() * 0.5)
+      : this.canvas.height * (0.6 + Math.random() * 0.4);
     this.vx = 0;
     this.vy = 0;
     this.phase = Math.random() * Math.PI * 2;
@@ -346,7 +344,7 @@ class Firefly {
     this.vx += scaled((Math.random() - 0.5) * FLY.DRIFT);
     this.vy += scaled((Math.random() - 0.5) * FLY.DRIFT);
     // Slight upward bias near bottom of canvas
-    if (this.y > _canvas.height * FLY.BIAS_THRESHOLD) {
+    if (this.y > this.canvas.height * FLY.BIAS_THRESHOLD) {
       this.vy -= scaled(FLY.BIAS_STRENGTH);
     }
     this.vx *= FLY.FRICTION;
@@ -355,12 +353,12 @@ class Firefly {
     this.y += scaled(this.vy);
     // Wrap
     if (this.x < -FLY.WRAP_MARGIN)
-      this.x += _canvas.width + FLY.WRAP_MARGIN * 2;
-    if (this.x > _canvas.width + FLY.WRAP_MARGIN)
-      this.x -= _canvas.width + FLY.WRAP_MARGIN * 2;
-    if (this.y < _canvas.height * FLY.CEIL_FRACTION)
-      this.y = _canvas.height * FLY.CEIL_FRACTION + FLY.CEIL_OFFSET;
-    if (this.y > _canvas.height + FLY.FLOOR_OFFSET) this.reset(false);
+      this.x += this.canvas.width + FLY.WRAP_MARGIN * 2;
+    if (this.x > this.canvas.width + FLY.WRAP_MARGIN)
+      this.x -= this.canvas.width + FLY.WRAP_MARGIN * 2;
+    if (this.y < this.canvas.height * FLY.CEIL_FRACTION)
+      this.y = this.canvas.height * FLY.CEIL_FRACTION + FLY.CEIL_OFFSET;
+    if (this.y > this.canvas.height + FLY.FLOOR_OFFSET) this.reset(false);
   }
   drawFirefly(targetCtx) {
     const pulse =
@@ -419,10 +417,13 @@ class Firefly {
 // ── Factory ──
 
 export function createBlocky(canvasEl, ctxEl, fireflyCount) {
-  _canvas = canvasEl;
-  _ctx = ctxEl;
+  const canvas = canvasEl;
+  const ctx = ctxEl;
 
-  const fireflies = Array.from({ length: fireflyCount }, () => new Firefly());
+  const fireflies = Array.from(
+    { length: fireflyCount },
+    () => new Firefly(canvas),
+  );
   const blockFragments = [];
 
   // Offscreen canvas for pixelation post-process
@@ -430,8 +431,8 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
   let pixelCtx = pixelCanvas.getContext("2d");
 
   function resizePixelCanvas() {
-    pixelCanvas.width = Math.ceil(_canvas.width / PIXEL.SCALE);
-    pixelCanvas.height = Math.ceil(_canvas.height / PIXEL.SCALE);
+    pixelCanvas.width = Math.ceil(canvas.width / PIXEL.SCALE);
+    pixelCanvas.height = Math.ceil(canvas.height / PIXEL.SCALE);
   }
   resizePixelCanvas();
 
@@ -441,11 +442,11 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
       const pw = pixelCanvas.width;
       const ph = pixelCanvas.height;
       pixelCtx.clearRect(0, 0, pw, ph);
-      pixelCtx.drawImage(_canvas, 0, 0, pw, ph);
-      _ctx.clearRect(0, 0, _canvas.width, _canvas.height);
-      _ctx.imageSmoothingEnabled = false;
-      _ctx.drawImage(pixelCanvas, 0, 0, _canvas.width, _canvas.height);
-      _ctx.imageSmoothingEnabled = true;
+      pixelCtx.drawImage(canvas, 0, 0, pw, ph);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(pixelCanvas, 0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = true;
 
       // Block fragments — update and draw
       for (let i = blockFragments.length - 1; i >= 0; i--) {
@@ -461,12 +462,12 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
         // Hard 90° tumble
         if (f.life % FRAG.TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
         const c = f.color;
-        _ctx.save();
-        _ctx.translate(f.x, f.y);
-        _ctx.rotate((f.rot * Math.PI) / 2);
-        _ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
-        _ctx.fillRect(-FRAG.SIZE / 2, -FRAG.SIZE / 2, FRAG.SIZE, FRAG.SIZE);
-        _ctx.restore();
+        ctx.save();
+        ctx.translate(f.x, f.y);
+        ctx.rotate((f.rot * Math.PI) / 2);
+        ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.fillRect(-FRAG.SIZE / 2, -FRAG.SIZE / 2, FRAG.SIZE, FRAG.SIZE);
+        ctx.restore();
       }
 
       // Fireflies / Butterflies — rendered crisp post-pixelation
@@ -485,9 +486,9 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
           f.vx += scrollVelocity * FLY.SCROLL_VX;
         }
         if (isDark) {
-          f.drawFirefly(_ctx);
+          f.drawFirefly(ctx);
         } else {
-          f.drawButterfly(_ctx);
+          f.drawButterfly(ctx);
         }
       });
     },

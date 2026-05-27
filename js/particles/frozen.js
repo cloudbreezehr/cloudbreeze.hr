@@ -350,16 +350,15 @@ const CRACKLE = defineConstants(
   { theme: "frozen" },
 );
 
-// ── Module-scoped canvas refs ──
-let _canvas, _ctx;
-
 class Snowflake {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.reset(true);
   }
   reset(init) {
-    this.x = Math.random() * _canvas.width;
-    this.y = init ? Math.random() * _canvas.height : -10;
+    this.x = Math.random() * this.canvas.width;
+    this.y = init ? Math.random() * this.canvas.height : -10;
     this.r = SNOW.RADIUS_MIN + Math.random() * SNOW.RADIUS_RANGE;
     this.fallSpeed = SNOW.FALL_MIN + Math.random() * SNOW.FALL_RANGE;
     this.vx = 0;
@@ -379,47 +378,47 @@ class Snowflake {
     this.y += scaled(this.fallSpeed + this.vy);
     this.vx *= SNOW.FRICTION;
     this.vy *= SNOW.FRICTION;
-    if (this.y > _canvas.height + 10) this.reset(false);
-    if (this.x < -20) this.x += _canvas.width + 40;
-    if (this.x > _canvas.width + 20) this.x -= _canvas.width + 40;
+    if (this.y > this.canvas.height + 10) this.reset(false);
+    if (this.x < -20) this.x += this.canvas.width + 40;
+    if (this.x > this.canvas.width + 20) this.x -= this.canvas.width + 40;
   }
   draw() {
-    _ctx.save();
-    _ctx.globalAlpha = this.opacity;
+    this.ctx.save();
+    this.ctx.globalAlpha = this.opacity;
     if (this.r >= SNOW.CRYSTAL_THRESHOLD) {
       // Crystalline snowflake — 6 arms with branches, slow rotation
-      _ctx.translate(this.x, this.y);
-      _ctx.rotate(this.rotation);
-      _ctx.strokeStyle = "rgba(220,240,255,1)";
-      _ctx.lineWidth = 0.6;
-      _ctx.lineCap = "round";
-      _ctx.beginPath();
+      this.ctx.translate(this.x, this.y);
+      this.ctx.rotate(this.rotation);
+      this.ctx.strokeStyle = "rgba(220,240,255,1)";
+      this.ctx.lineWidth = 0.6;
+      this.ctx.lineCap = "round";
+      this.ctx.beginPath();
       const arm = this.r;
       const branch = arm * SNOW.BRANCH_RATIO;
       for (let i = 0; i < 6; i++) {
         const a = (Math.PI / 3) * i;
         const ax = Math.cos(a) * arm;
         const ay = Math.sin(a) * arm;
-        _ctx.moveTo(0, 0);
-        _ctx.lineTo(ax, ay);
+        this.ctx.moveTo(0, 0);
+        this.ctx.lineTo(ax, ay);
         // Two branches at 2/3 along the arm
         const mx = Math.cos(a) * arm * 0.6;
         const my = Math.sin(a) * arm * 0.6;
-        _ctx.moveTo(mx, my);
-        _ctx.lineTo(
+        this.ctx.moveTo(mx, my);
+        this.ctx.lineTo(
           mx + Math.cos(a + SNOW.BRANCH_ANGLE) * branch,
           my + Math.sin(a + SNOW.BRANCH_ANGLE) * branch,
         );
-        _ctx.moveTo(mx, my);
-        _ctx.lineTo(
+        this.ctx.moveTo(mx, my);
+        this.ctx.lineTo(
           mx + Math.cos(a - SNOW.BRANCH_ANGLE) * branch,
           my + Math.sin(a - SNOW.BRANCH_ANGLE) * branch,
         );
       }
-      _ctx.stroke();
+      this.ctx.stroke();
       // Subtle glow for larger crystalline flakes
       drawHaloParticle(
-        _ctx,
+        this.ctx,
         0,
         0,
         this.r * SNOW.GLOW_RADIUS,
@@ -428,12 +427,12 @@ class Snowflake {
       );
     } else {
       // Small flakes — simple glowing dots
-      _ctx.fillStyle = rgbaStr(SNOW_DOT_RGB, 1);
-      _ctx.beginPath();
-      _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-      _ctx.fill();
+      this.ctx.fillStyle = rgbaStr(SNOW_DOT_RGB, 1);
+      this.ctx.beginPath();
+      this.ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      this.ctx.fill();
     }
-    _ctx.restore();
+    this.ctx.restore();
   }
 }
 
@@ -520,10 +519,13 @@ export class Crackle {
 // ── Factory ──
 
 export function createSnow(canvasEl, ctxEl, count) {
-  _canvas = canvasEl;
-  _ctx = ctxEl;
+  const canvas = canvasEl;
+  const ctx = ctxEl;
 
-  const snowflakes = Array.from({ length: count }, () => new Snowflake());
+  const snowflakes = Array.from(
+    { length: count },
+    () => new Snowflake(canvas, ctx),
+  );
   const crackles = Array.from({ length: CRACKLE.POOL }, () => new Crackle());
 
   // Crackles must render during the click-count build-up sequence, not

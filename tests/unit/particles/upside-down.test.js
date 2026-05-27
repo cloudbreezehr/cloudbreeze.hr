@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Test stub: Dust uses module-scoped _canvas/_ctx populated by
-// createUpsideDown.  The class itself reads _canvas.width/height in
-// spawn() and update().  Calling Dust.spawn() without a factory init
-// would crash, so each test that exercises a Dust instance has to
-// drive it via createUpsideDown — which itself is straightforward to
-// stand up with a minimal fake canvas.
+// Dust and Debris take canvas + ctx via constructor and store them as
+// instance fields, so tests can build a particle directly with a fake
+// canvas — no factory side-effect required.
 
 function makeFakeCanvas(w = 800, h = 600) {
   return { width: w, height: h };
@@ -74,12 +71,9 @@ describe("Dust — anti-gravity mote", () => {
 
   it("spawn places mote within the configured band at canvas-data top", async () => {
     mqlMatches = false;
-    const { Dust, DUST, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
+    const { Dust, DUST } = await import("../../../js/particles/upside-down.js");
     const canvas = makeFakeCanvas();
-    // Initialize module-scoped canvas refs by constructing the factory.
-    createUpsideDown(canvas, {});
-    const d = new Dust();
+    const d = new Dust(canvas, {});
     d.spawn();
     expect(d.y).toBeGreaterThanOrEqual(0);
     // Mote y must land inside the spawn band; tighten the bound to the
@@ -93,10 +87,8 @@ describe("Dust — anti-gravity mote", () => {
 
   it("position is invariant across update() when motion is reduced", async () => {
     mqlMatches = true;
-    const { Dust, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Dust();
+    const { Dust } = await import("../../../js/particles/upside-down.js");
+    const d = new Dust(makeFakeCanvas(), {});
     d.spawn();
     const x0 = d.x;
     const y0 = d.y;
@@ -110,10 +102,8 @@ describe("Dust — anti-gravity mote", () => {
 
   it("position drifts toward larger y under full motion (visually upward in flipped view)", async () => {
     mqlMatches = false;
-    const { Dust, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Dust();
+    const { Dust } = await import("../../../js/particles/upside-down.js");
+    const d = new Dust(makeFakeCanvas(), {});
     d.spawn();
     const y0 = d.y;
     // A handful of frames lets sway average out and the lift
@@ -124,11 +114,9 @@ describe("Dust — anti-gravity mote", () => {
 
   it("deactivates when drifting past canvas.height", async () => {
     mqlMatches = false;
-    const { Dust, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
+    const { Dust } = await import("../../../js/particles/upside-down.js");
     const canvas = makeFakeCanvas(800, 100);
-    createUpsideDown(canvas, {});
-    const d = new Dust();
+    const d = new Dust(canvas, {});
     d.spawn();
     // Drive past the cull threshold.  Lift is 0.25-0.7 px/frame; with
     // canvas.height=100 even worst-case takes only a few hundred frames.
@@ -138,10 +126,8 @@ describe("Dust — anti-gravity mote", () => {
 
   it("friction decays vx/vy even under reduced motion", async () => {
     mqlMatches = true;
-    const { Dust, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Dust();
+    const { Dust } = await import("../../../js/particles/upside-down.js");
+    const d = new Dust(makeFakeCanvas(), {});
     d.spawn();
     d.vx = 5;
     d.vy = -5;
@@ -191,10 +177,8 @@ describe("Debris — scroll-driven scrap", () => {
 
   it("spawn assigns position, velocity, polygon vertices, and life", async () => {
     mqlMatches = false;
-    const { Debris, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Debris();
+    const { Debris } = await import("../../../js/particles/upside-down.js");
+    const d = new Debris(makeFakeCanvas(), {});
     d.spawn(2);
     expect(d.active).toBe(true);
     expect(d.x).toBeGreaterThanOrEqual(0);
@@ -207,10 +191,8 @@ describe("Debris — scroll-driven scrap", () => {
 
   it("position is invariant across update() when motion is reduced", async () => {
     mqlMatches = true;
-    const { Debris, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Debris();
+    const { Debris } = await import("../../../js/particles/upside-down.js");
+    const d = new Debris(makeFakeCanvas(), {});
     d.spawn(2);
     const x0 = d.x;
     const y0 = d.y;
@@ -223,10 +205,8 @@ describe("Debris — scroll-driven scrap", () => {
 
   it("position and rotation advance under full motion with deterministic velocity", async () => {
     mqlMatches = false;
-    const { Debris, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Debris();
+    const { Debris } = await import("../../../js/particles/upside-down.js");
+    const d = new Debris(makeFakeCanvas(), {});
     d.spawn(2);
     // Set vx/vy/rotSpeed to known non-zero values so the assertions
     // below are independent of the random spawn distribution.
@@ -244,10 +224,8 @@ describe("Debris — scroll-driven scrap", () => {
 
   it("deactivates after maxLife frames", async () => {
     mqlMatches = false;
-    const { Debris, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Debris();
+    const { Debris } = await import("../../../js/particles/upside-down.js");
+    const d = new Debris(makeFakeCanvas(), {});
     d.spawn(2);
     const maxFrames = Math.ceil(d.maxLife) + 2;
     for (let i = 0; i < maxFrames; i++) d.update();
@@ -256,10 +234,8 @@ describe("Debris — scroll-driven scrap", () => {
 
   it("friction decays vx/vy even under reduced motion", async () => {
     mqlMatches = true;
-    const { Debris, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const d = new Debris();
+    const { Debris } = await import("../../../js/particles/upside-down.js");
+    const d = new Debris(makeFakeCanvas(), {});
     d.spawn(5);
     // Set vx/vy deterministically so the assertion is independent of
     // the random scatter on spawn.
@@ -278,15 +254,15 @@ describe("Debris — scroll-driven scrap", () => {
     // symmetric so the mean should be close to WIND_VY_MUL * sv,
     // unambiguously matching its sign.
     mqlMatches = false;
-    const { Debris, DEBRIS, createUpsideDown } =
+    const { Debris, DEBRIS } =
       await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
+    const canvas = makeFakeCanvas();
     const sv = 4;
     const expected = sv * DEBRIS.WIND_VY_MUL;
     let sum = 0;
     const N = 200;
     for (let i = 0; i < N; i++) {
-      const d = new Debris();
+      const d = new Debris(canvas, {});
       d.spawn(sv);
       sum += d.vy;
     }
@@ -324,10 +300,9 @@ describe("Needle — compass-wobble field", () => {
 
   it("constructs with target angle pointing toward canvas-data top", async () => {
     mqlMatches = false;
-    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+    const { Needle, NEEDLE_TARGET_ANGLE } =
       await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const n = new Needle();
+    const n = new Needle(makeFakeCanvas(), {});
     // Initial rendered angle equals the target — needles spawn aligned
     // before phase noise has had a chance to push them off.
     expect(n.angle).toBe(NEEDLE_TARGET_ANGLE);
@@ -335,10 +310,8 @@ describe("Needle — compass-wobble field", () => {
 
   it("angle is invariant across update() when motion is reduced", async () => {
     mqlMatches = true;
-    const { Needle, createUpsideDown } =
-      await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const n = new Needle();
+    const { Needle } = await import("../../../js/particles/upside-down.js");
+    const n = new Needle(makeFakeCanvas(), {});
     // Force the rendered angle off-target so easing would normally
     // pull it back; reduced motion must freeze that easing.
     n.angle = 0;
@@ -349,10 +322,9 @@ describe("Needle — compass-wobble field", () => {
 
   it("eases toward target under full motion when noise is suppressed by lock", async () => {
     mqlMatches = false;
-    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+    const { Needle, NEEDLE_TARGET_ANGLE } =
       await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const n = new Needle();
+    const n = new Needle(makeFakeCanvas(), {});
     n.angle = 0; // off-target
     // alignmentLock=1 zeros out the noise contribution → goal === target.
     for (let i = 0; i < 60; i++) n.update(performance.now(), 1);
@@ -365,10 +337,9 @@ describe("Needle — compass-wobble field", () => {
     // With lock=0, repeated update() calls at varying time should
     // produce different angles (noise term is nonzero on average).
     mqlMatches = false;
-    const { Needle, NEEDLE_TARGET_ANGLE, createUpsideDown } =
+    const { Needle, NEEDLE_TARGET_ANGLE } =
       await import("../../../js/particles/upside-down.js");
-    createUpsideDown(makeFakeCanvas(), {});
-    const n = new Needle();
+    const n = new Needle(makeFakeCanvas(), {});
     // Pin the noise phase to a value that keeps sin(...) non-trivial
     // across the test sweep; otherwise a randomly-seeded phase could
     // align with multiples of π and produce all-zero noise.

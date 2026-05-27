@@ -64,17 +64,17 @@ const DUST = defineConstants(
   { theme: "constellation" },
 );
 
-let _canvas, _ctx;
-
 class Dust {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.reset(true);
   }
   reset(init) {
-    this.x = Math.random() * _canvas.width;
+    this.x = Math.random() * this.canvas.width;
     this.y = init
-      ? Math.random() * _canvas.height
-      : _canvas.height + Math.random() * 20;
+      ? Math.random() * this.canvas.height
+      : this.canvas.height + Math.random() * 20;
     this.r = DUST.RADIUS_MIN + Math.random() * DUST.RADIUS_RANGE;
     this.opacity = DUST.OPACITY_MIN + Math.random() * DUST.OPACITY_RANGE;
     this.driftSpeed = DUST.DRIFT_MIN + Math.random() * DUST.DRIFT_RANGE;
@@ -91,12 +91,12 @@ class Dust {
     this.vx *= DUST.FRICTION;
     this.vy *= DUST.FRICTION;
     if (this.y < -10) this.reset(false);
-    if (this.x < -20) this.x += _canvas.width + 40;
-    if (this.x > _canvas.width + 20) this.x -= _canvas.width + 40;
+    if (this.x < -20) this.x += this.canvas.width + 40;
+    if (this.x > this.canvas.width + 20) this.x -= this.canvas.width + 40;
   }
   draw(color) {
     drawHaloParticle(
-      _ctx,
+      this.ctx,
       this.x,
       this.y,
       this.r * DUST.GLOW_RADIUS_MULT,
@@ -108,10 +108,10 @@ class Dust {
 }
 
 export function createConstellation(canvasEl) {
-  _canvas = canvasEl;
-  _ctx = canvasEl.getContext("2d");
+  const canvas = canvasEl;
+  const ctx = canvasEl.getContext("2d");
 
-  const dust = Array.from({ length: DUST.COUNT }, () => new Dust());
+  const dust = Array.from({ length: DUST.COUNT }, () => new Dust(canvas, ctx));
 
   // Indices, not pixel positions, so the chain re-anchors automatically
   // as stars shift on scroll parallax or canvas resize.
@@ -140,8 +140,8 @@ export function createConstellation(canvasEl) {
     const glowColor = pal.constellationGlow;
     if (!lineColor || !glowColor) return;
 
-    const w = _canvas.width;
-    const h = _canvas.height;
+    const w = canvas.width;
+    const h = canvas.height;
     const wrapLimitY = h * CHAIN.WRAP_SKIP_RATIO;
     const wrapLimitX = w * CHAIN.WRAP_SKIP_RATIO;
     const lineOpacity =
@@ -150,11 +150,11 @@ export function createConstellation(canvasEl) {
         : CHAIN.LINE_OPACITY_BASE) * fade;
 
     // Lines first (under halos)
-    _ctx.save();
-    _ctx.strokeStyle = rgbaStr(lineColor, lineOpacity);
-    _ctx.lineWidth = CHAIN.LINE_WIDTH;
-    _ctx.lineCap = "round";
-    _ctx.beginPath();
+    ctx.save();
+    ctx.strokeStyle = rgbaStr(lineColor, lineOpacity);
+    ctx.lineWidth = CHAIN.LINE_WIDTH;
+    ctx.lineCap = "round";
+    ctx.beginPath();
     for (let i = 1; i < chainState.chain.length; i++) {
       const prev = stars[chainState.chain[i - 1].index];
       const cur = stars[chainState.chain[i].index];
@@ -163,15 +163,15 @@ export function createConstellation(canvasEl) {
       const b = starScreenPos(cur, sp, h, w);
       if (Math.abs(a.py - b.py) > wrapLimitY) continue;
       if (Math.abs(a.sx - b.sx) > wrapLimitX) continue;
-      _ctx.moveTo(a.sx, a.py);
-      _ctx.lineTo(b.sx, b.py);
+      ctx.moveTo(a.sx, a.py);
+      ctx.lineTo(b.sx, b.py);
     }
-    _ctx.stroke();
-    _ctx.restore();
+    ctx.stroke();
+    ctx.restore();
 
     // Halos
-    _ctx.save();
-    _ctx.globalCompositeOperation = "lighter";
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
     const haloOpts = {
       midStop: CHAIN.GLOW_MID_STOP,
       midAlpha: CHAIN.GLOW_MID_ALPHA,
@@ -181,7 +181,7 @@ export function createConstellation(canvasEl) {
       if (!s) continue;
       const { sx, py } = starScreenPos(s, sp, h, w);
       drawHaloParticle(
-        _ctx,
+        ctx,
         sx,
         py,
         s.r * CHAIN.HALO_RADIUS_MULT,
@@ -190,7 +190,7 @@ export function createConstellation(canvasEl) {
         haloOpts,
       );
     }
-    _ctx.restore();
+    ctx.restore();
   }
 
   function drawDust(frame) {

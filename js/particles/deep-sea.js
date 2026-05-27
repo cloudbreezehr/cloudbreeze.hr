@@ -744,16 +744,17 @@ const PLANKTON = defineConstants(
   { theme: "deep-sea" },
 );
 
-// ── Module-scoped canvas refs ──
-let _canvas, _ctx;
-
 class Bubble {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.reset(true);
   }
   reset(init) {
-    this.x = Math.random() * _canvas.width;
-    this.y = init ? Math.random() * _canvas.height : _canvas.height + 10;
+    this.x = Math.random() * this.canvas.width;
+    this.y = init
+      ? Math.random() * this.canvas.height
+      : this.canvas.height + 10;
     this.baseR = BUB.RADIUS_MIN + Math.random() * BUB.RADIUS_RANGE;
     this.r = this.baseR;
     this.riseSpeed =
@@ -798,84 +799,86 @@ class Bubble {
       return;
     }
     // Wrap horizontal
-    if (this.x < -20) this.x += _canvas.width + 40;
-    if (this.x > _canvas.width + 20) this.x -= _canvas.width + 40;
+    if (this.x < -20) this.x += this.canvas.width + 40;
+    if (this.x > this.canvas.width + 20) this.x -= this.canvas.width + 40;
   }
   draw(pal) {
     if (!this.active) return;
     const rim = pal.bubbleRim;
     const fill = pal.bubbleFill;
     const spec = pal.bubbleSpecular;
-    _ctx.save();
-    _ctx.globalAlpha = this.opacity;
+    this.ctx.save();
+    this.ctx.globalAlpha = this.opacity;
 
     // Thin ring outline
-    _ctx.strokeStyle = rgbaStr(rim, BUB.RING_ALPHA);
-    _ctx.lineWidth = BUB.RING_WIDTH;
-    _ctx.beginPath();
-    _ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    _ctx.stroke();
+    this.ctx.strokeStyle = rgbaStr(rim, BUB.RING_ALPHA);
+    this.ctx.lineWidth = BUB.RING_WIDTH;
+    this.ctx.beginPath();
+    this.ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    this.ctx.stroke();
 
     // Very faint fill
-    _ctx.fillStyle = rgbaStr(fill, BUB.FILL_ALPHA);
-    _ctx.fill();
+    this.ctx.fillStyle = rgbaStr(fill, BUB.FILL_ALPHA);
+    this.ctx.fill();
 
     // Specular highlight — small arc near top-left
     if (this.r >= BUB.SPECULAR_THRESHOLD) {
-      _ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_PRIMARY_ALPHA);
-      _ctx.lineWidth = BUB.HIGHLIGHT_PRIMARY_WIDTH;
-      _ctx.beginPath();
-      _ctx.arc(
+      this.ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_PRIMARY_ALPHA);
+      this.ctx.lineWidth = BUB.HIGHLIGHT_PRIMARY_WIDTH;
+      this.ctx.beginPath();
+      this.ctx.arc(
         this.x - this.r * BUB.HIGHLIGHT_OFFSET_FRAC,
         this.y - this.r * BUB.HIGHLIGHT_OFFSET_FRAC,
         this.r * BUB.HIGHLIGHT_SIZE_FRAC,
         -Math.PI * 0.7,
         -Math.PI * 0.3,
       );
-      _ctx.stroke();
+      this.ctx.stroke();
     } else {
       // Small bubbles — just a dot highlight
-      _ctx.fillStyle = rgbaStr(spec, BUB.HIGHLIGHT_DOT_ALPHA);
-      _ctx.beginPath();
-      _ctx.arc(
+      this.ctx.fillStyle = rgbaStr(spec, BUB.HIGHLIGHT_DOT_ALPHA);
+      this.ctx.beginPath();
+      this.ctx.arc(
         this.x - this.r * BUB.DOT_OFFSET_FRAC,
         this.y - this.r * BUB.DOT_OFFSET_FRAC,
         this.r * BUB.DOT_SIZE_FRAC,
         0,
         Math.PI * 2,
       );
-      _ctx.fill();
+      this.ctx.fill();
     }
 
     // Large bubbles get a secondary smaller highlight
     if (this.r >= BUB.LARGE_THRESHOLD) {
-      _ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_SECONDARY_ALPHA);
-      _ctx.lineWidth = BUB.HIGHLIGHT_SECONDARY_WIDTH;
-      _ctx.beginPath();
-      _ctx.arc(
+      this.ctx.strokeStyle = rgbaStr(spec, BUB.HIGHLIGHT_SECONDARY_ALPHA);
+      this.ctx.lineWidth = BUB.HIGHLIGHT_SECONDARY_WIDTH;
+      this.ctx.beginPath();
+      this.ctx.arc(
         this.x + this.r * BUB.SECONDARY_OFFSET_X_FRAC,
         this.y + this.r * BUB.SECONDARY_OFFSET_Y_FRAC,
         this.r * BUB.SECONDARY_SIZE_FRAC,
         Math.PI * 0.2,
         Math.PI * 0.6,
       );
-      _ctx.stroke();
+      this.ctx.stroke();
     }
 
-    _ctx.restore();
+    this.ctx.restore();
   }
 }
 
 class Jellyfish {
-  constructor() {
+  constructor(canvas, ctx) {
+    this.canvas = canvas;
+    this.ctx = ctx;
     this.reset(true);
   }
   reset(init) {
     this.bellR = JELLY.BELL_MIN + Math.random() * JELLY.BELL_RANGE;
-    this.x = Math.random() * _canvas.width;
+    this.x = Math.random() * this.canvas.width;
     this.y = init
-      ? Math.random() * _canvas.height
-      : _canvas.height + this.bellR * 2;
+      ? Math.random() * this.canvas.height
+      : this.canvas.height + this.bellR * 2;
     this.vx = (Math.random() - 0.5) * JELLY.DRIFT_VX;
     this.vy = 0;
     this.pulse = Math.random() * Math.PI * 2;
@@ -928,11 +931,11 @@ class Jellyfish {
     this.y += scaled(this.vy);
 
     // Wrap around edges
-    if (this.y < -this.bellR * 3) this.y = _canvas.height + this.bellR * 2;
-    if (this.y > _canvas.height + this.bellR * 3) this.y = -this.bellR * 2;
-    if (this.x < -this.bellR * 3) this.x += _canvas.width + this.bellR * 6;
-    if (this.x > _canvas.width + this.bellR * 3)
-      this.x -= _canvas.width + this.bellR * 6;
+    if (this.y < -this.bellR * 3) this.y = this.canvas.height + this.bellR * 2;
+    if (this.y > this.canvas.height + this.bellR * 3) this.y = -this.bellR * 2;
+    if (this.x < -this.bellR * 3) this.x += this.canvas.width + this.bellR * 6;
+    if (this.x > this.canvas.width + this.bellR * 3)
+      this.x -= this.canvas.width + this.bellR * 6;
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
@@ -949,11 +952,11 @@ class Jellyfish {
     const glowAlpha =
       JELLY.GLOW_ALPHA_MIN + halfRange + Math.sin(this.glowPhase) * halfRange;
 
-    _ctx.save();
+    this.ctx.save();
 
     // Bioluminescent glow — radial gradient around the bell
     drawHaloParticle(
-      _ctx,
+      this.ctx,
       this.x,
       this.y,
       this.bellR * JELLY.GLOW_HALO_RADIUS_RATIO,
@@ -967,7 +970,7 @@ class Jellyfish {
     const controlLift = bellH * JELLY.BELL_CONTROL_LIFT;
     const apexLift = bellH * JELLY.BELL_APEX_LIFT;
     // Faint fill
-    const bellGrad = _ctx.createRadialGradient(
+    const bellGrad = this.ctx.createRadialGradient(
       this.x,
       this.y - bellH * JELLY.BELL_GLOW_OFFSET,
       0,
@@ -977,42 +980,42 @@ class Jellyfish {
     );
     bellGrad.addColorStop(0, rgbaStr(c, glowAlpha * JELLY.BELL_FILL_ALPHA_MUL));
     bellGrad.addColorStop(1, "transparent");
-    _ctx.fillStyle = bellGrad;
-    _ctx.beginPath();
-    _ctx.moveTo(this.x - bellW, this.y);
-    _ctx.quadraticCurveTo(
+    this.ctx.fillStyle = bellGrad;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x - bellW, this.y);
+    this.ctx.quadraticCurveTo(
       this.x - bellW,
       this.y - controlLift,
       this.x,
       this.y - apexLift,
     );
-    _ctx.quadraticCurveTo(
+    this.ctx.quadraticCurveTo(
       this.x + bellW,
       this.y - controlLift,
       this.x + bellW,
       this.y,
     );
-    _ctx.closePath();
-    _ctx.fill();
+    this.ctx.closePath();
+    this.ctx.fill();
 
     // Bell stroke
-    _ctx.strokeStyle = rgbaStr(c, JELLY.BELL_STROKE_ALPHA_BASE + glowAlpha);
-    _ctx.lineWidth = JELLY.BELL_STROKE_WIDTH;
-    _ctx.beginPath();
-    _ctx.moveTo(this.x - bellW, this.y);
-    _ctx.quadraticCurveTo(
+    this.ctx.strokeStyle = rgbaStr(c, JELLY.BELL_STROKE_ALPHA_BASE + glowAlpha);
+    this.ctx.lineWidth = JELLY.BELL_STROKE_WIDTH;
+    this.ctx.beginPath();
+    this.ctx.moveTo(this.x - bellW, this.y);
+    this.ctx.quadraticCurveTo(
       this.x - bellW,
       this.y - controlLift,
       this.x,
       this.y - apexLift,
     );
-    _ctx.quadraticCurveTo(
+    this.ctx.quadraticCurveTo(
       this.x + bellW,
       this.y - controlLift,
       this.x + bellW,
       this.y,
     );
-    _ctx.stroke();
+    this.ctx.stroke();
 
     // Tentacles — wavy lines from bottom of bell
     const tentLen = this.bellR * JELLY.TENTACLE_SEG_LEN_RATIO;
@@ -1023,16 +1026,16 @@ class Jellyfish {
     const segs = JELLY.TENTACLE_SEGMENTS;
     const halfStep = 0.5 / segs;
 
-    _ctx.strokeStyle = rgbaStr(
+    this.ctx.strokeStyle = rgbaStr(
       c,
       JELLY.TENTACLE_STROKE_ALPHA_BASE +
         glowAlpha * JELLY.TENTACLE_STROKE_ALPHA_SCALE,
     );
-    _ctx.lineWidth = JELLY.TENTACLE_STROKE_WIDTH;
+    this.ctx.lineWidth = JELLY.TENTACLE_STROKE_WIDTH;
     for (let i = 0; i < this.tentacles; i++) {
       const baseX = this.x - bellW + spacing * (i + 1);
-      _ctx.beginPath();
-      _ctx.moveTo(baseX, this.y);
+      this.ctx.beginPath();
+      this.ctx.moveTo(baseX, this.y);
       let tx = baseX + trailX * JELLY.TRAIL_BASE_FRAC;
       let ty = this.y;
       for (let s = 1; s <= segs; s++) {
@@ -1056,12 +1059,12 @@ class Jellyfish {
             this.bellR +
           trailX * cpt;
         const cpy = this.y + tentLen * cpt + trailY * cpt;
-        _ctx.quadraticCurveTo(cpx, cpy, tx, ty);
+        this.ctx.quadraticCurveTo(cpx, cpy, tx, ty);
       }
-      _ctx.stroke();
+      this.ctx.stroke();
     }
 
-    _ctx.restore();
+    this.ctx.restore();
   }
 }
 
@@ -1118,11 +1121,17 @@ export class Plankton {
 // ── Factory ──
 
 export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
-  _canvas = canvasEl;
-  _ctx = ctxEl;
+  const canvas = canvasEl;
+  const ctx = ctxEl;
 
-  const bubbles = Array.from({ length: bubbleCount }, () => new Bubble());
-  const jellyfish = Array.from({ length: jellyCount }, () => new Jellyfish());
+  const bubbles = Array.from(
+    { length: bubbleCount },
+    () => new Bubble(canvas, ctx),
+  );
+  const jellyfish = Array.from(
+    { length: jellyCount },
+    () => new Jellyfish(canvas, ctx),
+  );
   const plankton = Array.from({ length: PLANKTON.POOL }, () => new Plankton());
   let bubbleSpawnAccum = 0;
 
@@ -1204,7 +1213,7 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       // Drawn after jellies so wakes layer over the bell that produced them.
       for (const p of plankton) {
         p.update();
-        p.draw(_ctx);
+        p.draw(ctx);
       }
     },
 
