@@ -6,6 +6,7 @@
 // decide when a tooltip should be shown.
 
 const TOOLTIP_OFFSET_Y = 6;
+const TOOLTIP_EDGE_MARGIN_PX = 4;
 
 let tooltipEl = null;
 
@@ -37,6 +38,25 @@ function positionTooltip(anchor, preferAbove) {
     ? tipRect.top < 0
     : tipRect.bottom > window.innerHeight;
   if (overflows) (preferAbove ? below : above)();
+
+  // Horizontal clamp.  The transform centers the tooltip on the
+  // `left` value via translateX(-50%); shift the anchor inward when
+  // the resulting rect would cross either viewport edge.  Skip when
+  // width is zero — the tooltip hasn't been laid out yet and the rect
+  // has no meaningful coordinates to clamp against.
+  const clampedRect = tooltipEl.getBoundingClientRect();
+  if (clampedRect.width > 0) {
+    let shift = 0;
+    if (clampedRect.left < TOOLTIP_EDGE_MARGIN_PX) {
+      shift = TOOLTIP_EDGE_MARGIN_PX - clampedRect.left;
+    } else if (clampedRect.right > window.innerWidth - TOOLTIP_EDGE_MARGIN_PX) {
+      shift = window.innerWidth - TOOLTIP_EDGE_MARGIN_PX - clampedRect.right;
+    }
+    if (shift !== 0) {
+      const currentLeft = parseFloat(tooltipEl.style.left) || 0;
+      tooltipEl.style.left = `${currentLeft + shift}px`;
+    }
+  }
 }
 
 export function showHintTooltip(anchor, hint, preferAbove) {

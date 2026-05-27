@@ -93,4 +93,88 @@ describe("achievements/ui/tooltip", () => {
     // midpoint of left=50..right=80 is 65
     expect(tip.style.left).toEqual("65px");
   });
+
+  it("shifts inward when the centered tooltip would clip the right edge", () => {
+    const TIP_WIDTH = 300;
+    // Anchor at the far-right edge of the viewport — centered placement
+    // would overflow.
+    anchor.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 120,
+      left: window.innerWidth - 40,
+      right: window.innerWidth - 10,
+      width: 30,
+      height: 20,
+      x: window.innerWidth - 40,
+      y: 100,
+      toJSON: () => ({}),
+    });
+    mod.showHintTooltip(anchor, "would overflow", false);
+    const tip = getTooltip();
+    // Stub the tip's measured rect so the clamp branch fires.  The
+    // centered position is at anchor mid (innerWidth - 25); a tip
+    // TIP_WIDTH wide spans (anchor mid - TIP_WIDTH/2) to (anchor mid
+    // + TIP_WIDTH/2), with the right edge past innerWidth.
+    let measureCall = 0;
+    tip.getBoundingClientRect = () => {
+      measureCall++;
+      const center = window.innerWidth - 25;
+      return {
+        left: center - TIP_WIDTH / 2,
+        right: center + TIP_WIDTH / 2,
+        top: 100,
+        bottom: 130,
+        width: TIP_WIDTH,
+        height: 30,
+        x: center - TIP_WIDTH / 2,
+        y: 100,
+        toJSON: () => ({}),
+      };
+    };
+    // Re-show to force re-measurement against the stubbed rect.
+    mod.showHintTooltip(anchor, "would overflow", false);
+    // After the clamp, the new left should pull the tooltip back so
+    // its right edge sits at innerWidth - margin.  Center → left value
+    // adjusts by the overflow amount.
+    const finalLeft = parseFloat(tip.style.left);
+    expect(finalLeft).toBeLessThan(window.innerWidth - 25);
+  });
+
+  it("shifts inward when the centered tooltip would clip the left edge", () => {
+    const TIP_WIDTH = 300;
+    // Anchor at the far-left edge of the viewport — centered placement
+    // would extend past the left edge.
+    anchor.getBoundingClientRect = () => ({
+      top: 100,
+      bottom: 120,
+      left: 10,
+      right: 40,
+      width: 30,
+      height: 20,
+      x: 10,
+      y: 100,
+      toJSON: () => ({}),
+    });
+    mod.showHintTooltip(anchor, "would overflow", false);
+    const tip = getTooltip();
+    tip.getBoundingClientRect = () => {
+      const center = 25; // anchor midpoint
+      return {
+        left: center - TIP_WIDTH / 2,
+        right: center + TIP_WIDTH / 2,
+        top: 100,
+        bottom: 130,
+        width: TIP_WIDTH,
+        height: 30,
+        x: center - TIP_WIDTH / 2,
+        y: 100,
+        toJSON: () => ({}),
+      };
+    };
+    mod.showHintTooltip(anchor, "would overflow", false);
+    // Clamp should push the anchor rightward so the tooltip's left
+    // edge clears the viewport edge with the configured margin.
+    const finalLeft = parseFloat(tip.style.left);
+    expect(finalLeft).toBeGreaterThan(25);
+  });
 });
