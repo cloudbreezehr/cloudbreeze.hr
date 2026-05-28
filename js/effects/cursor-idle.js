@@ -274,5 +274,19 @@ export function initCursorIdle(dot, ring) {
   document.addEventListener("scroll", resetIdle, { passive: true });
   document.addEventListener("wheel", resetIdle, { passive: true });
 
+  // A backgrounded tab shouldn't keep spawning idle animations.  On
+  // hide, drop any in-flight animation + timers; on show, restart the
+  // idle countdown from "now" so the next play is gated by IDLE_MS
+  // rather than firing immediately on return.
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      clearTimeout(idleTimer);
+      clearTimeout(phaseTimer);
+      clearAnimation();
+    } else {
+      idleTimer = setTimeout(playAnimation, C.IDLE_MS);
+    }
+  });
+
   idleTimer = setTimeout(playAnimation, C.IDLE_MS);
 }
