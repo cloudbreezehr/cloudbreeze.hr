@@ -81,7 +81,7 @@ export function renderActivity(container) {
     empty.className = "activity-empty";
     empty.textContent = isTrash
       ? "Dismissed entries appear here, recoverable for a week."
-      : "Earned achievements will appear here.";
+      : "Discover something on the page — your unlocks will log here, newest first.";
     container.appendChild(empty);
   } else {
     const list = document.createElement("div");
