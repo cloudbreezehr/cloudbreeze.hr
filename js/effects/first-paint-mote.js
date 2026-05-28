@@ -7,7 +7,7 @@
 // fresh mote.
 
 import { defineConstants } from "../dev/registry.js";
-import { reducedDuration } from "../motion.js";
+import { reducedDuration, prefersReducedMotion } from "../motion.js";
 
 const SESSION_FLAG_KEY = "first-paint-mote-shown";
 
@@ -20,6 +20,11 @@ export const MOTE = defineConstants("onboarding.firstPaintMote", {
 });
 
 export function initFirstPaintMote() {
+  // Onboarding mote is a one-shot motion cue — skip entirely for
+  // users who opted out of animation rather than rendering a near-
+  // instant flash via the duration clamp.
+  if (prefersReducedMotion()) return;
+
   let shown = false;
   try {
     shown = !!window.sessionStorage.getItem(SESSION_FLAG_KEY);

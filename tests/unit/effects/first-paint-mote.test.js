@@ -89,7 +89,7 @@ describe("effects/first-paint-mote", () => {
     expect(getMote()).not.toBeNull();
   });
 
-  it("uses a zero-duration animation when prefers-reduced-motion is set", async () => {
+  it("skips the mote entirely when prefers-reduced-motion is set", async () => {
     // motion.js snapshots matchMedia at import time, so the flag must
     // be in place before the module imports.  Re-import after flipping.
     reducedMotion = true;
@@ -100,12 +100,10 @@ describe("effects/first-paint-mote", () => {
     vi.advanceTimersByTime(PAST_ARMING_MS);
     dispatchPointerMove(SEED_X, SEED_Y);
     dispatchPointerMove(SEED_X + PAST_DEAD_ZONE_PX, SEED_Y + PAST_DEAD_ZONE_PX);
-    // The mote element is created so the session-once contract still
-    // holds, but its animation duration collapses to 0 so the visitor
-    // never sees a sustained drift.
-    const animateCalls = Element.prototype.animate.mock.calls;
-    expect(animateCalls.length).toEqual(1);
-    expect(animateCalls[0][1].duration).toEqual(0);
+    // Onboarding cues are skip-entirely under reduced motion (per the
+    // motion.js policy), not duration-clamped.  No DOM, no animation.
+    expect(getMote()).toBeNull();
+    expect(Element.prototype.animate.mock.calls.length).toEqual(0);
   });
 
   it("does not spawn a mote when the session flag is already set", () => {
