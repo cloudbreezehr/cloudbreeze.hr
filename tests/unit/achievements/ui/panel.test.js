@@ -135,6 +135,28 @@ describe("achievements/ui/panel", () => {
       expect(panel.hasAttribute("inert")).toBe(false);
     });
 
+    it("restores each tab's scrollTop across close → reopen", () => {
+      mod.openPanel();
+      const achView = document.querySelector(".achievement-view-achievements");
+      const actView = document.querySelector(".achievement-view-activity");
+      const ACH_SCROLL = 123;
+      const ACT_SCROLL = 47;
+      achView.scrollTop = ACH_SCROLL;
+      actView.scrollTop = ACT_SCROLL;
+      mod.closePanel();
+      // Simulate the views being scrolled to 0 by an outside force
+      // before re-open (e.g. a re-render).
+      achView.scrollTop = 0;
+      actView.scrollTop = 0;
+      mod.openPanel();
+      const achViewAfter = document.querySelector(
+        ".achievement-view-achievements",
+      );
+      const actViewAfter = document.querySelector(".achievement-view-activity");
+      expect(achViewAfter.scrollTop).toEqual(ACH_SCROLL);
+      expect(actViewAfter.scrollTop).toEqual(ACT_SCROLL);
+    });
+
     it("renders the two tabs", () => {
       mod.openPanel();
       const tabButtons = document.querySelectorAll(".achievement-tab");

@@ -48,6 +48,11 @@ let panelOpen = false;
 let _escHandler = null;
 let _releaseFocusTrap = null;
 let _overlayHandle = null;
+// Per-tab scroll positions snapshotted at close and restored on reopen,
+// so a user who scrolled deep into a list and then closed the panel
+// returns to the same view rather than the top.  Keyed by tab class
+// fragment ("achievements" | "activity").
+const _scrollByTab = new Map();
 
 // Wire sibling submodules to this module's live panel state.  Done once
 // at module-evaluation time; openPanel/isPanelOpen/refreshPanel are
@@ -150,6 +155,14 @@ function openPanelUI(onHide) {
   panelEl.removeAttribute("inert");
   requestAnimationFrame(() => panelEl.classList.add("open"));
 
+  // Restore each tab's last scroll position so reopening lands the
+  // user back where they were.  Has to happen after the panel is in
+  // the DOM tree (above) so the views have layout to scroll against.
+  for (const [tab, top] of _scrollByTab) {
+    const view = panelEl.querySelector(`.achievement-view-${tab}`);
+    if (view) view.scrollTop = top;
+  }
+
   // Start observing unseen cards
   createSeenObserver();
   observeUnseenCards();
@@ -175,6 +188,14 @@ export function closePanel() {
   if (!panelOpen || !panelEl) return;
   panelOpen = false;
   setNavActive(false);
+
+  // Snapshot scroll positions before the close animation runs so a
+  // subsequent open restores the user's last view per tab.
+  for (const tab of ["achievements", "activity"]) {
+    const view = panelEl.querySelector(`.achievement-view-${tab}`);
+    if (view) _scrollByTab.set(tab, view.scrollTop);
+  }
+
   panelEl.classList.remove("open");
   // Make the off-screen panel non-focusable so Tab order doesn't walk
   // through the hidden cards.  Without this, after the visible page
@@ -405,6 +426,7 @@ export function destroyPanel() {
     document.removeEventListener("keydown", _escHandler);
     _escHandler = null;
   }
+  _scrollByTab.clear();
 }
 
 // Test hook — drop panel state between runs.
