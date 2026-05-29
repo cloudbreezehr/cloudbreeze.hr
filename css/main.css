@@ -4271,6 +4271,42 @@ nav.nav-light .achievement-btn::after {
   opacity: 1;
 }
 
+/* ── Hint affordance ── */
+/* Tiny "?" badge over the icon's corner for cards whose hover *would*
+   surface a hint.  Scoped to non-unlocked cards — once a card is
+   unlocked the user already discovered the achievement, and the
+   shimmer ::after on .unlocked already occupies the layering tier. */
+.achievement-card[data-has-hint]:not(.unlocked) .achievement-icon {
+  position: relative;
+}
+.achievement-card[data-has-hint]:not(.unlocked) .achievement-icon::after {
+  content: "?";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(var(--ink-rgb), 0.9);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
+  pointer-events: none;
+}
+.achievement-card[data-has-hint]:not(.unlocked):hover .achievement-icon::after {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.85);
+}
+
 /* ── Unseen Indicator ── */
 
 .achievement-card.unseen .achievement-card-time::before {

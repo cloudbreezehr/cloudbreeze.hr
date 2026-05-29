@@ -174,6 +174,39 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("unseen")).toBe(true);
     });
 
+    it("tags cards whose hover will surface a hint with data-has-hint", () => {
+      // first-light is non-hidden and has a hint — when locked, the
+      // hint is gated behind reveal-hints (so data-has-hint stays
+      // off); when unlocked the hint is freely shown.
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.dataset.hasHint).toEqual("1");
+    });
+
+    it("omits data-has-hint when a locked non-hidden card has no surfaceable hint", () => {
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      // Locked + non-hidden + reveal-hints off → resolveHintText
+      // returns null; no affordance should be advertised.
+      expect(card.dataset.hasHint).toBeUndefined();
+    });
+
+    it("omits data-has-hint on hidden-locked cards while reveal-hints is off", () => {
+      // Hidden cards only surface the placeholder hint when reveal-
+      // hints is on; with the default off, hover would show nothing,
+      // so no affordance should advertise otherwise.
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card.hidden-ach[data-id="time-warp"]',
+      );
+      expect(card.dataset.hasHint).toBeUndefined();
+    });
+
     it("brightens every theme set whose theme is active when themes stack", () => {
       // Two theme sets present, both with at least one unlock so they
       // render.  Both themes active → neither set should carry

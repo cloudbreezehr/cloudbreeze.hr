@@ -545,6 +545,12 @@ export function renderSections(container) {
       // Hint tooltip on hover. The text shown depends on lock/hidden state
       // and the Reveal hints / dev-active flags — see `resolveHintText`.
       if (ach.hint) {
+        // Tag cards whose hover *will* surface text so CSS can show a
+        // resting affordance.  Cards whose hint resolves to null (locked
+        // non-hidden with reveal-hints off) carry no mark.
+        if (resolveHintText(ach, isUnlocked, isRelocked)) {
+          card.dataset.hasHint = "1";
+        }
         card.addEventListener("mouseenter", () => {
           const text = resolveHintText(ach, isUnlocked, isRelocked);
           if (text) showHintTooltip(card, text);
