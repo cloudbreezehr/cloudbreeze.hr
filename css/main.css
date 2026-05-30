@@ -923,6 +923,25 @@ nav {
     transform: scale(1.08);
   }
 }
+/* One-shot click pulse — interrupts breathing for the duration of the
+   keyframe, then the click listener strips the class via animationend. */
+.cloud-svg.logo-clicked {
+  animation: logoClickPulse 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes logoClickPulse {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(0.92);
+  }
+  70% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 
 .logo-text {
   font-size: 1.15rem;

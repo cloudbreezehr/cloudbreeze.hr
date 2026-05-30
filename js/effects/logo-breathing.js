@@ -17,10 +17,12 @@ const BREATH = defineConstants("logo.breathing", {
 
 const IDLE_EVENTS = ["pointerdown", "pointermove", "scroll", "keydown"];
 const BREATHING_CLASS = "logo-breathing";
+const CLICKED_CLASS = "logo-clicked";
 
 export function initLogoBreathing() {
   const cloudSvg = document.querySelector(".cloud-svg");
   if (!cloudSvg) return;
+  const navLogo = cloudSvg.closest(".nav-logo");
 
   let idleTimer = null;
 
@@ -37,6 +39,22 @@ export function initLogoBreathing() {
   IDLE_EVENTS.forEach((evt) => {
     window.addEventListener(evt, resetIdle, { passive: true });
   });
+
+  // Click pulse confirms the logo registered the press.  Toggle the
+  // class off first so back-to-back clicks restart the keyframe — the
+  // browser collapses identical class adds into a no-op otherwise.
+  if (navLogo) {
+    navLogo.addEventListener("click", () => {
+      cloudSvg.classList.remove(CLICKED_CLASS);
+      void cloudSvg.offsetWidth;
+      cloudSvg.classList.add(CLICKED_CLASS);
+    });
+    cloudSvg.addEventListener("animationend", (e) => {
+      if (e.animationName === "logoClickPulse") {
+        cloudSvg.classList.remove(CLICKED_CLASS);
+      }
+    });
+  }
 
   idleTimer = setTimeout(startBreathing, BREATH.IDLE_MS);
 }
