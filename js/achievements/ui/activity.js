@@ -7,7 +7,7 @@
 
 import * as activityLog from "../activity-log.js";
 import { getAchievement } from "../registry.js";
-import { formatRelativeTime } from "../../time-ago.js";
+import { paintRelativeTime } from "../../time-ago.js";
 import { getTheme, toggleTheme } from "../../themes/registry.js";
 import {
   buildAchievementToast,
@@ -171,7 +171,7 @@ function renderActivityEntry(entry, opts = {}) {
   // the event originally fired.
   const ts = isTrash ? entry.trashedAt : entry.timestamp;
   const prefix = isTrash ? "dismissed " : "";
-  time.textContent = `${prefix}${formatRelativeTime(ts)}`;
+  paintRelativeTime(time, ts, prefix);
   time.title = new Date(ts).toLocaleString();
   meta.appendChild(time);
 
