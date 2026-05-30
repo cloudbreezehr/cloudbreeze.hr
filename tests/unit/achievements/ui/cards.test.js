@@ -710,6 +710,23 @@ describe("achievements/ui/cards", () => {
       ).toBe(0);
       expect(storage.getUnseenCount()).toEqual(0);
     });
+
+    it("fires an 'All caught up' confirmation toast when something was unseen", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      mod.markAllSeen();
+      const toast = document.querySelector(".achievement-activation-toast");
+      expect(toast).not.toBeNull();
+      expect(toast.textContent).toContain("All caught up");
+    });
+
+    it("does not fire a toast when there was nothing unseen", () => {
+      mod.renderSections(container);
+      mod.markAllSeen();
+      expect(
+        document.querySelector(".achievement-activation-toast"),
+      ).toBeNull();
+    });
   });
 
   describe("updateMarkReadVisibility", () => {

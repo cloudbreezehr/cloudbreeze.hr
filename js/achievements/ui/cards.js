@@ -13,6 +13,7 @@ import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import * as storage from "../storage.js";
 import { formatTimestamp, toggleTimestampMode } from "./timestamp.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
+import { showActivationToast } from "./toast.js";
 import { setActiveTab } from "./tabs.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
@@ -226,6 +227,9 @@ function markCardSeen(card, id) {
 }
 
 export function markAllSeen() {
+  // No-op when nothing was unseen — avoids a misleading "all caught up"
+  // toast on rapid double-clicks of the button.
+  const hadUnseen = storage.getUnseenCount() > 0;
   const unlocked = storage.getUnlocked();
   for (const u of unlocked) storage.markSeen(u.id);
   const panelEl = _getPanelEl();
@@ -238,6 +242,7 @@ export function markAllSeen() {
   }
   updateBadge();
   updateMarkReadVisibility();
+  if (hadUnseen) showActivationToast("All caught up");
 }
 
 export function updateMarkReadVisibility() {
