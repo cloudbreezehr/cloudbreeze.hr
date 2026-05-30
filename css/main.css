@@ -123,6 +123,15 @@ body {
   --logo-accent-color: var(--theme-primary);
 }
 
+/* Native <a>/<button> elements get cursor: pointer for free; div-based
+   controls promoted via bindClickable get role="button" but no inherent
+   cursor change.  Apply pointer at :where(0) specificity so the
+   custom-cursor rule below still overrides to `none` (source-order
+   resolves the tie). */
+:where([role="button"]) {
+  cursor: pointer;
+}
+
 /* OS cursor stays visible until cursor.js has both initialized and
    received its first mousemove — otherwise slow loads leave a window
    where neither cursor is showing. */
