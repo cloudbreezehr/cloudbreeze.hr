@@ -260,6 +260,8 @@ function buildPanel(onHide) {
   // Hint toggle — reveals descriptions on hidden achievements + tooltip clues on all locked
   const hintToggle = document.createElement("label");
   hintToggle.className = "achievement-hint-toggle";
+  hintToggle.title =
+    "Show hint text on locked achievements (hidden ones stay anonymous)";
   const cb = document.createElement("input");
   cb.type = "checkbox";
   cb.checked = getRevealHints();
