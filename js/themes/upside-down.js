@@ -172,6 +172,11 @@ const VIGNETTE_COLOR = [180, 0, 0];
 export function initUpsideDown() {
   let warningVisible = false;
   let warningShowTime = 0;
+  // Track the live warning element + its pending removal so rapid
+  // show → hide → show cycles reuse the same node instead of letting
+  // a previous fade-out timeout orphan a duplicate-id element.
+  let warningEl = null;
+  let warningRemoveTimer = null;
   let lastEdgeWasBottom = true;
   let disableCardUpside = null;
   // `themeCtx` is filled in by createTheme's return value below.  We read
@@ -215,14 +220,25 @@ export function initUpsideDown() {
   function showWarning() {
     if (warningVisible) return;
     warningVisible = true;
+    // A previous hide is still fading out — cancel its removal and
+    // reuse the element so the DOM never carries two #ud-warnings.
+    if (warningRemoveTimer) {
+      clearTimeout(warningRemoveTimer);
+      warningRemoveTimer = null;
+    }
+    if (warningEl && warningEl.parentNode) {
+      warningEl.classList.add("visible");
+      warningShowTime = Date.now();
+      return;
+    }
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: { type: "upside-down-warning" },
       }),
     );
-    const el = document.createElement("div");
-    el.className = "ud-warning";
-    el.id = "ud-warning";
+    warningEl = document.createElement("div");
+    warningEl.className = "ud-warning";
+    warningEl.id = "ud-warning";
     const flipped = themeCtx.isActive;
     const content = document.createElement("div");
     content.className = "ud-warning-content";
@@ -253,18 +269,23 @@ export function initUpsideDown() {
       : "Keep scrolling to break through… or stop while you can.";
     content.appendChild(hint);
 
-    el.appendChild(content);
-    document.body.appendChild(el);
+    warningEl.appendChild(content);
+    document.body.appendChild(warningEl);
+    const el = warningEl;
     requestAnimationFrame(() => el.classList.add("visible"));
     warningShowTime = Date.now();
   }
 
   function hideWarning() {
     warningVisible = false;
-    const el = document.getElementById("ud-warning");
-    if (!el) return;
-    el.classList.remove("visible");
-    setTimeout(() => el.remove(), UD_VFX.WARNING_HIDE_DELAY);
+    if (!warningEl) return;
+    warningEl.classList.remove("visible");
+    const el = warningEl;
+    warningRemoveTimer = setTimeout(() => {
+      if (el.parentNode) el.remove();
+      if (warningEl === el) warningEl = null;
+      warningRemoveTimer = null;
+    }, UD_VFX.WARNING_HIDE_DELAY);
   }
 
   // ── Bespoke sliding wipe ──
@@ -416,4 +437,18 @@ export function initUpsideDown() {
       ud.cleanup();
     },
   });
+
+  // Test hook — exposes the warning lifecycle to unit tests so the
+  // element-reuse invariant (#ud-warning never duplicated across rapid
+  // show/hide cycles) can be exercised without building the full
+  // overscroll trigger.  Production callers never read this.
+  _testWarningHandles = { show: showWarning, hide: hideWarning };
+}
+
+let _testWarningHandles = null;
+export function _getWarningTestHandles() {
+  return _testWarningHandles;
+}
+export function _resetWarningTestHandles() {
+  _testWarningHandles = null;
 }
