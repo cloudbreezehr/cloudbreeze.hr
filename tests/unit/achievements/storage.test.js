@@ -54,6 +54,24 @@ describe("achievements/storage", () => {
       const state = storage.getState();
       expect(state).toMatchObject({ active: false, unlocked: [] });
     });
+
+    it("stamps the schema version on default state", () => {
+      const state = storage.getState();
+      expect(state.version).toEqual(storage.SCHEMA_VERSION);
+    });
+
+    it("loads unversioned legacy state without losing data", () => {
+      // Old saves (pre-versioning) wrote no `version` field; the
+      // migrate hook should treat them as a lower version and pass
+      // them through the existing field-merge.
+      localStorage.setItem(
+        "achievements",
+        JSON.stringify({ active: true, unlocked: [{ id: "x", ts: 1 }] }),
+      );
+      const state = storage.getState();
+      expect(state.active).toBe(true);
+      expect(state.unlocked).toEqual([{ id: "x", ts: 1 }]);
+    });
   });
 
   describe("activate / setHidden", () => {

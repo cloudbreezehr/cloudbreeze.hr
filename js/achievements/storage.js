@@ -6,10 +6,15 @@
 // ── Constants ──
 const STORAGE_KEY = "achievements";
 const SAVE_DEBOUNCE_MS = 1000;
+// Bump when the persisted shape changes in a way the existing
+// field-merge can't reconcile (e.g. renames, type changes, splits).
+// Add a corresponding branch in `migrate()` below.
+export const SCHEMA_VERSION = 1;
 
 // ── Default state ──
 function defaultState() {
   return {
+    version: SCHEMA_VERSION,
     active: false,
     hidden: false,
     unlocked: [],
@@ -25,6 +30,24 @@ function defaultState() {
   };
 }
 
+// Apply schema bumps to a parsed-but-not-yet-merged blob.  Each bump
+// is one `if (fromVersion < N) { ... }` block that rewrites fields in
+// place; the field-merge below then absorbs the result.  Today this
+// is a no-op — the hook exists so future migrations land in a single
+// well-named place instead of being grafted into read().
+//
+// Invariant: when migrate() returns, `parsed` is shaped at
+// SCHEMA_VERSION.  The downstream field-merge takes its version from
+// defaultState (always current) and never reads parsed.version again,
+// so any branch that runs MUST upgrade parsed to the current shape.
+function migrate(parsed) {
+  const fromVersion = typeof parsed.version === "number" ? parsed.version : 0;
+  if (fromVersion >= SCHEMA_VERSION) return parsed;
+  // No transformations registered yet for version 1.  Examples for
+  // future use: `if (fromVersion < 2) parsed.foo = parsed.legacyFoo`.
+  return parsed;
+}
+
 // ── In-memory state ──
 let _state = null;
 let _saveTimer = null;
@@ -33,8 +56,10 @@ function read() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    // Merge with defaults to handle schema evolution
+    const parsed = migrate(JSON.parse(raw));
+    // Merge with defaults to handle additive schema evolution.  Field
+    // changes that the merge can't absorb (renames, type changes) go
+    // through migrate() above instead.
     const state = defaultState();
     state.active = !!parsed.active;
     state.hidden = !!parsed.hidden;
