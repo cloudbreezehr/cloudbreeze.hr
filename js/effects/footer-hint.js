@@ -43,4 +43,14 @@ export function initFooterHint() {
     },
     { passive: true },
   );
+
+  // If deep-sea activates while the user is mid-hover, drop the hint
+  // immediately rather than waiting for them to leave — the discovery
+  // has happened, the affordance has served its purpose.
+  window.addEventListener("achievement", (e) => {
+    if (e.detail?.type === "theme-activate" && e.detail.theme === "deep-sea") {
+      clearTimeout(lingerTimer);
+      footerEl.classList.remove(HINTING_CLASS);
+    }
+  });
 }
