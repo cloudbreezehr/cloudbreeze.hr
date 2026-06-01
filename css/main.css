@@ -2539,6 +2539,26 @@ body[data-active-theme="frozen"]::after {
   z-index: var(--z-theme-effect);
 }
 
+/* Reduced-motion ripple substitute — one static ring that follows the
+   hold position.  The .tick class is briefly toggled on each would-be
+   spawn interval to mark the cadence; the transition is clamped to
+   ~0ms under reduced motion so the brightness change reads as discrete
+   acknowledgments rather than a sustained pulse. */
+.deep-sea-static-ring {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 200, 180, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: var(--z-theme-effect);
+  transition: border-color 0.15s;
+}
+.deep-sea-static-ring.tick {
+  border-color: rgba(0, 220, 200, 0.9);
+}
+
 /* Water creep overlay — dark teal gradients from edges */
 .deep-sea-overlay {
   position: fixed;

@@ -7,6 +7,7 @@ import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
+import { prefersReducedMotion } from "../motion.js";
 
 // ── Particle counts ──
 const COUNTS = defineConstants(
@@ -59,6 +60,7 @@ const DV = defineConstants(
     RIPPLE_MAX_SCALE: 3,
     RIPPLE_STAGGER_MS: 150,
     RIPPLE_START_OPACITY: 0.6,
+    STATIC_RING_TICK_MS: 150,
     WATER_SIZE_MIN: 8,
     WATER_SIZE_RANGE: 25,
     HUE_ROTATE: 50,
@@ -107,8 +109,20 @@ export function initDeepSea() {
   let holdX = 0;
   let holdY = 0;
   let rippleTimer = null;
+  // Under reduced motion the hold still needs *some* touch-point
+  // feedback so the user knows their input registered.  A single
+  // persistent ring at the hold position is the static surface; each
+  // would-be ripple interval briefly bumps its opacity so the user
+  // sees the cadence without sustained animation.
+  let staticRingEl = null;
+  let staticTickTimer = null;
+  let staticTickHide = null;
 
   function startRipples() {
+    if (prefersReducedMotion()) {
+      startStaticRing();
+      return;
+    }
     spawnRipple(holdX, holdY, rippleOpts);
     rippleTimer = setInterval(
       () => spawnRipple(holdX, holdY, rippleOpts),
@@ -116,10 +130,48 @@ export function initDeepSea() {
     );
   }
 
+  function startStaticRing() {
+    if (staticRingEl) return;
+    staticRingEl = document.createElement("div");
+    staticRingEl.className = "deep-sea-static-ring";
+    positionStaticRing();
+    document.body.appendChild(staticRingEl);
+    tickStaticRing();
+    staticTickTimer = setInterval(tickStaticRing, DV.RIPPLE_INTERVAL_MS);
+  }
+
+  function positionStaticRing() {
+    if (!staticRingEl) return;
+    staticRingEl.style.left = `${holdX}px`;
+    staticRingEl.style.top = `${holdY}px`;
+  }
+
+  function tickStaticRing() {
+    if (!staticRingEl) return;
+    staticRingEl.classList.add("tick");
+    if (staticTickHide) clearTimeout(staticTickHide);
+    staticTickHide = setTimeout(() => {
+      if (staticRingEl) staticRingEl.classList.remove("tick");
+      staticTickHide = null;
+    }, DV.STATIC_RING_TICK_MS);
+  }
+
   function stopRipples() {
     if (rippleTimer) {
       clearInterval(rippleTimer);
       rippleTimer = null;
+    }
+    if (staticTickTimer) {
+      clearInterval(staticTickTimer);
+      staticTickTimer = null;
+    }
+    if (staticTickHide) {
+      clearTimeout(staticTickHide);
+      staticTickHide = null;
+    }
+    if (staticRingEl) {
+      staticRingEl.remove();
+      staticRingEl = null;
     }
   }
 
@@ -165,6 +217,7 @@ export function initDeepSea() {
       onMove(x, y) {
         holdX = x;
         holdY = y;
+        positionStaticRing();
       },
       onUp() {
         stopRipples();
