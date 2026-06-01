@@ -90,10 +90,20 @@ body.light-appearance .skip-link {
 }
 
 /* ── Keyboard Focus Rings ── */
+/* Explicit width + style so the ring doesn't fall back to the UA
+   default (which varies and can be near-invisible on busy canvas
+   backgrounds).  The box-shadow adds a soft dark halo *outside* the
+   bright outline so the ring reads against both light and dark
+   surfaces without depending on the page color behind it. */
 :focus-visible {
-  outline-color: rgb(var(--theme-glow));
+  outline: 2px solid rgb(var(--theme-glow));
   outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.35);
+  border-radius: 2px;
   animation: focusPulse 2s ease-in-out infinite;
+}
+body.light-appearance :focus-visible {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55);
 }
 @keyframes focusPulse {
   0%,
