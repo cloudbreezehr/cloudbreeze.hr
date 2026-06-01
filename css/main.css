@@ -5837,3 +5837,32 @@ body.light-appearance .achievement-badge {
     max-width: none;
   }
 }
+
+/* ── Print ── */
+/* Strip every decorative / interactive surface so a printed page is
+   just the readable content.  The canvas, overlays, custom cursor, and
+   Cloudlog chrome carry zero print value and would either waste ink or
+   render as empty boxes. */
+@media print {
+  #bg-canvas,
+  #cursor,
+  #cursor-ring,
+  .skip-link,
+  .achievement-btn,
+  .achievement-panel,
+  .achievement-toast-container,
+  .achievement-tooltip,
+  .achievement-pulse-ring,
+  .konami-confirm-prompt,
+  .first-paint-mote,
+  footer::after {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .page {
+    color: #000 !important;
+  }
+}
