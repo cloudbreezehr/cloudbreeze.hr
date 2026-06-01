@@ -137,6 +137,7 @@ const MODULES = [
       ),
   },
   { path: "./effects/footer-hint.js", init: (m) => m.initFooterHint() },
+  { path: "./effects/footer-year.js", init: (m) => m.initFooterYear() },
   {
     path: "./effects/first-paint-mote.js",
     init: (m) => m.initFirstPaintMote(),
