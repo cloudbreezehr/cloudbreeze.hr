@@ -5876,3 +5876,34 @@ body.light-appearance .achievement-badge {
     color: #000 !important;
   }
 }
+
+/* ── Reduced transparency ── */
+/* Honors the OS "reduce transparency" preference: drop every blur and
+   make the glassy chrome opaque so text never sits over a see-through
+   busy canvas.  backdrop-filter is killed globally (it's the whole
+   point of the preference); the key floating surfaces get a solid fill
+   to replace the alpha they were leaning on. */
+@media (prefers-reduced-transparency: reduce) {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .achievement-panel,
+  .achievement-toast,
+  .achievement-tooltip,
+  .achievement-toast-queue-counter,
+  .achievement-activation-toast,
+  .konami-confirm-prompt,
+  .skip-link {
+    background: rgb(var(--ink-rgb)) !important;
+  }
+  body.light-appearance .achievement-panel,
+  body.light-appearance .achievement-toast,
+  body.light-appearance .achievement-tooltip,
+  body.light-appearance .achievement-toast-queue-counter,
+  body.light-appearance .achievement-activation-toast,
+  body.light-appearance .konami-confirm-prompt,
+  body.light-appearance .skip-link {
+    background: rgb(240, 247, 255) !important;
+  }
+}
