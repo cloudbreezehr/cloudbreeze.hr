@@ -71,14 +71,24 @@ export function hideNavButton() {
   if (navBtn) navBtn.style.display = "none";
 }
 
+// Past this, the badge shows "N+" instead of the exact count — a
+// two-glyph cap keeps the badge from ballooning the button's hit area.
+const BADGE_MAX_DISPLAY = 9;
+
 export function updateBadge() {
   if (badgeEl) {
     const count = storage.getUnseenCount();
-    badgeEl.textContent = String(count);
+    badgeEl.textContent =
+      count > BADGE_MAX_DISPLAY ? `${BADGE_MAX_DISPLAY}+` : String(count);
     if (count > 0) {
       badgeEl.classList.add("visible");
+      const noun = count === 1 ? "achievement" : "achievements";
+      badgeEl.setAttribute("aria-label", `${count} unread ${noun}`);
+      badgeEl.setAttribute("role", "status");
     } else {
       badgeEl.classList.remove("visible");
+      badgeEl.removeAttribute("aria-label");
+      badgeEl.removeAttribute("role");
     }
     if (navBtn) {
       navBtn.setAttribute(

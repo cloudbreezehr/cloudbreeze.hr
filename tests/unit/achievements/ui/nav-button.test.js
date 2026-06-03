@@ -108,6 +108,19 @@ describe("achievements/ui/nav-button", () => {
     expect(btn.getAttribute("data-tooltip")).toEqual("Cloudlog (1 new)");
   });
 
+  it("clamps the badge to 9+ past nine unseen and sets an aria-label", async () => {
+    const storage = await import("../../../../js/achievements/storage.js");
+    const { ACHIEVEMENTS } =
+      await import("../../../../js/achievements/registry.js");
+    mod.createNavButton(() => {});
+    const badge = mod.getNavBtnEl().querySelector(".achievement-badge");
+    // Unlock more than the display cap, leaving them all unseen.
+    for (const ach of ACHIEVEMENTS.slice(0, 12)) storage.unlock(ach.id);
+    mod.updateBadge();
+    expect(badge.textContent).toEqual("9+");
+    expect(badge.getAttribute("aria-label")).toMatch(/unread achievements$/);
+  });
+
   it("updateBadge invokes the onBadgeChange callback", () => {
     const onBadgeChange = vi.fn();
     mod.createNavButton(() => {}, { onBadgeChange });
