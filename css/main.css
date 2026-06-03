@@ -5907,3 +5907,39 @@ body.light-appearance .achievement-badge {
     background: rgb(240, 247, 255) !important;
   }
 }
+
+/* ── Forced colors (Windows high-contrast) ── */
+/* Under forced-colors the UA replaces our palette with system colors,
+   and backdrop-filters render as solid blocks.  Drop the decorative
+   blur, keep semantic distinctions (unlocked vs locked) via system
+   color keywords, and make sure focus stays visible. */
+@media (forced-colors: active) {
+  .achievement-panel,
+  .achievement-toast,
+  .achievement-tooltip {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .achievement-card.unlocked .achievement-card-title {
+    color: CanvasText;
+  }
+  .achievement-card.locked .achievement-card-title,
+  .achievement-card.hidden-ach .achievement-card-title {
+    color: GrayText;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight;
+  }
+}
+
+/* ── Reduced motion: also calm static glow ── */
+/* prefers-reduced-motion frequently doubles as "I want less visual
+   noise."  Dropping the text-shadow halo under the same preference
+   removes the glow these headings carry by default. */
+@media (prefers-reduced-motion: reduce) {
+  .hero-title,
+  .logo-text,
+  .nav-logo {
+    text-shadow: none !important;
+  }
+}
