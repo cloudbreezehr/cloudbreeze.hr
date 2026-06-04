@@ -172,6 +172,19 @@ describe("achievements/ui/panel", () => {
       expect(pointsEl.textContent).toMatch(/\d+ pts$/);
     });
 
+    it("shows the last-unlocked caption once something is unlocked", () => {
+      storage.unlock("first-light");
+      mod.openPanel();
+      const caption = document.querySelector(".achievement-last-unlocked");
+      expect(caption.textContent).toContain("Last:");
+    });
+
+    it("leaves the last-unlocked caption empty with zero unlocks", () => {
+      mod.openPanel();
+      const caption = document.querySelector(".achievement-last-unlocked");
+      expect(caption.textContent).toEqual("");
+    });
+
     it("paints the overall progress strip with a width and aria value", () => {
       storage.unlock("first-light");
       mod.openPanel();

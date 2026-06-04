@@ -6,9 +6,10 @@
 // wiring — and the configure* calls that wire sibling submodules to
 // the live panel element.
 
-import { ACHIEVEMENTS, sumPoints } from "../registry.js";
+import { ACHIEVEMENTS, sumPoints, getAchievement } from "../registry.js";
 import * as storage from "../storage.js";
 import * as activityLog from "../activity-log.js";
+import { paintRelativeTime } from "../../time-ago.js";
 import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
@@ -106,6 +107,33 @@ function paintProgressStrip(strip) {
   strip.setAttribute("aria-valuemax", "100");
   strip.setAttribute("aria-valuenow", String(pct));
   strip.setAttribute("aria-label", `${pct}% of achievements unlocked`);
+}
+
+// Paint the "Last: <title> · <relative time>" caption from the most
+// recently unlocked achievement.  Stays empty (and display:none via the
+// :empty CSS) when nothing's unlocked yet.
+function paintLastUnlocked(el) {
+  if (!el) return;
+  const unlocked = storage.getUnlocked();
+  if (unlocked.length === 0) {
+    el.textContent = "";
+    return;
+  }
+  // getUnlocked() preserves insertion order, so the last entry is the
+  // most recent unlock.
+  const latest = unlocked[unlocked.length - 1];
+  const ach = getAchievement(latest.id);
+  if (!ach) {
+    el.textContent = "";
+    return;
+  }
+  el.textContent = "";
+  const label = document.createElement("span");
+  label.textContent = `Last: ${ach.title} · `;
+  const time = document.createElement("span");
+  paintRelativeTime(time, latest.ts);
+  el.appendChild(label);
+  el.appendChild(time);
 }
 
 // ── Panel ──
@@ -276,6 +304,12 @@ function buildPanel(onHide) {
   progressStrip.appendChild(progressFill);
   paintProgressStrip(progressStrip);
 
+  // "Last: <title> · 2m ago" session-context caption.  Hidden until the
+  // first unlock exists; paintLastUnlocked owns visibility + content.
+  const lastUnlocked = document.createElement("div");
+  lastUnlocked.className = "achievement-last-unlocked";
+  paintLastUnlocked(lastUnlocked);
+
   const closeBtn = document.createElement("button");
   closeBtn.className = "achievement-close";
   closeBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M4 12l8-8"/></svg>`;
@@ -284,6 +318,7 @@ function buildPanel(onHide) {
   header.appendChild(titleRow);
   header.appendChild(closeBtn);
   header.appendChild(progressStrip);
+  header.appendChild(lastUnlocked);
 
   // Hint toggle — reveals descriptions on hidden achievements + tooltip clues on all locked
   const hintToggle = document.createElement("label");
@@ -409,6 +444,7 @@ export function refreshPanel() {
   const pointsEl = panelEl.querySelector(".achievement-points-total");
   if (pointsEl) pointsEl.textContent = `${totalPoints()} pts`;
   paintProgressStrip(panelEl.querySelector(".achievement-progress-strip"));
+  paintLastUnlocked(panelEl.querySelector(".achievement-last-unlocked"));
   const countEl = panelEl.querySelector(".achievement-count-total");
   if (countEl) {
     const unlocked = storage.getUnlocked().length;
