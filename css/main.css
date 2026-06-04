@@ -4226,6 +4226,29 @@ nav.nav-light .achievement-btn::after {
   }
 }
 
+/* Locked-card click shake — "nothing happens here yet". */
+.achievement-card.shake {
+  animation: card-shake 0.3s ease-in-out;
+}
+@keyframes card-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
 .achievement-toast[data-rarity="epic"].clicked {
   animation: card-pop-epic 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

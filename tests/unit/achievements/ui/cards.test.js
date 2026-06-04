@@ -174,6 +174,16 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("unseen")).toBe(true);
     });
 
+    it("shakes a locked card on click instead of navigating", () => {
+      mod.renderSections(container);
+      const card = container.querySelector(
+        ".achievement-card.locked[data-id], .achievement-card.hidden-ach[data-id]",
+      );
+      expect(card).not.toBeNull();
+      card.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(card.classList.contains("shake")).toBe(true);
+    });
+
     it("tags cards whose hover will surface a hint with data-has-hint", () => {
       // first-light is non-hidden and has a hint — when locked, the
       // hint is gated behind reveal-hints (so data-has-hint stays

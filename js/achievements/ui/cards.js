@@ -542,9 +542,13 @@ export function renderSections(container) {
 
       // Unlocked cards route to their activity-log entry — the click
       // jumps to the Activity tab and scrolls the matching row into
-      // view.
+      // view.  Locked cards aren't navigable, but a click still gets a
+      // tiny shake so the input doesn't feel ignored ("nothing here
+      // yet").
       if (isUnlocked) {
         bindClickable(card, () => onCardClick(card, ach.id));
+      } else {
+        card.addEventListener("click", () => shakeCard(card));
       }
 
       // Hint tooltip on hover. The text shown depends on lock/hidden state
@@ -582,6 +586,18 @@ function onCardClick(card, achievementId) {
     },
   );
   _scrollToActivityEntryFor(achievementId, "achievement-unlocked");
+}
+
+// One-shot horizontal shake for a click on a locked card — input
+// acknowledgment, not navigation.  Strip-then-add restarts the
+// keyframe on rapid repeat clicks.
+function shakeCard(card) {
+  card.classList.remove("shake");
+  void card.offsetHeight;
+  card.classList.add("shake");
+  card.addEventListener("animationend", () => card.classList.remove("shake"), {
+    once: true,
+  });
 }
 
 // Refresh a single card in-place when it unlocks while panel is open
