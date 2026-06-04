@@ -171,6 +171,19 @@ describe("achievements/ui/panel", () => {
       const pointsEl = document.querySelector(".achievement-points-total");
       expect(pointsEl.textContent).toMatch(/\d+ pts$/);
     });
+
+    it("paints the overall progress strip with a width and aria value", () => {
+      storage.unlock("first-light");
+      mod.openPanel();
+      const strip = document.querySelector(".achievement-progress-strip");
+      const fill = strip.querySelector(".achievement-progress-strip-fill");
+      expect(strip.getAttribute("role")).toEqual("progressbar");
+      // At least one unlock → non-zero percentage.
+      expect(parseInt(strip.getAttribute("aria-valuenow"), 10)).toBeGreaterThan(
+        0,
+      );
+      expect(fill.style.width).toMatch(/%$/);
+    });
   });
 
   describe("closePanel", () => {

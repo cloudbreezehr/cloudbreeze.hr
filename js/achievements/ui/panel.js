@@ -91,6 +91,23 @@ function totalPoints() {
   return sumPoints(storage.getUnlocked());
 }
 
+// Paint the overall-completion strip: fill width = unlocked / total,
+// plus an accessible label.  Re-callable so refreshPanel keeps it
+// current as unlocks land.
+function paintProgressStrip(strip) {
+  if (!strip) return;
+  const fill = strip.querySelector(".achievement-progress-strip-fill");
+  const unlocked = storage.getUnlocked().length;
+  const total = ACHIEVEMENTS.length;
+  const pct = total > 0 ? Math.round((unlocked / total) * 100) : 0;
+  if (fill) fill.style.width = `${pct}%`;
+  strip.setAttribute("role", "progressbar");
+  strip.setAttribute("aria-valuemin", "0");
+  strip.setAttribute("aria-valuemax", "100");
+  strip.setAttribute("aria-valuenow", String(pct));
+  strip.setAttribute("aria-label", `${pct}% of achievements unlocked`);
+}
+
 // ── Panel ──
 
 export function openPanel(onHide) {
@@ -249,6 +266,16 @@ function buildPanel(onHide) {
   titleRow.appendChild(title);
   titleRow.appendChild(pointsEl);
 
+  // Overall completion strip — turns the bare "12/26" count into a
+  // glanceable "you're ~46% there" bar.  Width driven inline so the
+  // single source of truth is the unlocked/total ratio.
+  const progressStrip = document.createElement("div");
+  progressStrip.className = "achievement-progress-strip";
+  const progressFill = document.createElement("div");
+  progressFill.className = "achievement-progress-strip-fill";
+  progressStrip.appendChild(progressFill);
+  paintProgressStrip(progressStrip);
+
   const closeBtn = document.createElement("button");
   closeBtn.className = "achievement-close";
   closeBtn.innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M4 12l8-8"/></svg>`;
@@ -256,6 +283,7 @@ function buildPanel(onHide) {
 
   header.appendChild(titleRow);
   header.appendChild(closeBtn);
+  header.appendChild(progressStrip);
 
   // Hint toggle — reveals descriptions on hidden achievements + tooltip clues on all locked
   const hintToggle = document.createElement("label");
@@ -380,6 +408,7 @@ export function refreshPanel() {
   // Update points and count
   const pointsEl = panelEl.querySelector(".achievement-points-total");
   if (pointsEl) pointsEl.textContent = `${totalPoints()} pts`;
+  paintProgressStrip(panelEl.querySelector(".achievement-progress-strip"));
   const countEl = panelEl.querySelector(".achievement-count-total");
   if (countEl) {
     const unlocked = storage.getUnlocked().length;
