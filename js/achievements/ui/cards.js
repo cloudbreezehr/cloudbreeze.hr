@@ -46,7 +46,11 @@ const SEGMENTED_PROGRESS_MAX = 10;
 export const INTRO_CARD_THRESHOLD = 10;
 
 // ── State ──
-let revealHints = false;
+const REVEAL_HINTS_PREF = "revealHints";
+// Seed from the persisted preference so an explicit opt-in survives
+// reloads.  Defaults off — the discovery layer stays intact for new
+// visitors.
+let revealHints = storage.getPref(REVEAL_HINTS_PREF, false);
 let _seenObserver = null;
 let _seenTimers = new Map();
 // Last-rendered progress per key.  A subsequent render with a higher
@@ -92,6 +96,7 @@ export function getRevealHints() {
 
 export function setRevealHints(value) {
   revealHints = !!value;
+  storage.setPref(REVEAL_HINTS_PREF, revealHints);
   _refreshPanel();
 }
 

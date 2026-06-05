@@ -153,6 +153,24 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("preferences", () => {
+    it("getPref returns the fallback when unset", () => {
+      expect(storage.getPref("revealHints", false)).toBe(false);
+      expect(storage.getPref("missing", "x")).toBe("x");
+    });
+
+    it("setPref persists and round-trips through a reload", async () => {
+      storage.setPref("revealHints", true);
+      expect(storage.getPref("revealHints", false)).toBe(true);
+      storage.saveNow();
+      // Re-read from a fresh module instance to confirm it persisted.
+      vi.resetModules();
+      const fresh = await import("../../../js/achievements/storage.js");
+      fresh.load();
+      expect(fresh.getPref("revealHints", false)).toBe(true);
+    });
+  });
+
   describe("progress items", () => {
     it("getProgressItems returns empty array for unknown key", () => {
       expect(storage.getProgressItems("nothing")).toEqual([]);

@@ -27,6 +27,10 @@ function defaultState() {
     },
     progress: {},
     relocked: [],
+    // Free-form UI preferences that should survive reloads (reveal-hints
+    // toggle, compact density, …).  Additive bag so adding a pref is a
+    // getPref/setPref call with no schema bump.
+    prefs: {},
   };
 }
 
@@ -72,6 +76,9 @@ function read() {
       state.progress = parsed.progress;
     }
     if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;
+    if (parsed.prefs && typeof parsed.prefs === "object") {
+      Object.assign(state.prefs, parsed.prefs);
+    }
     return state;
   } catch {
     return defaultState();
@@ -173,6 +180,21 @@ export function markSeen(id) {
 export function getUnseenCount() {
   const state = getState();
   return state.unlocked.filter((u) => !state.seen.includes(u.id)).length;
+}
+
+// ── UI preferences ──
+// Generic persisted-preference bag.  getPref returns `fallback` when
+// the key was never set so callers state their own default inline.
+export function getPref(key, fallback = null) {
+  const prefs = getState().prefs || {};
+  return key in prefs ? prefs[key] : fallback;
+}
+
+export function setPref(key, value) {
+  const state = getState();
+  if (!state.prefs) state.prefs = {};
+  state.prefs[key] = value;
+  save();
 }
 
 export function getCounter(key) {
