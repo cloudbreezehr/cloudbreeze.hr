@@ -3669,6 +3669,28 @@ nav.nav-light .achievement-btn::after {
 .achievement-mark-read:hover {
   color: rgba(255, 255, 255, 0.6);
 }
+.achievement-density-btn {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.3);
+  background: none;
+  border: none;
+  padding: 0;
+  transition: color 0.2s;
+}
+.achievement-density-btn:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Compact density — collapse card descriptions and tighten padding so
+   more cards fit per screen.  The progress bar + title + points stay. */
+.achievement-panel.compact .achievement-card-desc {
+  display: none;
+}
+.achievement-panel.compact .achievement-card {
+  padding: 0.3rem 0.5rem;
+  gap: 0.45rem;
+}
 
 /* ── Tabs ── */
 /* Horizontal tab row between the Cloudlog header and the scrollable body.

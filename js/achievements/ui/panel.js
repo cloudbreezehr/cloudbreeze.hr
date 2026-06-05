@@ -42,6 +42,7 @@ import {
 
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
+const COMPACT_PREF = "compactCards";
 
 // ── State ──
 let panelEl = null;
@@ -275,6 +276,8 @@ export function isPanelOpen() {
 function buildPanel(onHide) {
   const panel = document.createElement("div");
   panel.className = "achievement-panel";
+  // Restore the persisted density preference so it survives reloads.
+  if (storage.getPref(COMPACT_PREF, false)) panel.classList.add("compact");
 
   // Header
   const header = document.createElement("div");
@@ -343,6 +346,24 @@ function buildPanel(onHide) {
   markReadBtn.textContent = "Mark all read";
   markReadBtn.addEventListener("click", markAllSeen);
   headerControls.appendChild(markReadBtn);
+
+  // Density toggle — collapses card descriptions for a denser list.
+  // The label names the action it performs (a SR user hears the same
+  // thing a sighted one reads), so no aria-pressed: pairing "pressed"
+  // with an action verb ("Comfortable, pressed") reads as a contradiction.
+  const densityBtn = document.createElement("button");
+  densityBtn.className = "achievement-density-btn";
+  densityBtn.title = "Toggle compact list";
+  densityBtn.textContent = panel.classList.contains("compact")
+    ? "Comfortable"
+    : "Compact";
+  densityBtn.addEventListener("click", () => {
+    const compact = !panel.classList.contains("compact");
+    panel.classList.toggle("compact", compact);
+    storage.setPref(COMPACT_PREF, compact);
+    densityBtn.textContent = compact ? "Comfortable" : "Compact";
+  });
+  headerControls.appendChild(densityBtn);
 
   header.appendChild(headerControls);
 

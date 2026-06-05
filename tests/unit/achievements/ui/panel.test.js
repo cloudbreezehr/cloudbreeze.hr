@@ -172,6 +172,17 @@ describe("achievements/ui/panel", () => {
       expect(pointsEl.textContent).toMatch(/\d+ pts$/);
     });
 
+    it("toggles compact density and persists the preference", async () => {
+      const storageMod = await import("../../../../js/achievements/storage.js");
+      mod.openPanel();
+      const panel = getPanel();
+      const btn = panel.querySelector(".achievement-density-btn");
+      expect(panel.classList.contains("compact")).toBe(false);
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(panel.classList.contains("compact")).toBe(true);
+      expect(storageMod.getPref("compactCards", false)).toBe(true);
+    });
+
     it("shows the last-unlocked caption once something is unlocked", () => {
       storage.unlock("first-light");
       mod.openPanel();
