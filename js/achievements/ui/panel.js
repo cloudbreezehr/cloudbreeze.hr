@@ -235,6 +235,10 @@ export function closePanel() {
   panelOpen = false;
   setNavActive(false);
 
+  // Stamp the close time so the next open can highlight unlocks earned
+  // in the interim.
+  storage.setPref(storage.LAST_PANEL_CLOSE_PREF, Date.now());
+
   // Snapshot scroll positions before the close animation runs so a
   // subsequent open restores the user's last view per tab.
   for (const tab of ["achievements", "activity"]) {

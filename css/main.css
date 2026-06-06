@@ -4340,6 +4340,23 @@ nav.nav-light .achievement-btn::after {
   }
 }
 
+/* One-shot pop-in for cards unlocked since the panel last closed —
+   forwards fill so the card settles at its resting state after. */
+.achievement-card.just-unlocked {
+  animation: achievement-card-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)
+    backwards;
+}
+@keyframes achievement-card-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .achievement-icon {
   flex-shrink: 0;
   width: 24px;

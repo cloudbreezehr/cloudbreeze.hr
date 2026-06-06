@@ -185,6 +185,11 @@ export function getUnseenCount() {
 // ── UI preferences ──
 // Generic persisted-preference bag.  getPref returns `fallback` when
 // the key was never set so callers state their own default inline.
+
+// Timestamp of the last panel close — read to decide which cards count
+// as "earned while you were away" and should animate in on reopen.
+export const LAST_PANEL_CLOSE_PREF = "lastPanelCloseTs";
+
 export function getPref(key, fallback = null) {
   const prefs = getState().prefs || {};
   return key in prefs ? prefs[key] : fallback;

@@ -391,6 +391,11 @@ export function renderSections(container) {
     container.appendChild(buildIntroCard());
   }
 
+  // Snapshot the last-close stamp once per render so every card in this
+  // pass compares against the same boundary.  Null (never closed) means
+  // no card is "new since last time".
+  const sinceTs = storage.getPref(storage.LAST_PANEL_CLOSE_PREF, null);
+
   for (const set of SETS) {
     // Theme sets: only show if user has at least one unlocked
     if (isThemeSet(set.id) && !hasAnyInSet(set.id)) continue;
@@ -463,6 +468,13 @@ export function renderSections(container) {
       if (isUnlocked) {
         card.classList.add("unlocked");
         if (isUnseen) card.classList.add("unseen");
+        // One-shot reveal for unlocks earned since the panel last
+        // closed.  Fresh DOM each render means the keyframe plays once
+        // per open without a replay guard.
+        if (sinceTs != null) {
+          const ts = storage.getUnlockTime(ach.id);
+          if (ts && ts > sinceTs) card.classList.add("just-unlocked");
+        }
       } else if (isRelocked) {
         card.classList.add("relocked");
       } else if (ach.hidden) {

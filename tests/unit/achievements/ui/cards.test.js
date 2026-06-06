@@ -174,6 +174,27 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("unseen")).toBe(true);
     });
 
+    it("flags cards unlocked since the last panel close with just-unlocked", () => {
+      // Stamp a close boundary in the past, then unlock after it.
+      storage.setPref("lastPanelCloseTs", 1000);
+      vi.setSystemTime(new Date(5000));
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.classList.contains("just-unlocked")).toBe(true);
+    });
+
+    it("does not flag just-unlocked when there is no prior close stamp", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.classList.contains("just-unlocked")).toBe(false);
+    });
+
     it("shakes a locked card on click instead of navigating", () => {
       mod.renderSections(container);
       const card = container.querySelector(
