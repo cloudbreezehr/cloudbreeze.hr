@@ -10,6 +10,10 @@ import { hideHintTooltip } from "./tooltip.js";
 
 // ── State ──
 let activeTab = "achievements";
+// Last-painted badge count per source, so updateTabBadges can pulse the
+// badge only when the count actually grows (a new arrival), not on
+// every incidental repaint.
+const _lastBadgeCount = new Map();
 
 // Panel is owned by the facade; tabs reads it via an injected getter
 // so it can cope with null (before buildPanel runs) without importing
@@ -110,6 +114,15 @@ export function updateTabBadges() {
     else if (source === "achievements") count = storage.getUnseenCount();
     badge.textContent = String(count);
     badge.classList.toggle("visible", count > 0);
+    // Pulse once when the count grew since the last paint — a new
+    // unlock/entry arrived while the panel was open.
+    const prev = _lastBadgeCount.get(source) ?? 0;
+    if (count > prev) {
+      badge.classList.remove("pulse");
+      void badge.offsetWidth;
+      badge.classList.add("pulse");
+    }
+    _lastBadgeCount.set(source, count);
   });
 }
 
@@ -117,4 +130,5 @@ export function updateTabBadges() {
 export function _resetForTests() {
   activeTab = "achievements";
   _getPanelEl = () => null;
+  _lastBadgeCount.clear();
 }

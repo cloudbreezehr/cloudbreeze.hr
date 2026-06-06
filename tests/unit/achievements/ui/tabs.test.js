@@ -175,6 +175,30 @@ describe("achievements/ui/tabs", () => {
       expect(actBadge.classList.contains("visible")).toBe(true);
     });
 
+    it("pulses a badge only when its count grows", () => {
+      const { tabBar } = buildPanelDom();
+      tabBar.appendChild(
+        mod.buildTabButton("achievements", "Achievements", "achievements"),
+      );
+      const badge = tabBar.querySelector(
+        '[data-tab="achievements"] .achievement-tab-badge',
+      );
+
+      // First paint establishes the baseline at 0 → no pulse.
+      mod.updateTabBadges();
+      expect(badge.classList.contains("pulse")).toBe(false);
+
+      // A new unlock grows the count → pulse fires.
+      storage.unlock("first-light");
+      mod.updateTabBadges();
+      expect(badge.classList.contains("pulse")).toBe(true);
+
+      // Re-paint with no growth → no fresh pulse (class stripped).
+      badge.classList.remove("pulse");
+      mod.updateTabBadges();
+      expect(badge.classList.contains("pulse")).toBe(false);
+    });
+
     it("no-ops when no panel is configured", () => {
       panelEl = null;
       expect(() => mod.updateTabBadges()).not.toThrow();
