@@ -29,7 +29,7 @@ import {
   destroyToastContainer,
 } from "./ui/toast.js";
 import { refreshCard, destroySeenObserver } from "./ui/cards.js";
-import { updateTabBadges } from "./ui/tabs.js";
+import { updateTabBadges, setActiveTab, getActiveTab } from "./ui/tabs.js";
 import {
   openPanel,
   closePanel,
@@ -50,6 +50,8 @@ export function createNavButton(onPanelToggle) {
 export { updateBadge, showNavButton, hideNavButton, markRevealPulseFired };
 
 export { openPanel, closePanel, isPanelOpen };
+
+export { setActiveTab, getActiveTab };
 
 export {
   buildAchievementToast,

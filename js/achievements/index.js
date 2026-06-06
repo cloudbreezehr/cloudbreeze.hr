@@ -14,6 +14,8 @@ import {
   showActivationToast,
   showActivationPulse,
   markRevealPulseFired,
+  setActiveTab,
+  getActiveTab,
   onAchievementUnlocked,
   onAchievementRelocked,
 } from "./ui.js";
@@ -178,6 +180,40 @@ export function initAchievements() {
       );
     }
   });
+
+  // While the panel is open, [ and ] swap tabs without leaving the
+  // keyboard.  No-op when the panel is closed so the keys stay free for
+  // anything else.
+  const TABS_ORDER = ["achievements", "activity"];
+  function stepTab(delta) {
+    if (!isPanelOpen()) return;
+    const i = TABS_ORDER.indexOf(getActiveTab());
+    if (i === -1) return;
+    const next =
+      TABS_ORDER[(i + delta + TABS_ORDER.length) % TABS_ORDER.length];
+    setActiveTab(next);
+  }
+  onKey("[", () => stepTab(-1));
+  onKey("]", () => stepTab(1));
+
+  // Hash deep-links: #cloudlog-activity / #cloudlog-achievements open
+  // the panel directly to a tab (shareable "look what I unlocked" URLs).
+  function openFromHash() {
+    const hash = window.location.hash;
+    const tab = hash === "#cloudlog-activity" ? "activity" : "achievements";
+    if (hash !== "#cloudlog-activity" && hash !== "#cloudlog-achievements")
+      return;
+    if (!storage.isActive()) return;
+    if (!isPanelOpen()) {
+      openPanel(() => {
+        storage.setHidden(true);
+        hideNavButton();
+      });
+    }
+    setActiveTab(tab);
+  }
+  window.addEventListener("hashchange", openFromHash);
+  openFromHash();
 
   createTripleClickDetector(document, (e) => activate(e.clientX, e.clientY));
 }
