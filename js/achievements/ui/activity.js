@@ -89,7 +89,23 @@ export function renderActivity(container) {
     if (!isTrash && entries.length <= INTRO_HINT_THRESHOLD) {
       list.appendChild(buildIntroHint());
     }
+    // Active entries get date-bucket headers (Today / Yesterday / This
+    // week / Earlier) so a long log scans by recency.  Trash stays a
+    // flat list — it's already small and time-bucketing dismissals adds
+    // noise.
+    //
+    // Single-pass header emission relies on entries arriving newest-first
+    // (descending timestamp) — getActive() guarantees this, so each bucket
+    // is contiguous and emits its header exactly once.
+    let lastBucket = null;
     for (const entry of entries) {
+      if (!isTrash) {
+        const bucket = ageBucket(entry.timestamp);
+        if (bucket !== lastBucket) {
+          list.appendChild(buildGroupHeader(bucket));
+          lastBucket = bucket;
+        }
+      }
       const row = renderActivityEntry(entry, { trash: isTrash });
       if (row) list.appendChild(row);
     }
@@ -125,6 +141,31 @@ function buildIntroHint() {
   hint.className = "activity-intro-hint";
   hint.textContent = "Your discoveries appear here in order, newest first.";
   return hint;
+}
+
+const DAY_MS = 86400000;
+
+// Bucket an entry timestamp into a coarse recency band.  Uses calendar
+// day boundaries (local midnight) rather than rolling 24h windows so
+// "Today"/"Yesterday" match the user's intuition.
+function ageBucket(ts) {
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  if (ts >= startOfToday) return "Today";
+  if (ts >= startOfToday - DAY_MS) return "Yesterday";
+  if (ts >= startOfToday - 7 * DAY_MS) return "This week";
+  return "Earlier";
+}
+
+function buildGroupHeader(label) {
+  const h = document.createElement("div");
+  h.className = "activity-group-header";
+  h.textContent = label;
+  return h;
 }
 
 // Build a single activity-log row.  `opts.trash` selects between the

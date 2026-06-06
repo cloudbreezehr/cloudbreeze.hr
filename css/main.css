@@ -3837,6 +3837,27 @@ nav.nav-light .achievement-btn::after {
   gap: 0.5rem;
 }
 
+/* Date-bucket header (Today / Yesterday / …).  Sticks to the top of the
+   scroll container so the active band stays labeled while scrolling. */
+.activity-group-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.3rem 0.2rem 0.2rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(var(--ink-rgb), 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+body.light-appearance .activity-group-header {
+  color: rgba(var(--ink-rgb), 0.45);
+  background: rgba(240, 247, 255, 0.92);
+}
+
 /* Onboarding hint shown above the activity list while the user is still
    in the discovery phase.  Slimmer than the Achievements-tab intro card
    so it reads as a tip, not a peer of the entries below it. */

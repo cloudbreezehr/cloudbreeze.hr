@@ -86,6 +86,13 @@ describe("achievements/ui/activity", () => {
       expect(container.querySelectorAll(".activity-row").length).toEqual(2);
     });
 
+    it("emits a 'Today' date-group header for fresh entries", () => {
+      mod.renderActivity(container);
+      const headers = container.querySelectorAll(".activity-group-header");
+      expect(headers.length).toBeGreaterThanOrEqual(1);
+      expect(headers[0].textContent).toEqual("Today");
+    });
+
     it("count uses singular/plural noun correctly", () => {
       mod.renderActivity(container);
       expect(container.querySelector(".activity-count").textContent).toEqual(
