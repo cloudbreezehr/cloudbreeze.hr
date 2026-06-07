@@ -437,6 +437,45 @@ export function showActivationToast(message) {
   }, ACTIVATION_TOAST_MS);
 }
 
+// ── Undo Toast ──
+// Confirmation + reversal for a just-performed action.  Auto-dismisses
+// like the activation toast, but carries an "Undo" button that fires the
+// supplied callback and clears the toast immediately.
+const UNDO_TOAST_MS = 5000;
+
+export function showUndoToast(message, onUndo) {
+  announce(message);
+  // Replace any existing undo toast so rapid dismissals don't stack.
+  const prior = document.querySelector(".achievement-undo-toast");
+  if (prior) prior.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "achievement-undo-toast";
+  const label = document.createElement("span");
+  label.textContent = message;
+  const btn = document.createElement("button");
+  btn.className = "achievement-undo-btn";
+  btn.textContent = "Undo";
+  toast.appendChild(label);
+  toast.appendChild(btn);
+  document.body.appendChild(toast);
+
+  let dismissTimer = null;
+  function dismiss() {
+    if (dismissTimer) clearTimeout(dismissTimer);
+    toast.classList.remove("visible");
+    setTimeout(() => toast.remove(), ACTIVATION_FADE_MS);
+  }
+  btn.addEventListener("click", () => {
+    if (onUndo) onUndo();
+    dismiss();
+  });
+
+  void toast.offsetHeight;
+  toast.classList.add("visible");
+  dismissTimer = setTimeout(dismiss, UNDO_TOAST_MS);
+}
+
 // ── Activation Pulse Ring ──
 
 export function showActivationPulse(x, y) {

@@ -145,6 +145,30 @@ describe("achievements/ui/activity", () => {
       expect(activityLog.getTrashedCount()).toEqual(1);
     });
 
+    it("dismiss shows an undo toast that restores the entry", () => {
+      mod.renderActivity(container);
+      const dismiss = container.querySelector(".activity-dismiss");
+      dismiss.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const toast = document.querySelector(".achievement-undo-toast");
+      expect(toast).not.toBeNull();
+      toast
+        .querySelector(".achievement-undo-btn")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(activityLog.getActive().length).toEqual(2);
+      expect(activityLog.getTrashedCount()).toEqual(0);
+    });
+
+    it("requires two clicks to clear all (confirm step)", () => {
+      mod.renderActivity(container);
+      const clearBtn = container.querySelector(".activity-clear");
+      clearBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      // Armed, not yet cleared.
+      expect(clearBtn.classList.contains("armed")).toBe(true);
+      expect(activityLog.getActive().length).toEqual(2);
+      clearBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(activityLog.getActive().length).toEqual(0);
+    });
+
     it("renders the intro hint while at or below the threshold", () => {
       mod.renderActivity(container);
       expect(container.querySelector(".activity-intro-hint")).not.toBeNull();
@@ -332,10 +356,10 @@ describe("achievements/ui/activity", () => {
       container
         .querySelector(".activity-trash-toggle")
         .dispatchEvent(new MouseEvent("click", { bubbles: true }));
-      // Empty it.
-      container
-        .querySelector(".activity-clear")
-        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      // Empty it — two clicks (arm + confirm) on the destructive action.
+      const emptyBtn = container.querySelector(".activity-clear");
+      emptyBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      emptyBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       // Re-render — the sub-view should have reset to "list" because
       // trash is now empty.
       mod.renderActivity(container);
@@ -346,15 +370,16 @@ describe("achievements/ui/activity", () => {
   });
 
   describe("clear all", () => {
-    it("soft-deletes every active entry into the trash", () => {
+    it("soft-deletes every active entry into the trash after confirm", () => {
       activityLog.log("achievement-unlocked", { achievementId: "first-light" });
       activityLog.log("achievement-unlocked", {
         achievementId: "cloud-reader",
       });
       mod.renderActivity(container);
-      container
-        .querySelector(".activity-clear")
-        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      const clearBtn = container.querySelector(".activity-clear");
+      // First click arms, second commits.
+      clearBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      clearBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
       expect(activityLog.getActive().length).toEqual(0);
       expect(activityLog.getTrashedCount()).toEqual(2);
     });

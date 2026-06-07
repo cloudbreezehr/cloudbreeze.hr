@@ -13,6 +13,7 @@ import {
   buildAchievementToast,
   wireToastClick,
   buildRelockToast,
+  showUndoToast,
 } from "./toast.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { INTRO_CARD_THRESHOLD } from "./cards.js";
@@ -27,6 +28,10 @@ import { bindClickable } from "../../clickable.js";
 export const INTRO_HINT_THRESHOLD = INTRO_CARD_THRESHOLD;
 
 let activitySubView = "list"; // "list" | "trash"
+
+// How long the "Clear all" / "Empty trash" button stays armed after the
+// first click before reverting to its resting label.
+const CONFIRM_WINDOW_MS = 3000;
 
 // Panel-facing hook injected by the facade — lets scroll-to-entry find
 // the live panel element without this module importing its parent.
@@ -64,10 +69,27 @@ export function renderActivity(container) {
 
   // Primary action — differs per sub-view.  List: soft-delete all
   // (entries go to trash).  Trash: hard-delete all (permanent purge).
+  // Both are bulk + destructive, so the first click arms a confirm
+  // state and the second within the window commits.
   const primaryBtn = document.createElement("button");
   primaryBtn.className = "activity-clear";
-  primaryBtn.textContent = isTrash ? "Empty trash" : "Clear all";
+  const restLabel = isTrash ? "Empty trash" : "Clear all";
+  primaryBtn.textContent = restLabel;
+  let armed = false;
+  let armTimer = null;
   primaryBtn.addEventListener("click", () => {
+    if (!armed) {
+      armed = true;
+      primaryBtn.textContent = "Sure?";
+      primaryBtn.classList.add("armed");
+      armTimer = setTimeout(() => {
+        armed = false;
+        primaryBtn.textContent = restLabel;
+        primaryBtn.classList.remove("armed");
+      }, CONFIRM_WINDOW_MS);
+      return;
+    }
+    if (armTimer) clearTimeout(armTimer);
     if (isTrash) activityLog.emptyTrash();
     else activityLog.clear();
   });
@@ -235,6 +257,9 @@ function renderActivityEntry(entry, opts = {}) {
     actionBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       activityLog.trash(entry.id);
+      // Offer a quick reversal so a misclick doesn't force a trip into
+      // the trash sub-view.
+      showUndoToast("Entry dismissed", () => activityLog.restore(entry.id));
     });
   }
   meta.appendChild(actionBtn);
