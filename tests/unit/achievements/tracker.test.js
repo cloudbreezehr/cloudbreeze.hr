@@ -764,6 +764,33 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
+  it("announces a non-silent theme activation to the live region", async () => {
+    await startTracker();
+    dispatchAchievement("theme-activate", { theme: "frozen" });
+    vi.advanceTimersByTime(100);
+    // resetModules across tests can leave stale (empty) live nodes in
+    // the DOM, so assert that *some* live region carries the message.
+    const announced = [
+      ...document.querySelectorAll('[aria-live="polite"]'),
+    ].some((el) => el.textContent.toLowerCase().includes("activated"));
+    expect(announced).toBe(true);
+  });
+
+  it("does not announce a silent theme activation", async () => {
+    await startTracker();
+    // Clear any text left in live regions by earlier tests so this
+    // assertion only sees what the silent dispatch produces (nothing).
+    document
+      .querySelectorAll('[aria-live="polite"]')
+      .forEach((el) => (el.textContent = ""));
+    dispatchAchievement("theme-activate", { theme: "frozen", silent: true });
+    vi.advanceTimersByTime(100);
+    const announced = [
+      ...document.querySelectorAll('[aria-live="polite"]'),
+    ].some((el) => el.textContent.toLowerCase().includes("frozen"));
+    expect(announced).toBe(false);
+  });
+
   it("records themes-activated across every theme for elemental progress", async () => {
     const { storage } = await startTracker();
 

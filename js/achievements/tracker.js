@@ -11,6 +11,8 @@ import {
   resolveProgressTotal,
 } from "./progress.js";
 import * as storage from "./storage.js";
+import { announce } from "./announcer.js";
+import { getTheme } from "../themes/registry.js";
 
 // ── Timing Constants ──
 // Window for the rapid-fire achievement — N clicks must land inside
@@ -366,6 +368,13 @@ export function createTracker(onUnlock, onRelock) {
 
     "theme-activate"(data) {
       if (!data || !data.theme) return;
+      // Announce visual theme changes to screen readers — the canvas
+      // and overlays are aria-hidden, so without this a theme swap is
+      // silent to SR users.  Skip programmatic (silent) activations.
+      if (!data.silent) {
+        const theme = getTheme(data.theme);
+        announce(`${theme?.label || data.theme} theme activated`);
+      }
       session.themesActivated.add(data.theme);
       storage.incrementCounter("totalThemeActivations");
 
@@ -404,6 +413,8 @@ export function createTracker(onUnlock, onRelock) {
       // achievement is reserved for users who discover the original
       // exit gesture.
       if (data.silent) return;
+      const theme = getTheme(data.theme);
+      announce(`${theme?.label || data.theme} theme deactivated`);
       const deactivateMap = {
         "deep-sea": "resurface",
         frozen: "thaw",
