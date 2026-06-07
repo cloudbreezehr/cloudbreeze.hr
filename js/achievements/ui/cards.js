@@ -387,9 +387,17 @@ function buildProgressBar(progressKey) {
 // ── Section renderer ──
 
 export function renderSections(container) {
+  // A refresh (unlock landing while the panel is open) rebuilds the whole
+  // view, recreating the search input.  Capture focus + caret off the old
+  // input before we replace it so typing isn't interrupted mid-keystroke.
+  const caret = captureSearchCaret(container);
+  container.innerHTML = "";
+
   if (storage.getUnlocked().length <= INTRO_CARD_THRESHOLD) {
     container.appendChild(buildIntroCard());
   }
+
+  container.appendChild(buildSearchBar(container));
 
   // Snapshot the last-close stamp once per render so every card in this
   // pass compares against the same boundary.  Null (never closed) means
@@ -589,6 +597,81 @@ export function renderSections(container) {
 
     container.appendChild(section);
   }
+
+  // Re-apply any persisted query so a refresh (unlock landing while the
+  // panel is open) doesn't reset an in-progress filter.
+  applySearchFilter(container);
+
+  restoreSearchCaret(container, caret);
+}
+
+// ── Search ──
+const _searchState = { query: "" };
+
+// Read focus + selection off the live search input, or null if it isn't
+// the focused element.  Used to carry typing state across a full rebuild.
+function captureSearchCaret(container) {
+  const input = container.querySelector(".achievement-search-input");
+  if (!input || document.activeElement !== input) return null;
+  return { start: input.selectionStart, end: input.selectionEnd };
+}
+
+// Re-focus the freshly built search input and restore the caret/selection
+// captured before the rebuild.  No-op when nothing was focused.
+function restoreSearchCaret(container, caret) {
+  if (!caret) return;
+  const input = container.querySelector(".achievement-search-input");
+  if (!input) return;
+  input.focus();
+  // type="search" reports null for selection in some engines; guard it.
+  if (caret.start != null) input.setSelectionRange(caret.start, caret.end);
+}
+
+// Build the live search input.  Keeps its value across re-renders via
+// _searchState so an unlock-driven refresh doesn't wipe what the user
+// typed.
+function buildSearchBar(container) {
+  const wrap = document.createElement("div");
+  wrap.className = "achievement-search";
+  const input = document.createElement("input");
+  input.type = "search";
+  input.className = "achievement-search-input";
+  input.placeholder = "Search achievements…";
+  input.setAttribute("aria-label", "Search achievements");
+  input.value = _searchState.query;
+  input.addEventListener("input", () => {
+    _searchState.query = input.value;
+    applySearchFilter(container);
+  });
+  wrap.appendChild(input);
+  return wrap;
+}
+
+// Hide cards whose title/description don't match the query, then hide
+// any section left with no visible cards.  Matches the rendered text
+// only, so locked-hidden cards (showing "???") match on "???" rather
+// than leaking their real title.
+function applySearchFilter(container) {
+  const q = _searchState.query.trim().toLowerCase();
+  container.querySelectorAll(".achievement-set").forEach((section) => {
+    let anyVisible = false;
+    section.querySelectorAll(".achievement-card[data-id]").forEach((card) => {
+      if (!q) {
+        card.classList.remove("search-hidden");
+        anyVisible = true;
+        return;
+      }
+      const title =
+        card.querySelector(".achievement-card-title")?.textContent || "";
+      const desc =
+        card.querySelector(".achievement-card-desc")?.textContent || "";
+      const match = (title + " " + desc).toLowerCase().includes(q);
+      card.classList.toggle("search-hidden", !match);
+      if (match) anyVisible = true;
+    });
+    // A section with no matching cards collapses out of the way.
+    section.classList.toggle("search-hidden", !!q && !anyVisible);
+  });
 }
 
 function onCardClick(card, achievementId) {
@@ -682,6 +765,7 @@ export function _resetForTests() {
   _refreshPanel = () => {};
   _scrollToActivityEntryFor = () => {};
   lastProgressShineSnapshot.clear();
+  _searchState.query = "";
   if (_themeStackListener) {
     window.removeEventListener("achievement", _themeStackListener);
     _themeStackListener = null;

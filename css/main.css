@@ -4095,6 +4095,35 @@ body.light-appearance .activity-group-header {
 
 /* ── Achievement Set ── */
 
+/* Live achievement search — filters cards by title/description. */
+.achievement-search {
+  margin-bottom: 0.5rem;
+}
+.achievement-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-family: "DM Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+}
+.achievement-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+body.light-appearance .achievement-search-input {
+  color: rgba(var(--ink-rgb), 0.85);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.achievement-card.search-hidden,
+.achievement-set.search-hidden {
+  display: none;
+}
+
 .achievement-set {
   display: flex;
   flex-direction: column;

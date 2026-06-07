@@ -482,11 +482,9 @@ export function refreshPanel() {
 
   // Re-render the Achievements view only — the Activity view is managed by
   // its own onChange subscription so rebuilding it here would double-render.
+  // renderSections clears the view itself (preserving search focus/caret).
   const achView = panelEl.querySelector(".achievement-view-achievements");
-  if (achView) {
-    achView.innerHTML = "";
-    renderSections(achView);
-  }
+  if (achView) renderSections(achView);
 
   // Re-observe new unseen cards after DOM rebuild
   observeUnseenCards();

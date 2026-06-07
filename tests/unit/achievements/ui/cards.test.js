@@ -174,9 +174,48 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("unseen")).toBe(true);
     });
 
+    it("filters cards live by the search query", () => {
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const input = container.querySelector(".achievement-search-input");
+      expect(input).not.toBeNull();
+      input.value = "zzzznomatch";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      const visible = [
+        ...container.querySelectorAll(".achievement-card[data-id]"),
+      ].filter((c) => !c.classList.contains("search-hidden"));
+      expect(visible.length).toEqual(0);
+      // Clearing the query restores everything.
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      const restored = [
+        ...container.querySelectorAll(".achievement-card[data-id]"),
+      ].filter((c) => !c.classList.contains("search-hidden"));
+      expect(restored.length).toBeGreaterThan(0);
+    });
+
+    it("keeps search focus and caret across an unlock-driven rebuild", () => {
+      document.body.appendChild(container);
+      mod.renderSections(container);
+      const input = container.querySelector(".achievement-search-input");
+      input.value = "clo";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.focus();
+      input.setSelectionRange(2, 2);
+
+      // Simulate the refresh path: re-render the same container in place.
+      mod.renderSections(container);
+
+      const rebuilt = container.querySelector(".achievement-search-input");
+      expect(document.activeElement).toBe(rebuilt);
+      expect(rebuilt.value).toBe("clo");
+      expect(rebuilt.selectionStart).toBe(2);
+      document.body.removeChild(container);
+    });
+
     it("flags cards unlocked since the last panel close with just-unlocked", () => {
       // Stamp a close boundary in the past, then unlock after it.
-      storage.setPref("lastPanelCloseTs", 1000);
+      storage.setPref(storage.LAST_PANEL_CLOSE_PREF, 1000);
       vi.setSystemTime(new Date(5000));
       storage.unlock("first-light");
       mod.renderSections(container);
