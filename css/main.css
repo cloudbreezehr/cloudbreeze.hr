@@ -2192,6 +2192,23 @@ body.light-appearance #cursor-ring {
 body.upside-down .page {
   transform: scaleY(-1);
 }
+/* Click shudder — composes with the flip by baking scaleY(-1) into each
+   keyframe so the page stays upside-down while it shakes. */
+body.upside-down .page.ud-shudder {
+  animation: ud-shudder 0.25s ease-in-out;
+}
+@keyframes ud-shudder {
+  0%,
+  100% {
+    transform: scaleY(-1) translateX(0) rotate(0);
+  }
+  25% {
+    transform: scaleY(-1) translateX(-2px) rotate(-0.5deg);
+  }
+  75% {
+    transform: scaleY(-1) translateX(2px) rotate(0.5deg);
+  }
+}
 
 /* Nav is moved out of .page during flip so sticky isn't broken by the transform.
    Pin it to the visual bottom, flipped to match the upside-down world. */

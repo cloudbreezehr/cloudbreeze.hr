@@ -214,8 +214,26 @@ export function initUpsideDown() {
       // burst, gated on the OS preference rather than dampened.
       if (reducedMotion) return;
       ud.pulseAlignment();
+      // A brief viewport shudder reinforces "the world is unstable".
+      // One-shot class on .page; strip-then-add restarts on rapid clicks.
+      shudderViewport();
     },
   });
+
+  // One-shot whole-page shudder for clicks under upside-down.  The .page
+  // element is what the upside-down flip transforms, so the shudder
+  // composes with the existing flip via a dedicated keyframe.
+  function shudderViewport() {
+    if (!pageEl) return;
+    pageEl.classList.remove("ud-shudder");
+    void pageEl.offsetWidth;
+    pageEl.classList.add("ud-shudder");
+    pageEl.addEventListener(
+      "animationend",
+      () => pageEl.classList.remove("ud-shudder"),
+      { once: true },
+    );
+  }
 
   function showWarning() {
     if (warningVisible) return;
