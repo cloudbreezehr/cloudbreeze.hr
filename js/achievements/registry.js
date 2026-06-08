@@ -1146,6 +1146,24 @@ export const ACHIEVEMENTS = [
     points: EPIC,
     hidden: true,
   },
+  {
+    id: "triple-stack",
+    title: "Triple Stack",
+    description: "Three worlds at once.",
+    hint: "Have three themes active simultaneously",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "kitchen-sink",
+    title: "Kitchen Sink",
+    description: "Every world, all at once.",
+    hint: "Have every theme active simultaneously",
+    set: "mastery",
+    points: LEGENDARY,
+    hidden: true,
+  },
 ];
 
 // ── Lookup helpers ──

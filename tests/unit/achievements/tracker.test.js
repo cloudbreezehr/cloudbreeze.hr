@@ -764,6 +764,16 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
+  it("unlocks triple-stack when three themes are active at once", async () => {
+    const { storage } = await startTracker();
+    document.body.classList.add("frozen", "deep-sea");
+    dispatchAchievement("theme-activate", { theme: "deep-sea" });
+    expect(storage.isUnlocked("triple-stack")).toBe(false);
+    document.body.classList.add("blocky");
+    dispatchAchievement("theme-activate", { theme: "blocky" });
+    expect(storage.isUnlocked("triple-stack")).toBe(true);
+  });
+
   it("announces a non-silent theme activation to the live region", async () => {
     await startTracker();
     dispatchAchievement("theme-activate", { theme: "frozen" });

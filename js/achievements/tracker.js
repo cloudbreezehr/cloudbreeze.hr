@@ -12,7 +12,11 @@ import {
 } from "./progress.js";
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
-import { getTheme } from "../themes/registry.js";
+import { getTheme, getThemeIds } from "../themes/registry.js";
+
+// Themes that count toward "all themes active" stacking achievements.
+const STACKABLE_THEME_COUNT = getThemeIds().length;
+const TRIPLE_STACK_COUNT = 3;
 
 // ── Timing Constants ──
 // Window for the rapid-fire achievement — N clicks must land inside
@@ -397,6 +401,15 @@ export function createTracker(onUnlock, onRelock) {
 
       // Elemental — every theme activated at least once (persistent)
       tryProgressItem("themes-activated", data.theme);
+
+      // Stacking combos — count themes currently in the body class set.
+      // Reading the live DOM means this fires whether the stack was built
+      // gesture-by-gesture or by the Konami all-at-once code.
+      const activeCount = getThemeIds().filter((id) =>
+        document.body.classList.contains(id),
+      ).length;
+      if (activeCount >= TRIPLE_STACK_COUNT) tryUnlock("triple-stack");
+      if (activeCount >= STACKABLE_THEME_COUNT) tryUnlock("kitchen-sink");
 
       // The Long Watch — start a fresh countdown for the new theme. Any
       // switch (activate of another theme while one is running) resets
