@@ -564,6 +564,10 @@ export function createTracker(onUnlock, onRelock) {
     "konami-cheat"() {
       tryUnlock("cheat-code");
     },
+
+    "shooting-star-clicked"() {
+      tryUnlock("wish-granted");
+    },
   };
 
   // ── Visibility tracking for night-owl ──

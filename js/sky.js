@@ -297,6 +297,13 @@ const SHOOTING = defineConstants("sky.shooting", {
     step: 1,
     description: "Max simultaneous shooting stars",
   },
+  HIT_RADIUS: {
+    value: 36,
+    min: 8,
+    max: 120,
+    step: 2,
+    description: "Click hit radius around a shooting star's head (px)",
+  },
   SPAWN_CHANCE: {
     value: 0.003,
     min: 0,
@@ -781,6 +788,21 @@ export function createSky(starCount) {
           SHOOTING.LINE_WIDTH,
         );
       });
+    },
+
+    // Hit-test a click (canvas-pixel coords) against the head of any
+    // in-flight shooting star.  Generous radius since the arcs move
+    // fast.  Returns true on a hit so the caller can reward the catch.
+    clickShootingStar(cx, cy) {
+      for (const ss of shootingStars) {
+        if (!ss.active) continue;
+        const dx = ss.x - cx;
+        const dy = ss.y - cy;
+        if (dx * dx + dy * dy <= SHOOTING.HIT_RADIUS * SHOOTING.HIT_RADIUS) {
+          return true;
+        }
+      }
+      return false;
     },
   };
 }

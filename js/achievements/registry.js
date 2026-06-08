@@ -1147,6 +1147,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "wish-granted",
+    title: "Wish Granted",
+    description: "Caught a falling star.",
+    hint: "Click a shooting star as it crosses the sky",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",

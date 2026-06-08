@@ -366,6 +366,15 @@ export function initCanvas(canvasEl, appearance, options) {
 
     fury.click(cx, cy, canvas, scrollProgress);
 
+    // Catching a shooting star mid-flight is its own little reward.
+    if (sky && sky.clickShootingStar && sky.clickShootingStar(cx, cy)) {
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "shooting-star-clicked" },
+        }),
+      );
+    }
+
     const ptr = {
       x: e.clientX,
       y: e.clientY,

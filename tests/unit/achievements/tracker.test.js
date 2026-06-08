@@ -764,6 +764,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
+  it("unlocks wish-granted on a shooting-star click", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("shooting-star-clicked", {});
+    expect(storage.isUnlocked("wish-granted")).toBe(true);
+  });
+
   it("unlocks triple-stack when three themes are active at once", async () => {
     const { storage } = await startTracker();
     document.body.classList.add("frozen", "deep-sea");
