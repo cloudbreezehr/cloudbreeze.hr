@@ -54,6 +54,11 @@ const VV = defineConstants(
     STILLNESS_CHECK_INTERVAL_MS: 250,
     TILT_INTENSITY: 2,
     TILT_SCALE: 1.005,
+    // Idle static — once the pointer's been still this long, fire a glitch
+    // line every interval; moves beyond the noise floor reset the timer.
+    IDLE_STATIC_MS: 30000,
+    STATIC_INTERVAL_MS: 8000,
+    IDLE_MOVE_NOISE_PX: 3,
   },
   { theme: "vhs" },
 );
@@ -242,8 +247,42 @@ export function initVhs() {
   // anything painting after this would be lost from the trail.
   const { canvasEl } = getCanvasCtx();
   const vhs = createVhs(canvasEl);
+
+  // Idle static — while VHS is active and the pointer has been still for
+  // a while, fire a glitch line every so often to sell the "tape left
+  // running" feel.  Wall-clock timed so it's honest under any frame rate.
+  let lastHoverX = NaN;
+  let lastHoverY = NaN;
+  let lastMoveMs = Date.now();
+  let lastStaticMs = 0;
+
   registerCanvasHooks("vhs", {
     drawPost({ ctx, palFor, forces, reducedMotion }) {
+      // Track pointer stillness off wall-clock.  Any move beyond the
+      // noise floor resets the idle timer.
+      if (forces.hover.active) {
+        if (
+          Number.isNaN(lastHoverX) ||
+          Math.abs(forces.hover.x - lastHoverX) > VV.IDLE_MOVE_NOISE_PX ||
+          Math.abs(forces.hover.y - lastHoverY) > VV.IDLE_MOVE_NOISE_PX
+        ) {
+          lastMoveMs = Date.now();
+        }
+        lastHoverX = forces.hover.x;
+        lastHoverY = forces.hover.y;
+      }
+      const now = Date.now();
+      if (
+        !reducedMotion &&
+        now - lastMoveMs > VV.IDLE_STATIC_MS &&
+        now - lastStaticMs > VV.STATIC_INTERVAL_MS
+      ) {
+        lastStaticMs = now;
+        vhs.clickGlitch(
+          Math.random() * canvasEl.width,
+          Math.random() * canvasEl.height,
+        );
+      }
       // The DOM cursor is not part of the canvas, so the trail history
       // has to be fed manually for the cursor to leave a phosphor
       // afterimage. clearCursor on hover-out so a stale trail doesn't
