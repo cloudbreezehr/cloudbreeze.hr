@@ -764,6 +764,15 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
+  it("unlocks persistent after 1000 lifetime clicks", async () => {
+    const { storage } = await startTracker();
+    // Seed the counter near the threshold to avoid 1000 dispatches.
+    storage.setCounter("totalClicks", 999);
+    dispatchAchievement("click", {});
+    expect(storage.isUnlocked("persistent")).toBe(true);
+    expect(storage.isUnlocked("devoted")).toBe(false);
+  });
+
   it("unlocks wish-granted on a shooting-star click", async () => {
     const { storage } = await startTracker();
     dispatchAchievement("shooting-star-clicked", {});

@@ -23,6 +23,9 @@ const TRIPLE_STACK_COUNT = 3;
 // this gap.
 export const RAPID_FIRE_WINDOW_MS = 3000;
 export const RAPID_FIRE_CLICKS = 10;
+// Lifetime click milestones.
+const PERSISTENT_CLICKS = 1000;
+const DEVOTED_CLICKS = 10000;
 // Cumulative visible time for night-owl.  Counted via a setInterval
 // poll so we accumulate per-tick rather than wall-clock — closing
 // the tab pauses progress.
@@ -170,8 +173,14 @@ export function createTracker(onUnlock, onRelock) {
   const handlers = {
     click(data) {
       session.clicks++;
+      const totalClicks = storage.getCounter("totalClicks") + 1;
       storage.incrementCounter("totalClicks");
       tryUnlock("first-light");
+
+      // Lifetime click milestones — persistent counters, so these tick
+      // over across sessions.
+      if (totalClicks >= PERSISTENT_CLICKS) tryUnlock("persistent");
+      if (totalClicks >= DEVOTED_CLICKS) tryUnlock("devoted");
 
       // Rapid fire: 10 clicks in 3 seconds
       const now = Date.now();
