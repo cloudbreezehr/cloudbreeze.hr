@@ -9,6 +9,7 @@
 // can see when they entered or left a theme alongside their unlocks.
 
 import * as activityLog from "./activity-log.js";
+import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { hideHintTooltip } from "./ui/tooltip.js";
 import {
@@ -26,6 +27,7 @@ import {
   showRelockToast,
   showActivationToast,
   showActivationPulse,
+  celebrateFirstUnlock,
   destroyToastContainer,
 } from "./ui/toast.js";
 import { refreshCard, destroySeenObserver } from "./ui/cards.js";
@@ -71,6 +73,13 @@ export function onAchievementUnlocked(achievement) {
   const noun = pts === 1 ? "point" : "points";
   announce(`Achievement unlocked: ${achievement.title}. ${pts} ${noun}.`);
   activityLog.log("achievement-unlocked", { achievementId: achievement.id });
+  // The first unlock of all time gets a rocket volley regardless of
+  // tier — a one-time "this site does something" beat.  Latched in a
+  // pref so it never repeats.
+  if (!storage.getPref("firstUnlockCelebrated", false)) {
+    storage.setPref("firstUnlockCelebrated", true);
+    celebrateFirstUnlock();
+  }
   updateBadge();
   pulseBadge();
   refreshCard(achievement.id);

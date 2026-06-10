@@ -437,6 +437,17 @@ export function showActivationToast(message) {
   }, ACTIVATION_TOAST_MS);
 }
 
+// ── First-unlock celebration ──
+// A one-time rocket volley for a visitor's very first unlock, marking
+// the "oh, this site does something" moment regardless of the
+// achievement's tier.  Skipped under reduced motion by the fireworks
+// module's own gate.
+const FIRST_UNLOCK_ROCKETS = 3;
+
+export function celebrateFirstUnlock() {
+  launchRocketFireworks({ count: FIRST_UNLOCK_ROCKETS });
+}
+
 // ── Undo Toast ──
 // Confirmation + reversal for a just-performed action.  Auto-dismisses
 // like the activation toast, but carries an "Undo" button that fires the
