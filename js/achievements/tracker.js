@@ -26,6 +26,8 @@ export const RAPID_FIRE_CLICKS = 10;
 // Lifetime click milestones.
 const PERSISTENT_CLICKS = 1000;
 const DEVOTED_CLICKS = 10000;
+// Consecutive-day visit streak for the "Regular" achievement.
+const REGULAR_STREAK_DAYS = 7;
 // Cumulative visible time for night-owl.  Counted via a setInterval
 // poll so we accumulate per-tick rather than wall-clock — closing
 // the tab pauses progress.
@@ -616,6 +618,8 @@ export function createTracker(onUnlock, onRelock) {
       state.counters.sessionDays = days;
       storage.save();
     }
+    // Reward a week of consecutive-day visits.
+    if (storage.currentStreak() >= REGULAR_STREAK_DAYS) tryUnlock("regular");
   }
 
   // ── Wire up ──

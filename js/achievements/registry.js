@@ -1147,6 +1147,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "regular",
+    title: "Regular",
+    description: "Seven days running.",
+    hint: "Visit on seven consecutive days",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  {
     id: "persistent",
     title: "Persistent",
     description: "A thousand clicks deep.",

@@ -443,6 +443,17 @@ function buildPanel(onHide) {
     `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
   );
 
+  // Visit streak — a tiny "back tomorrow" nudge.  Shown only at 2+
+  // consecutive days so a first/one-off visit carries no clutter.
+  const streak = storage.currentStreak();
+  if (streak >= 2) {
+    const streakEl = document.createElement("span");
+    streakEl.className = "achievement-streak";
+    streakEl.textContent = `🔥 ${streak}-day streak`;
+    streakEl.setAttribute("data-tooltip", "Consecutive days visited");
+    footer.appendChild(streakEl);
+  }
+
   footer.appendChild(hideBtn);
   footer.appendChild(countEl);
   panel.appendChild(footer);

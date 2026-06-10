@@ -153,6 +153,35 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("currentStreak", () => {
+    function isoDaysAgo(n) {
+      return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    }
+
+    it("returns 0 when today isn't recorded", () => {
+      storage.getState().counters.sessionDays = [isoDaysAgo(3)];
+      expect(storage.currentStreak()).toBe(0);
+    });
+
+    it("counts consecutive days ending today", () => {
+      storage.getState().counters.sessionDays = [
+        isoDaysAgo(2),
+        isoDaysAgo(1),
+        isoDaysAgo(0),
+      ];
+      expect(storage.currentStreak()).toBe(3);
+    });
+
+    it("stops at the first gap", () => {
+      storage.getState().counters.sessionDays = [
+        isoDaysAgo(5),
+        isoDaysAgo(1),
+        isoDaysAgo(0),
+      ];
+      expect(storage.currentStreak()).toBe(2);
+    });
+  });
+
   describe("preferences", () => {
     it("getPref returns the fallback when unset", () => {
       expect(storage.getPref("revealHints", false)).toBe(false);

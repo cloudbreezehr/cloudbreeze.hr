@@ -206,6 +206,29 @@ export function getCounter(key) {
   return getState().counters[key] || 0;
 }
 
+// Consecutive-day visit streak ending today, derived from the
+// sessionDays history (an array of "YYYY-MM-DD" strings).  Returns 0 if
+// today isn't recorded yet, otherwise the run of back-to-back days
+// ending today.  Computed rather than stored so it can't drift from the
+// underlying day set.
+export function currentStreak() {
+  const days = getState().counters.sessionDays || [];
+  if (days.length === 0) return 0;
+  const present = new Set(days);
+  const DAY_MS = 86400000;
+  // Day keys are UTC (trackSession uses toISOString().slice(0,10)), so
+  // step in UTC to match — slicing the ISO string yields the UTC date.
+  let cursor = Date.now();
+  const isoOf = (ms) => new Date(ms).toISOString().slice(0, 10);
+  if (!present.has(isoOf(cursor))) return 0;
+  let streak = 0;
+  while (present.has(isoOf(cursor))) {
+    streak++;
+    cursor -= DAY_MS;
+  }
+  return streak;
+}
+
 export function setCounter(key, value) {
   getState().counters[key] = value;
   save();
