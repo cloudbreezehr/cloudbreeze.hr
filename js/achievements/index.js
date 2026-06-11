@@ -21,6 +21,7 @@ import {
 } from "./ui.js";
 import { onKey } from "../keyboard.js";
 import { maybeShowWelcomeBack, markGreeted } from "./welcome-back.js";
+import { initDiscoveryHint } from "./discovery-hint.js";
 
 // ── Triple-click detection ──
 // Window during which a click counts toward the same triple. Each click
@@ -216,4 +217,8 @@ export function initAchievements() {
   openFromHash();
 
   createTripleClickDetector(document, (e) => activate(e.clientX, e.clientY));
+
+  // Gentle one-time nudge for visitors who linger without discovering
+  // any of the interactive layer.
+  initDiscoveryHint(showActivationToast);
 }
