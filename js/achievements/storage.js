@@ -5,6 +5,9 @@
 
 // ── Constants ──
 const STORAGE_KEY = "achievements";
+// Sidecar key holding the last corrupt payload, kept for diagnosis so a
+// parse failure doesn't silently erase whatever was there.
+const CORRUPT_KEY = "achievements.corrupt";
 const SAVE_DEBOUNCE_MS = 1000;
 // Bump when the persisted shape changes in a way the existing
 // field-merge can't reconcile (e.g. renames, type changes, splits).
@@ -57,9 +60,14 @@ let _state = null;
 let _saveTimer = null;
 
 function read() {
+  let raw = null;
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return defaultState();
+  }
+  if (!raw) return defaultState();
+  try {
     const parsed = migrate(JSON.parse(raw));
     // Merge with defaults to handle additive schema evolution.  Field
     // changes that the merge can't absorb (renames, type changes) go
@@ -81,22 +89,66 @@ function read() {
     }
     return state;
   } catch {
+    // Parse/shape error — the stored payload is corrupt.  Stash it
+    // under a sidecar key (once) for diagnosis instead of silently
+    // overwriting it on the next save, then start fresh.
+    try {
+      if (raw && !localStorage.getItem(CORRUPT_KEY)) {
+        localStorage.setItem(CORRUPT_KEY, raw);
+      }
+    } catch {
+      // ignore — nothing more we can do
+    }
     return defaultState();
   }
+}
+
+// True after a write failed because the quota was exceeded — lets the
+// UI surface a one-time "couldn't save" notice.  Callers read it via
+// lastWriteFailed().
+let _writeFailed = false;
+
+export function lastWriteFailed() {
+  return _writeFailed;
 }
 
 function write(state) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    _writeFailed = false;
   } catch {
-    // localStorage full or unavailable — silently continue
+    // QuotaExceededError, private-mode, or disabled storage all land
+    // here.  Flag the failure so the UI can tell the user their
+    // progress isn't being saved instead of failing silently.  Emit only
+    // on the rising edge so a run of failed writes nags just once.
+    if (!_writeFailed && typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("storage-write-failed"));
+    }
+    _writeFailed = true;
   }
 }
 
 // ── Public API ──
 
+let _unloadBound = false;
+
 export function load() {
   _state = read();
+  // Flush any debounced write before the tab goes away so a rapid close
+  // doesn't lose the last second of progress.  pagehide + visibilitychange
+  // are reliable where beforeunload isn't (mobile Safari skips beforeunload
+  // and it breaks bfcache); both can fire, but saveNow no-ops with no timer
+  // pending so a double-fire is harmless.  Bound once.
+  if (!_unloadBound && typeof window !== "undefined") {
+    _unloadBound = true;
+    const flush = () => {
+      if (_saveTimer) saveNow();
+    };
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") flush();
+    });
+  }
   return _state;
 }
 

@@ -221,4 +221,13 @@ export function initAchievements() {
   // Gentle one-time nudge for visitors who linger without discovering
   // any of the interactive layer.
   initDiscoveryHint(showActivationToast);
+
+  // Tell the user once if a save fails (quota, private mode) so silent
+  // data loss doesn't surprise them.  storage dispatches only on the
+  // rising edge, so this fires once per failure run, not per write.
+  window.addEventListener(
+    "storage-write-failed",
+    () => showActivationToast("Couldn't save — your progress may not persist"),
+    { once: true },
+  );
 }

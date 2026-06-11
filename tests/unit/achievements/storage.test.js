@@ -55,6 +55,12 @@ describe("achievements/storage", () => {
       expect(state).toMatchObject({ active: false, unlocked: [] });
     });
 
+    it("preserves a corrupt payload under a sidecar key", () => {
+      localStorage.setItem("achievements", "not-json{");
+      storage.getState();
+      expect(localStorage.getItem("achievements.corrupt")).toEqual("not-json{");
+    });
+
     it("stamps the schema version on default state", () => {
       const state = storage.getState();
       expect(state.version).toEqual(storage.SCHEMA_VERSION);
@@ -258,6 +264,55 @@ describe("achievements/storage", () => {
       expect(storage.getCounter("x")).toBe(0);
       const raw = JSON.parse(localStorage.getItem("achievements"));
       expect(raw.unlocked).toEqual([]);
+    });
+  });
+
+  describe("write failure", () => {
+    it("flags lastWriteFailed and emits once on the rising edge", () => {
+      const fired = vi.fn();
+      window.addEventListener("storage-write-failed", fired);
+      const spy = vi.spyOn(localStorage, "setItem").mockImplementation(() => {
+        throw new Error("quota");
+      });
+
+      storage.unlock("a");
+      storage.saveNow(); // forces the write → fails
+      expect(storage.lastWriteFailed()).toBe(true);
+      expect(fired).toHaveBeenCalledTimes(1);
+
+      // A second failed write while already-failed must not re-nag.
+      storage.unlock("b");
+      storage.saveNow();
+      expect(fired).toHaveBeenCalledTimes(1);
+
+      spy.mockRestore();
+      window.removeEventListener("storage-write-failed", fired);
+    });
+
+    it("clears the failure flag once a write succeeds again", () => {
+      const spy = vi
+        .spyOn(localStorage, "setItem")
+        .mockImplementationOnce(() => {
+          throw new Error("quota");
+        });
+      storage.unlock("a");
+      storage.saveNow();
+      expect(storage.lastWriteFailed()).toBe(true);
+      storage.saveNow(); // setItem works now
+      expect(storage.lastWriteFailed()).toBe(false);
+      spy.mockRestore();
+    });
+  });
+
+  describe("unload flush", () => {
+    it("flushes a pending debounced write on pagehide", () => {
+      vi.useFakeTimers();
+      storage.load(); // binds the pagehide/visibilitychange flush
+      storage.setPref("k", "v"); // debounced via save(), timer pending
+      // Nothing written yet — the debounce hasn't elapsed.
+      window.dispatchEvent(new Event("pagehide"));
+      const raw = JSON.parse(localStorage.getItem("achievements"));
+      expect(raw.prefs.k).toEqual("v");
     });
   });
 });
