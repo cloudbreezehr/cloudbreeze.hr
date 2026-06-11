@@ -51,7 +51,7 @@ export function createNavButton(onPanelToggle) {
 
 export { updateBadge, showNavButton, hideNavButton, markRevealPulseFired };
 
-export { openPanel, closePanel, isPanelOpen };
+export { openPanel, closePanel, isPanelOpen, refreshPanel };
 
 export { setActiveTab, getActiveTab };
 

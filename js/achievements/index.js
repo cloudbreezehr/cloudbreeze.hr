@@ -16,6 +16,8 @@ import {
   markRevealPulseFired,
   setActiveTab,
   getActiveTab,
+  refreshPanel,
+  updateBadge,
   onAchievementUnlocked,
   onAchievementRelocked,
 } from "./ui.js";
@@ -221,6 +223,17 @@ export function initAchievements() {
   // Gentle one-time nudge for visitors who linger without discovering
   // any of the interactive layer.
   initDiscoveryHint(showActivationToast);
+
+  // Cross-tab sync — when another tab writes the achievements key, this
+  // tab's in-memory state is stale.  Re-load and repaint so an unlock in
+  // one tab shows up in the other without a manual reload.  The
+  // `storage` event only fires in *other* tabs, never the writer.
+  window.addEventListener("storage", (e) => {
+    if (e.key !== storage.STORAGE_KEY) return;
+    storage.load();
+    updateBadge();
+    if (isPanelOpen()) refreshPanel();
+  });
 
   // Tell the user once if a save fails (quota, private mode) so silent
   // data loss doesn't surprise them.  storage dispatches only on the

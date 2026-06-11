@@ -4,7 +4,7 @@
 // Writes are debounced to max 1/second.
 
 // ── Constants ──
-const STORAGE_KEY = "achievements";
+export const STORAGE_KEY = "achievements";
 // Sidecar key holding the last corrupt payload, kept for diagnosis so a
 // parse failure doesn't silently erase whatever was there.
 const CORRUPT_KEY = "achievements.corrupt";
