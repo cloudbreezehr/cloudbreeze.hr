@@ -28,11 +28,23 @@ let _queue = [];
 let _flushTimer = null;
 let _started = false;
 
+// Run a flush during browser idle time when the API is available so
+// analytics never competes with a paint frame.  Falls back to a direct
+// call where requestIdleCallback isn't supported.  Urgent flushes
+// (batch-size cap, pagehide) bypass this and call flush() directly.
+function flushWhenIdle() {
+  if (typeof requestIdleCallback === "function") {
+    requestIdleCallback(() => flush(), { timeout: FLUSH_INTERVAL_MS });
+  } else {
+    flush();
+  }
+}
+
 function scheduleFlush() {
   if (_flushTimer) return;
   _flushTimer = setTimeout(() => {
     _flushTimer = null;
-    flush();
+    flushWhenIdle();
   }, FLUSH_INTERVAL_MS);
 }
 
