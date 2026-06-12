@@ -59,6 +59,29 @@ function migrate(parsed) {
 let _state = null;
 let _saveTimer = null;
 
+// Merge an already-parsed (and migrated) blob onto a fresh default.
+// Additive schema evolution lands here — only fields present and the
+// right type are copied, so a backup from an older shape still loads.
+// Field changes the merge can't absorb go through migrate() instead.
+function mergeIntoDefault(parsed) {
+  const state = defaultState();
+  state.active = !!parsed.active;
+  state.hidden = !!parsed.hidden;
+  if (Array.isArray(parsed.unlocked)) state.unlocked = parsed.unlocked;
+  if (Array.isArray(parsed.seen)) state.seen = parsed.seen;
+  if (parsed.counters && typeof parsed.counters === "object") {
+    Object.assign(state.counters, parsed.counters);
+  }
+  if (parsed.progress && typeof parsed.progress === "object") {
+    state.progress = parsed.progress;
+  }
+  if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;
+  if (parsed.prefs && typeof parsed.prefs === "object") {
+    Object.assign(state.prefs, parsed.prefs);
+  }
+  return state;
+}
+
 function read() {
   let raw = null;
   try {
@@ -68,26 +91,7 @@ function read() {
   }
   if (!raw) return defaultState();
   try {
-    const parsed = migrate(JSON.parse(raw));
-    // Merge with defaults to handle additive schema evolution.  Field
-    // changes that the merge can't absorb (renames, type changes) go
-    // through migrate() above instead.
-    const state = defaultState();
-    state.active = !!parsed.active;
-    state.hidden = !!parsed.hidden;
-    if (Array.isArray(parsed.unlocked)) state.unlocked = parsed.unlocked;
-    if (Array.isArray(parsed.seen)) state.seen = parsed.seen;
-    if (parsed.counters && typeof parsed.counters === "object") {
-      Object.assign(state.counters, parsed.counters);
-    }
-    if (parsed.progress && typeof parsed.progress === "object") {
-      state.progress = parsed.progress;
-    }
-    if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;
-    if (parsed.prefs && typeof parsed.prefs === "object") {
-      Object.assign(state.prefs, parsed.prefs);
-    }
-    return state;
+    return mergeIntoDefault(migrate(JSON.parse(raw)));
   } catch {
     // Parse/shape error — the stored payload is corrupt.  Stash it
     // under a sidecar key (once) for diagnosis instead of silently
@@ -360,4 +364,28 @@ export function clearRelocked(id) {
 export function reset() {
   _state = defaultState();
   saveNow();
+}
+
+// ── Backup / restore ──
+// Serialize the live state for download.  Returns a pretty JSON string
+// the user can save to a file.
+export function exportState() {
+  return JSON.stringify(getState(), null, 2);
+}
+
+// Replace the live state from a previously-exported JSON string.  Runs
+// the same migrate + field-merge as a normal load so a backup from an
+// older schema still imports cleanly.  Returns true on success, false
+// if the payload is unparseable or not an object.
+export function importState(json) {
+  let parsed;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    return false;
+  }
+  if (!parsed || typeof parsed !== "object") return false;
+  _state = mergeIntoDefault(migrate(parsed));
+  saveNow();
+  return true;
 }

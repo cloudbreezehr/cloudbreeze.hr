@@ -14,8 +14,8 @@ import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
 import { hideHintTooltip } from "./tooltip.js";
-import { setActive as setNavActive } from "./nav-button.js";
-import { configureToasts } from "./toast.js";
+import { setActive as setNavActive, updateBadge } from "./nav-button.js";
+import { configureToasts, showActivationToast } from "./toast.js";
 import {
   configureCards,
   getRevealHints,
@@ -135,6 +135,63 @@ function paintLastUnlocked(el) {
   paintRelativeTime(time, latest.ts);
   el.appendChild(label);
   el.appendChild(time);
+}
+
+// Export/import controls for the footer.  Export downloads the live
+// state as JSON; import reads a chosen file and replaces local state
+// (then repaints).  Kept compact — two small icon-ish text buttons.
+function buildBackupControls() {
+  const wrap = document.createElement("div");
+  wrap.className = "achievement-backup";
+
+  const exportBtn = document.createElement("button");
+  exportBtn.className = "achievement-backup-btn";
+  exportBtn.textContent = "Export";
+  exportBtn.title = "Download your Cloudlog as a JSON file";
+  exportBtn.addEventListener("click", () => {
+    const blob = new Blob([storage.exportState()], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cloudbreeze-cloudlog.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  const importInput = document.createElement("input");
+  importInput.type = "file";
+  importInput.accept = "application/json,.json";
+  importInput.style.display = "none";
+  importInput.addEventListener("change", () => {
+    const file = importInput.files && importInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (storage.importState(String(reader.result))) {
+        refreshPanel();
+        // refreshPanel repaints panel contents only; the nav badge reads
+        // the unseen count separately and needs its own nudge.
+        updateBadge();
+        showActivationToast("Cloudlog imported");
+      } else {
+        showActivationToast("Import failed — not a valid backup");
+      }
+    };
+    reader.readAsText(file);
+    importInput.value = "";
+  });
+  const importBtn = document.createElement("button");
+  importBtn.className = "achievement-backup-btn";
+  importBtn.textContent = "Import";
+  importBtn.title = "Replace your Cloudlog from a backup file";
+  importBtn.addEventListener("click", () => importInput.click());
+
+  wrap.appendChild(exportBtn);
+  wrap.appendChild(importBtn);
+  wrap.appendChild(importInput);
+  return wrap;
 }
 
 // ── Panel ──
@@ -455,6 +512,7 @@ function buildPanel(onHide) {
   }
 
   footer.appendChild(hideBtn);
+  footer.appendChild(buildBackupControls());
   footer.appendChild(countEl);
   panel.appendChild(footer);
 

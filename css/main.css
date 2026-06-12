@@ -4088,6 +4088,23 @@ body.light-appearance .activity-group-header {
   color: rgba(255, 180, 90, 0.85);
   letter-spacing: 0.04em;
 }
+.achievement-backup {
+  display: flex;
+  gap: 0.6rem;
+}
+.achievement-backup-btn {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.05em;
+  padding: 0;
+  transition: color 0.2s;
+}
+.achievement-backup-btn:hover {
+  color: rgba(255, 255, 255, 0.6);
+}
 .achievement-count-total {
   position: relative;
   font-family: "DM Mono", monospace;

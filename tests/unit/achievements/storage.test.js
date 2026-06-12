@@ -159,6 +159,31 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("export / import", () => {
+    it("round-trips state through export then import", async () => {
+      storage.unlock("first-light");
+      storage.setPref("revealHints", true);
+      const json = storage.exportState();
+
+      // Wipe and re-import into a fresh module instance.
+      vi.resetModules();
+      const fresh = await import("../../../js/achievements/storage.js");
+      fresh.load();
+      expect(fresh.isUnlocked("first-light")).toBe(false);
+      expect(fresh.importState(json)).toBe(true);
+      expect(fresh.isUnlocked("first-light")).toBe(true);
+      expect(fresh.getPref("revealHints", false)).toBe(true);
+    });
+
+    it("rejects an unparseable import", () => {
+      expect(storage.importState("}{not json")).toBe(false);
+    });
+
+    it("rejects a non-object import", () => {
+      expect(storage.importState("42")).toBe(false);
+    });
+  });
+
   describe("currentStreak", () => {
     function isoDaysAgo(n) {
       return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
