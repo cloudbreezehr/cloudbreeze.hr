@@ -36,3 +36,67 @@ export function getQualityTier() {
   if (cores >= HIGH_CORES && memGB >= HIGH_MEMORY_GB) return "high";
   return "mid";
 }
+
+// ── Live FPS guard ──
+// The startup tier reads hardware signals, which are imperfect — a
+// capable laptop on battery saver throttles, a busy machine drops
+// frames.  observeFps watches frame timing and, after a sustained dip,
+// reports a downscale factor (<1) so the caller can shed cost; it
+// reports 1 again once frames recover (hysteresis prevents one bad
+// stretch from locking the page down permanently).  Today the factor's
+// magnitude is a forward hook — the sole caller treats any value <1 as a
+// boolean and sheds CSS-only decoration — but it's reported so a future
+// consumer can scale particle counts proportionally.
+
+// Below this FPS for SUSTAINED_MS → downscale.  Above the recover line
+// for the same window → restore.  The gap is the hysteresis band.
+const FPS_LOW = 40;
+const FPS_RECOVER = 52;
+const SUSTAINED_MS = 2000;
+const DOWNSCALE = 0.7;
+
+export function observeFps(onChange) {
+  let last = performance.now();
+  let belowSince = 0;
+  let aboveSince = 0;
+  let downscaled = false;
+  let rafId = null;
+
+  function tick(now) {
+    const dt = now - last;
+    last = now;
+    // Ignore absurd gaps (tab was backgrounded) so a resume frame can't
+    // trip the guard.
+    if (dt > 0 && dt < 1000) {
+      const fps = 1000 / dt;
+      if (!downscaled) {
+        if (fps < FPS_LOW) {
+          if (belowSince === 0) belowSince = now;
+          else if (now - belowSince >= SUSTAINED_MS) {
+            downscaled = true;
+            belowSince = 0;
+            onChange(DOWNSCALE);
+          }
+        } else {
+          belowSince = 0;
+        }
+      } else {
+        if (fps > FPS_RECOVER) {
+          if (aboveSince === 0) aboveSince = now;
+          else if (now - aboveSince >= SUSTAINED_MS) {
+            downscaled = false;
+            aboveSince = 0;
+            onChange(1);
+          }
+        } else {
+          aboveSince = 0;
+        }
+      }
+    }
+    rafId = requestAnimationFrame(tick);
+  }
+  rafId = requestAnimationFrame(tick);
+  return () => {
+    if (rafId != null) cancelAnimationFrame(rafId);
+  };
+}

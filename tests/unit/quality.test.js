@@ -1,6 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-import { getQualityTier, PARTICLE_SCALE } from "../../js/quality.js";
+import {
+  getQualityTier,
+  PARTICLE_SCALE,
+  observeFps,
+} from "../../js/quality.js";
 
 // quality.js classifies the device into a coarse tier based on
 // navigator.hardwareConcurrency and navigator.deviceMemory.  Tests
@@ -95,6 +99,66 @@ describe("quality.js", () => {
 
     it("is frozen so callers can't mutate the shared map", () => {
       expect(Object.isFrozen(PARTICLE_SCALE)).toBe(true);
+    });
+  });
+
+  describe("observeFps", () => {
+    let rafCbs;
+    let nowMs;
+    let origRaf;
+    let origCancel;
+    let origNow;
+
+    beforeEach(() => {
+      rafCbs = [];
+      nowMs = 0;
+      origRaf = globalThis.requestAnimationFrame;
+      origCancel = globalThis.cancelAnimationFrame;
+      origNow = performance.now;
+      globalThis.requestAnimationFrame = (cb) => {
+        rafCbs.push(cb);
+        return rafCbs.length;
+      };
+      globalThis.cancelAnimationFrame = () => {};
+      performance.now = () => nowMs;
+    });
+
+    afterEach(() => {
+      globalThis.requestAnimationFrame = origRaf;
+      globalThis.cancelAnimationFrame = origCancel;
+      performance.now = origNow;
+    });
+
+    // Drive one frame `dtMs` after the previous, flushing the rAF queue.
+    function frame(dtMs) {
+      nowMs += dtMs;
+      const cbs = rafCbs;
+      rafCbs = [];
+      for (const cb of cbs) cb(nowMs);
+    }
+
+    it("reports a downscale after sustained low FPS, then restores", () => {
+      const changes = [];
+      observeFps((f) => changes.push(f));
+      // Prime the loop (first tick just sets `last`).
+      frame(16);
+      // ~20 FPS (50ms/frame) for >2s → downscale.
+      for (let i = 0; i < 60; i++) frame(50);
+      expect(changes).toContain(0.7);
+
+      // ~60 FPS (16ms/frame) for >2s → restore to 1.
+      for (let i = 0; i < 200; i++) frame(16);
+      expect(changes[changes.length - 1]).toEqual(1);
+    });
+
+    it("ignores a huge frame gap (backgrounded tab)", () => {
+      const changes = [];
+      observeFps((f) => changes.push(f));
+      frame(16);
+      // A single multi-second gap must not trip the guard.
+      frame(60000);
+      frame(16);
+      expect(changes).toEqual([]);
     });
   });
 });

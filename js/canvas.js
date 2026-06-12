@@ -11,7 +11,7 @@ import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds } from "./themes/registry.js";
-import { getQualityTier, PARTICLE_SCALE } from "./quality.js";
+import { getQualityTier, PARTICLE_SCALE, observeFps } from "./quality.js";
 
 // ── Scroll Velocity ──
 const SCROLL = defineConstants("canvas.scroll", {
@@ -325,6 +325,14 @@ export function initCanvas(canvasEl, appearance, options) {
       requestAnimationFrame(render);
     }
   }
+
+  // Live FPS guard — sustained low frame rate flips a body class that
+  // CSS uses to shed the most expensive always-on decorative cost
+  // (grain overlay, backdrop blurs).  Reverts with hysteresis when
+  // frames recover, so one bad stretch doesn't lock the page down.
+  observeFps((factor) => {
+    document.body.classList.toggle("perf-reduced", factor < 1);
+  });
 
   const UI_OVERLAY = UI_OVERLAY_SELECTOR;
 
