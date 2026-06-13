@@ -602,6 +602,42 @@ export const WELL = defineConstants("interactions.well", {
     step: 0.05,
     description: "Blast speed factor variation for well burst",
   },
+  PULSE_RING_COUNT: {
+    value: 2,
+    min: 1,
+    max: 4,
+    step: 1,
+    description:
+      "Number of concentric rings spawned when the gravity well activates",
+  },
+  PULSE_RING_STAGGER_MS: {
+    value: 120,
+    min: 0,
+    max: 400,
+    step: 10,
+    description: "Delay between successive pulse rings in ms",
+  },
+  PULSE_RING_DURATION_MS: {
+    value: 700,
+    min: 200,
+    max: 2000,
+    step: 50,
+    description: "Expansion duration of each pulse ring in ms",
+  },
+  PULSE_RING_MAX_SCALE: {
+    value: 6,
+    min: 1,
+    max: 20,
+    step: 0.5,
+    description: "Final scale multiplier for the pulse ring before it fades",
+  },
+  PULSE_RING_OPACITY: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Starting opacity of each pulse ring",
+  },
 });
 
 // ── Drag Trail ──

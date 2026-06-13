@@ -1,6 +1,8 @@
 import { drawHaloParticle, rgbaStr } from "./canvas-utils.js";
 import { notifySectionActivate } from "./dev/registry.js";
 import { chance, prefersReducedMotion } from "./motion.js";
+import { spawnRipple } from "./effects/ripple.js";
+import { mirrorYWhenInverted, getViewportHeight } from "./viewport.js";
 import {
   CLICK,
   ORBIT,
@@ -392,10 +394,30 @@ export function createInteractions() {
       if (forces.wellStrength > 0 && prevWell === 0) {
         notifySectionActivate("interactions.well");
         window.dispatchEvent(
-          new CustomEvent("achievement", { detail: { type: "well-activate" } }),
+          new CustomEvent("achievement", {
+            detail: {
+              type: "well-activate",
+              x: forces.dragPos.x,
+              y: forces.dragPos.y,
+            },
+          }),
         );
         cursorDot?.classList.add("gravity-well");
         cursorRing?.classList.add("gravity-well");
+        if (!prefersReducedMotion()) {
+          spawnRipple(
+            forces.dragPos.x,
+            mirrorYWhenInverted(forces.dragPos.y, getViewportHeight()),
+            {
+              className: "well-pulse-ring",
+              count: WELL.PULSE_RING_COUNT,
+              staggerMs: WELL.PULSE_RING_STAGGER_MS,
+              duration: WELL.PULSE_RING_DURATION_MS,
+              maxScale: WELL.PULSE_RING_MAX_SCALE,
+              startOpacity: WELL.PULSE_RING_OPACITY,
+            },
+          );
+        }
       }
       if (forces.wellStrength >= 1 && prevWell < 1) {
         window.dispatchEvent(

@@ -258,6 +258,16 @@ body:not([data-active-theme]) #cursor {
     opacity: 1;
   }
 }
+.well-pulse-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--cursor-glow, 180, 180, 255), 0.6);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);
