@@ -30,7 +30,7 @@ import {
   celebrateFirstUnlock,
   destroyToastContainer,
 } from "./ui/toast.js";
-import { refreshCard, destroySeenObserver } from "./ui/cards.js";
+import { refreshCard, destroySeenObserver, scrollToCard } from "./ui/cards.js";
 import { updateTabBadges, setActiveTab, getActiveTab } from "./ui/tabs.js";
 import {
   openPanel,
@@ -63,7 +63,7 @@ export {
   showActivationPulse,
 };
 
-export { refreshCard };
+export { refreshCard, scrollToCard };
 
 // ── Lifecycle ──
 

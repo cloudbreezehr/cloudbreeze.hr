@@ -157,6 +157,11 @@ export function toggleTheme(id, opts) {
   if (typeof fn === "function") fn(opts);
 }
 
+/** True once a theme's toggle has been bound (i.e. its init ran). */
+export function hasToggle(id) {
+  return typeof _toggles.get(id) === "function";
+}
+
 /**
  * True if `id` matches a known theme.  The shared validation seam:
  * `registerToggle` and the canvas-hooks registry both call this so that

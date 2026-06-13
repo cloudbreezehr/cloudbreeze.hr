@@ -3,6 +3,7 @@
 // wires tracker + UI + storage together.
 
 import * as storage from "./storage.js";
+import { getAchievement } from "./registry.js";
 import { createTracker } from "./tracker.js";
 import {
   createNavButton,
@@ -18,6 +19,7 @@ import {
   getActiveTab,
   refreshPanel,
   updateBadge,
+  scrollToCard,
   onAchievementUnlocked,
   onAchievementRelocked,
 } from "./ui.js";
@@ -32,6 +34,9 @@ import { initDiscoveryHint } from "./discovery-hint.js";
 // click) still triggers cleanly.
 export const TRIPLE_CLICK_MAX_MS = 600;
 export const TRIPLE_CLICK_COUNT = 3;
+// Wait for the panel slide-in before scrolling a deep-linked card into
+// view, so the scroll lands against a laid-out container.
+const PANEL_SETTLE_MS = 350;
 
 /**
  * Watch an event target for triple-clicks within TRIPLE_CLICK_MAX_MS.
@@ -243,4 +248,20 @@ export function initAchievements() {
     () => showActivationToast("Couldn't save — your progress may not persist"),
     { once: true },
   );
+
+  // `?achievement=<id>` deep-links to a specific card — opens the panel
+  // and scrolls/highlights the card.  Shareable "look what I found" URL.
+  const achParam = new URLSearchParams(window.location.search).get(
+    "achievement",
+  );
+  if (achParam && storage.isActive() && getAchievement(achParam)) {
+    if (!isPanelOpen()) {
+      openPanel(() => {
+        storage.setHidden(true);
+        hideNavButton();
+      });
+    }
+    setActiveTab("achievements");
+    setTimeout(() => scrollToCard(achParam), PANEL_SETTLE_MS);
+  }
 }
