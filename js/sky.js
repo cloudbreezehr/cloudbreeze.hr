@@ -414,11 +414,12 @@ const AURORA = defineConstants("sky.aurora", {
     description: "Aurora band height as a fraction of canvas height",
   },
   WAVE_SPEED: {
-    value: 0.0004,
+    value: 0.012,
     min: 0,
-    max: 0.005,
-    step: 0.0001,
-    description: "Phase advance per ms for the aurora wave",
+    max: 0.1,
+    step: 0.001,
+    description:
+      "Phase advance per frame for the aurora wave (full cycle ≈ 30 s at 60 fps)",
   },
   WAVE_AMP: {
     value: 0.03,
@@ -666,7 +667,7 @@ export function createSky(starCount) {
         );
         const auroraAlpha = fadeIn * AURORA.PEAK_OPACITY * starVis;
         if (auroraAlpha > 0.002) {
-          _auroraPhase += AURORA.WAVE_SPEED * (idleMs > AURORA.IDLE_MS ? 1 : 0);
+          _auroraPhase += scaled(AURORA.WAVE_SPEED);
           const bandH = canvas.height * AURORA.BAND_HEIGHT;
           const waveH = canvas.height * AURORA.WAVE_AMP;
           const steps = AURORA.RIBBON_STEPS;
