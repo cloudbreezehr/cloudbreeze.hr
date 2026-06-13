@@ -4367,7 +4367,9 @@ body.light-appearance .achievement-search-input {
   position: relative;
   transition:
     opacity 0.3s,
-    background 0.3s;
+    background 0.3s,
+    translate 0.2s ease-out,
+    box-shadow 0.2s ease-out;
 }
 .achievement-card.locked,
 .achievement-card.hidden-ach {
@@ -4379,6 +4381,8 @@ body.light-appearance .achievement-search-input {
 }
 .achievement-card.unlocked:hover {
   background: rgba(255, 255, 255, 0.06);
+  translate: 0 -2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
 }
 
 /* Glow pseudo-element — opacity animation is GPU-composited */
