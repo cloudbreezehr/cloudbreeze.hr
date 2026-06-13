@@ -247,19 +247,24 @@ export function buildAchievementToast(achievement) {
   return toast;
 }
 
-// Standard click handler for any rendered toast: pulse the toast, then
-// open the panel and scroll to the achievement's card.
+// Standard click handler for any rendered toast: pulse on press-down
+// for a physical-button feel, then open the panel and scroll to the
+// achievement's card on the full click.
 export function wireToastClick(toast, achievement) {
-  bindClickable(toast, () => {
+  // Pulse fires on pointerdown so the toast visually depresses the
+  // moment the user presses — no wait for the release event.
+  toast.addEventListener("pointerdown", () => {
     toast.classList.remove("clicked");
     void toast.offsetHeight;
     toast.classList.add("clicked");
-    toast.addEventListener(
-      "animationend",
-      () => toast.classList.remove("clicked"),
-      { once: true },
-    );
+    toast.addEventListener("animationend", () => toast.classList.remove("clicked"), {
+      once: true,
+    });
+  });
 
+  // Navigation fires on the full click so a drag (pointerdown without
+  // pointerup at the same position) doesn't route to the panel.
+  bindClickable(toast, () => {
     if (!_isPanelOpen()) {
       if (_openPanel) _openPanel();
       setTimeout(() => {
