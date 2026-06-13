@@ -45,6 +45,14 @@ export function buildTabButton(id, label, unseenSource) {
   labelEl.textContent = label;
   btn.appendChild(labelEl);
 
+  // Activity tab gets a secondary counter showing soft-deleted entries
+  // so users know the trash sub-view is non-empty without opening it.
+  if (id === "activity") {
+    const trashCount = document.createElement("span");
+    trashCount.className = "achievement-tab-trash-count";
+    btn.appendChild(trashCount);
+  }
+
   // Badge is created even when count is zero so we can show/hide via CSS.
   const badge = document.createElement("span");
   badge.className = "achievement-tab-badge";
@@ -123,6 +131,16 @@ export function updateTabBadges() {
       badge.classList.add("pulse");
     }
     _lastBadgeCount.set(source, count);
+
+    // Activity tab: keep the trash-count hint current.
+    if (source === "activity") {
+      const trashEl = btn.querySelector(".achievement-tab-trash-count");
+      if (trashEl) {
+        const trashed = activityLog.getTrashedCount();
+        trashEl.textContent = trashed > 0 ? `${trashed} trashed` : "";
+        trashEl.classList.toggle("visible", trashed > 0);
+      }
+    }
   });
 }
 

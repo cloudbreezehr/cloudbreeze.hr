@@ -3767,6 +3767,16 @@ nav.nav-light .achievement-btn::after {
 .achievement-tab-badge.pulse {
   animation: achievement-badge-pulse 0.6s ease-out;
 }
+.achievement-tab-trash-count {
+  display: none;
+  font-family: "DM Mono", monospace;
+  font-size: 0.48rem;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.03em;
+}
+.achievement-tab-trash-count.visible {
+  display: inline;
+}
 
 /* Tab views — only the active one is rendered.  The default (Achievements)
    is marked .active at build time in buildPanel. */
