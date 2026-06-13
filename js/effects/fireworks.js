@@ -736,10 +736,20 @@ export function burstFireworks(x, y, opts = {}) {
  * @param {"epic"|"legendary"} tier
  * @returns {number} Number of rockets, or 0 for unrecognized tiers.
  */
+// Cap applied when the browser reports the user is on a data-saver
+// connection — one rocket carries the celebration without burning
+// bandwidth on a full volley.
+const DATA_SAVER_ROCKET_CAP = 1;
+
 export function rocketCountForTier(tier) {
-  if (tier === "legendary") return FW.ROCKET_COUNT_LEGENDARY;
-  if (tier === "epic") return FW.ROCKET_COUNT_EPIC;
-  return 0;
+  const base =
+    tier === "legendary"
+      ? FW.ROCKET_COUNT_LEGENDARY
+      : tier === "epic"
+        ? FW.ROCKET_COUNT_EPIC
+        : 0;
+  if (base > 0 && navigator.connection?.saveData) return DATA_SAVER_ROCKET_CAP;
+  return base;
 }
 
 /**
