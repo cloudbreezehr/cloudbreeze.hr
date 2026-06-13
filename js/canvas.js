@@ -261,7 +261,8 @@ export function initCanvas(canvasEl, appearance, options) {
     // directly.
     const reducedMotion = prefersReducedMotion();
 
-    if (sky && !suppressSky) sky.draw(ctx, canvas, sp, pal, forces);
+    if (sky && !suppressSky)
+      sky.draw(ctx, canvas, sp, pal, forces, scrollVelocity);
 
     // Click fury — lightning, aurora, meteors.
     if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);

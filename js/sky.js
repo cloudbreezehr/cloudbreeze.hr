@@ -458,6 +458,45 @@ const AURORA = defineConstants("sky.aurora", {
   },
 });
 
+// ── Comet Streak ──
+const COMET = defineConstants("sky.comet", {
+  VEL_THRESHOLD: {
+    value: 3,
+    min: 0.5,
+    max: 20,
+    step: 0.5,
+    description: "Minimum |scrollVelocity| before comet trails appear on stars",
+  },
+  MAX_TRAIL_LEN: {
+    value: 40,
+    min: 4,
+    max: 200,
+    step: 2,
+    description: "Maximum trail length in pixels at peak scroll velocity",
+  },
+  VEL_FULL: {
+    value: 18,
+    min: 2,
+    max: 60,
+    step: 1,
+    description: "ScrollVelocity at which trails reach MAX_TRAIL_LEN",
+  },
+  OPACITY_SCALE: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Trail opacity relative to the star's own opacity",
+  },
+  TRAIL_WIDTH_FACTOR: {
+    value: 1.5,
+    min: 0.5,
+    max: 5,
+    step: 0.1,
+    description: "Trail stroke width as a multiple of the star's radius",
+  },
+});
+
 // Spawn parameters shared by stars and any element that should obey the
 // same sky rules (fade window, position spread, launch angle).
 export const SKY_SHARED = defineConstants("sky.shared", {
@@ -608,7 +647,7 @@ export function createSky(starCount) {
   let _auroraPhase = 0;
 
   return {
-    draw(ctx, canvas, sp, pal, forces) {
+    draw(ctx, canvas, sp, pal, forces, scrollVelocity = 0) {
       const starVis = scrollFade(
         sp,
         0,
@@ -802,6 +841,30 @@ export function createSky(starCount) {
           ctx.beginPath();
           ctx.arc(sx, py, s.r, 0, Math.PI * 2);
           ctx.fill();
+        }
+        // Comet streak: extend each star in the direction opposite to scroll.
+        // Trail length scales with scroll velocity; collapses under reduced motion.
+        const absVel = Math.abs(scrollVelocity);
+        if (!prefersReducedMotion() && absVel > COMET.VEL_THRESHOLD) {
+          const frac = Math.min(
+            1,
+            (absVel - COMET.VEL_THRESHOLD) /
+              (COMET.VEL_FULL - COMET.VEL_THRESHOLD),
+          );
+          const trailLen = scaled(COMET.MAX_TRAIL_LEN * frac);
+          if (trailLen > 0.5) {
+            const dir = scrollVelocity > 0 ? -1 : 1;
+            drawTrail(
+              ctx,
+              sx,
+              py,
+              sx,
+              py + dir * trailLen,
+              [sc, sc, sc],
+              op * COMET.OPACITY_SCALE,
+              s.r * COMET.TRAIL_WIDTH_FACTOR,
+            );
+          }
         }
         // Planted-star discovery marker: a faint, always-on outline ring.
         // Subtle enough not to spoil the puzzle at a glance, distinct
