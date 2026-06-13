@@ -45,10 +45,11 @@ let toastQueue = [];
 let activeToasts = [];
 let toastsPaused = false;
 let queueCounterEl = null;
-// Hover and keyboard-focus are independent pause sources — the timer
-// only resumes when *both* are inactive.
+// Hover, keyboard-focus, and touch are independent pause sources — the
+// timer only resumes when all three are inactive.
 let hoverActive = false;
 let focusActive = false;
+let touchActive = false;
 
 // Panel-facing callbacks injected by the facade.  Kept behind a
 // configure function so this module doesn't import its parent and
@@ -101,6 +102,20 @@ function ensureToastContainer() {
     focusActive = false;
     reconcilePauseState();
   });
+  // Touch users get neither hover nor focus events.  Touching the container
+  // pauses the countdown for as long as the finger is down.
+  toastContainer.addEventListener("touchstart", () => {
+    touchActive = true;
+    reconcilePauseState();
+  }, { passive: true });
+  toastContainer.addEventListener("touchend", () => {
+    touchActive = false;
+    reconcilePauseState();
+  }, { passive: true });
+  toastContainer.addEventListener("touchcancel", () => {
+    touchActive = false;
+    reconcilePauseState();
+  }, { passive: true });
   toastContainer.addEventListener("mouseover", (e) => {
     const toast = e.target.closest(".achievement-toast");
     if (toast && toast.dataset.hint)
@@ -109,7 +124,7 @@ function ensureToastContainer() {
 }
 
 function reconcilePauseState() {
-  const shouldPause = hoverActive || focusActive;
+  const shouldPause = hoverActive || focusActive || touchActive;
   if (shouldPause && !toastsPaused) pauseToasts();
   else if (!shouldPause && toastsPaused) resumeToasts();
 }
@@ -518,6 +533,7 @@ export function destroyToastContainer() {
   queueCounterEl = null;
   hoverActive = false;
   focusActive = false;
+  touchActive = false;
 }
 
 // Test hook — full reset including injected callbacks.
