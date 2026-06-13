@@ -161,6 +161,7 @@ const MODULES = [
   { path: "./themes/vhs.js", init: (m) => m.initVhs() },
   { path: "./themes/constellation.js", init: (m) => m.initConstellation() },
   { path: "./themes/konami.js", init: (m) => m.initKonami() },
+  { path: "./themes/lights-out.js", init: (m) => m.initLightsOut() },
 
   // Achievements
   { path: "./achievements/index.js", init: (m) => m.initAchievements() },
