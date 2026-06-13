@@ -390,6 +390,74 @@ const SHOOTING = defineConstants("sky.shooting", {
   },
 });
 
+// ── Aurora ──
+const AURORA = defineConstants("sky.aurora", {
+  IDLE_MS: {
+    value: 180000,
+    min: 30000,
+    max: 600000,
+    step: 10000,
+    description: "Cursor idle duration before the aurora fades in (ms)",
+  },
+  FADE_MS: {
+    value: 20000,
+    min: 1000,
+    max: 60000,
+    step: 1000,
+    description: "Fade-in and fade-out duration for the aurora ribbon (ms)",
+  },
+  BAND_HEIGHT: {
+    value: 0.18,
+    min: 0.02,
+    max: 0.5,
+    step: 0.01,
+    description: "Aurora band height as a fraction of canvas height",
+  },
+  WAVE_SPEED: {
+    value: 0.0004,
+    min: 0,
+    max: 0.005,
+    step: 0.0001,
+    description: "Phase advance per ms for the aurora wave",
+  },
+  WAVE_AMP: {
+    value: 0.03,
+    min: 0,
+    max: 0.15,
+    step: 0.005,
+    description: "Vertical wave amplitude as fraction of canvas height",
+  },
+  PEAK_OPACITY: {
+    value: 0.18,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Maximum opacity of the aurora at full idle",
+  },
+  RIBBON_STEPS: {
+    value: 40,
+    min: 8,
+    max: 120,
+    step: 4,
+    description: "Path tessellation steps for the aurora ribbon edge",
+  },
+  HUE_OSCILLATION_RATE: {
+    value: 0.3,
+    min: 0,
+    max: 2,
+    step: 0.05,
+    description:
+      "Rate at which the aurora hue oscillates across the palette range",
+  },
+  WAVE_SPATIAL_FREQ: {
+    value: 4,
+    min: 1,
+    max: 16,
+    step: 1,
+    description: "Number of full wave cycles across the ribbon width",
+  },
+});
+
 // Spawn parameters shared by stars and any element that should obey the
 // same sky rules (fade window, position spread, launch angle).
 export const SKY_SHARED = defineConstants("sky.shared", {
@@ -537,6 +605,7 @@ export function createSky(starCount) {
   let dwellLastY = NaN;
   let dwellStartMs = -1;
   let dwellPulseFired = false;
+  let _auroraPhase = 0;
 
   return {
     draw(ctx, canvas, sp, pal, forces) {
@@ -548,6 +617,57 @@ export function createSky(starCount) {
         SKY_SHARED.FADE_END,
       );
       if (starVis <= 0) return;
+
+      // ── Idle aurora ──
+      if (!prefersReducedMotion() && forces) {
+        const idleMs = performance.now() - forces.lastMoveTime;
+        const fadeIn = Math.max(
+          0,
+          Math.min(1, (idleMs - AURORA.IDLE_MS) / AURORA.FADE_MS),
+        );
+        const auroraAlpha = fadeIn * AURORA.PEAK_OPACITY * starVis;
+        if (auroraAlpha > 0.002) {
+          _auroraPhase += AURORA.WAVE_SPEED * (idleMs > AURORA.IDLE_MS ? 1 : 0);
+          const bandH = canvas.height * AURORA.BAND_HEIGHT;
+          const waveH = canvas.height * AURORA.WAVE_AMP;
+          const steps = AURORA.RIBBON_STEPS;
+          const stepW = canvas.width / steps;
+          const hue =
+            pal.auroraHueBase +
+            (Math.sin(_auroraPhase * AURORA.HUE_OSCILLATION_RATE) * 0.5 + 0.5) *
+              pal.auroraHueRange;
+          ctx.save();
+          ctx.globalCompositeOperation = "lighter";
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          for (let i = 0; i <= steps; i++) {
+            const x = i * stepW;
+            const bottomY =
+              bandH +
+              Math.sin(
+                _auroraPhase +
+                  (x / canvas.width) * Math.PI * 2 * AURORA.WAVE_SPATIAL_FREQ,
+              ) *
+                waveH;
+            ctx.lineTo(x, bottomY);
+          }
+          ctx.lineTo(canvas.width, 0);
+          ctx.closePath();
+          const grad = ctx.createLinearGradient(0, 0, 0, bandH + waveH);
+          grad.addColorStop(
+            0,
+            `hsla(${hue},80%,75%,${(auroraAlpha * 0.6).toFixed(4)})`,
+          );
+          grad.addColorStop(
+            0.5,
+            `hsla(${hue},80%,65%,${auroraAlpha.toFixed(4)})`,
+          );
+          grad.addColorStop(1, `hsla(${hue},80%,65%,0)`);
+          ctx.fillStyle = grad;
+          ctx.fill();
+          ctx.restore();
+        }
+      }
 
       // ── Dwell-pulse detector ──
       // Wall-clock timing (not `t`) so the threshold is honest under

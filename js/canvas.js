@@ -165,6 +165,7 @@ export function initCanvas(canvasEl, appearance, options) {
     holdStrength: 0,
     wellStrength: 0,
     hover: { x: 0, y: 0, active: false },
+    lastMoveTime: performance.now(),
   };
   const interactions = createInteractions();
 
@@ -465,6 +466,7 @@ export function initCanvas(canvasEl, appearance, options) {
       forces.hover.x = e.clientX;
       forces.hover.y = canvasY(e.clientY);
       forces.hover.active = true;
+      forces.lastMoveTime = performance.now();
     },
     { passive: true },
   );
@@ -475,6 +477,17 @@ export function initCanvas(canvasEl, appearance, options) {
     },
     { passive: true },
   );
+
+  // Any user activity resets the idle clock, not just mouse movement.
+  // Covers scroll, keyboard, and touch so the aurora doesn't fade in
+  // during active non-mouse interaction.
+  const resetIdle = () => {
+    forces.lastMoveTime = performance.now();
+  };
+  window.addEventListener("pointerdown", resetIdle, { passive: true });
+  window.addEventListener("keydown", resetIdle, { passive: true });
+  window.addEventListener("scroll", resetIdle, { passive: true });
+  window.addEventListener("touchstart", resetIdle, { passive: true });
 
   // Visualize dock-snap / dock-release events with an edge burst at the
   // reported side (each event has exactly one publisher in the codebase).
