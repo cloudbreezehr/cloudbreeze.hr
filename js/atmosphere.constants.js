@@ -802,6 +802,43 @@ export const MOTE_IMP = defineConstants("atmosphere.moteImpulse", {
   },
 });
 
+// ── Wind ──
+// Shared directional drift that slowly rotates on a sin wave, making
+// clouds and wisps feel like they're responding to a shifting breeze
+// rather than looping on fixed tracks.  Phase advances each frame;
+// one full cycle is long enough that the shift reads as weather, not
+// animation.
+export const WIND = defineConstants("atmosphere.wind", {
+  PHASE_SPEED: {
+    value: 0.00175,
+    min: 0,
+    max: 0.01,
+    step: 0.0001,
+    description: "Wind phase advance per frame (full cycle ≈ 60 s at 60 fps)",
+  },
+  CLOUD_AMP: {
+    value: 0.04,
+    min: 0,
+    max: 0.2,
+    step: 0.005,
+    description: "Max horizontal drift bias added to cloud speed",
+  },
+  WISP_SPEED_MOD: {
+    value: 0.12,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Max horizontal drift bias added to wisp speed",
+  },
+  WISP_Y_AMP: {
+    value: 0.06,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Max wisp vertical drift per frame from wind",
+  },
+});
+
 // ── Mote Hover Drift ──
 export const MOTE_HOVER = defineConstants("atmosphere.moteHover", {
   RADIUS: {

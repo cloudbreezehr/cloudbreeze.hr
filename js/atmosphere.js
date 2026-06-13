@@ -15,10 +15,16 @@ import {
   GUST,
   MOTE_IMP,
   MOTE_HOVER,
+  WIND,
 } from "./atmosphere.constants.js";
 
 // ── Module-scoped canvas refs ──
 let _canvas, _ctx;
+
+// ── Wind ──
+// Phase advances each draw frame; cos/sin of the phase produce the
+// horizontal and vertical drift biases shared by all sky particles.
+let _windPhase = 0;
 
 // ── Streak scroll parameters ──
 // Bands map scroll progress (0 = top, 1 = bottom) to opacity/speed multipliers
@@ -67,8 +73,8 @@ class Cloud {
       });
     }
   }
-  update() {
-    this.x += scaled(this.speedX);
+  update(windX) {
+    this.x += scaled(this.speedX + windX);
     const m = CLOUD.WRAP_MARGIN * this.scale;
     if (this.x < -m) this.x += _canvas.width + m * 2;
     if (this.x > _canvas.width + m) this.x -= _canvas.width + m * 2;
@@ -202,8 +208,9 @@ class BreezeWisp {
     this.width = WISP.WIDTH_MIN + Math.random() * WISP.WIDTH_RANGE;
     this.phase = Math.random() * Math.PI * 2;
   }
-  update() {
-    this.x += scaled(this.speed);
+  update(windX, windY) {
+    this.x += scaled(this.speed + windX);
+    this.y += scaled(windY);
     this.phase += scaled(WISP.PHASE_SPEED);
     if (this.x > _canvas.width + this.len) this.reset(false);
   }
@@ -316,6 +323,13 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
 
   return {
     draw(sp, scrollVelocity, pal, forces, blocky) {
+      // Advance wind phase and derive per-frame drift biases.  Wrapped to
+      // [0, 2π] to avoid unbounded float growth.
+      _windPhase = (_windPhase + scaled(WIND.PHASE_SPEED)) % (Math.PI * 2);
+      const windX = Math.cos(_windPhase) * WIND.CLOUD_AMP;
+      const wispWindX = Math.cos(_windPhase) * WIND.WISP_SPEED_MOD;
+      const wispWindY = Math.sin(_windPhase) * WIND.WISP_Y_AMP;
+
       // Streaks — evolve with scroll
       if (opts.streaks) {
         const streakP = getStreakParams(sp);
@@ -346,7 +360,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
               )
             : 1;
         clouds.forEach((c) => {
-          c.update();
+          c.update(windX);
           // Click gently pushes nearby clouds sideways
           if (forces.clickImpulse.strength > 0.1) {
             const cy = c.baseY + cloudYOffset;
@@ -385,7 +399,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           WISP.FADE_OUT_END,
         );
         wisps.forEach((w) => {
-          w.update();
+          w.update(wispWindX, wispWindY);
           w.draw(wispVis, pal, wispYOffset);
         });
       }
