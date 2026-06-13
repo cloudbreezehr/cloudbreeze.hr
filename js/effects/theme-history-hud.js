@@ -32,6 +32,10 @@ export const HUD = defineConstants("effects.themeHistoryHud", {
   ACTIVE_PULSE_MS: 2400,
   // ms a slot shows the "newly discovered" shimmer
   NEW_DISCOVERY_HIGHLIGHT_MS: 10000,
+  // hold duration before the stats tooltip appears on a discovered slot
+  LONG_PRESS_MS: 500,
+  // how long the stats tooltip lingers after the pointer lifts
+  STATS_DISMISS_MS: 1800,
 });
 
 export const STORAGE_KEY = "cb_theme_history_v1";
@@ -43,6 +47,8 @@ let hudEl = null;
 let handleEl = null;
 let slotsByTheme = new Map();
 let collapseTimer = 0;
+// Session-only activation counts, incremented on every theme-activate event.
+const _activationCounts = new Map();
 
 // ── Public API ──
 
@@ -63,6 +69,8 @@ export function initThemeHistoryHud() {
 
 function onThemeActivate(themeId) {
   if (!getThemeIds().includes(themeId)) return;
+
+  _activationCounts.set(themeId, (_activationCounts.get(themeId) ?? 0) + 1);
 
   const firstDiscovery = !discovered.has(themeId);
   if (firstDiscovery) {
@@ -197,9 +205,49 @@ function rebuildSlots() {
         "aria-label",
         `Revisit ${label} theme (discovered ${formatRelativeTime(discovered.get(id))})`,
       );
+
+      // Long-press shows discovery stats; short click toggles the theme.
+      let longPressTimer = null;
+      let longPressFired = false;
+      const cancelLongPress = () => clearTimeout(longPressTimer);
+      const dismissStats = () => slot.classList.remove("showing-stats");
+
+      slot.addEventListener("pointerdown", () => {
+        longPressFired = false;
+        longPressTimer = setTimeout(() => {
+          longPressFired = true;
+          const foundAt = discovered.get(id);
+          const count = _activationCounts.get(id) ?? 0;
+          const tip = slot.querySelector(".thh-stats-tip");
+          if (tip) {
+            const noun = count === 1 ? "time" : "times";
+            tip.textContent = `Found ${formatRelativeTime(foundAt)} · ${count} ${noun}`;
+          }
+          slot.classList.add("showing-stats");
+        }, HUD.LONG_PRESS_MS);
+      });
+      slot.addEventListener("pointerup", () => {
+        cancelLongPress();
+        setTimeout(dismissStats, HUD.STATS_DISMISS_MS);
+      });
+      slot.addEventListener("pointerleave", () => {
+        cancelLongPress();
+        dismissStats();
+      });
+      slot.addEventListener("pointercancel", () => {
+        cancelLongPress();
+        dismissStats();
+      });
+
       // `silent: true` skips the deactivation achievement — leaving a theme
       // from the HUD shouldn't count as discovering the original exit.
-      slot.addEventListener("click", () => toggleTheme(id, { silent: true }));
+      slot.addEventListener("click", () => {
+        if (longPressFired) {
+          longPressFired = false;
+          return;
+        }
+        toggleTheme(id, { silent: true });
+      });
     } else {
       slot.setAttribute("role", "presentation");
       slot.setAttribute("aria-label", "Undiscovered theme");
@@ -214,6 +262,13 @@ function rebuildSlots() {
     labelEl.className = "thh-label";
     labelEl.textContent = isDiscovered ? label : "???";
     slot.appendChild(labelEl);
+
+    if (isDiscovered) {
+      const tipEl = document.createElement("span");
+      tipEl.className = "thh-stats-tip";
+      tipEl.setAttribute("aria-hidden", "true");
+      slot.appendChild(tipEl);
+    }
 
     // Newly discovered: temporarily mark for extra shimmer
     if (
