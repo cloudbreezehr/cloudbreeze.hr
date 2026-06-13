@@ -326,12 +326,49 @@ describe("achievements/ui/panel", () => {
     });
   });
 
-  describe("hide-from-navbar button", () => {
-    it("closes the panel and invokes onHide", () => {
+  describe("footer overflow menu", () => {
+    function menuItem(label) {
+      return [...document.querySelectorAll(".achievement-menu-item")].find(
+        (el) => el.textContent.includes(label),
+      );
+    }
+
+    it("toggles open on the kebab button and exposes the rare actions", () => {
+      mod.openPanel();
+      const wrap = document.querySelector(".achievement-menu");
+      const btn = wrap.querySelector(".achievement-menu-btn");
+      expect(wrap.classList.contains("open")).toBe(false);
+      expect(btn.getAttribute("aria-expanded")).toEqual("false");
+
+      btn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(wrap.classList.contains("open")).toBe(true);
+      expect(btn.getAttribute("aria-expanded")).toEqual("true");
+      expect(menuItem("Export")).toBeTruthy();
+      expect(menuItem("Import")).toBeTruthy();
+      expect(menuItem("Hide from navbar")).toBeTruthy();
+    });
+
+    it("closes when a click lands outside the menu", () => {
+      mod.openPanel();
+      const wrap = document.querySelector(".achievement-menu");
+      wrap
+        .querySelector(".achievement-menu-btn")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      expect(wrap.classList.contains("open")).toBe(true);
+
+      document.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+      expect(wrap.classList.contains("open")).toBe(false);
+    });
+
+    it("Hide from navbar closes the panel and invokes onHide", () => {
       const onHide = vi.fn();
       mod.openPanel(onHide);
-      const hideBtn = document.querySelector(".achievement-hide-btn");
-      hideBtn.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      document
+        .querySelector(".achievement-menu-btn")
+        .dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      menuItem("Hide from navbar").dispatchEvent(
+        new MouseEvent("click", { bubbles: true }),
+      );
       expect(mod.isPanelOpen()).toBe(false);
       expect(onHide).toHaveBeenCalledOnce();
     });

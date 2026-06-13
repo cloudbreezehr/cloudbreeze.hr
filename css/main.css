@@ -4067,20 +4067,15 @@ body.light-appearance .activity-group-header {
   border-top: 1px solid rgba(255, 255, 255, 0.06);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.8rem;
 }
-.achievement-hide-btn {
-  background: none;
-  border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-family: "DM Mono", monospace;
-  font-size: 0.6rem;
-  letter-spacing: 0.05em;
-  padding: 0;
-  transition: color 0.2s;
-}
-.achievement-hide-btn:hover {
-  color: rgba(255, 255, 255, 0.6);
+/* Right-anchored info + actions group.  margin-left:auto pins it to the
+   right whether or not the streak occupies the left. */
+.achievement-footer-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
 }
 .achievement-streak {
   font-family: "DM Mono", monospace;
@@ -4088,22 +4083,107 @@ body.light-appearance .activity-group-header {
   color: rgba(255, 180, 90, 0.85);
   letter-spacing: 0.04em;
 }
-.achievement-backup {
-  display: flex;
-  gap: 0.6rem;
+
+/* Overflow menu — kebab button + drop-up list of rare footer actions. */
+.achievement-menu {
+  position: relative;
+  display: inline-flex;
 }
-.achievement-backup-btn {
+.achievement-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.3);
-  font-family: "DM Mono", monospace;
-  font-size: 0.55rem;
-  letter-spacing: 0.05em;
-  padding: 0;
-  transition: color 0.2s;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
 }
-.achievement-backup-btn:hover {
-  color: rgba(255, 255, 255, 0.6);
+.achievement-menu-btn svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.achievement-menu-btn:hover,
+.achievement-menu.open .achievement-menu-btn {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
+.achievement-menu-list {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 156px;
+  /* Local stacking only — sits above the panel's own in-scroll sticky
+     content (the activity date headers). */
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: rgba(var(--ink-rgb), 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    visibility 0.15s;
+}
+.achievement-menu.open .achievement-menu-list {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.achievement-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 6px 9px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: "DM Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.achievement-menu-item:hover,
+.achievement-menu-item:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+}
+.achievement-menu-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.5);
+}
+.achievement-menu-item:hover .achievement-menu-icon,
+.achievement-menu-item:focus-visible .achievement-menu-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
+.achievement-menu-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
 }
 .achievement-count-total {
   position: relative;
@@ -6141,6 +6221,7 @@ body.light-appearance .achievement-badge {
   .achievement-panel,
   .achievement-toast,
   .achievement-tooltip,
+  .achievement-menu-list,
   .achievement-toast-queue-counter,
   .achievement-activation-toast,
   .konami-confirm-prompt,
@@ -6150,6 +6231,7 @@ body.light-appearance .achievement-badge {
   body.light-appearance .achievement-panel,
   body.light-appearance .achievement-toast,
   body.light-appearance .achievement-tooltip,
+  body.light-appearance .achievement-menu-list,
   body.light-appearance .achievement-toast-queue-counter,
   body.light-appearance .achievement-activation-toast,
   body.light-appearance .konami-confirm-prompt,
@@ -6169,6 +6251,12 @@ body.light-appearance .achievement-badge {
   .achievement-tooltip {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+  /* Give the drop-up a solid system surface and a visible edge — without
+     a border it would be indistinguishable from the panel behind it. */
+  .achievement-menu-list {
+    background: Canvas;
+    border-color: CanvasText;
   }
   .achievement-card.unlocked .achievement-card-title {
     color: CanvasText;

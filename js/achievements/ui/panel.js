@@ -39,6 +39,12 @@ import {
   buildTabButton,
   updateTabBadges,
 } from "./tabs.js";
+import {
+  MENU_DOTS_SVG,
+  EXPORT_SVG,
+  IMPORT_SVG,
+  HIDE_NAVBAR_SVG,
+} from "./icons.js";
 
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
@@ -137,35 +143,26 @@ function paintLastUnlocked(el) {
   el.appendChild(time);
 }
 
-// Export/import controls for the footer.  Export downloads the live
-// state as JSON; import reads a chosen file and replaces local state
-// (then repaints).  Kept compact — two small icon-ish text buttons.
-function buildBackupControls() {
-  const wrap = document.createElement("div");
-  wrap.className = "achievement-backup";
+// Download the live Cloudlog state as a JSON file.
+function exportCloudlog() {
+  const blob = new Blob([storage.exportState()], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "cloudbreeze-cloudlog.json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
-  const exportBtn = document.createElement("button");
-  exportBtn.className = "achievement-backup-btn";
-  exportBtn.textContent = "Export";
-  exportBtn.title = "Download your Cloudlog as a JSON file";
-  exportBtn.addEventListener("click", () => {
-    const blob = new Blob([storage.exportState()], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cloudbreeze-cloudlog.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  });
-
-  const importInput = document.createElement("input");
-  importInput.type = "file";
-  importInput.accept = "application/json,.json";
-  importInput.style.display = "none";
-  importInput.addEventListener("change", () => {
-    const file = importInput.files && importInput.files[0];
+// Hidden file input that drives Import — clicked programmatically from the
+// overflow menu, reads a chosen backup, replaces local state, and repaints.
+function buildImportInput() {
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json,.json";
+  input.style.display = "none";
+  input.addEventListener("change", () => {
+    const file = input.files && input.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
@@ -180,17 +177,95 @@ function buildBackupControls() {
       }
     };
     reader.readAsText(file);
-    importInput.value = "";
+    input.value = "";
   });
-  const importBtn = document.createElement("button");
-  importBtn.className = "achievement-backup-btn";
-  importBtn.textContent = "Import";
-  importBtn.title = "Replace your Cloudlog from a backup file";
-  importBtn.addEventListener("click", () => importInput.click());
+  return input;
+}
 
-  wrap.appendChild(exportBtn);
-  wrap.appendChild(importBtn);
-  wrap.appendChild(importInput);
+// Drop-up overflow menu for the footer's rare actions, so the footer
+// stays uncluttered (just streak + count inline).  Each item is
+// `{ icon, label, onClick }`.  The menu drops up from a kebab button and
+// dismisses on outside click, Esc, or item activation — the document
+// listener is bound only while open and removed on close, so no handler
+// outlives the menu.
+function buildOverflowMenu(items) {
+  const wrap = document.createElement("div");
+  wrap.className = "achievement-menu";
+
+  const btn = document.createElement("button");
+  btn.className = "achievement-menu-btn";
+  btn.setAttribute("aria-haspopup", "menu");
+  btn.setAttribute("aria-expanded", "false");
+  btn.setAttribute("aria-label", "More options");
+  btn.title = "More options";
+  btn.innerHTML = MENU_DOTS_SVG;
+
+  const list = document.createElement("div");
+  list.className = "achievement-menu-list";
+  list.setAttribute("role", "menu");
+
+  let onOutside = null;
+
+  function close() {
+    if (!wrap.classList.contains("open")) return;
+    wrap.classList.remove("open");
+    btn.setAttribute("aria-expanded", "false");
+    if (onOutside) {
+      document.removeEventListener("pointerdown", onOutside, true);
+      onOutside = null;
+    }
+  }
+
+  function open() {
+    if (wrap.classList.contains("open")) return;
+    wrap.classList.add("open");
+    btn.setAttribute("aria-expanded", "true");
+    // Capture-phase so a click anywhere outside the menu dismisses it
+    // before in-panel handlers see the event; removed again on close.
+    onOutside = (e) => {
+      if (!wrap.contains(e.target)) close();
+    };
+    document.addEventListener("pointerdown", onOutside, true);
+    // Land keyboard focus on the first action.
+    const first = list.querySelector(".achievement-menu-item");
+    if (first) first.focus();
+  }
+
+  btn.addEventListener("click", () =>
+    wrap.classList.contains("open") ? close() : open(),
+  );
+
+  // Esc closes the menu and returns focus to its button, without bubbling
+  // up to the panel's own Escape-to-close handler.
+  list.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      close();
+      btn.focus();
+    }
+  });
+
+  for (const item of items) {
+    const mi = document.createElement("button");
+    mi.className = "achievement-menu-item";
+    mi.setAttribute("role", "menuitem");
+    const icon = document.createElement("span");
+    icon.className = "achievement-menu-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.innerHTML = item.icon;
+    const label = document.createElement("span");
+    label.textContent = item.label;
+    mi.appendChild(icon);
+    mi.appendChild(label);
+    mi.addEventListener("click", () => {
+      close();
+      item.onClick();
+    });
+    list.appendChild(mi);
+  }
+
+  wrap.appendChild(btn);
+  wrap.appendChild(list);
   return wrap;
 }
 
@@ -481,24 +556,11 @@ function buildPanel(onHide) {
 
   panel.appendChild(body);
 
-  // Footer with hide option
+  // Footer: ambient info inline (streak left, count right), with the rare
+  // actions (export / import / hide) tucked behind an overflow menu so the
+  // row never feels crammed.
   const footer = document.createElement("div");
   footer.className = "achievement-footer";
-  const hideBtn = document.createElement("button");
-  hideBtn.className = "achievement-hide-btn";
-  hideBtn.textContent = "Hide from navbar";
-  hideBtn.addEventListener("click", () => {
-    closePanel();
-    if (onHide) onHide();
-  });
-  const countEl = document.createElement("span");
-  countEl.className = "achievement-count-total";
-  const unlocked = storage.getUnlocked().length;
-  countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
-  countEl.setAttribute(
-    "data-tooltip",
-    `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
-  );
 
   // Visit streak — a tiny "back tomorrow" nudge.  Shown only at 2+
   // consecutive days so a first/one-off visit carries no clutter.
@@ -511,9 +573,36 @@ function buildPanel(onHide) {
     footer.appendChild(streakEl);
   }
 
-  footer.appendChild(hideBtn);
-  footer.appendChild(buildBackupControls());
-  footer.appendChild(countEl);
+  const footerEnd = document.createElement("div");
+  footerEnd.className = "achievement-footer-end";
+
+  const countEl = document.createElement("span");
+  countEl.className = "achievement-count-total";
+  const unlocked = storage.getUnlocked().length;
+  countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+  countEl.setAttribute(
+    "data-tooltip",
+    `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
+  );
+
+  const importInput = buildImportInput();
+  const menu = buildOverflowMenu([
+    { icon: EXPORT_SVG, label: "Export", onClick: exportCloudlog },
+    { icon: IMPORT_SVG, label: "Import", onClick: () => importInput.click() },
+    {
+      icon: HIDE_NAVBAR_SVG,
+      label: "Hide from navbar",
+      onClick: () => {
+        closePanel();
+        if (onHide) onHide();
+      },
+    },
+  ]);
+
+  footerEnd.appendChild(countEl);
+  footerEnd.appendChild(menu);
+  footerEnd.appendChild(importInput);
+  footer.appendChild(footerEnd);
   panel.appendChild(footer);
 
   // Hide "Mark all read" when nothing is unseen
