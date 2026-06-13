@@ -128,6 +128,7 @@ const MODULES = [
   { path: "./effects/nav-sparkle.js", init: (m) => m.initNavSparkle() },
   { path: "./effects/logo-breathing.js", init: (m) => m.initLogoBreathing() },
   { path: "./effects/logo-parallax.js", init: (m) => m.initLogoParallax() },
+  { path: "./effects/logo-sparkle.js", init: (m) => m.initLogoSparkle() },
   {
     path: "./effects/cursor-idle.js",
     init: (m) =>
