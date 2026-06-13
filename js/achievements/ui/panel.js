@@ -562,16 +562,23 @@ function buildPanel(onHide) {
   const footer = document.createElement("div");
   footer.className = "achievement-footer";
 
-  // Visit streak — a tiny "back tomorrow" nudge.  Shown only at 2+
-  // consecutive days so a first/one-off visit carries no clutter.
+  // Left-side footer info: streak when the user is on a run; visit count
+  // otherwise.  Streak conveys "come back tomorrow"; visit count gives a
+  // sense of history to single-day or non-consecutive visitors.
   const streak = storage.currentStreak();
+  const visitDays = storage.getState().counters.sessionDays?.length ?? 0;
+  const leftEl = document.createElement("span");
   if (streak >= 2) {
-    const streakEl = document.createElement("span");
-    streakEl.className = "achievement-streak";
-    streakEl.textContent = `🔥 ${streak}-day streak`;
-    streakEl.setAttribute("data-tooltip", "Consecutive days visited");
-    footer.appendChild(streakEl);
+    leftEl.className = "achievement-streak";
+    leftEl.textContent = `🔥 ${streak}-day streak`;
+    leftEl.setAttribute("data-tooltip", "Consecutive days visited");
+  } else {
+    leftEl.className = "achievement-visit-count";
+    const noun = visitDays === 1 ? "day" : "days";
+    leftEl.textContent = `Visit ${visitDays}`;
+    leftEl.setAttribute("data-tooltip", `Visited on ${visitDays} ${noun}`);
   }
+  footer.appendChild(leftEl);
 
   const footerEnd = document.createElement("div");
   footerEnd.className = "achievement-footer-end";

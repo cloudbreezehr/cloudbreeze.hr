@@ -4093,6 +4093,12 @@ body.light-appearance .activity-group-header {
   color: rgba(255, 180, 90, 0.85);
   letter-spacing: 0.04em;
 }
+.achievement-visit-count {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.04em;
+}
 
 /* Overflow menu — kebab button + drop-up list of rare footer actions. */
 .achievement-menu {
