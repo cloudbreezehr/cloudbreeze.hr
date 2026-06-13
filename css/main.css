@@ -903,6 +903,46 @@ body::after {
 }
 
 /* NAV */
+/* Scroll-progress indicator — fills left-to-right as the user scrolls */
+#scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  transform-origin: left;
+  transform: scaleX(0);
+  background: linear-gradient(
+    to right,
+    rgba(var(--theme-glow, 130, 200, 255), 0.7),
+    rgba(var(--theme-glow, 130, 200, 255), 0.4)
+  );
+  z-index: var(--z-nav);
+  pointer-events: none;
+}
+@keyframes scroll-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@supports (animation-timeline: scroll()) {
+  #scroll-progress {
+    animation: scroll-progress-fill linear both;
+    animation-timeline: scroll(root block);
+  }
+}
+body.upside-down #scroll-progress {
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  #scroll-progress {
+    display: none;
+  }
+}
+
 nav {
   display: flex;
   align-items: center;
