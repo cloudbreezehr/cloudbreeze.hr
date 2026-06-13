@@ -178,18 +178,19 @@ for (const { path, init } of MODULES) load(path, init);
 // this is a shortcut, not a found easter egg.  Theme toggles register
 // during each theme module's async init, so poll briefly until the
 // toggle exists rather than racing it.
+const THEME_PARAM_POLL_MS = 50;
+const THEME_PARAM_MAX_ATTEMPTS = 40; // poll window = POLL_MS * MAX_ATTEMPTS
 const themeParam = new URLSearchParams(window.location.search).get("theme");
 if (themeParam) {
   load("./themes/registry.js", (m) => {
     if (!m.isThemeRegistered(themeParam)) return;
     let attempts = 0;
-    const MAX_ATTEMPTS = 40; // ~2s at 50ms
     const poll = setInterval(() => {
-      if (m.hasToggle(themeParam) || attempts++ >= MAX_ATTEMPTS) {
+      if (m.hasToggle(themeParam) || attempts++ >= THEME_PARAM_MAX_ATTEMPTS) {
         clearInterval(poll);
         if (m.hasToggle(themeParam))
           m.toggleTheme(themeParam, { silent: true });
       }
-    }, 50);
+    }, THEME_PARAM_POLL_MS);
   });
 }
