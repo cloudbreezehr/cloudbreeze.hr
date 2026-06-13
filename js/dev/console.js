@@ -198,7 +198,10 @@ function buildSectionEl(category, registry, rowMap) {
     if (entry.type !== "number") continue;
     const row = document.createElement("div");
     row.className = "dc-row";
-    row.dataset.searchKey = `${category}.${key} ${entry.label}`.toLowerCase();
+    // Include the description so a search like "cloud opacity" finds the
+    // knob even when the user doesn't know its constant name.
+    row.dataset.searchKey =
+      `${category}.${key} ${entry.label} ${entry.description || ""}`.toLowerCase();
 
     const top = document.createElement("div");
     top.className = "dc-row-top";
