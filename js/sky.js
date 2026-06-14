@@ -457,6 +457,41 @@ const AURORA = defineConstants("sky.aurora", {
     step: 1,
     description: "Number of full wave cycles across the ribbon width",
   },
+  MIN_VISIBLE_ALPHA: {
+    value: 0.002,
+    min: 0,
+    max: 0.05,
+    step: 0.001,
+    description: "Alpha below which the aurora is skipped (no draw cost)",
+  },
+  SATURATION: {
+    value: 80,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Aurora HSL saturation (%)",
+  },
+  LIGHTNESS_TOP: {
+    value: 75,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Aurora HSL lightness at the top gradient stop (%)",
+  },
+  LIGHTNESS_BASE: {
+    value: 65,
+    min: 0,
+    max: 100,
+    step: 1,
+    description: "Aurora HSL lightness at the mid/bottom gradient stops (%)",
+  },
+  TOP_ALPHA_FACTOR: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Top gradient stop alpha as a fraction of the base alpha",
+  },
 });
 
 // ── Comet Streak ──
@@ -666,7 +701,7 @@ export function createSky(starCount) {
           Math.min(1, (idleMs - AURORA.IDLE_MS) / AURORA.FADE_MS),
         );
         const auroraAlpha = fadeIn * AURORA.PEAK_OPACITY * starVis;
-        if (auroraAlpha > 0.002) {
+        if (auroraAlpha > AURORA.MIN_VISIBLE_ALPHA) {
           _auroraPhase += scaled(AURORA.WAVE_SPEED);
           const bandH = canvas.height * AURORA.BAND_HEIGHT;
           const waveH = canvas.height * AURORA.WAVE_AMP;
@@ -694,15 +729,20 @@ export function createSky(starCount) {
           ctx.lineTo(canvas.width, 0);
           ctx.closePath();
           const grad = ctx.createLinearGradient(0, 0, 0, bandH + waveH);
+          const sat = AURORA.SATURATION;
+          const topAlpha = (auroraAlpha * AURORA.TOP_ALPHA_FACTOR).toFixed(4);
           grad.addColorStop(
             0,
-            `hsla(${hue},80%,75%,${(auroraAlpha * 0.6).toFixed(4)})`,
+            `hsla(${hue},${sat}%,${AURORA.LIGHTNESS_TOP}%,${topAlpha})`,
           );
           grad.addColorStop(
             0.5,
-            `hsla(${hue},80%,65%,${auroraAlpha.toFixed(4)})`,
+            `hsla(${hue},${sat}%,${AURORA.LIGHTNESS_BASE}%,${auroraAlpha.toFixed(4)})`,
           );
-          grad.addColorStop(1, `hsla(${hue},80%,65%,0)`);
+          grad.addColorStop(
+            1,
+            `hsla(${hue},${sat}%,${AURORA.LIGHTNESS_BASE}%,0)`,
+          );
           ctx.fillStyle = grad;
           ctx.fill();
           ctx.restore();
