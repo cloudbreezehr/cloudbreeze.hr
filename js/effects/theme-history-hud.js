@@ -208,12 +208,16 @@ function rebuildSlots() {
 
       // Long-press shows discovery stats; short click toggles the theme.
       let longPressTimer = null;
+      let dismissTimer = null;
       let longPressFired = false;
       const cancelLongPress = () => clearTimeout(longPressTimer);
       const dismissStats = () => slot.classList.remove("showing-stats");
 
       slot.addEventListener("pointerdown", () => {
         longPressFired = false;
+        // Cancel a pending auto-dismiss from the previous press so it can't
+        // fire mid-press and hide the stats this press is about to show.
+        clearTimeout(dismissTimer);
         longPressTimer = setTimeout(() => {
           longPressFired = true;
           const foundAt = discovered.get(id);
@@ -228,7 +232,7 @@ function rebuildSlots() {
       });
       slot.addEventListener("pointerup", () => {
         cancelLongPress();
-        setTimeout(dismissStats, HUD.STATS_DISMISS_MS);
+        dismissTimer = setTimeout(dismissStats, HUD.STATS_DISMISS_MS);
       });
       slot.addEventListener("pointerleave", () => {
         cancelLongPress();
