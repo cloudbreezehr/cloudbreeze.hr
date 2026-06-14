@@ -1,8 +1,8 @@
 // ── Overlay History ──
 // Back-button / back-gesture handling for dismissable overlays with
-// symmetric Forward-to-reopen.  Each overlay registers via
-// pushOverlay() when it opens; the returned handle exposes pop() for
-// the overlay's own close paths.
+// Forward-to-reopen after a browser-Back close.  Each overlay
+// registers via pushOverlay() when it opens; the returned handle
+// exposes pop() for the overlay's own close paths.
 //
 // Model: each push assigns a monotonic seq and pushes a synthetic
 // history entry carrying that seq.  The module tracks every entry
@@ -18,10 +18,14 @@
 // Back/UI-close, and guards onClose/onReopen from firing redundantly.
 //
 // When the UI closes the topmost overlay via handle.pop(), we call
-// history.back() to rewind the cursor so the previous URL state is
-// current.  That rewind fires popstate, but the entry is already
-// marked dead so onClose doesn't re-fire.  A forward entry remains
-// on the browser stack — pressing Forward reopens the overlay.
+// history.replaceState to convert the overlay entry into a plain base
+// entry in place.  This avoids history.back(), which triggers browser
+// scroll restoration even with scrollRestoration='manual' on some
+// platforms, causing the page to jump to where it was when the overlay
+// was opened.  replaceState emits no popstate, so the overlay's own
+// close path handles cleanup; no double-close risk.  The trade-off:
+// a UI close does not leave a forward entry, so Forward won't reopen
+// the overlay (it will after a browser-Back close).
 //
 // When the UI closes an overlay that is *not* on top, we can't
 // selectively remove a middle entry — the stack just marks it dead.
@@ -37,6 +41,11 @@
 // history.pushState / history.replaceState.  popstate events are
 // interpreted as overlay traversals; a future SPA router or analytics
 // state would need to coexist with this module explicitly.
+
+// Opt out of browser scroll restoration globally so history.back() never
+// animates or snaps the page to the position recorded at pushState time.
+// This module owns all pushState calls for the app, so the opt-out is safe.
+history.scrollRestoration = "manual";
 
 const entries = new Map();
 let currentSeq = null;
@@ -95,10 +104,10 @@ function ensureListener() {
  * @param {Function} onClose — invoked when the user navigates back
  *   out of this overlay's history entry (Back press / back-gesture).
  * @param {Function} [onReopen] — optional.  Invoked when the user
- *   navigates forward into this overlay's entry after it was closed
- *   (Back-then-Forward, or Forward after a UI-close left a forward
- *   entry).  Must be idempotent — it may fire for an already-open
- *   overlay in edge cases.
+ *   navigates forward into this overlay's entry after a browser-Back
+ *   close.  Not called after a UI close (handle.pop()), which leaves
+ *   no forward entry.  Must be idempotent — it may fire for an
+ *   already-open overlay in edge cases.
  * @returns {{ pop: Function }} handle.  Call pop() from the overlay's
  *   own close paths (X button, Escape, outside click, auto-close on
  *   scroll).  Idempotent: safe to call more than once per close.
@@ -114,15 +123,17 @@ export function pushOverlay(onClose, onReopen) {
     pop() {
       if (!entry.alive) return;
       entry.alive = false;
-      // Only rewind the browser when this overlay is the topmost one.
-      // history.back() fires popstate, and the handler will find the
-      // entry already marked dead and skip onClose.  If this entry is
-      // buried under a newer overlay's entry, we can't selectively
-      // remove a middle entry — let it sit dead until a natural Back
-      // traversal reaches it; the handler will skim past.  Forward
-      // into a buried dead entry will still call onReopen if defined.
+      // Only touch the history entry when this overlay is the topmost
+      // one.  replaceState converts it to a plain base entry without
+      // triggering browser scroll restoration (history.back() causes a
+      // page jump on some platforms even with scrollRestoration='manual').
+      // replaceState fires no popstate, so onClose is never re-invoked.
+      // If this entry is buried under a newer overlay, we can't remove
+      // a middle entry — leave it dead until a natural Back traversal
+      // reaches it; the handler will skim past.
       if (currentSeq === seq) {
-        history.back();
+        currentSeq = null;
+        history.replaceState(null, "");
       }
     },
     // Unregister this overlay entirely — no future popstate traversal

@@ -103,10 +103,9 @@ describe("overlay-history", () => {
     it("skips onClose on a dead entry (UI already closed it)", () => {
       const onClose = vi.fn();
       const handle = overlay.pushOverlay(onClose);
-      handle.pop(); // marks dead + rewinds (popstate fires from back())
+      handle.pop(); // marks dead (replaceState, no popstate fired)
       onClose.mockClear();
-      // Another popstate into the same dead entry (e.g., user navigates
-      // Back-Forward-Back manually) must not re-fire onClose.
+      // A Back popstate arriving after a UI close must not re-fire onClose.
       popstateToRoot();
       expect(onClose).not.toHaveBeenCalled();
     });
@@ -170,13 +169,13 @@ describe("overlay-history", () => {
   });
 
   describe("handle.pop() — UI-initiated close", () => {
-    it("rewinds the browser when the overlay is topmost", () => {
-      const backSpy = vi.spyOn(history, "back");
+    it("replaces the overlay entry in-place when the overlay is topmost", () => {
+      const replaceSpy = vi.spyOn(history, "replaceState");
       const onClose = vi.fn();
       const handle = overlay.pushOverlay(onClose);
       handle.pop();
-      expect(backSpy).toHaveBeenCalledOnce();
-      backSpy.mockRestore();
+      expect(replaceSpy).toHaveBeenCalledOnce();
+      replaceSpy.mockRestore();
     });
 
     it("does not invoke onClose when the UI closed it first", () => {
@@ -189,40 +188,41 @@ describe("overlay-history", () => {
     });
 
     it("is idempotent — second pop() in the same cycle is a no-op", () => {
-      const backSpy = vi.spyOn(history, "back");
+      const replaceSpy = vi.spyOn(history, "replaceState");
       const handle = overlay.pushOverlay(() => {});
       handle.pop();
       handle.pop();
       handle.pop();
-      expect(backSpy).toHaveBeenCalledOnce();
-      backSpy.mockRestore();
+      // pushOverlay itself calls pushState once; pop() calls replaceState once
+      expect(replaceSpy).toHaveBeenCalledOnce();
+      replaceSpy.mockRestore();
     });
 
-    it("rewinds again after Forward-reopen re-arms the entry", () => {
-      // pop() is gated on the alive flag, which onReopen flips back
-      // to true.  So the sequence open → pop → reopen → pop should
-      // rewind the browser twice.  Stubbed history.back so happy-dom
-      // doesn't fire its own popstate and race the synthetic ones.
-      const backSpy = vi.spyOn(history, "back").mockImplementation(() => {});
+    it("replaces again after Forward-reopen re-arms the entry", () => {
+      // pop() is gated on the alive flag, which onReopen flips back to true.
+      // open → pop (replaceState #1) → Forward-reopen → pop (replaceState #2)
+      const replaceSpy = vi.spyOn(history, "replaceState");
       const handle = overlay.pushOverlay(
         () => {},
         () => {},
       );
-      handle.pop();
-      popstateToRoot(); // synthetic Back-out (what the stubbed back() would fire)
-      popstateToSeq(0); // Forward-reopen
-      handle.pop();
-      expect(backSpy).toHaveBeenCalledTimes(2);
-      backSpy.mockRestore();
+      handle.pop(); // replaceState #1
+      // replaceState fires no popstate; simulate Forward directly
+      popstateToSeq(0); // re-arms entry via onReopen
+      handle.pop(); // replaceState #2
+      // pushOverlay called pushState once; two pop()s call replaceState twice
+      expect(replaceSpy).toHaveBeenCalledTimes(2);
+      replaceSpy.mockRestore();
     });
 
-    it("skips history.back() when the overlay is buried under a newer one", () => {
-      const backSpy = vi.spyOn(history, "back");
+    it("skips replaceState when the overlay is buried under a newer one", () => {
+      const replaceSpy = vi.spyOn(history, "replaceState");
+      const pushCount = replaceSpy.mock.calls.length; // pushOverlay uses pushState, not replaceState
       const buriedHandle = overlay.pushOverlay(() => {});
       overlay.pushOverlay(() => {});
       buriedHandle.pop();
-      expect(backSpy).not.toHaveBeenCalled();
-      backSpy.mockRestore();
+      expect(replaceSpy).toHaveBeenCalledTimes(pushCount); // unchanged
+      replaceSpy.mockRestore();
     });
   });
 
