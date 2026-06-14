@@ -86,7 +86,14 @@ export function trapFocus(container, { initialFocus } = {}) {
         document.activeElement === document.body ||
         container.contains(document.activeElement))
     ) {
-      previouslyFocused.focus();
+      // preventScroll guards against browsers scrolling to the trigger element
+      // on focus restore.  Some browsers do not honor it for fixed-position
+      // elements, so we also snapshot and restore scrollY as a fallback.
+      const savedScrollY = window.scrollY;
+      previouslyFocused.focus({ preventScroll: true });
+      if (window.scrollY !== savedScrollY) {
+        window.scrollTo({ top: savedScrollY, behavior: "instant" });
+      }
     }
   };
 }

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { trapFocus } from "../../../js/achievements/focus-trap.js";
 
 // happy-dom does not emulate layout, so offsetParent is null for many
@@ -152,5 +152,42 @@ describe("achievements/focus-trap", () => {
     const event = pressTab(false);
     expect(event.defaultPrevented).toBe(true);
     expect(document.activeElement).toBe(a);
+  });
+
+  it("restores scroll position when focus() causes a scroll despite preventScroll:true", () => {
+    // Some browsers ignore preventScroll:true for fixed-position elements and
+    // scroll the page.  The release() function snapshots scrollY before
+    // focus() and calls window.scrollTo to undo any movement.
+    const a = makeButton("a");
+    container.append(a);
+    release = trapFocus(container);
+
+    // Simulate the page being at scroll position 500 when the trap is released.
+    const scrollToSpy = vi.spyOn(window, "scrollTo");
+    Object.defineProperty(window, "scrollY", {
+      value: 500,
+      configurable: true,
+    });
+
+    // Simulate a browser that scrolls to 0 when focus() is called (ignoring
+    // preventScroll:true).
+    const origFocus = previouslyFocused.focus.bind(previouslyFocused);
+    vi.spyOn(previouslyFocused, "focus").mockImplementation((opts) => {
+      origFocus(opts);
+      Object.defineProperty(window, "scrollY", {
+        value: 0,
+        configurable: true,
+      });
+    });
+
+    release();
+    release = undefined;
+
+    // The fallback must have fired window.scrollTo to restore the saved position.
+    expect(scrollToSpy).toHaveBeenCalledWith({ top: 500, behavior: "instant" });
+
+    // Restore
+    Object.defineProperty(window, "scrollY", { value: 0, configurable: true });
+    scrollToSpy.mockRestore();
   });
 });
