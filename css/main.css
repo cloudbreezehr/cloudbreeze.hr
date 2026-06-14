@@ -1327,6 +1327,16 @@ nav {
   animation: scrollPulse 2s ease infinite;
 }
 
+/* On short viewports the vertically-centered hero content reaches the
+   bottom band where this absolutely-positioned cue sits, so it would
+   overlap the hero buttons. Drop the decorative cue there — scrolling is
+   self-evident on a short screen. */
+@media (max-height: 640px) {
+  .scroll-hint {
+    display: none;
+  }
+}
+
 /* SECTIONS */
 section {
   padding: 6rem 3rem;
