@@ -1,0 +1,144 @@
+# Project Context
+
+Cloudbreeze.hr is a single-page marketing site for a cloud consultancy. The visual identity is built around an interactive sky canvas (`#bg-canvas`) that evolves as the user scrolls — from near-space (stars, shooting stars) through atmosphere (clouds, wisps) to ground level (horizon glow). The site has hidden easter-egg themes that transform the visual experience.
+
+## Architecture
+
+**Canvas module structure**: All background visuals render on a single full-viewport canvas (`#bg-canvas`). The system is split into focused ES modules, each following the factory pattern — `createXxx(canvas, ctx, ...)` returns an object with `draw()` and optional `click()`, `clickBurst()`, etc. Particle classes within modules follow `constructor` → `reset(init)` → `update()` → `draw()`.
+
+```
+js/
+  canvas.js             Orchestrator: render loop, scroll, pointer dispatch, forces object
+  canvas-utils.js       Shared utilities: scrollFade, drawTrail
+  scroll-highlight.js   Smooth-scroll an element into view, then flash it
+  sky.js                Stars, shooting stars
+  atmosphere.js         Clouds, streaks, wisps, motes, gusts, horizon glow
+  fury.js               Click fury: lightning, aurora, meteors
+  interactions.js       Force helpers, click particles, orbit, trail, gravity well
+  particles/
+    frozen.js           Snowflake class + snow globe turbulence
+    deep-sea.js         Bubble + Jellyfish classes, ambient spawning, click/drag bubbles
+    blocky.js           Firefly/Butterfly class, block fragments, pixelation post-process
+```
+
+**Shared state**: The `forces` object `{ clickImpulse, isDragging, dragPos, holdStrength, wellStrength }` is owned by `canvas.js` and passed by reference to modules that need interaction. Frame-varying values (`sp`, `scrollVelocity`, `pal`, `isDark`) are explicit parameters to each module's `draw()`.
+
+**Palette system** (`js/colors.js`): Two-layer color control:
+1. CSS filter on `#bg-canvas` handles global tone shifts per theme
+2. `resolvePalette(appearance, theme)` returns a flat color object — callers read `pal.colorName` with zero branching
+
+Adding a new theme means: add an override object in `colors.js` + a CSS filter rule in `main.css` + detection in the canvas render loop. Zero changes to rendering code.
+
+**Theme priority**: Last-triggered wins via `body.dataset.lastTheme`, falling back to the registered `THEMES` array order (`deep-sea > frozen > blocky > upside-down`). Detected in the render loop via body class checks.
+
+**Pointer interactions**: Unified system using pointer events with touch fallback. `js/pointer.js` provides `bindPointer()` for event binding. `js/interactions.js` handles the actual particle effects (click burst, orbit, trail, gravity well) and exports pure force helpers (`applyRepulsion`, `applyAttraction`, `applyWellForce`) used by particle modules.
+- `clickImpulse` {x, y, strength} — repels nearby particles on click
+- `isDragging` / `dragPos` — attracts nearby particles with tangential orbit, scales with hold duration
+- `scrollVelocity` — pushes scroll-reactive particles
+- `pointercancel` → touch event fallback (`touchmove`/`touchend`) for mobile scroll
+
+**Any new canvas particle type should interact with these existing forces.** Import and use `applyRepulsion`, `applyAttraction`, `applyWellForce` from `interactions.js`. See `particles/frozen.js` (Snowflake) or `atmosphere.js` (ScrollMote) for reference.
+
+**Any new canvas particle's per-frame motion math goes through `scaled()` / `chance()` from `js/motion.js`.** Never read `motionScale()` directly and never accept a `motionScale` parameter — the helpers absorb the policy at the call site. Position deltas, phase advances, impulse forces use `scaled(value)`; stochastic spawn rolls use `chance(p)` instead of `Math.random() < p * motionScale()`. Friction-style velocity decay (`this.vx *= FRICTION`) is *not* motion and stays unwrapped — it's damping that should bleed off coasting velocity even when the budget is zero. For "skip entirely" gates (one-shot bursts, flashing effects, rAF-loop suspension) use `prefersReducedMotion()` from the same module. The unit test for the particle should include a reduced-motion case asserting position is invariant across an `update()` call. See `particles/frozen.js` (Snowflake) for the standard pattern; `particles/deep-sea.js` (Jellyfish) for custom integration that wraps bespoke math in `scaled()`.
+
+**Easter eggs** (`js/themes/`): Themes triggered by hidden user actions. All follow the same force-based pattern: accumulate `force` 0→1 via user input, show progressive visual indicators at thresholds, trigger a wipe transition at 1.0, apply body class. Deactivation uses the same system with fewer presses. Deactivation wipe timing must use the same constants as activation (don't hardcode).
+
+**Achievement system** (`js/achievements/`): The Cloudlog tracks achievements across exploration, mastery, theme-specific, and meta sets. Integration is event-based: source modules dispatch `CustomEvent("achievement", { detail: { type, ...data } })` on `window`, and `tracker.js` is the sole module that evaluates conditions and triggers unlocks. Never duplicate detection logic — if a source module already knows something happened, dispatch an event from there and let the tracker listen. See `spec/spec-achievements.md` for the full spec and `js/achievements/registry.js` for definitions and point tiers.
+
+**Every new feature or interaction MUST include achievement integration.** When adding a new theme, particle effect, interaction, or user-facing feature:
+1. Dispatch appropriate `CustomEvent("achievement", ...)` events from the source module at meaningful moments
+2. Add corresponding achievement definitions to `js/achievements/registry.js`
+3. Add handlers in `js/achievements/tracker.js` that listen for those events
+4. Never track state in the tracker that the source module already tracks — reuse via events
+
+## Code Standards
+
+- **No magic numbers**: Every numeric literal that controls appearance or behavior must be a named constant — no exceptions. This applies to all files equally: canvas.js, easter-egg trigger modules (blocky.js, frozen.js, etc.), and anywhere else. Opacity values, thresholds, multipliers, durations, probabilities, pixel sizes — all of it. Group constants by feature with section comments (`// ── Feature Name ──`) at the top of the file or function scope.
+- **No appearance/theme branching in rendering**: Colors come from the palette. Don't write `isDark ? X : Y` in draw code — add colors to the palette overrides instead.
+- **Self-cleaning DOM effects**: Use Web Animations API with `onfinish = () => el.remove()` for transient particles (frost breath, ripples). Never accumulate orphaned DOM nodes.
+- **Performance**: Canvas particles use object pools or fixed arrays, not unbounded allocation. Any dynamically-spawned particle array (click effects, fragments, pops) must have a cap constant and a guard at the push site. Gradient calls are the most expensive canvas operation — skip them for small/invisible particles. Batch `moveTo`/`lineTo` calls into a single `beginPath`/`stroke` when possible.
+- **CSS theme rules**: Append after the previous theme's section. Follow the established pattern — cursor, cloud-svg filter, hero gradient, buttons, cards, nav CTA, contact, footer, `::after` opacity.
+- **Touch compatibility**: Any pointer interaction must handle `pointercancel` gracefully. Touch events (`touchmove`/`touchend`) serve as fallback when the browser captures the pointer for native gestures.
+- **Upside-down awareness**: The upside-down theme flips the canvas and page via CSS `scaleY(-1)`. Any feature that anchors to a specific viewport edge or uses scroll-position thresholds must invert its scroll logic when `body.upside-down` is active (`1 - sp` instead of `sp`). The CSS flip handles the visual inversion automatically — only scroll-dependent visibility/positioning needs manual handling.
+- **Verify derived values**: When a value is computed from another, never compare it back to its own source in a condition — the result is always true/false. Simplify or remove the dead branch.
+- **No inter-diff comments**: Comments must describe the code as it is now, not how it got here. Don't write "extracted from X", "moved from Y", "duplicated here", "was previously in Z". A reader who has never seen the git history should find every comment meaningful.
+- **No consumer names in module docs**: A module's own comments, headers, and docstrings must not enumerate its callers. Don't write "used by X and Y", "(the Cloudlog panel, mobile nav)", "consumed by foo.js". The list goes stale the moment a consumer is added, removed, or renamed — and modules shouldn't know or care who imports them. Describe *what the module does* and *what its contract is*; callers are an `rg` away when someone actually needs them.
+- **No incidental subsystem references**: Don't justify code with the names of other modules or subsystems unless that cross-module relationship *is* the durable contract. Don't write "size is dynamic so the dev console can tune it", "this fires events that the analytics bridge listens for", "exported so tests can derive timings". The example subsystem may be renamed, removed, or replaced; the rule shouldn't move when it does. Same hazard as naming consumers — the durable thing is *what* the code does and *why* (the constraint, the invariant), not *which other module incidentally cares*. Acceptable exception: when the cross-module relationship is genuinely the contract, like an event-emitter module whose only purpose is feeding a specific pipeline, or a custom event with exactly one publisher in the codebase — then the relationship is the rule, not an example of it. **Test for "incidental":** mentally swap the named consumer with "X". If the comment still teaches the reader something useful ("X listens for these events"), the name was incidental and should be removed. If the comment becomes meaningless ("X dispatches these events" — to who? from where?), the name was the contract — keep it, because removing it leaves the reader with nothing.
+- **Lead with the invariant, not the anecdote**: When a comment explains *why* a line of code exists, lead with the durable rule (the invariant, the contract, the constraint that will still be true next year) and relegate any specific scenario to a brief parenthetical — or omit it entirely. Don't write "panel was closed via Back, then reopened via the nav button, leaving a stale handle, so…"; write "invariant: `_overlayHandle` is always null or the currently-tracked overlay" and trust the reader. Narrative scenarios age oddly — the UI flow they describe gets renamed, rewired, or deleted while the invariant remains true, and the comment is left recounting a workflow nobody can find anymore. Same hazard as naming consumers: the durable thing is the rule; the example is the expendable part.
+- **Preserve comments when rewriting files**: Reaching for `Write` to replace an existing file — instead of `Edit` on the specific regions — tends to silently drop the surrounding section headers, explainer comments, and subsystem banners that aren't visible in your mental model of the new code. Before finalizing a `Write` that overwrites an existing file, diff the old and new contents (or read the prior version from git) and confirm every comment in the original either survives, gets replaced by a more useful one, or is intentionally removed with a reason. Prefer `Edit` for surgical changes; the preservation is automatic.
+- **Don't restate values or units near constants**: Comments next to a constant must not embed the value, the unit, or any phrase that goes stale when the constant is tuned. Don't write "// 30-minute window", "// 3-hour throttle", "// 600ms settle delay", "// past the 30-minute throttle" — every one of those becomes a lie the moment someone changes the number. The constant's name and value carry the *what*; the comment only adds value if it explains the *why* (the trade-off, the constraint, the reason this knob exists). If a comment passes the test "would this still be correct if the value doubled?", keep it; otherwise rewrite or delete. Same rule applies to test code: a comment that says "advance 10 minutes — still within the throttle" rots when the throttle moves; "still within the throttle window" doesn't, and the symbolic timer math (`THROTTLE_MS / 3`) carries the rest.
+- **Comment footprint matches code footprint**: A module that touches a concern at one line gets one comment about that concern, at that line — not a header paragraph, not a per-function "X-aware" qualifier, not docstring sentences explaining how X interacts with each export. If the code's participation in X is "call one helper at one boundary," the prose's participation should match. Example: a module that adds an overlay element with a CSS class to opt into a global flip rule doesn't need its file header to discuss flipping, doesn't need each public function's docstring to mention the flipped case, and doesn't need internal comments to explain how the flip affects unrelated code paths. The class name and the helper name carry the meaning at the one site that uses them. Test: if a reader deletes every comment that mentions concern X and the code still teaches them what they need to know to edit it, those comments were noise. The reader who needs to understand X follows the import or grep; they don't need every function in the file to remind them X exists.
+
+## Current Themes
+
+| Theme | Trigger | Body class | Key files |
+|-------|---------|------------|-----------|
+| Deep-sea | Hold footer 10 seconds | `body.deep-sea` | `js/themes/deep-sea.js`, `js/particles/deep-sea.js` |
+| Frozen | Click logo 25 times | `body.frozen` | `js/themes/frozen.js`, `js/particles/frozen.js` |
+| Blocky | Click appearance toggle 20 times | `body.blocky` | `js/themes/blocky.js`, `js/particles/blocky.js` |
+| Rainy | Click hero tag ("Cloud Solutions") 15 times | `body.rainy` | `js/themes/rainy.js`, `js/particles/rain.js` |
+| Paper | Type SKETCH or DRAW | `body.paper` | `js/themes/paper.js`, `js/particles/paper.js` |
+| VHS | Press Escape 5 times rapidly | `body.vhs` | `js/themes/vhs.js`, `js/particles/vhs.js` |
+| Upside-down | Overscroll bottom of page 20+ times | `body.upside-down` | `js/themes/upside-down.js` |
+
+## Focus Areas
+
+- **New themes/easter eggs**: The palette + theme architecture is designed for this. Each new theme is additive — override object, CSS section, body class, trigger module.
+- **Progressive indicators**: Easter eggs should have visible buildup before triggering (the frozen theme has 5 stages from subtle to dramatic). Users should feel something is happening before the payoff.
+- **Interactivity**: Background elements should respond to user input. Clicks repel, drags attract with orbit, scroll pushes. This makes the canvas feel alive rather than decorative.
+- **Performance**: The site must feel smooth on mobile. Canvas operations are the bottleneck — minimize gradient creation, use pools over allocation, skip invisible particles early.
+- **Code hygiene**: Constants extracted, patterns reused, no dead code, no speculative abstractions. Each file should be readable top-to-bottom.
+
+# Conventions
+
+## Commit Messages
+
+- Always use a single-line commit message in imperative
+- No prefixes: no task IDs, no repo names, no conventional commit prefixes (fix:, refactor:, etc.)
+- Just describe what was done, e.g. "Add retry logic for failed API calls"
+
+## Formatting
+
+Run prettier on staged files before every commit, so the commit doesn't drag in formatter drift from unrelated files that someone forgot to format earlier. Workflow:
+
+1. Stage the files you want to commit (`git add <files>`).
+2. Format only those staged files:
+   ```
+   git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(js|css|html)$' | xargs -r npx prettier --write
+   ```
+3. Re-stage any changes prettier made (`git add <same files>`).
+4. Commit.
+
+Never run `npx prettier --write "**/*.{js,css,html}"` as part of a normal commit — that reformats the whole tree and can silently pick up drift outside your change. Whole-tree formatting belongs in its own dedicated commit (e.g., "Run formatter over all files").
+
+## Testing
+
+### Manual verification
+
+- Do NOT start a dev server yourself (no `http-server`, `npx serve`, `python -m http.server`, etc.)
+- When you need to verify something in the browser, ask the user to test it and describe what to check
+
+### Automated tests
+
+- Vitest + happy-dom. Run with `npm test` (watch mode: `npm run test:watch`).
+- Unit tests live under `tests/unit/` and mirror the `js/` source tree: `js/achievements/storage.js` → `tests/unit/achievements/storage.test.js`, `js/analytics/bridges/appearance.js` → `tests/unit/analytics/bridges/appearance.test.js`. One test file per source module. Mirror existing files for structure — they are the pattern library.
+- Integration tests (cross-module behavior, end-to-end flows) live under `tests/integration/` in a flat layout.
+- Test the contract, not the implementation. Prefer `toEqual` over `toBe` unless reference identity is part of what the function promises — a test that breaks when a function starts returning a shallow copy of the same value is coupled to the wrong thing.
+- Deterministic time only. Use `vi.useFakeTimers()` and `vi.setSystemTime()` — no real-time waits, no flakiness.
+- Modules with module-level state (storage, motion, appearance) need `vi.resetModules()` + re-import in `beforeEach` so state doesn't leak between tests. See `tests/unit/achievements/storage.test.js` for the pattern.
+- Prefer dispatching real events over calling the registered handler directly — tests the wiring, not just the logic.
+- Don't over-mock. Stub narrow DOM APIs (`IntersectionObserver`, `matchMedia`) at the edges; leave everything else real.
+- Pure helpers, data registries, and state-machine modules are highest-ROI targets. Transient visual effects are lowest — don't chase coverage for its own sake.
+- Keep the suite fast. If a single test approaches ~100ms of wall time, check whether real time could be replaced with fake timers. Baseline to defend: ~1s for the whole unit-test suite.
+- **Derive test timings from exported source constants, not magic numbers.** Tunable knobs (throttle windows, settle delays, dead zones) belong to the source module — export them and have tests `import { THROTTLE_MS } from "..."` then derive symbolically: `THROTTLE_MS / 3` for "well within", `THROTTLE_MS + SLACK_MS` for "past". This means tuning the source automatically retunes the tests, and "is this still within the throttle?" stays true regardless of the value. The same rule applies to other magic literals in test code: name them. A constant called `WITHIN_THROTTLE_MS` documents intent in a way `10 * 60 * 1000` never can. Use a small `SLACK_MS` for the "+ epsilon" pattern when you need to land just past a boundary. Re-declaring source constants verbatim in tests is the wrong fix — it loses the "tune source, tests follow" property and replaces it with a typo-detector that's not worth the maintenance cost for tuning knobs. (For values whose *exact* number is part of the contract — e.g. fixed by an external API spec — re-declaration is fine, but those are rare.)
+
+## GitHub
+
+- Always use the `gh` CLI for GitHub operations (PRs, issues, repos, etc.)
+- Do NOT use the GitHub MCP server tools — the token is not approved
+
+## Post-batch self-review
+
+After a batch of commits that together add a new module or ~200+ lines of changed code, before moving on, review the diffs critically as if reviewing a PR you didn't write. Read each file fresh — duplication across files, magic numbers, fragile couplings (init order, shared mutable state), missed conventions from this file. Flag what's worth fixing. If anything is, add fixup commits targeting the relevant originals (`git commit --fixup=<sha>`) and autosquash (`git rebase -i --autosquash <base>`), so the final history shows clean commits, not "add feature" + "fix feature I just wrote".
+
+Skip this for small, self-contained commits where mid-flight review already covered the ground — no ritual needed.

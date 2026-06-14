@@ -15,9 +15,8 @@ Thumbs.db
 # Node
 node_modules/
 
-# Local tooling / notes — symlinks to the parent workspace
+# Local tooling — symlink to the parent workspace
 .claude
-CLAUDE.md
 
 # Local-only design scratch, kept out of the repo
 spec/
