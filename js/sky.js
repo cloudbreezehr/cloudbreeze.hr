@@ -418,8 +418,7 @@ const AURORA = defineConstants("sky.aurora", {
     min: 0,
     max: 0.1,
     step: 0.001,
-    description:
-      "Phase advance per frame for the aurora wave (full cycle ≈ 30 s at 60 fps)",
+    description: "Phase advance per frame for the aurora wave",
   },
   WAVE_AMP: {
     value: 0.03,

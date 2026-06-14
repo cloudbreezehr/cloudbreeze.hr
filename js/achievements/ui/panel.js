@@ -274,13 +274,14 @@ function buildOverflowMenu(items) {
 export function openPanel(onHide) {
   if (panelOpen) return;
   // Register with the shared overlay-history stack so Back / back-gesture
-  // closes the panel before navigating away, and Forward reopens it after
-  // any close that left a forward entry.  The handle is kept in
-  // _overlayHandle across close/reopen cycles so subsequent UI-closes
-  // after a Forward-reopen still rewind the browser cursor.  pop() is
-  // idempotent on the entry's alive flag, so a second pop in an already-
-  // dead cycle is a silent no-op.  onReopen calls openPanelUI directly
-  // so the DOM setup runs without pushing another overlay entry on top.
+  // closes the panel before navigating away.  A browser-Back close leaves
+  // a forward entry, so Forward reopens the panel; a UI close (X / Esc)
+  // replaces the entry in place, so Forward does not reopen after one.
+  // The handle is kept in _overlayHandle across close/reopen cycles; pop()
+  // is idempotent on the entry's alive flag, so a second pop in an
+  // already-dead cycle is a silent no-op.  onReopen calls openPanelUI
+  // directly so the DOM setup runs without pushing another overlay entry
+  // on top.
   //
   // Drop any stale handle before overwriting — invariant is that
   // _overlayHandle is always null or the currently-tracked overlay.
@@ -387,12 +388,12 @@ export function closePanel() {
   hideHintTooltip();
   destroySeenObserver();
 
-  // Pop but keep the handle — a Forward press after this close will
-  // route through onReopen and call openPanelUI again.  The handle is
-  // only released in destroyPanel (full teardown) or when a new
-  // openPanel creates a fresh entry.  pop() is idempotent against the
-  // entry's alive flag, so popstate-initiated closes (where alive was
-  // already flipped by the handler) are safe.
+  // Pop but keep the handle.  After a browser-Back close the entry is
+  // already dead (the popstate handler flipped it), so pop() no-ops and
+  // the surviving forward entry lets Forward reopen via onReopen; after a
+  // UI close pop() replaces the entry in place, so Forward won't reopen.
+  // The handle is only released in destroyPanel (full teardown) or when a
+  // new openPanel creates a fresh entry.
   if (_overlayHandle) _overlayHandle.pop();
 
   if (_releaseFocusTrap) {
@@ -666,8 +667,8 @@ export function destroyPanel() {
   panelEl = null;
   panelOpen = false;
   // Full teardown — dispose() unregisters the overlay entirely so a
-  // later Forward press can't resurrect a destroyed UI.  pop() first
-  // to rewind the browser if this entry is still on top.
+  // later Forward press can't resurrect a destroyed UI.  pop() first to
+  // replace the entry in place if it's still on top, then dispose.
   if (_overlayHandle) {
     _overlayHandle.pop();
     _overlayHandle.dispose();
