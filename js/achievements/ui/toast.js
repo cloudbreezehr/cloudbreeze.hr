@@ -104,18 +104,30 @@ function ensureToastContainer() {
   });
   // Touch users get neither hover nor focus events.  Touching the container
   // pauses the countdown for as long as the finger is down.
-  toastContainer.addEventListener("touchstart", () => {
-    touchActive = true;
-    reconcilePauseState();
-  }, { passive: true });
-  toastContainer.addEventListener("touchend", () => {
-    touchActive = false;
-    reconcilePauseState();
-  }, { passive: true });
-  toastContainer.addEventListener("touchcancel", () => {
-    touchActive = false;
-    reconcilePauseState();
-  }, { passive: true });
+  toastContainer.addEventListener(
+    "touchstart",
+    () => {
+      touchActive = true;
+      reconcilePauseState();
+    },
+    { passive: true },
+  );
+  toastContainer.addEventListener(
+    "touchend",
+    () => {
+      touchActive = false;
+      reconcilePauseState();
+    },
+    { passive: true },
+  );
+  toastContainer.addEventListener(
+    "touchcancel",
+    () => {
+      touchActive = false;
+      reconcilePauseState();
+    },
+    { passive: true },
+  );
   toastContainer.addEventListener("mouseover", (e) => {
     const toast = e.target.closest(".achievement-toast");
     if (toast && toast.dataset.hint)
@@ -272,9 +284,13 @@ export function wireToastClick(toast, achievement) {
     toast.classList.remove("clicked");
     void toast.offsetHeight;
     toast.classList.add("clicked");
-    toast.addEventListener("animationend", () => toast.classList.remove("clicked"), {
-      once: true,
-    });
+    toast.addEventListener(
+      "animationend",
+      () => toast.classList.remove("clicked"),
+      {
+        once: true,
+      },
+    );
   });
 
   // Navigation fires on the full click so a drag (pointerdown without
