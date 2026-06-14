@@ -4,32 +4,34 @@ Cloudbreeze.hr is a single-page marketing site for a cloud consultancy. The visu
 
 ## Architecture
 
-**Canvas module structure**: All background visuals render on a single full-viewport canvas (`#bg-canvas`). The system is split into focused ES modules, each following the factory pattern — `createXxx(canvas, ctx, ...)` returns an object with `draw()` and optional `click()`, `clickBurst()`, etc. Particle classes within modules follow `constructor` → `reset(init)` → `update()` → `draw()`.
+**Module structure**: Background visuals render on a single full-viewport canvas (`#bg-canvas`); canvas modules follow the factory pattern — `createXxx(canvas, ctx, ...)` returns an object with `draw()` and optional `click()`, `clickBurst()`, etc., and particle classes within them follow `constructor` → `reset(init)` → `update()` → `draw()`. The wider tree, by role:
 
 ```
 js/
-  canvas.js             Orchestrator: render loop, scroll, pointer dispatch, forces object
-  canvas-utils.js       Shared utilities: scrollFade, drawTrail
-  scroll-highlight.js   Smooth-scroll an element into view, then flash it
-  sky.js                Stars, shooting stars
-  atmosphere.js         Clouds, streaks, wisps, motes, gusts, horizon glow
-  fury.js               Click fury: lightning, aurora, meteors
-  interactions.js       Force helpers, click particles, orbit, trail, gravity well
-  particles/
-    frozen.js           Snowflake class + snow globe turbulence
-    deep-sea.js         Bubble + Jellyfish classes, ambient spawning, click/drag bubbles
-    blocky.js           Firefly/Butterfly class, block fragments, pixelation post-process
+  canvas.js, canvas-utils.js     Render loop, scroll + pointer dispatch, shared draw helpers, the `forces` object
+  sky.js, atmosphere.js, fury.js Scroll-driven background layers (stars; clouds/wisps/horizon; click fury)
+  interactions.js, pointer.js, cursor.js  Pointer forces (repel/attract/well) and cursor effects
+  motion.js                      Reduced-motion policy: `scaled()`, `chance()`, `prefersReducedMotion()`
+  quality.js                     FPS-adaptive quality tier
+  colors.js                      `resolvePalette()` — per-appearance, per-theme color overrides
+  layers.js                      z-index registry exposed as CSS custom properties
+  particles/                     Per-theme canvas particle classes (one file per theme)
+  themes/                        Easter-egg themes: registry, factory, trigger strategies, one module per theme
+  effects/                       Standalone self-cleaning DOM effects (ripples, fireworks, HUD, hints, sparkles)
+  achievements/                  Cloudlog: tracker, registry, storage, progress, UI
+  analytics/                     Event taxonomy, consent, adapters + bridges
+  dev/                           Dev console + tunable-constant registry
 ```
 
-**Shared state**: The `forces` object `{ clickImpulse, isDragging, dragPos, holdStrength, wellStrength }` is owned by `canvas.js` and passed by reference to modules that need interaction. Frame-varying values (`sp`, `scrollVelocity`, `pal`, `isDark`) are explicit parameters to each module's `draw()`.
+**Shared state**: The `forces` object — pointer and interaction state (click impulse, drag, hold/well strength, hover, last-move time; see its definition in `canvas.js`) — is owned by `canvas.js` and passed by reference to modules that need interaction. Frame-varying values (`sp`, `scrollVelocity`, `pal`, `isDark`) are explicit parameters to each module's `draw()`.
 
 **Palette system** (`js/colors.js`): Two-layer color control:
 1. CSS filter on `#bg-canvas` handles global tone shifts per theme
 2. `resolvePalette(appearance, theme)` returns a flat color object — callers read `pal.colorName` with zero branching
 
-Adding a new theme means: add an override object in `colors.js` + a CSS filter rule in `main.css` + detection in the canvas render loop. Zero changes to rendering code.
+A new theme's look is additive: a `body[data-active-theme="…"]` section in `main.css` (canvas `filter` + element styles) plus, for canvas colors, a per-theme override in `colors.js` that `resolvePalette()` returns. The render loop auto-detects any registered theme, so there's zero per-theme branching in rendering code.
 
-**Theme priority**: Last-triggered wins via `body.dataset.lastTheme`, falling back to the registered `THEMES` array order (`deep-sea > frozen > blocky > upside-down`). Detected in the render loop via body class checks.
+**Theme priority**: Several easter-egg themes can be active at once — each toggles a `body.{id}` class. The render loop resolves a single winner (last-triggered wins via `body.dataset.lastTheme`, else the declaration order in `js/themes/registry.js`) and writes it to `body.dataset.activeTheme`. CSS theme rules (`body[data-active-theme="…"]`) and the canvas palette both key off that resolved winner, so only one theme paints at a time.
 
 **Pointer interactions**: Unified system using pointer events with touch fallback. `js/pointer.js` provides `bindPointer()` for event binding. `js/interactions.js` handles the actual particle effects (click burst, orbit, trail, gravity well) and exports pure force helpers (`applyRepulsion`, `applyAttraction`, `applyWellForce`) used by particle modules.
 - `clickImpulse` {x, y, strength} — repels nearby particles on click
@@ -41,7 +43,7 @@ Adding a new theme means: add an override object in `colors.js` + a CSS filter r
 
 **Any new canvas particle's per-frame motion math goes through `scaled()` / `chance()` from `js/motion.js`.** Never read `motionScale()` directly and never accept a `motionScale` parameter — the helpers absorb the policy at the call site. Position deltas, phase advances, impulse forces use `scaled(value)`; stochastic spawn rolls use `chance(p)` instead of `Math.random() < p * motionScale()`. Friction-style velocity decay (`this.vx *= FRICTION`) is *not* motion and stays unwrapped — it's damping that should bleed off coasting velocity even when the budget is zero. For "skip entirely" gates (one-shot bursts, flashing effects, rAF-loop suspension) use `prefersReducedMotion()` from the same module. The unit test for the particle should include a reduced-motion case asserting position is invariant across an `update()` call. See `particles/frozen.js` (Snowflake) for the standard pattern; `particles/deep-sea.js` (Jellyfish) for custom integration that wraps bespoke math in `scaled()`.
 
-**Easter eggs** (`js/themes/`): Themes triggered by hidden user actions. All follow the same force-based pattern: accumulate `force` 0→1 via user input, show progressive visual indicators at thresholds, trigger a wipe transition at 1.0, apply body class. Deactivation uses the same system with fewer presses. Deactivation wipe timing must use the same constants as activation (don't hardcode).
+**Easter eggs** (`js/themes/`): Themes triggered by hidden user actions. `registry.js` is the theme catalog; `triggers.js` holds the pluggable input-detection strategies; `factory.js` wraps a strategy into the shared lifecycle — accumulate `force` 0→1 via user input, show progressive visual indicators at thresholds, trigger a wipe transition at 1.0, toggle the `body.{id}` class. Deactivation uses the same system with a lower threshold, and its wipe timing must reuse the activation constants (don't hardcode).
 
 **Achievement system** (`js/achievements/`): The Cloudlog tracks achievements across exploration, mastery, theme-specific, and meta sets. Integration is event-based: source modules dispatch `CustomEvent("achievement", { detail: { type, ...data } })` on `window`, and `tracker.js` is the sole module that evaluates conditions and triggers unlocks. Never duplicate detection logic — if a source module already knows something happened, dispatch an event from there and let the tracker listen. See `spec/spec-achievements.md` for the full spec and `js/achievements/registry.js` for definitions and point tiers.
 
@@ -57,7 +59,7 @@ Adding a new theme means: add an override object in `colors.js` + a CSS filter r
 - **No appearance/theme branching in rendering**: Colors come from the palette. Don't write `isDark ? X : Y` in draw code — add colors to the palette overrides instead.
 - **Self-cleaning DOM effects**: Use Web Animations API with `onfinish = () => el.remove()` for transient particles (frost breath, ripples). Never accumulate orphaned DOM nodes.
 - **Performance**: Canvas particles use object pools or fixed arrays, not unbounded allocation. Any dynamically-spawned particle array (click effects, fragments, pops) must have a cap constant and a guard at the push site. Gradient calls are the most expensive canvas operation — skip them for small/invisible particles. Batch `moveTo`/`lineTo` calls into a single `beginPath`/`stroke` when possible.
-- **CSS theme rules**: Append after the previous theme's section. Follow the established pattern — cursor, cloud-svg filter, hero gradient, buttons, cards, nav CTA, contact, footer, `::after` opacity.
+- **CSS theme rules**: Each theme gets a `body[data-active-theme="…"]` section appended after the previous theme's, following the established element order — cursor, cloud-svg filter, hero gradient, buttons, cards, nav CTA, contact, footer, `::after` opacity.
 - **Touch compatibility**: Any pointer interaction must handle `pointercancel` gracefully. Touch events (`touchmove`/`touchend`) serve as fallback when the browser captures the pointer for native gestures.
 - **Upside-down awareness**: The upside-down theme flips the canvas and page via CSS `scaleY(-1)`. Any feature that anchors to a specific viewport edge or uses scroll-position thresholds must invert its scroll logic when `body.upside-down` is active (`1 - sp` instead of `sp`). The CSS flip handles the visual inversion automatically — only scroll-dependent visibility/positioning needs manual handling.
 - **Verify derived values**: When a value is computed from another, never compare it back to its own source in a condition — the result is always true/false. Simplify or remove the dead branch.
@@ -71,15 +73,18 @@ Adding a new theme means: add an override object in `colors.js` + a CSS filter r
 
 ## Current Themes
 
+Order below matches the declaration order in `js/themes/registry.js`. Exact thresholds (click counts, hold durations) are named constants in each theme's module / `js/themes/triggers.js` — kept out of this table so it doesn't rot when they're tuned.
+
 | Theme | Trigger | Body class | Key files |
 |-------|---------|------------|-----------|
-| Deep-sea | Hold footer 10 seconds | `body.deep-sea` | `js/themes/deep-sea.js`, `js/particles/deep-sea.js` |
-| Frozen | Click logo 25 times | `body.frozen` | `js/themes/frozen.js`, `js/particles/frozen.js` |
-| Blocky | Click appearance toggle 20 times | `body.blocky` | `js/themes/blocky.js`, `js/particles/blocky.js` |
-| Rainy | Click hero tag ("Cloud Solutions") 15 times | `body.rainy` | `js/themes/rainy.js`, `js/particles/rain.js` |
-| Paper | Type SKETCH or DRAW | `body.paper` | `js/themes/paper.js`, `js/particles/paper.js` |
-| VHS | Press Escape 5 times rapidly | `body.vhs` | `js/themes/vhs.js`, `js/particles/vhs.js` |
-| Upside-down | Overscroll bottom of page 20+ times | `body.upside-down` | `js/themes/upside-down.js` |
+| Frozen | Repeated logo clicks | `body.frozen` | `js/themes/frozen.js`, `js/particles/frozen.js` |
+| Deep-sea | Long-press the footer | `body.deep-sea` | `js/themes/deep-sea.js`, `js/particles/deep-sea.js` |
+| Blocky | Repeated appearance-toggle clicks | `body.blocky` | `js/themes/blocky.js`, `js/particles/blocky.js` |
+| Rainy | Repeated hero-tag clicks | `body.rainy` | `js/themes/rainy.js`, `js/particles/rain.js` |
+| Paper | Type SKETCH / DRAW | `body.paper` | `js/themes/paper.js`, `js/particles/paper.js` |
+| VHS | Rapid Escape presses | `body.vhs` | `js/themes/vhs.js`, `js/particles/vhs.js` |
+| Upside-down | Repeated bottom overscroll | `body.upside-down` | `js/themes/upside-down.js`, `js/particles/upside-down.js` |
+| Constellation | Trace a star pattern (click tagged stars) | `body.constellation` | `js/themes/constellation.js`, `js/particles/constellation.js` |
 
 ## Focus Areas
 
