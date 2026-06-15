@@ -1,9 +1,9 @@
 // ── Konami Trigger ──
 // Listens for the classic up-up-down-down-left-right-left-right-B-A
 // sequence; on match, shows a brief Enter-to-confirm prompt; on Enter
-// inside the window, activates every registered theme that isn't
-// already active.  Wrong key or timeout resets the sequence so a
-// mistype doesn't leave the prompt dangling.
+// inside the window, turns every registered theme on at once — or clears
+// them all if they're already on.  Wrong key or timeout resets the
+// sequence so a mistype doesn't leave the prompt dangling.
 
 import { getThemeIds, toggleTheme } from "./registry.js";
 
@@ -60,8 +60,15 @@ export function initKonami() {
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "konami-cheat" } }),
     );
-    for (const id of getThemeIds()) {
-      if (!document.body.classList.contains(id)) toggleTheme(id);
+    // Toggle-all: turn every theme on, or — when they're all already on —
+    // clear them. The clear path is silent (a bulk cheat, like lights-out),
+    // so it doesn't hand out the per-theme exit achievements reserved for the
+    // real exit gestures.
+    const ids = getThemeIds();
+    const allActive = ids.every((id) => document.body.classList.contains(id));
+    for (const id of ids) {
+      if (allActive) toggleTheme(id, { silent: true });
+      else if (!document.body.classList.contains(id)) toggleTheme(id);
     }
   }
 

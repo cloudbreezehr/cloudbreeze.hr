@@ -79,6 +79,13 @@ describe("themes/konami", () => {
     expect(registryMock.toggled).toEqual(["theme-a", "theme-c"]);
   });
 
+  it("clears every theme when they are all already active", () => {
+    registryMock.ids.forEach((id) => document.body.classList.add(id));
+    pressSequence(mod._KONAMI_SEQUENCE);
+    press("Enter");
+    expect(registryMock.toggled).toEqual(registryMock.ids);
+  });
+
   it("resets the prompt when a non-Enter key is pressed during the confirm window", () => {
     pressSequence(mod._KONAMI_SEQUENCE);
     expect(getPrompt()).not.toBeNull();
