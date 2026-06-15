@@ -164,6 +164,15 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  {
+    id: "clean-slate",
+    title: "Clean Slate",
+    description: "Wiped away in a flurry.",
+    hint: "Scribble to clear every active theme at once",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Exploration: Interaction ──
   {
     id: "first-light",

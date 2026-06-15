@@ -584,6 +584,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("abracadabra");
     },
 
+    "themes-scribbled"() {
+      tryUnlock("clean-slate");
+    },
+
     "shooting-star-clicked"() {
       tryUnlock("wish-granted");
     },
