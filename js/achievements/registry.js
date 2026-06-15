@@ -155,6 +155,15 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  {
+    id: "abracadabra",
+    title: "Abracadabra",
+    description: "Some words are spells.",
+    hint: "Spell a magic word that isn't a theme",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Exploration: Interaction ──
   {
     id: "first-light",

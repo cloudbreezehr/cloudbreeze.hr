@@ -580,6 +580,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("wordsmith");
     },
 
+    incantation() {
+      tryUnlock("abracadabra");
+    },
+
     "shooting-star-clicked"() {
       tryUnlock("wish-granted");
     },

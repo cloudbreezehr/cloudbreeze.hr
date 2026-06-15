@@ -1,16 +1,17 @@
 // ── Spell-to-Toggle Trigger ──
-// A pointer-friendly, registry-driven way to toggle any theme: enter the
-// letters of its name in order — by tapping them on the page (touch) or
-// typing them (keyboard). This gives touch users a path to themes whose
-// primary trigger needs a keyboard, and to those themes' achievements,
-// without a physical keyboard or third-party app.
+// A pointer-friendly, registry-driven way to spell secrets: enter a word's
+// letters in order — by tapping them on the page (touch) or typing them
+// (keyboard). Spelling a theme's name toggles it (a touch user's route to
+// keyboard-only themes and their achievements); spelling an incantation word
+// fires its effect. One matcher spans both, so adding a theme or a word
+// needs no change to the input handling.
 //
-// Cross-cutting, not a per-theme factory trigger: one listener pair reads
-// the theme catalog from the registry and toggles whichever name completes,
-// so adding a theme needs no change here. Tapped letters are read from the
-// existing page text via caretPositionFromPoint — no per-letter markup.
+// Cross-cutting, not a per-theme factory trigger. Tapped letters are read
+// from the existing page text via caretPositionFromPoint — no per-letter
+// markup.
 
 import { getThemes, toggleTheme } from "./registry.js";
+import { INCANTATIONS } from "../effects/incantations.js";
 import { prefersReducedMotion } from "../motion.js";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
@@ -200,24 +201,54 @@ function popGlyph(glyph, fallbackX, fallbackY, status) {
   }).onfinish = () => el.remove();
 }
 
-export function initSpellTrigger() {
-  const names = getThemes().map((t) => ({ id: t.id, name: t.label }));
-  const matcher = createSpellMatcher(names);
+// Build the spellable targets and what each does on completion. Themes
+// toggle; incantation words fire their effect. One matcher over both means
+// the input plumbing below is shared — adding a theme or a word needs no
+// change here.
+function buildActions() {
+  const targets = [];
+  const actions = new Map();
 
-  function apply(letter) {
-    const result = matcher.feed(letter, Date.now());
-    if (result.matchedId) {
+  for (const theme of getThemes()) {
+    targets.push({ id: theme.id, name: theme.label });
+    actions.set(theme.id, () => {
       // Non-silent on purpose: spelling is a touch user's only route to a
       // theme's exit achievement, so deactivating by re-spelling must award
       // it. lights-out.js and the HUD pass { silent: true } to suppress that
       // reward — do NOT copy them here, or touch users lose those unlocks.
-      toggleTheme(result.matchedId);
+      toggleTheme(theme.id);
       window.dispatchEvent(
         new CustomEvent("achievement", {
-          detail: { type: "theme-spelled", theme: result.matchedId },
+          detail: { type: "theme-spelled", theme: theme.id },
         }),
       );
-    }
+    });
+  }
+
+  for (const inc of INCANTATIONS) {
+    const id = `incantation:${inc.word}`;
+    targets.push({ id, name: inc.word });
+    actions.set(id, (point) => {
+      inc.cast(point);
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "incantation", word: inc.word },
+        }),
+      );
+    });
+  }
+
+  return { targets, actions };
+}
+
+export function initSpellTrigger() {
+  const { targets, actions } = buildActions();
+  const matcher = createSpellMatcher(targets);
+
+  // point is the cast location (the tapped letter) or null for keyboard input.
+  function runMatch(letter, point) {
+    const result = matcher.feed(letter, Date.now());
+    if (result.matchedId) actions.get(result.matchedId)?.(point);
     return result;
   }
 
@@ -229,7 +260,7 @@ export function initSpellTrigger() {
     if (e.key.length !== 1) return;
     const letter = e.key.toUpperCase();
     if (letter < "A" || letter > "Z") return;
-    apply(letter);
+    runMatch(letter, null);
   }
 
   function onClick(e) {
@@ -240,7 +271,10 @@ export function initSpellTrigger() {
     if (!glyph) return;
     const letter = glyph.raw.toUpperCase();
     if (letter < "A" || letter > "Z") return;
-    const { advanced, brokeStreak } = apply(letter);
+    const { advanced, brokeStreak } = runMatch(letter, {
+      x: e.clientX,
+      y: e.clientY,
+    });
     // Pop the tapped glyph green when it advanced a name, red + shake when a
     // mid-spell tap fell on a dead letter. Letters that begin nothing (no
     // streak to break) stay silent so casual taps don't litter the page.

@@ -86,7 +86,7 @@ Order below matches the declaration order in `js/themes/registry.js`. Exact thre
 | Upside-down | Repeated bottom overscroll | `body.upside-down` | `js/themes/upside-down.js`, `js/particles/upside-down.js` |
 | Constellation | Trace a star pattern (click tagged stars) | `body.constellation` | `js/themes/constellation.js`, `js/particles/constellation.js` |
 
-Every theme can *also* be toggled by entering the letters of its name — tapping them on the page (touch) or typing them (keyboard). This is a cross-cutting path in `js/themes/spell-trigger.js` that reads names from the registry (no per-theme code), giving touch users a route to themes whose primary trigger needs a keyboard, and to their achievements. Like `lights-out.js` and `konami.js`, it lives outside the per-theme factory and calls `toggleTheme`.
+Every theme can *also* be toggled by entering the letters of its name — tapping them on the page (touch) or typing them (keyboard). This is a cross-cutting path in `js/themes/spell-trigger.js` that reads names from the registry (no per-theme code), giving touch users a route to themes whose primary trigger needs a keyboard, and to their achievements. Like `lights-out.js` and `konami.js`, it lives outside the per-theme factory and calls `toggleTheme`. The same speller also fires *incantations* — secret words in `js/effects/incantations.js` that trigger a one-shot effect instead of a theme — through one shared matcher (themes toggle, words cast).
 
 ## Focus Areas
 

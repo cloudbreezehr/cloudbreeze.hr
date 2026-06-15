@@ -97,6 +97,7 @@ describe("themes/spell-trigger", () => {
   describe("initSpellTrigger", () => {
     let mod;
     let toggled;
+    let casts;
     let achievements;
     let stop;
     let onAchievement;
@@ -115,6 +116,10 @@ describe("themes/spell-trigger", () => {
         ],
         toggleTheme: (id) => toggled.push(id),
       }));
+      casts = [];
+      vi.doMock("../../../js/effects/incantations.js", () => ({
+        INCANTATIONS: [{ word: "BOOM", cast: (point) => casts.push(point) }],
+      }));
       vi.doMock("../../../js/motion.js", () => ({
         prefersReducedMotion: () => true,
       }));
@@ -132,6 +137,7 @@ describe("themes/spell-trigger", () => {
       window.removeEventListener("achievement", onAchievement);
       vi.useRealTimers();
       vi.doUnmock("../../../js/themes/registry.js");
+      vi.doUnmock("../../../js/effects/incantations.js");
       vi.doUnmock("../../../js/motion.js");
     });
 
@@ -153,6 +159,19 @@ describe("themes/spell-trigger", () => {
       expect(achievements).toContainEqual({
         type: "theme-spelled",
         theme: "vhs",
+      });
+    });
+
+    it("casts an incantation when its word is spelled", () => {
+      type("BOOM");
+      expect(casts).toHaveLength(1);
+    });
+
+    it("dispatches an incantation achievement event on a cast", () => {
+      type("BOOM");
+      expect(achievements).toContainEqual({
+        type: "incantation",
+        word: "BOOM",
       });
     });
 

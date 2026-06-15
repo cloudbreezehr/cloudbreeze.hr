@@ -268,6 +268,17 @@ body:not([data-active-theme]) #cursor {
   pointer-events: none;
   z-index: var(--z-cursor-ring);
 }
+/* Concentric rings cast by the PULSE incantation. */
+.incantation-ring {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--cursor-glow), 0.7);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);
