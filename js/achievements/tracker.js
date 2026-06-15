@@ -576,6 +576,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("cheat-code");
     },
 
+    "theme-spelled"() {
+      tryUnlock("wordsmith");
+    },
+
     "shooting-star-clicked"() {
       tryUnlock("wish-granted");
     },

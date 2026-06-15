@@ -977,6 +977,27 @@ nav {
   z-index: var(--z-cursor-ring);
 }
 
+/* Spell-to-toggle feedback — a glyph that pops at a tapped letter while
+   spelling a theme name. Green when the tap advances a name, red + shake on
+   a wasted mid-spell tap. Sized to the tapped glyph inline by JS; self-
+   cleaning via the Web Animations API. */
+.spell-pop {
+  position: fixed;
+  z-index: var(--z-cursor-ring);
+  pointer-events: none;
+  font-family: "DM Mono", monospace;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.spell-pop--advance {
+  color: rgb(120, 224, 156);
+  text-shadow: 0 0 8px rgba(120, 224, 156, 0.55);
+}
+.spell-pop--broke {
+  color: rgb(235, 116, 116);
+  text-shadow: 0 0 8px rgba(235, 116, 116, 0.5);
+}
+
 /* SVG Cloud Logo */
 .cloud-svg {
   width: 44px;

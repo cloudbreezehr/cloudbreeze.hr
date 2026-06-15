@@ -146,6 +146,15 @@ export const ACHIEVEMENTS = [
     points: COMMON,
     hidden: true,
   },
+  {
+    id: "wordsmith",
+    title: "Wordsmith",
+    description: "You spelled it out.",
+    hint: "Toggle a theme by entering the letters of its name",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Exploration: Interaction ──
   {
     id: "first-light",
