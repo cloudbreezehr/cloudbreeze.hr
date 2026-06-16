@@ -3,15 +3,18 @@
 // fire a one-shot effect. Pure content + effect bindings: the letter input
 // and matching are shared with the theme speller (spell-trigger.js), which
 // merges these words into its single matcher — so there's no separate input
-// plumbing here. Each `cast(origin)` receives a resolved { x, y } anchored to
-// the cursor by the speller; an effect that scatters on its own (BOOM's
-// rockets) simply ignores it. Each effect handles reduced motion itself.
+// plumbing here. Each `cast(origin, charge)` receives a resolved { x, y }
+// anchored to the cursor by the speller (an effect that scatters on its own,
+// like BOOM's rockets, ignores it) plus a charge: extra repeats of the word's
+// `chargeChar`, if it declares one (the surplus O's in BOOOOM). Each effect
+// handles reduced motion itself.
 
 import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
 import { prefersReducedMotion } from "../motion.js";
 
 const BOOM_ROCKETS = 3;
+const BOOM_MAX_EXTRA_ROCKETS = 12;
 const PULSE_RINGS = 4;
 const PULSE_MAX_SCALE = 14;
 const PULSE_DURATION_MS = 1200;
@@ -20,7 +23,12 @@ export const INCANTATIONS = [
   {
     word: "BOOM",
     // Rockets rise from the bottom and scatter, so the origin is irrelevant.
-    cast: () => launchRocketFireworks({ count: BOOM_ROCKETS }),
+    // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap.
+    chargeChar: "O",
+    cast: (origin, charge) =>
+      launchRocketFireworks({
+        count: BOOM_ROCKETS + Math.min(charge || 0, BOOM_MAX_EXTRA_ROCKETS),
+      }),
   },
   {
     word: "STAR",

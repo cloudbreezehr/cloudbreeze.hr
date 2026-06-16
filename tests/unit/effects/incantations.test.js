@@ -28,8 +28,8 @@ describe("effects/incantations", () => {
     vi.doUnmock("../../../js/effects/ripple.js");
   });
 
-  function cast(word, point) {
-    mod.INCANTATIONS.find((i) => i.word === word).cast(point);
+  function cast(word, origin, charge) {
+    mod.INCANTATIONS.find((i) => i.word === word).cast(origin, charge);
   }
 
   it("exposes words that are matcher-eligible (uppercase, >= 3 letters)", () => {
@@ -43,6 +43,22 @@ describe("effects/incantations", () => {
   it("BOOM launches a rocket volley", () => {
     cast("BOOM");
     expect(fireworks.rockets).toHaveLength(1);
+  });
+
+  it("BOOM fires more rockets the more it's charged", () => {
+    cast("BOOM", null, 0);
+    cast("BOOM", null, 4);
+    expect(fireworks.rockets[1].count).toBeGreaterThan(
+      fireworks.rockets[0].count,
+    );
+  });
+
+  it("BOOM caps its extra rockets", () => {
+    cast("BOOM", null, 0);
+    cast("BOOM", null, 9999);
+    const capped = fireworks.rockets[1].count;
+    cast("BOOM", null, 10000);
+    expect(fireworks.rockets[2].count).toBe(capped);
   });
 
   it("STAR bursts at the cast origin", () => {

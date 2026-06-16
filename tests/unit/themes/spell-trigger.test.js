@@ -92,12 +92,31 @@ describe("themes/spell-trigger", () => {
       const m = createSpellMatcher([{ id: "hi", name: "Hi" }]);
       expect(spell(m, "HI").matchedId).toBeNull();
     });
+
+    it("accumulates charge from extra repeats of a chargeChar", () => {
+      const m = createSpellMatcher([
+        { id: "boom", name: "BOOM", chargeChar: "O" },
+      ]);
+      expect(spell(m, "BOOM").matchedCharge).toBe(0);
+      expect(spell(m, "BOOOOM", 100).matchedCharge).toBe(2);
+    });
+
+    it("counts a charge letter as an advance, not a broken streak", () => {
+      const m = createSpellMatcher([
+        { id: "boom", name: "BOOM", chargeChar: "O" },
+      ]);
+      "BOO".split("").forEach((ch, i) => m.feed(ch, i)); // parked, expecting M
+      const res = m.feed("O", 100); // a surplus O
+      expect(res.advanced).toBe(true);
+      expect(res.brokeStreak).toBe(false);
+    });
   });
 
   describe("initSpellTrigger", () => {
     let mod;
     let toggled;
     let casts;
+    let charges;
     let achievements;
     let stop;
     let onAchievement;
@@ -117,8 +136,18 @@ describe("themes/spell-trigger", () => {
         toggleTheme: (id) => toggled.push(id),
       }));
       casts = [];
+      charges = [];
       vi.doMock("../../../js/effects/incantations.js", () => ({
-        INCANTATIONS: [{ word: "BOOM", cast: (point) => casts.push(point) }],
+        INCANTATIONS: [
+          {
+            word: "BOOM",
+            chargeChar: "O",
+            cast: (origin, charge) => {
+              casts.push(origin);
+              charges.push(charge);
+            },
+          },
+        ],
       }));
       vi.doMock("../../../js/motion.js", () => ({
         prefersReducedMotion: () => true,
@@ -193,6 +222,11 @@ describe("themes/spell-trigger", () => {
       );
       type("BOOM");
       expect(casts[0]).toEqual({ x: 123, y: 45 });
+    });
+
+    it("passes accumulated charge from extra letters to the cast", () => {
+      type("BOOOOM");
+      expect(charges[0]).toBe(2);
     });
 
     it("ignores letters typed into a focused input", () => {

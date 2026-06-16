@@ -50,19 +50,30 @@ function normalizeName(s) {
 
 // Pure matcher: feed one uppercase letter at a time. Returns whether the
 // letter advanced any name's progress, the id of a name that just completed
-// (if any), and whether it broke an in-progress streak (a dead letter tapped
-// while mid-spell — drives the miss feedback). Forgiving: a non-matching
-// letter is ignored rather than resetting progress (fat-finger tolerance);
-// only an idle gap longer than gapMs clears progress.
+// (if any), the charge it completed with, and whether it broke an in-progress
+// streak (a dead letter tapped while mid-spell — drives the miss feedback).
+// Forgiving: a non-matching letter is ignored rather than resetting progress
+// (fat-finger tolerance); only an idle gap longer than gapMs clears progress.
+// A target may declare a `chargeChar`: extra repeats of it right after its run
+// accumulate `matchedCharge` instead of being ignored (e.g. the surplus O's in
+// BOOOOM).
 export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
   const targets = names
-    .map((n) => ({ id: n.id, letters: normalizeName(n.name) }))
+    .map((n) => ({
+      id: n.id,
+      letters: normalizeName(n.name),
+      chargeChar: n.chargeChar ? n.chargeChar.toUpperCase() : null,
+    }))
     .filter((n) => n.letters.length >= MIN_SPELL_LEN);
   const prog = new Map(targets.map((t) => [t.id, 0]));
+  const charge = new Map(targets.map((t) => [t.id, 0]));
   let lastTime = -Infinity;
 
   function reset() {
-    for (const t of targets) prog.set(t.id, 0);
+    for (const t of targets) {
+      prog.set(t.id, 0);
+      charge.set(t.id, 0);
+    }
   }
 
   function feed(letter, now) {
@@ -71,19 +82,40 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
     const hadProgress = targets.some((t) => prog.get(t.id) > 0);
     let advanced = false;
     let matchedId = null;
+    let matchedCharge = 0;
     for (const t of targets) {
       const i = prog.get(t.id);
-      if (t.letters[i] !== letter) continue;
-      advanced = true;
-      const next = i + 1;
-      if (next === t.letters.length) {
-        prog.set(t.id, 0); // ready to re-spell (toggles back off)
-        if (!matchedId) matchedId = t.id;
-      } else {
-        prog.set(t.id, next);
+      if (t.letters[i] === letter) {
+        advanced = true;
+        const next = i + 1;
+        if (next === t.letters.length) {
+          if (!matchedId) {
+            matchedId = t.id;
+            matchedCharge = charge.get(t.id);
+          }
+          prog.set(t.id, 0); // ready to re-spell (toggles back off)
+          charge.set(t.id, 0);
+        } else {
+          prog.set(t.id, next);
+        }
+      } else if (
+        t.chargeChar &&
+        letter === t.chargeChar &&
+        i > 0 &&
+        t.letters[i - 1] === t.chargeChar
+      ) {
+        // An extra repeat of the just-finished charge run — accumulate rather
+        // than ignore, so BOOOOM carries more charge than BOOM.
+        advanced = true;
+        charge.set(t.id, charge.get(t.id) + 1);
       }
     }
-    return { advanced, matchedId, brokeStreak: !advanced && hadProgress };
+    return {
+      advanced,
+      matchedId,
+      matchedCharge,
+      brokeStreak: !advanced && hadProgress,
+    };
   }
 
   return { feed, reset };
@@ -232,9 +264,9 @@ function buildActions() {
 
   for (const inc of INCANTATIONS) {
     const id = `incantation:${inc.word}`;
-    targets.push({ id, name: inc.word });
-    actions.set(id, (point) => {
-      inc.cast(point);
+    targets.push({ id, name: inc.word, chargeChar: inc.chargeChar });
+    actions.set(id, (origin, charge) => {
+      inc.cast(origin, charge);
       window.dispatchEvent(
         new CustomEvent("achievement", {
           detail: { type: "incantation", word: inc.word },
@@ -269,7 +301,9 @@ export function initSpellTrigger() {
   // point is the tapped-letter location, or null for keyboard input.
   function runMatch(letter, point) {
     const result = matcher.feed(letter, Date.now());
-    if (result.matchedId) actions.get(result.matchedId)?.(castOrigin(point));
+    if (result.matchedId) {
+      actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);
+    }
     return result;
   }
 
