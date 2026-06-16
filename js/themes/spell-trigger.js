@@ -69,6 +69,9 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
       id: n.id,
       letters: normalizeName(n.name),
       chargeChar: n.chargeChar ? n.chargeChar.toUpperCase() : null,
+      // Optional cap on accumulated charge (number or a live getter). Past it,
+      // surplus charge letters do nothing — no advance, no charge, no miss.
+      chargeMax: n.chargeMax ?? null,
     }))
     .filter((n) => n.letters.length >= MIN_SPELL_LEN);
   const prog = new Map(targets.map((t) => [t.id, 0]));
@@ -87,6 +90,8 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
     lastTime = now;
     const hadProgress = targets.some((t) => prog.get(t.id) > 0);
     let advanced = false;
+    let charged = false; // a charge counter ticked up this letter
+    let chargeMatched = false; // a charge letter landed, even if already maxed
     let matchedId = null;
     let matchedCharge = 0;
     for (const t of targets) {
@@ -111,9 +116,16 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
         t.letters[i - 1] === t.chargeChar
       ) {
         // An extra repeat of the just-finished charge run — accumulate rather
-        // than ignore, so BOOOOM carries more charge than BOOM.
-        advanced = true;
-        charge.set(t.id, charge.get(t.id) + 1);
+        // than ignore, so BOOOOM carries more charge than BOOM. Past chargeMax
+        // it's recognised but inert (no advance), so the buildup stops cleanly.
+        chargeMatched = true;
+        const max =
+          typeof t.chargeMax === "function" ? t.chargeMax() : t.chargeMax;
+        if (max == null || charge.get(t.id) < max) {
+          advanced = true;
+          charged = true;
+          charge.set(t.id, charge.get(t.id) + 1);
+        }
       }
     }
     // Live buildup signals for the cursor: how far into the nearest word we
@@ -128,9 +140,12 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
     }
     return {
       advanced,
+      charged,
       matchedId,
       matchedCharge,
-      brokeStreak: !advanced && hadProgress,
+      // A maxed-out charge letter is recognised, not a miss — so it never goes
+      // red even though it didn't advance.
+      brokeStreak: !advanced && !chargeMatched && hadProgress,
       progress,
       liveCharge,
     };
@@ -282,7 +297,12 @@ function buildActions() {
 
   for (const inc of INCANTATIONS) {
     const id = `incantation:${inc.word}`;
-    targets.push({ id, name: inc.word, chargeChar: inc.chargeChar });
+    targets.push({
+      id,
+      name: inc.word,
+      chargeChar: inc.chargeChar,
+      chargeMax: inc.chargeMax,
+    });
     actions.set(id, (origin, charge) => {
       inc.cast(origin, charge);
       window.dispatchEvent(
@@ -328,21 +348,34 @@ export function initSpellTrigger() {
     root.style.setProperty("--spell-charge", shown.toFixed(3));
     root.style.setProperty("--spell-overcharge", String(liveCharge));
     document.body.classList.toggle("spell-overcharging", liveCharge > 0);
+    // Drop the per-letter twitch class once the overcharge ends (completion or
+    // a non-charge letter) so a finished kick doesn't linger on the body.
+    if (liveCharge === 0) document.body.classList.remove("spell-kick");
     if (shown > 0 || liveCharge > 0) {
       settleTimer = setTimeout(resetCharge, CHARGE_SETTLE_MS);
     }
+  }
+  // A discrete twitch on each surplus charge letter, restarted per letter by
+  // re-adding the class after a reflow. Stops naturally at the charge cap (the
+  // matcher no longer reports `charged`).
+  function kick() {
+    document.body.classList.remove("spell-kick");
+    void document.body.offsetWidth;
+    document.body.classList.add("spell-kick");
   }
   function resetCharge() {
     clearTimeout(settleTimer);
     root.style.setProperty("--spell-charge", "0");
     root.style.setProperty("--spell-overcharge", "0");
     document.body.classList.remove("spell-overcharging");
+    document.body.classList.remove("spell-kick");
   }
 
   // point is the tapped-letter location, or null for keyboard input.
   function runMatch(letter, point) {
     const result = matcher.feed(letter, Date.now());
     applyCharge(result.progress, result.liveCharge);
+    if (result.charged) kick();
     if (result.matchedId) {
       actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);
     }

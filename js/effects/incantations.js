@@ -40,8 +40,10 @@ export const INCANTATIONS = [
   {
     word: "BOOM",
     // Rockets rise from the bottom and scatter, so the origin is irrelevant.
-    // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap.
+    // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap — read
+    // live so the dev-console MAX_EXTRA slider also bounds the cursor buildup.
     chargeChar: "O",
+    chargeMax: () => BOOM.MAX_EXTRA,
     cast: (origin, charge) =>
       launchRocketFireworks({
         count: BOOM.ROCKETS + Math.min(charge || 0, BOOM.MAX_EXTRA),

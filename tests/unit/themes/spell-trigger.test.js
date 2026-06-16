@@ -123,6 +123,25 @@ describe("themes/spell-trigger", () => {
       expect(m.feed("O", 4).liveCharge).toBe(2);
       expect(m.feed("M", 5).progress).toBe(0); // completion discharges
     });
+
+    it("clamps charge at chargeMax", () => {
+      const m = createSpellMatcher([
+        { id: "boom", name: "BOOM", chargeChar: "O", chargeMax: () => 2 },
+      ]);
+      // BOOOOOOM: four surplus O's, but the cap is 2.
+      expect(spell(m, "BOOOOOOM").matchedCharge).toBe(2);
+    });
+
+    it("reports charged until the cap, then stops without a miss", () => {
+      const m = createSpellMatcher([
+        { id: "boom", name: "BOOM", chargeChar: "O", chargeMax: () => 1 },
+      ]);
+      "BOO".split("").forEach((ch, i) => m.feed(ch, i)); // parked, charge 0
+      expect(m.feed("O", 10).charged).toBe(true); // charge → 1
+      const maxed = m.feed("O", 11); // would be 2, but capped at 1
+      expect(maxed.charged).toBe(false);
+      expect(maxed.brokeStreak).toBe(false); // recognised, not a dead letter
+    });
   });
 
   describe("initSpellTrigger", () => {
@@ -260,6 +279,18 @@ describe("themes/spell-trigger", () => {
     it("flags overcharge while a charge letter stacks", () => {
       type("BOOOO"); // BOOM parked + surplus O's
       expect(document.body.classList.contains("spell-overcharging")).toBe(true);
+    });
+
+    it("twitches the cursor on each surplus charge letter", () => {
+      type("BOOOO"); // surplus O's fire the per-letter kick
+      expect(document.body.classList.contains("spell-kick")).toBe(true);
+    });
+
+    it("clears the twitch class once the spell completes", () => {
+      type("BOOOO");
+      expect(document.body.classList.contains("spell-kick")).toBe(true);
+      type("M"); // completes BOOM → discharge clears the twitch class
+      expect(document.body.classList.contains("spell-kick")).toBe(false);
     });
 
     it("eases the cursor charge back to rest after the settle delay", () => {
