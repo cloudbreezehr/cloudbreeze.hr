@@ -11,10 +11,27 @@
 
 import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
+import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
-const BOOM_ROCKETS = 3;
-const BOOM_MAX_EXTRA_ROCKETS = 12;
+// Dev-tunable so the BOOOOM payoff can be dialled in live in the dev console —
+// the reward scales with how many O's the user bothered to enter.
+const BOOM = defineConstants("incantations.boom", {
+  ROCKETS: {
+    value: 3,
+    min: 1,
+    max: 30,
+    step: 1,
+    description: "Base rockets fired by BOOM",
+  },
+  MAX_EXTRA: {
+    value: 50,
+    min: 0,
+    max: 200,
+    step: 5,
+    description: "Max extra rockets from surplus O's (BOOOOM)",
+  },
+});
 const PULSE_RINGS = 4;
 const PULSE_MAX_SCALE = 14;
 const PULSE_DURATION_MS = 1200;
@@ -27,7 +44,7 @@ export const INCANTATIONS = [
     chargeChar: "O",
     cast: (origin, charge) =>
       launchRocketFireworks({
-        count: BOOM_ROCKETS + Math.min(charge || 0, BOOM_MAX_EXTRA_ROCKETS),
+        count: BOOM.ROCKETS + Math.min(charge || 0, BOOM.MAX_EXTRA),
       }),
   },
   {
