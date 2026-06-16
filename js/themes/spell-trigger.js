@@ -29,15 +29,13 @@ export const SPELL_GAP_MS = 15000;
 const MIN_SPELL_LEN = 3;
 
 // ── Letter-pop feedback ──
+// The pop overlays the tapped glyph in the same font, so it reads as a coloured
+// ghost of the letter rather than a separate mark.
 const POP_DURATION_MS = 600;
 const POP_BROKE_MS = 500;
-const POP_RISE_PX = 26;
 const POP_SHAKE_PX = 4;
-const POP_END_SCALE = 0.7;
-const POP_START_OPACITY = 0.9;
-// Pop size when the tapped glyph's own size can't be read (keyboard input has
-// no glyph; layout-less environments report no font size).
-const POP_FALLBACK_FONT = "1.1rem";
+const POP_ADVANCE_SCALE = 1.15;
+const POP_START_OPACITY = 0.85;
 
 // Where an incantation effect originates when there's no pointer at all
 // (keyboard cast, mouse never moved): horizontally centred, upper third.
@@ -199,9 +197,20 @@ function glyphAtPoint(x, y) {
   if (offset > 0) candidates.push(offset - 1);
   if (candidates.length === 0) return null;
 
-  const fontSize = node.parentElement
-    ? getComputedStyle(node.parentElement).fontSize
-    : "";
+  // Snapshot the tapped element's font so the pop can overlay the glyph exactly.
+  const cs = node.parentElement ? getComputedStyle(node.parentElement) : null;
+  const font = cs
+    ? {
+        family: cs.fontFamily,
+        size: cs.fontSize,
+        weight: cs.fontWeight,
+        style: cs.fontStyle,
+        stretch: cs.fontStretch,
+        letterSpacing: cs.letterSpacing,
+        lineHeight: cs.lineHeight,
+        textTransform: cs.textTransform,
+      }
+    : null;
 
   // The point must land inside a candidate glyph's box on BOTH axes.
   // caretPositionFromPoint snaps to the nearest caret even for a click in empty
@@ -220,52 +229,58 @@ function glyphAtPoint(x, y) {
       y >= rect.top &&
       y <= rect.bottom
     ) {
-      return { raw: text.charAt(i), rect, fontSize };
+      return { raw: text.charAt(i), rect, font };
     }
   }
   // Rects existed but the point was outside every candidate → not on a letter.
   if (sawRect) return null;
   // No layout available (e.g. the test environment) — trust the caret offset.
   const fallback = offset < text.length ? offset : offset - 1;
-  return { raw: text.charAt(fallback), rect: null, fontSize };
+  return { raw: text.charAt(fallback), rect: null, font };
 }
 
-// status: "advance" (green, rises) or "broke" (red, shakes).
+// status: "advance" (green, blooms) or "broke" (red, shakes). The pop is a
+// coloured copy of the tapped glyph laid exactly over it, fading in place.
 function popGlyph(glyph, fallbackX, fallbackY, status) {
   if (prefersReducedMotion()) return;
   const el = document.createElement("span");
   el.className = `spell-pop spell-pop--${status}`;
   el.textContent = glyph.raw;
   el.setAttribute("aria-hidden", "true");
+  el.style.transformOrigin = "center";
+
+  const f = glyph.font;
+  if (f) {
+    el.style.fontFamily = f.family;
+    el.style.fontSize = f.size;
+    el.style.fontWeight = f.weight;
+    el.style.fontStyle = f.style;
+    el.style.fontStretch = f.stretch;
+    el.style.letterSpacing = f.letterSpacing;
+    el.style.lineHeight = f.lineHeight;
+    el.style.textTransform = f.textTransform;
+  }
+
+  // With the rect, sit exactly over the glyph (same font + line height makes it
+  // a ghost of the letter). Without one (keyboard / layout-less), centre on the
+  // fallback point — base carries the centring so the keyframes can add to it.
   const rect = glyph.rect;
-  el.style.left = `${rect ? rect.left + rect.width / 2 : fallbackX}px`;
-  el.style.top = `${rect ? rect.top + rect.height / 2 : fallbackY}px`;
-  el.style.fontSize = glyph.fontSize || POP_FALLBACK_FONT;
+  const base = rect ? "" : "translate(-50%, -50%) ";
+  el.style.left = `${rect ? rect.left : fallbackX}px`;
+  el.style.top = `${rect ? rect.top : fallbackY}px`;
   document.body.appendChild(el);
 
   const frames =
     status === "broke"
       ? [
-          { opacity: POP_START_OPACITY, transform: "translate(-50%, -50%)" },
-          {
-            transform: `translate(calc(-50% - ${POP_SHAKE_PX}px), -50%)`,
-            offset: 0.25,
-          },
-          {
-            transform: `translate(calc(-50% + ${POP_SHAKE_PX}px), -50%)`,
-            offset: 0.75,
-          },
-          { opacity: 0, transform: "translate(-50%, -50%)" },
+          { opacity: POP_START_OPACITY, transform: `${base}translateX(0)` },
+          { transform: `${base}translateX(-${POP_SHAKE_PX}px)`, offset: 0.25 },
+          { transform: `${base}translateX(${POP_SHAKE_PX}px)`, offset: 0.75 },
+          { opacity: 0, transform: `${base}translateX(0)` },
         ]
       : [
-          {
-            opacity: POP_START_OPACITY,
-            transform: "translate(-50%, -50%) scale(1)",
-          },
-          {
-            opacity: 0,
-            transform: `translate(-50%, calc(-50% - ${POP_RISE_PX}px)) scale(${POP_END_SCALE})`,
-          },
+          { opacity: POP_START_OPACITY, transform: `${base}scale(1)` },
+          { opacity: 0, transform: `${base}scale(${POP_ADVANCE_SCALE})` },
         ];
   el.animate(frames, {
     duration: status === "broke" ? POP_BROKE_MS : POP_DURATION_MS,

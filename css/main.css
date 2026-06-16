@@ -1031,17 +1031,14 @@ nav {
   z-index: var(--z-cursor-ring);
 }
 
-/* Spell-to-toggle feedback — a glyph that pops at a tapped letter while
-   spelling a theme name. Green when the tap advances a name, red + shake on
-   a wasted mid-spell tap. Sized to the tapped glyph inline by JS; self-
-   cleaning via the Web Animations API. */
+/* Spell-to-toggle feedback — a coloured ghost of the tapped letter laid over
+   it: green when the tap advances a name, red + shake on a wasted mid-spell
+   tap. The font (family/size/weight/…) is copied from the tapped element inline
+   by JS so it overlays exactly; self-cleaning via the Web Animations API. */
 .spell-pop {
   position: fixed;
   z-index: var(--z-cursor-ring);
   pointer-events: none;
-  font-family: "DM Mono", monospace;
-  font-size: 1.1rem;
-  font-weight: 600;
 }
 .spell-pop--advance {
   color: rgb(120, 224, 156);
