@@ -3,8 +3,10 @@
 // reversals) clears every active theme at once — the touch/mouse counterpart
 // to the keyboard's double-Escape lights-out. Like lights-out it clears
 // silently (a bulk panic-wipe, not a deliberate single-theme exit) and only
-// acts when a theme is active. Horizontal-only, so a vertical scroll-drag
-// never trips it.
+// acts when a theme is active. Requires a held button/finger and is
+// horizontal-only, so idle mouse drift and vertical scroll-drags never trip
+// it; and it yields to drag-capturing themes (paper) so a scribble there
+// draws instead of wiping.
 
 import { getThemes, toggleTheme } from "./registry.js";
 
@@ -69,11 +71,21 @@ export function initScribbleClear() {
   const detector = createScribbleDetector();
 
   function onPointerMove(e) {
+    // Require a held button / finger — a deliberate drag, not idle mouse
+    // drift. This also matches touch, where pointermove only fires in contact.
+    if (e.buttons === 0) {
+      detector.reset();
+      return;
+    }
     if (!detector.feed(e.clientX, performance.now())) return;
     const active = getThemes().filter((m) =>
       document.body.classList.contains(m.id),
     );
     if (active.length === 0) return;
+    // A theme that turns drags into content (paper's ink strokes) owns the
+    // gesture — a scribble there is drawing, not a clear — so yield to it
+    // rather than wipe what the user is actively working in.
+    if (active.some((m) => m.capturesPointer)) return;
     active.forEach((m) => toggleTheme(m.id, { silent: true }));
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "themes-scribbled" } }),

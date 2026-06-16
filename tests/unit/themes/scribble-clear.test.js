@@ -71,8 +71,8 @@ describe("themes/scribble-clear", () => {
       toggled = [];
       vi.doMock("../../../js/themes/registry.js", () => ({
         getThemes: () => [
-          { id: "paper", label: "Paper" },
-          { id: "vhs", label: "VHS" },
+          { id: "frozen", label: "Frozen" },
+          { id: "paper", label: "Paper", capturesPointer: true },
         ],
         toggleTheme: (id, opts) => toggled.push({ id, opts }),
       }));
@@ -91,12 +91,14 @@ describe("themes/scribble-clear", () => {
       vi.doUnmock("../../../js/themes/registry.js");
     });
 
-    function scribble() {
+    // buttons defaults to 1 (a held drag); pass 0 to simulate idle mouse drift.
+    function scribble(buttons = 1) {
       const swing = SCRIBBLE_MIN_SWING_PX + 10;
       for (let i = 0; i < 10; i++) {
         window.dispatchEvent(
           new MouseEvent("pointermove", {
             clientX: i % 2 === 0 ? 0 : swing,
+            buttons,
             bubbles: true,
           }),
         );
@@ -104,15 +106,29 @@ describe("themes/scribble-clear", () => {
     }
 
     it("clears every active theme silently when scribbled", () => {
-      document.body.classList.add("paper");
+      document.body.classList.add("frozen");
       scribble();
-      expect(toggled).toEqual([{ id: "paper", opts: { silent: true } }]);
+      expect(toggled).toEqual([{ id: "frozen", opts: { silent: true } }]);
     });
 
     it("dispatches a themes-scribbled achievement event", () => {
-      document.body.classList.add("vhs");
+      document.body.classList.add("frozen");
       scribble();
       expect(achievements).toContainEqual({ type: "themes-scribbled" });
+    });
+
+    it("ignores movement with no button held (idle mouse drift)", () => {
+      document.body.classList.add("frozen");
+      scribble(0);
+      expect(toggled).toEqual([]);
+      expect(achievements).toEqual([]);
+    });
+
+    it("yields to a drag-capturing theme so a scribble there isn't a wipe", () => {
+      document.body.classList.add("paper");
+      scribble();
+      expect(toggled).toEqual([]);
+      expect(achievements).toEqual([]);
     });
 
     it("does nothing when no theme is active", () => {
