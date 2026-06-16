@@ -10,13 +10,12 @@ import {
 // registry so they don't pull in every real theme, and mock motion so the
 // letter-pop's Web-Animations call is skipped under happy-dom.
 //
-// Coverage boundary: glyphAtPoint's rect-based glyph picking needs real
-// layout, which happy-dom lacks — charRect's getBoundingClientRect returns
-// no box, so the click tests below fall back to the bare caret offset (the
-// pre-fix path). The rect disambiguation is therefore MANUAL-ONLY; verify by
-// hand in a browser that (a) clicking the right edge of a letter selects that
-// letter, not its neighbour, and (b) a large heading letter pops large and in
-// its original case.
+// glyphAtPoint's rect logic needs layout. Most click tests run under happy-dom
+// (no layout) and so exercise the caret-offset fallback; one test stubs
+// getBoundingClientRect to cover the rect-bounded hit test — a tap must land on
+// the glyph's box, not just resolve to the nearest caret. What stays manual is
+// the real-font rendering: reading the exact glyph under varied fonts, and the
+// pop matching the glyph's size and case.
 
 const SLACK_MS = 1;
 
@@ -348,6 +347,57 @@ describe("themes/spell-trigger", () => {
       tap(); // s
 
       expect(toggled).toEqual(["vhs"]);
+      delete document.caretPositionFromPoint;
+    });
+
+    // With real layout, the tap must land on the glyph's box — caret snapping
+    // must not let a far-off tap resolve to the nearest letter.
+    it("registers a tap inside a glyph's box but ignores one outside it", () => {
+      const p = document.createElement("p");
+      const textNode = document.createTextNode("vhs");
+      p.appendChild(textNode);
+      document.body.appendChild(p);
+      // Pretend every glyph occupies a 20×20 box at the origin.
+      const rectSpy = vi
+        .spyOn(Range.prototype, "getBoundingClientRect")
+        .mockReturnValue({
+          left: 0,
+          right: 20,
+          top: 0,
+          bottom: 20,
+          width: 20,
+          height: 20,
+        });
+      let offset = 0;
+      document.caretPositionFromPoint = () => ({
+        offsetNode: textNode,
+        offset,
+      });
+      const tapAt = (x, y) =>
+        document.dispatchEvent(
+          new MouseEvent("click", {
+            detail: 1,
+            clientX: x,
+            clientY: y,
+            bubbles: true,
+          }),
+        );
+
+      // Far outside the box → caret snaps to the text but the tap isn't on it.
+      offset = 0;
+      tapAt(500, 500);
+      expect(toggled).toEqual([]);
+
+      // Inside the box → spells normally.
+      offset = 0;
+      tapAt(5, 5); // v
+      offset = 1;
+      tapAt(5, 5); // h
+      offset = 2;
+      tapAt(5, 5); // s
+      expect(toggled).toEqual(["vhs"]);
+
+      rectSpy.mockRestore();
       delete document.caretPositionFromPoint;
     });
 

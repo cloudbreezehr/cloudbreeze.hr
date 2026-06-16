@@ -199,32 +199,35 @@ function glyphAtPoint(x, y) {
   if (offset > 0) candidates.push(offset - 1);
   if (candidates.length === 0) return null;
 
-  // Prefer the candidate whose glyph rect contains the point; else the
-  // nearest by horizontal distance. With no rects (layout-less), the first
-  // candidate (the caret offset) stands in.
-  let pick = null;
+  const fontSize = node.parentElement
+    ? getComputedStyle(node.parentElement).fontSize
+    : "";
+
+  // The point must land inside a candidate glyph's box on BOTH axes.
+  // caretPositionFromPoint snaps to the nearest caret even for a click in empty
+  // space, so without this bound a tap anywhere would resolve to the closest
+  // letter — the hit target has to be the glyph itself, not the viewport. The
+  // box is the line height for that character (generous vertically, exact
+  // horizontally), which also disambiguates left/right halves between glyphs.
+  let sawRect = false;
   for (const i of candidates) {
     const rect = charRect(node, i);
-    const within = rect && x >= rect.left && x <= rect.right;
-    const dist = rect
-      ? x < rect.left
-        ? rect.left - x
-        : x - rect.right
-      : Infinity;
-    if (within) {
-      pick = { i, rect };
-      break;
+    if (!rect) continue;
+    sawRect = true;
+    if (
+      x >= rect.left &&
+      x <= rect.right &&
+      y >= rect.top &&
+      y <= rect.bottom
+    ) {
+      return { raw: text.charAt(i), rect, fontSize };
     }
-    if (!pick || dist < pick.dist) pick = { i, rect, dist };
   }
-
-  return {
-    raw: text.charAt(pick.i),
-    rect: pick.rect,
-    fontSize: node.parentElement
-      ? getComputedStyle(node.parentElement).fontSize
-      : "",
-  };
+  // Rects existed but the point was outside every candidate → not on a letter.
+  if (sawRect) return null;
+  // No layout available (e.g. the test environment) — trust the caret offset.
+  const fallback = offset < text.length ? offset : offset - 1;
+  return { raw: text.charAt(fallback), rect: null, fontSize };
 }
 
 // status: "advance" (green, rises) or "broke" (red, shakes).
