@@ -39,6 +39,11 @@ const POP_START_OPACITY = 0.9;
 // no glyph; layout-less environments report no font size).
 const POP_FALLBACK_FONT = "1.1rem";
 
+// Where an incantation effect originates when there's no pointer at all
+// (keyboard cast, mouse never moved): horizontally centred, upper third.
+const CAST_FALLBACK_X_FRACTION = 0.5;
+const CAST_FALLBACK_Y_FRACTION = 1 / 3;
+
 function normalizeName(s) {
   return s.toUpperCase().replace(/[^A-Z]/g, "");
 }
@@ -245,11 +250,31 @@ export function initSpellTrigger() {
   const { targets, actions } = buildActions();
   const matcher = createSpellMatcher(targets);
 
-  // point is the cast location (the tapped letter) or null for keyboard input.
+  // Track the cursor so keyboard-typed casts originate where the pointer is,
+  // not at a fixed spot. Updated on move and on tap.
+  let lastPointer = null;
+
+  // Resolve where an incantation's effect originates: an explicit cast point
+  // (the tapped letter), else the last cursor position, else viewport centre.
+  function castOrigin(point) {
+    return (
+      point ||
+      lastPointer || {
+        x: window.innerWidth * CAST_FALLBACK_X_FRACTION,
+        y: window.innerHeight * CAST_FALLBACK_Y_FRACTION,
+      }
+    );
+  }
+
+  // point is the tapped-letter location, or null for keyboard input.
   function runMatch(letter, point) {
     const result = matcher.feed(letter, Date.now());
-    if (result.matchedId) actions.get(result.matchedId)?.(point);
+    if (result.matchedId) actions.get(result.matchedId)?.(castOrigin(point));
     return result;
+  }
+
+  function onPointerMove(e) {
+    lastPointer = { x: e.clientX, y: e.clientY };
   }
 
   function onKeydown(e) {
@@ -271,6 +296,7 @@ export function initSpellTrigger() {
     if (!glyph) return;
     const letter = glyph.raw.toUpperCase();
     if (letter < "A" || letter > "Z") return;
+    lastPointer = { x: e.clientX, y: e.clientY };
     const { advanced, brokeStreak } = runMatch(letter, {
       x: e.clientX,
       y: e.clientY,
@@ -282,11 +308,13 @@ export function initSpellTrigger() {
     else if (brokeStreak) popGlyph(glyph, e.clientX, e.clientY, "broke");
   }
 
+  document.addEventListener("pointermove", onPointerMove, { passive: true });
   document.addEventListener("keydown", onKeydown);
   document.addEventListener("click", onClick);
 
   return {
     stop() {
+      document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("keydown", onKeydown);
       document.removeEventListener("click", onClick);
     },

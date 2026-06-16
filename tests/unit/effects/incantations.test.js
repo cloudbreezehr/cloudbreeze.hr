@@ -45,19 +45,12 @@ describe("effects/incantations", () => {
     expect(fireworks.rockets).toHaveLength(1);
   });
 
-  it("STAR bursts at the cast point", () => {
+  it("STAR bursts at the cast origin", () => {
     cast("STAR", { x: 10, y: 20 });
     expect(fireworks.bursts[0]).toMatchObject({ x: 10, y: 20 });
   });
 
-  it("STAR falls back to a viewport-derived point with no cast location", () => {
-    cast("STAR", null);
-    expect(fireworks.bursts).toHaveLength(1);
-    expect(Number.isFinite(fireworks.bursts[0].x)).toBe(true);
-    expect(Number.isFinite(fireworks.bursts[0].y)).toBe(true);
-  });
-
-  it("PULSE spawns concentric rings at the cast point", () => {
+  it("PULSE spawns concentric rings at the cast origin", () => {
     cast("PULSE", { x: 5, y: 6 });
     expect(ripple.rings[0]).toMatchObject({ x: 5, y: 6 });
     expect(ripple.rings[0].opts.className).toBe("incantation-ring");

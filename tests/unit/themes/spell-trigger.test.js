@@ -175,6 +175,26 @@ describe("themes/spell-trigger", () => {
       });
     });
 
+    it("anchors a keyboard cast to a viewport fallback when the pointer hasn't moved", () => {
+      type("BOOM");
+      expect(casts[0]).toMatchObject({
+        x: expect.any(Number),
+        y: expect.any(Number),
+      });
+    });
+
+    it("anchors a cast to the last pointer position", () => {
+      document.dispatchEvent(
+        new MouseEvent("pointermove", {
+          clientX: 123,
+          clientY: 45,
+          bubbles: true,
+        }),
+      );
+      type("BOOM");
+      expect(casts[0]).toEqual({ x: 123, y: 45 });
+    });
+
     it("ignores letters typed into a focused input", () => {
       const input = document.createElement("input");
       document.body.appendChild(input);
