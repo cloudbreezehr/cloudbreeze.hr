@@ -8,6 +8,7 @@ import {
   STORM_FORECASTER_THEME_COUNT,
   LONG_WATCH_MS,
 } from "../../../js/achievements/tracker.js";
+import { INCANTATION_WORDS } from "../../../js/effects/incantations.js";
 
 // tracker.js collaborates with storage.js (module-level state) and reads
 // registry/progress at runtime. Each test resets modules + localStorage so
@@ -115,6 +116,51 @@ describe("tracker — tryUnlock", () => {
     dispatchAchievement("click");
 
     expect(storage.isUnlocked("first-light")).toBe(true);
+  });
+});
+
+describe("tracker — incantations", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks abracadabra on any incantation", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("incantation", { word: INCANTATION_WORDS[0] });
+    expect(storage.isUnlocked("abracadabra")).toBe(true);
+  });
+
+  it("unlocks overkill only when an incantation is maxed", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("incantation", {
+      word: INCANTATION_WORDS[0],
+      maxed: false,
+    });
+    expect(storage.isUnlocked("overkill")).toBe(false);
+    dispatchAchievement("incantation", {
+      word: INCANTATION_WORDS[0],
+      maxed: true,
+    });
+    expect(storage.isUnlocked("overkill")).toBe(true);
+  });
+
+  it("unlocks grimoire only after every incantation is cast", async () => {
+    const { storage } = await startTracker();
+    INCANTATION_WORDS.slice(0, -1).forEach((word) =>
+      dispatchAchievement("incantation", { word }),
+    );
+    expect(storage.isUnlocked("grimoire")).toBe(false);
+    dispatchAchievement("incantation", {
+      word: INCANTATION_WORDS[INCANTATION_WORDS.length - 1],
+    });
+    expect(storage.isUnlocked("grimoire")).toBe(true);
   });
 });
 

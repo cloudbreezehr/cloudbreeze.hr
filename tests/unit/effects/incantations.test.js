@@ -40,6 +40,10 @@ describe("effects/incantations", () => {
     }
   });
 
+  it("exports the full word set for the collector achievement", () => {
+    expect(mod.INCANTATION_WORDS).toEqual(mod.INCANTATIONS.map((i) => i.word));
+  });
+
   it("BOOM launches a rocket volley", () => {
     cast("BOOM");
     expect(fireworks.rockets).toHaveLength(1);

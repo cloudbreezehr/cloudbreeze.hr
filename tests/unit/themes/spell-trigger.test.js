@@ -174,6 +174,7 @@ describe("themes/spell-trigger", () => {
           {
             word: "BOOM",
             chargeChar: "O",
+            chargeMax: () => 2,
             cast: (origin, charge) => {
               casts.push(origin);
               charges.push(charge);
@@ -233,6 +234,16 @@ describe("themes/spell-trigger", () => {
       expect(achievements).toContainEqual({
         type: "incantation",
         word: "BOOM",
+        maxed: false,
+      });
+    });
+
+    it("flags maxed when an incantation is charged to its cap", () => {
+      type("BOOOOM"); // two surplus O's hits the mock cap of 2
+      expect(achievements).toContainEqual({
+        type: "incantation",
+        word: "BOOM",
+        maxed: true,
       });
     });
 

@@ -305,9 +305,12 @@ function buildActions() {
     });
     actions.set(id, (origin, charge) => {
       inc.cast(origin, charge);
+      const max =
+        typeof inc.chargeMax === "function" ? inc.chargeMax() : inc.chargeMax;
+      const maxed = max > 0 && charge >= max;
       window.dispatchEvent(
         new CustomEvent("achievement", {
-          detail: { type: "incantation", word: inc.word },
+          detail: { type: "incantation", word: inc.word, maxed },
         }),
       );
     });

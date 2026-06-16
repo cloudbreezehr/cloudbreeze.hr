@@ -580,8 +580,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("wordsmith");
     },
 
-    incantation() {
+    incantation(data) {
       tryUnlock("abracadabra");
+      if (data && data.word) tryProgressItem("incantations-cast", data.word);
+      if (data && data.maxed) tryUnlock("overkill");
     },
 
     "themes-scribbled"() {

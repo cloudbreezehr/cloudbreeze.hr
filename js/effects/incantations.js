@@ -68,3 +68,6 @@ export const INCANTATIONS = [
     },
   },
 ];
+
+// The collectible set for the "cast them all" achievement.
+export const INCANTATION_WORDS = INCANTATIONS.map((inc) => inc.word);

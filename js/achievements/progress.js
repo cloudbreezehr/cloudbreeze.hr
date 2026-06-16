@@ -16,6 +16,7 @@ import {
   THEME_SETS,
 } from "./registry.js";
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
+import { INCANTATION_WORDS } from "../effects/incantations.js";
 
 export const APPEARANCES = ["dark", "light", "auto"];
 export const QUADRANTS = ["tl", "tr", "bl", "br"];
@@ -40,6 +41,7 @@ export const PROGRESS_ITEMS = {
   "almanac-appearances": () => APPEARANCES,
   "panel-tabs-visited": () => PANEL_TABS,
   "quadrants-clicked": () => QUADRANTS,
+  "incantations-cast": () => INCANTATION_WORDS,
 };
 
 function countNonMetaUnlocked() {
