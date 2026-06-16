@@ -44,6 +44,12 @@ const POP_FALLBACK_FONT = "1.1rem";
 const CAST_FALLBACK_X_FRACTION = 0.5;
 const CAST_FALLBACK_Y_FRACTION = 1 / 3;
 
+// Cursor spell-charge buildup: progress below this stays invisible so a stray
+// advancing letter doesn't flicker the cursor; the charge eases back to rest
+// this long after the last letter.
+export const CHARGE_MIN_PROGRESS = 0.35;
+export const CHARGE_SETTLE_MS = 1500;
+
 function normalizeName(s) {
   return s.toUpperCase().replace(/[^A-Z]/g, "");
 }
@@ -110,11 +116,23 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
         charge.set(t.id, charge.get(t.id) + 1);
       }
     }
+    // Live buildup signals for the cursor: how far into the nearest word we
+    // are (0..1, never a sustained 1 — completion resets it) and how much
+    // surplus charge is stacked while parked before the final letter.
+    let progress = 0;
+    let liveCharge = 0;
+    for (const t of targets) {
+      const frac = prog.get(t.id) / t.letters.length;
+      if (frac > progress) progress = frac;
+      if (charge.get(t.id) > liveCharge) liveCharge = charge.get(t.id);
+    }
     return {
       advanced,
       matchedId,
       matchedCharge,
       brokeStreak: !advanced && hadProgress,
+      progress,
+      liveCharge,
     };
   }
 
@@ -298,9 +316,33 @@ export function initSpellTrigger() {
     );
   }
 
+  // Drive the cursor's spell-charge halo from live matcher state. progress
+  // ramps the swell/glow; liveCharge (surplus charge letters, parked before
+  // the final letter) flips the overcharge pulse. Eases back to rest after a
+  // pause. CSS renders it from the variables — see #cursor-ring::after.
+  let settleTimer = null;
+  const root = document.documentElement;
+  function applyCharge(progress, liveCharge) {
+    clearTimeout(settleTimer);
+    const shown = progress >= CHARGE_MIN_PROGRESS ? progress : 0;
+    root.style.setProperty("--spell-charge", shown.toFixed(3));
+    root.style.setProperty("--spell-overcharge", String(liveCharge));
+    document.body.classList.toggle("spell-overcharging", liveCharge > 0);
+    if (shown > 0 || liveCharge > 0) {
+      settleTimer = setTimeout(resetCharge, CHARGE_SETTLE_MS);
+    }
+  }
+  function resetCharge() {
+    clearTimeout(settleTimer);
+    root.style.setProperty("--spell-charge", "0");
+    root.style.setProperty("--spell-overcharge", "0");
+    document.body.classList.remove("spell-overcharging");
+  }
+
   // point is the tapped-letter location, or null for keyboard input.
   function runMatch(letter, point) {
     const result = matcher.feed(letter, Date.now());
+    applyCharge(result.progress, result.liveCharge);
     if (result.matchedId) {
       actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);
     }
@@ -351,6 +393,7 @@ export function initSpellTrigger() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("keydown", onKeydown);
       document.removeEventListener("click", onClick);
+      resetCharge();
     },
   };
 }

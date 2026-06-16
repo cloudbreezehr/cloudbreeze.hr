@@ -258,6 +258,42 @@ body:not([data-active-theme]) #cursor {
     opacity: 1;
   }
 }
+/* Spell-charge halo — the cursor ring swells and brightens as a word builds
+   (--spell-charge, set by the speller), discharging when it completes. Surplus
+   charge letters (BOOOOM) set body.spell-overcharging for a hot, furious
+   pulse. The ::before is the gravity-well's, so the halo uses ::after. */
+#cursor-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid
+    rgba(var(--cursor-glow), calc(0.7 * var(--spell-charge, 0)));
+  transform: scale(calc(1 + 0.9 * var(--spell-charge, 0)));
+  opacity: var(--spell-charge, 0);
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition:
+    transform 0.18s ease-out,
+    opacity 0.25s ease-out,
+    border-color 0.18s ease-out;
+}
+body.spell-overcharging #cursor-ring::after {
+  border-color: rgba(255, 184, 92, 0.85);
+  /* The more surplus charge letters, the bigger the hot glow (capped). */
+  box-shadow: 0 0 calc(2px + 3px * min(var(--spell-overcharge, 0), 8))
+    rgba(255, 184, 92, 0.55);
+  animation: spell-overcharge 0.28s ease-in-out infinite;
+}
+@keyframes spell-overcharge {
+  0%,
+  100% {
+    transform: scale(calc(1 + 0.9 * var(--spell-charge, 0)));
+  }
+  50% {
+    transform: scale(calc(1.18 + 0.9 * var(--spell-charge, 0)));
+  }
+}
 .well-pulse-ring {
   position: fixed;
   width: 40px;

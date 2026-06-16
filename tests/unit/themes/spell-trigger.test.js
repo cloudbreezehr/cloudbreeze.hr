@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   createSpellMatcher,
   SPELL_GAP_MS,
+  CHARGE_SETTLE_MS,
 } from "../../../js/themes/spell-trigger.js";
 
 // The matcher is a pure state machine, exercised with explicit timestamps.
@@ -109,6 +110,18 @@ describe("themes/spell-trigger", () => {
       const res = m.feed("O", 100); // a surplus O
       expect(res.advanced).toBe(true);
       expect(res.brokeStreak).toBe(false);
+    });
+
+    it("reports live progress and charge for the cursor buildup", () => {
+      const m = createSpellMatcher([
+        { id: "boom", name: "BOOM", chargeChar: "O" },
+      ]);
+      expect(m.feed("B", 0).progress).toBeCloseTo(0.25);
+      m.feed("O", 1);
+      expect(m.feed("O", 2).progress).toBeCloseTo(0.75); // parked before the M
+      expect(m.feed("O", 3).liveCharge).toBe(1); // surplus O stacks while parked
+      expect(m.feed("O", 4).liveCharge).toBe(2);
+      expect(m.feed("M", 5).progress).toBe(0); // completion discharges
     });
   });
 
@@ -227,6 +240,33 @@ describe("themes/spell-trigger", () => {
     it("passes accumulated charge from extra letters to the cast", () => {
       type("BOOOOM");
       expect(charges[0]).toBe(2);
+    });
+
+    const chargeAmount = () =>
+      parseFloat(
+        document.documentElement.style.getPropertyValue("--spell-charge"),
+      ) || 0;
+
+    it("drives the cursor charge variable while spelling", () => {
+      type("PAP"); // 3/5 of PAPER, above the threshold
+      expect(chargeAmount()).toBeGreaterThan(0);
+    });
+
+    it("keeps a single stray letter below the charge threshold", () => {
+      type("P"); // 1/5 of PAPER, below the threshold
+      expect(chargeAmount()).toBe(0);
+    });
+
+    it("flags overcharge while a charge letter stacks", () => {
+      type("BOOOO"); // BOOM parked + surplus O's
+      expect(document.body.classList.contains("spell-overcharging")).toBe(true);
+    });
+
+    it("eases the cursor charge back to rest after the settle delay", () => {
+      type("PAP");
+      expect(chargeAmount()).toBeGreaterThan(0);
+      vi.advanceTimersByTime(CHARGE_SETTLE_MS + 1);
+      expect(chargeAmount()).toBe(0);
     });
 
     it("ignores letters typed into a focused input", () => {
