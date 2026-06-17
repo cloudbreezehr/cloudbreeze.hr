@@ -350,6 +350,14 @@ body.spell-kick #cursor-ring::after {
   z-index: var(--z-cursor-ring);
   filter: drop-shadow(0 0 6px rgba(220, 232, 255, 0.85));
 }
+/* Light streaks (COMET / WARP / GUST / WISH). Geometry + gradient set inline. */
+.streak {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+  border-radius: 999px;
+  will-change: transform, opacity;
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);

@@ -16,6 +16,7 @@ import { screenFlash } from "./flash.js";
 import { screenShake } from "./screen-shake.js";
 import { hueSweep } from "./hue-sweep.js";
 import { lightningStrike } from "./lightning.js";
+import { streak } from "./streak.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -95,6 +96,13 @@ const STORM_STAGGER_MS = 120;
 const STORM_SHAKE = 6;
 const STORM_SHAKE_PER_CHARGE = 2;
 const STORM_MAX_CHARGE = 6;
+
+// ── COMET — a lone diagonal streak ──
+const COMET_ANGLE_RAD = Math.PI * 0.15; // down-and-to-the-right
+const COMET_LENGTH = 220;
+const COMET_TRAVEL = 560;
+const COMET_DURATION_MS = 800;
+const COMET_COLOR = "#bfe0ff";
 
 export const INCANTATIONS = [
   {
@@ -265,6 +273,19 @@ export const INCANTATIONS = [
       }
       screenShake({ amplitude: STORM_SHAKE + extra * STORM_SHAKE_PER_CHARGE });
     },
+  },
+  {
+    word: "COMET",
+    // A single bright streak arcs past the cursor.
+    cast: (origin) =>
+      streak({
+        origin,
+        angle: COMET_ANGLE_RAD,
+        length: COMET_LENGTH,
+        travel: COMET_TRAVEL,
+        durationMs: COMET_DURATION_MS,
+        color: COMET_COLOR,
+      }),
   },
 ];
 
