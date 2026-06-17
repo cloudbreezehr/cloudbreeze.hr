@@ -41,6 +41,13 @@ const DEPLOY_ROCKETS = 4;
 const DEPLOY_MAX_EXTRA = 30;
 const DEPLOY_COLOR = "#5b9bf0";
 
+// ── NOVA — a shockwave ring around a central burst ──
+const NOVA_BASE_SCALE = 30;
+const NOVA_SCALE_PER_CHARGE = 8;
+const NOVA_MAX_CHARGE = 6;
+const NOVA_RINGS = 2;
+const NOVA_DURATION_MS = 900;
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -82,6 +89,24 @@ export const INCANTATIONS = [
         count: DEPLOY_ROCKETS + Math.min(charge || 0, DEPLOY_MAX_EXTRA),
         color: DEPLOY_COLOR,
       }),
+  },
+  {
+    word: "NOVA",
+    // A shockwave ring rips outward from a central burst; NOOOVA goes bigger.
+    chargeChar: "O",
+    chargeMax: () => NOVA_MAX_CHARGE,
+    cast: (origin, charge) => {
+      burstFireworks(origin.x, origin.y);
+      if (prefersReducedMotion()) return;
+      spawnRipple(origin.x, origin.y, {
+        className: "incantation-ring",
+        count: NOVA_RINGS,
+        maxScale:
+          NOVA_BASE_SCALE +
+          Math.min(charge || 0, NOVA_MAX_CHARGE) * NOVA_SCALE_PER_CHARGE,
+        duration: NOVA_DURATION_MS,
+      });
+    },
   },
 ];
 
