@@ -55,6 +55,13 @@ const CONFETTI_PER_CHARGE = 14;
 const CONFETTI_MAX_CHARGE = 10;
 const PARTY_CONFETTI = 50;
 const PARTY_ROCKETS = 3;
+const SNOW_BASE = 30;
+const SNOW_PER_CHARGE = 12;
+const SNOW_MAX_CHARGE = 10;
+const SNOW_COLORS = ["#ffffff", "#e8f4ff", "#cfe6ff"];
+const SNOW_SWAY = 40;
+const SNOW_SPIN = 120;
+const SNOW_DURATION_MS = 3200;
 
 export const INCANTATIONS = [
   {
@@ -135,6 +142,22 @@ export const INCANTATIONS = [
       confettiBurst({ origin, count: PARTY_CONFETTI });
       launchRocketFireworks({ count: PARTY_ROCKETS });
     },
+  },
+  {
+    word: "SNOW",
+    // A gentle white flurry from the top; SNOOOW comes down heavier.
+    chargeChar: "O",
+    chargeMax: () => SNOW_MAX_CHARGE,
+    cast: (origin, charge) =>
+      confettiBurst({
+        count:
+          SNOW_BASE + Math.min(charge || 0, SNOW_MAX_CHARGE) * SNOW_PER_CHARGE,
+        round: true,
+        colors: SNOW_COLORS,
+        sway: SNOW_SWAY,
+        spin: SNOW_SPIN,
+        durationMs: SNOW_DURATION_MS,
+      }),
   },
 ];
 
