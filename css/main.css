@@ -358,6 +358,14 @@ body.spell-kick #cursor-ring::after {
   border-radius: 999px;
   will-change: transform, opacity;
 }
+/* Orbiting motes (ORBIT). Size, colour and motion set inline. */
+.orbit-mote {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);

@@ -17,6 +17,7 @@ import { screenShake } from "./screen-shake.js";
 import { hueSweep } from "./hue-sweep.js";
 import { lightningStrike } from "./lightning.js";
 import { streak } from "./streak.js";
+import { orbit } from "./orbit.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -82,6 +83,13 @@ const GLOW_DURATION_MS = 700;
 const QUAKE_AMPLITUDE = 8;
 const QUAKE_AMP_PER_CHARGE = 3;
 const QUAKE_MAX_CHARGE = 8;
+
+// ── ORBIT — motes circling the cursor ──
+const ORBIT_COUNT = 6;
+const ORBIT_RADIUS = 70;
+const ORBIT_TURNS = 2;
+const ORBIT_DURATION_MS = 1700;
+const ORBIT_COLOR = "#8fd3ff";
 
 // ── SUN — a warm golden flash ──
 const SUN_COLOR = "#ffd36a";
@@ -264,6 +272,19 @@ export const INCANTATIONS = [
         amplitude:
           QUAKE_AMPLITUDE +
           Math.min(charge || 0, QUAKE_MAX_CHARGE) * QUAKE_AMP_PER_CHARGE,
+      }),
+  },
+  {
+    word: "ORBIT",
+    // A ring of motes circles the cursor a couple of times, then fades.
+    cast: (origin) =>
+      orbit({
+        origin,
+        count: ORBIT_COUNT,
+        radius: ORBIT_RADIUS,
+        turns: ORBIT_TURNS,
+        durationMs: ORBIT_DURATION_MS,
+        color: ORBIT_COLOR,
       }),
   },
   {
