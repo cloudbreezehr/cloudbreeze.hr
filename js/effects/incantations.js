@@ -15,6 +15,7 @@ import { confettiBurst } from "./confetti.js";
 import { screenFlash } from "./flash.js";
 import { screenShake } from "./screen-shake.js";
 import { hueSweep } from "./hue-sweep.js";
+import { lightningStrike } from "./lightning.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -233,6 +234,11 @@ export const INCANTATIONS = [
     word: "RAINBOW",
     // One smooth pass of the whole page through the spectrum.
     cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS }),
+  },
+  {
+    word: "BOLT",
+    // A lightning bolt cracks down to the cursor, with a flash.
+    cast: (origin) => lightningStrike(origin.x, origin.y),
   },
 ];
 
