@@ -322,6 +322,14 @@ body.spell-kick #cursor-ring::after {
   pointer-events: none;
   z-index: var(--z-cursor-ring);
 }
+/* Falling pieces cast by CONFETTI / PARTY / SNOW. Size, colour and motion are
+   set inline by the confetti effect; this is just the shared shell. */
+.confetti-piece {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+  will-change: transform, opacity;
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);

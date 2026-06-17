@@ -11,6 +11,7 @@
 
 import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
+import { confettiBurst } from "./confetti.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -47,6 +48,11 @@ const NOVA_SCALE_PER_CHARGE = 8;
 const NOVA_MAX_CHARGE = 6;
 const NOVA_RINGS = 2;
 const NOVA_DURATION_MS = 900;
+
+// ── CONFETTI / PARTY / SNOW — drifting pieces ──
+const CONFETTI_BASE = 40;
+const CONFETTI_PER_CHARGE = 14;
+const CONFETTI_MAX_CHARGE = 10;
 
 export const INCANTATIONS = [
   {
@@ -107,6 +113,18 @@ export const INCANTATIONS = [
         duration: NOVA_DURATION_MS,
       });
     },
+  },
+  {
+    word: "CONFETTI",
+    // Rains across the top of the page; extra T's (CONFETTTTI) drop more.
+    chargeChar: "T",
+    chargeMax: () => CONFETTI_MAX_CHARGE,
+    cast: (origin, charge) =>
+      confettiBurst({
+        count:
+          CONFETTI_BASE +
+          Math.min(charge || 0, CONFETTI_MAX_CHARGE) * CONFETTI_PER_CHARGE,
+      }),
   },
 ];
 
