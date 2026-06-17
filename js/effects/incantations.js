@@ -36,6 +36,11 @@ const PULSE_RINGS = 4;
 const PULSE_MAX_SCALE = 14;
 const PULSE_DURATION_MS = 1200;
 
+// ── DEPLOY — brand-blue rocket volley ("ship it") ──
+const DEPLOY_ROCKETS = 4;
+const DEPLOY_MAX_EXTRA = 30;
+const DEPLOY_COLOR = "#5b9bf0";
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -66,6 +71,17 @@ export const INCANTATIONS = [
         duration: PULSE_DURATION_MS,
       });
     },
+  },
+  {
+    word: "DEPLOY",
+    // Ship it. A brand-blue rocket volley; DEPLOOOY launches more.
+    chargeChar: "O",
+    chargeMax: () => DEPLOY_MAX_EXTRA,
+    cast: (origin, charge) =>
+      launchRocketFireworks({
+        count: DEPLOY_ROCKETS + Math.min(charge || 0, DEPLOY_MAX_EXTRA),
+        color: DEPLOY_COLOR,
+      }),
   },
 ];
 
