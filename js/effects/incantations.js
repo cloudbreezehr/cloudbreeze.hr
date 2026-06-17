@@ -113,6 +113,15 @@ const WARP_TRAVEL = 700;
 const WARP_DURATION_MS = 600;
 const WARP_COLOR = "#cfe0ff";
 
+// ── GUST — scattered streaks blowing across the page ──
+const GUST_COUNT = 10;
+const GUST_PER_CHARGE = 4;
+const GUST_MAX_CHARGE = 8;
+const GUST_LENGTH = 120;
+const GUST_TRAVEL = 480;
+const GUST_DURATION_MS = 650;
+const GUST_COLOR = "#e8f4ff";
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -311,6 +320,22 @@ export const INCANTATIONS = [
         travel: WARP_TRAVEL,
         durationMs: WARP_DURATION_MS,
         color: WARP_COLOR,
+      }),
+  },
+  {
+    word: "GUST",
+    // A wind of streaks blows across the page from scattered points; GUUUST
+    // blows harder. Origin is ignored — the gust fills the viewport.
+    chargeChar: "U",
+    chargeMax: () => GUST_MAX_CHARGE,
+    cast: (origin, charge) =>
+      streak({
+        count:
+          GUST_COUNT + Math.min(charge || 0, GUST_MAX_CHARGE) * GUST_PER_CHARGE,
+        length: GUST_LENGTH,
+        travel: GUST_TRAVEL,
+        durationMs: GUST_DURATION_MS,
+        color: GUST_COLOR,
       }),
   },
 ];
