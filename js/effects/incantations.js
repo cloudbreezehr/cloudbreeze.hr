@@ -88,6 +88,14 @@ const DISCO_DURATION_MS = 2400;
 const DISCO_SATURATE = 1.4;
 const RAINBOW_DURATION_MS = 1800;
 
+// ── STORM — staggered bolts + a rolling shake ──
+const STORM_BOLTS = 2;
+const STORM_SPREAD = 120;
+const STORM_STAGGER_MS = 120;
+const STORM_SHAKE = 6;
+const STORM_SHAKE_PER_CHARGE = 2;
+const STORM_MAX_CHARGE = 6;
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -239,6 +247,24 @@ export const INCANTATIONS = [
     word: "BOLT",
     // A lightning bolt cracks down to the cursor, with a flash.
     cast: (origin) => lightningStrike(origin.x, origin.y),
+  },
+  {
+    word: "STORM",
+    // Several staggered bolts, a flash, and a rolling shake; STOOORM rages.
+    chargeChar: "O",
+    chargeMax: () => STORM_MAX_CHARGE,
+    cast: (origin, charge) => {
+      const extra = Math.min(charge || 0, STORM_MAX_CHARGE);
+      const bolts = STORM_BOLTS + extra;
+      for (let i = 0; i < bolts; i++) {
+        const x = origin.x + (Math.random() - 0.5) * 2 * STORM_SPREAD;
+        setTimeout(
+          () => lightningStrike(x, origin.y, { flash: i === 0 }),
+          i * STORM_STAGGER_MS,
+        );
+      }
+      screenShake({ amplitude: STORM_SHAKE + extra * STORM_SHAKE_PER_CHARGE });
+    },
   },
 ];
 
