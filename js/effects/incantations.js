@@ -12,6 +12,7 @@
 import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
 import { confettiBurst } from "./confetti.js";
+import { screenFlash } from "./flash.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -62,6 +63,11 @@ const SNOW_COLORS = ["#ffffff", "#e8f4ff", "#cfe6ff"];
 const SNOW_SWAY = 40;
 const SNOW_SPIN = 120;
 const SNOW_DURATION_MS = 3200;
+
+// ── SUDO / GLOW — screen flashes ──
+const SUDO_COLOR = "#ffffff";
+const SUDO_PEAK = 0.55;
+const SUDO_DURATION_MS = 320;
 
 export const INCANTATIONS = [
   {
@@ -157,6 +163,16 @@ export const INCANTATIONS = [
         sway: SNOW_SWAY,
         spin: SNOW_SPIN,
         durationMs: SNOW_DURATION_MS,
+      }),
+  },
+  {
+    word: "SUDO",
+    // Superuser surge — a quick bright flash over the page.
+    cast: () =>
+      screenFlash({
+        color: SUDO_COLOR,
+        peak: SUDO_PEAK,
+        durationMs: SUDO_DURATION_MS,
       }),
   },
 ];

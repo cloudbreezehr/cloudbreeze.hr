@@ -330,6 +330,15 @@ body.spell-kick #cursor-ring::after {
   z-index: var(--z-cursor-ring);
   will-change: transform, opacity;
 }
+/* Full-viewport flash wash (SUDO / GLOW / STORM). Colour + blend set inline. */
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-theme-flash);
+  opacity: 0;
+  will-change: opacity;
+}
 @keyframes cursor-spin {
   to {
     transform: rotate(360deg);
