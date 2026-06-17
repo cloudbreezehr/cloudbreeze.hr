@@ -229,6 +229,11 @@ export const INCANTATIONS = [
         saturate: DISCO_SATURATE,
       }),
   },
+  {
+    word: "RAINBOW",
+    // One smooth pass of the whole page through the spectrum.
+    cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS }),
+  },
 ];
 
 // The collectible set for the "cast them all" achievement.
