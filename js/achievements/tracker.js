@@ -593,6 +593,10 @@ export function createTracker(onUnlock, onRelock) {
     "shooting-star-clicked"() {
       tryUnlock("wish-granted");
     },
+
+    "cheatsheet-discovered"() {
+      tryUnlock("cheat-codes");
+    },
   };
 
   // ── Visibility tracking for night-owl ──

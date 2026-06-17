@@ -825,6 +825,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("wish-granted")).toBe(true);
   });
 
+  it("unlocks cheat-codes when the cheatsheet is discovered", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("cheatsheet-discovered", {});
+    expect(storage.isUnlocked("cheat-codes")).toBe(true);
+  });
+
   it("unlocks triple-stack when three themes are active at once", async () => {
     const { storage } = await startTracker();
     document.body.classList.add("frozen", "deep-sea");

@@ -1229,6 +1229,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "cheat-codes",
+    title: "Cheat Codes",
+    description: "Found the secret that lists every secret.",
+    hint: "Spell out a word for the curious",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",
