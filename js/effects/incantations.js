@@ -83,6 +83,11 @@ const QUAKE_AMPLITUDE = 8;
 const QUAKE_AMP_PER_CHARGE = 3;
 const QUAKE_MAX_CHARGE = 8;
 
+// ── SUN — a warm golden flash ──
+const SUN_COLOR = "#ffd36a";
+const SUN_PEAK = 0.45;
+const SUN_DURATION_MS = 900;
+
 // ── DISCO / RAINBOW — hue sweeps ──
 const DISCO_TURNS = 3;
 const DISCO_DURATION_MS = 2400;
@@ -259,6 +264,16 @@ export const INCANTATIONS = [
         amplitude:
           QUAKE_AMPLITUDE +
           Math.min(charge || 0, QUAKE_MAX_CHARGE) * QUAKE_AMP_PER_CHARGE,
+      }),
+  },
+  {
+    word: "SUN",
+    // A warm golden glow washes over the page, like sun breaking through.
+    cast: () =>
+      screenFlash({
+        color: SUN_COLOR,
+        peak: SUN_PEAK,
+        durationMs: SUN_DURATION_MS,
       }),
   },
   {
