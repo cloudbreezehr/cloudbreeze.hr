@@ -104,6 +104,15 @@ const COMET_TRAVEL = 560;
 const COMET_DURATION_MS = 800;
 const COMET_COLOR = "#bfe0ff";
 
+// ── WARP — radial streaks from centre (lightspeed) ──
+const WARP_COUNT = 16;
+const WARP_PER_CHARGE = 4;
+const WARP_MAX_CHARGE = 8;
+const WARP_LENGTH = 180;
+const WARP_TRAVEL = 700;
+const WARP_DURATION_MS = 600;
+const WARP_COLOR = "#cfe0ff";
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -285,6 +294,23 @@ export const INCANTATIONS = [
         travel: COMET_TRAVEL,
         durationMs: COMET_DURATION_MS,
         color: COMET_COLOR,
+      }),
+  },
+  {
+    word: "WARP",
+    // Streaks rip outward from centre like a jump to lightspeed; WAAARP launches
+    // more.
+    chargeChar: "A",
+    chargeMax: () => WARP_MAX_CHARGE,
+    cast: (origin, charge) =>
+      streak({
+        radial: true,
+        count:
+          WARP_COUNT + Math.min(charge || 0, WARP_MAX_CHARGE) * WARP_PER_CHARGE,
+        length: WARP_LENGTH,
+        travel: WARP_TRAVEL,
+        durationMs: WARP_DURATION_MS,
+        color: WARP_COLOR,
       }),
   },
 ];
