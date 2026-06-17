@@ -13,6 +13,7 @@ import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
 import { confettiBurst } from "./confetti.js";
 import { screenFlash } from "./flash.js";
+import { screenShake } from "./screen-shake.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -73,6 +74,11 @@ const GLOW_PEAK = 0.3;
 const GLOW_PEAK_PER_CHARGE = 0.08;
 const GLOW_MAX_CHARGE = 5;
 const GLOW_DURATION_MS = 700;
+
+// ── QUAKE — screen shake ──
+const QUAKE_AMPLITUDE = 8;
+const QUAKE_AMP_PER_CHARGE = 3;
+const QUAKE_MAX_CHARGE = 8;
 
 export const INCANTATIONS = [
   {
@@ -192,6 +198,18 @@ export const INCANTATIONS = [
           GLOW_PEAK +
           Math.min(charge || 0, GLOW_MAX_CHARGE) * GLOW_PEAK_PER_CHARGE,
         durationMs: GLOW_DURATION_MS,
+      }),
+  },
+  {
+    word: "QUAKE",
+    // The whole page shudders; QUAAAKE shakes harder.
+    chargeChar: "A",
+    chargeMax: () => QUAKE_MAX_CHARGE,
+    cast: (origin, charge) =>
+      screenShake({
+        amplitude:
+          QUAKE_AMPLITUDE +
+          Math.min(charge || 0, QUAKE_MAX_CHARGE) * QUAKE_AMP_PER_CHARGE,
       }),
   },
 ];
