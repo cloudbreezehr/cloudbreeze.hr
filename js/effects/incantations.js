@@ -7,7 +7,8 @@
 // anchored to the cursor by the speller (an effect that scatters on its own,
 // like BOOM's rockets, ignores it) plus a charge: extra repeats of the word's
 // `chargeChar`, if it declares one (the surplus O's in BOOOOM). Each effect
-// handles reduced motion itself.
+// handles reduced motion itself. Each entry also carries a short `hint` — a
+// one-line, user-facing description of what the word does.
 
 import { launchRocketFireworks, burstFireworks } from "./fireworks.js";
 import { spawnRipple } from "./ripple.js";
@@ -145,6 +146,7 @@ const WISH_COLOR = "#fff0c8";
 export const INCANTATIONS = [
   {
     word: "BOOM",
+    hint: "A volley of fireworks rockets",
     // Rockets rise from the bottom and scatter, so the origin is irrelevant.
     // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap — read
     // live so the dev-console MAX_EXTRA slider also bounds the cursor buildup.
@@ -157,10 +159,12 @@ export const INCANTATIONS = [
   },
   {
     word: "STAR",
+    hint: "A firework bursts at the cursor",
     cast: (origin) => burstFireworks(origin.x, origin.y),
   },
   {
     word: "PULSE",
+    hint: "Rings ripple outward from the cursor",
     cast: (origin) => {
       // spawnRipple animates unconditionally, so gate it here — its siblings
       // (launchRocketFireworks / burstFireworks) already self-skip.
@@ -175,6 +179,7 @@ export const INCANTATIONS = [
   },
   {
     word: "DEPLOY",
+    hint: "Ship it — a blue rocket volley",
     // Ship it. A brand-blue rocket volley; DEPLOOOY launches more.
     chargeChar: "O",
     chargeMax: () => DEPLOY_MAX_EXTRA,
@@ -186,6 +191,7 @@ export const INCANTATIONS = [
   },
   {
     word: "NOVA",
+    hint: "A shockwave ring around a burst",
     // A shockwave ring rips outward from a central burst; NOOOVA goes bigger.
     chargeChar: "O",
     chargeMax: () => NOVA_MAX_CHARGE,
@@ -204,6 +210,7 @@ export const INCANTATIONS = [
   },
   {
     word: "CONFETTI",
+    hint: "Confetti rains down the page",
     // Rains across the top of the page; extra T's (CONFETTTTI) drop more.
     chargeChar: "T",
     chargeMax: () => CONFETTI_MAX_CHARGE,
@@ -216,6 +223,7 @@ export const INCANTATIONS = [
   },
   {
     word: "PARTY",
+    hint: "Confetti and a rocket volley",
     // Confetti from the cursor plus a small rocket volley.
     cast: (origin) => {
       confettiBurst({ origin, count: PARTY_CONFETTI });
@@ -224,6 +232,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SNOW",
+    hint: "A gentle snow flurry",
     // A gentle white flurry from the top; SNOOOW comes down heavier.
     chargeChar: "O",
     chargeMax: () => SNOW_MAX_CHARGE,
@@ -240,6 +249,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SUDO",
+    hint: "A bright white flash",
     // Superuser surge — a quick bright flash over the page.
     cast: () =>
       screenFlash({
@@ -250,6 +260,7 @@ export const INCANTATIONS = [
   },
   {
     word: "GLOW",
+    hint: "A soft bloom of light",
     // A soft bloom of light over the page; GLOOOW burns brighter.
     chargeChar: "O",
     chargeMax: () => GLOW_MAX_CHARGE,
@@ -264,6 +275,7 @@ export const INCANTATIONS = [
   },
   {
     word: "QUAKE",
+    hint: "The whole page shakes",
     // The whole page shudders; QUAAAKE shakes harder.
     chargeChar: "A",
     chargeMax: () => QUAKE_MAX_CHARGE,
@@ -276,6 +288,7 @@ export const INCANTATIONS = [
   },
   {
     word: "ORBIT",
+    hint: "Motes circle the cursor",
     // A ring of motes circles the cursor a couple of times, then fades.
     cast: (origin) =>
       orbit({
@@ -289,6 +302,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SUN",
+    hint: "A warm golden glow",
     // A warm golden glow washes over the page, like sun breaking through.
     cast: () =>
       screenFlash({
@@ -299,6 +313,7 @@ export const INCANTATIONS = [
   },
   {
     word: "DISCO",
+    hint: "The page spins through colour",
     // The whole page spins through the colour wheel a few times.
     cast: () =>
       hueSweep({
@@ -309,16 +324,19 @@ export const INCANTATIONS = [
   },
   {
     word: "RAINBOW",
+    hint: "A smooth sweep through the spectrum",
     // One smooth pass of the whole page through the spectrum.
     cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS }),
   },
   {
     word: "BOLT",
+    hint: "A lightning strike at the cursor",
     // A lightning bolt cracks down to the cursor, with a flash.
     cast: (origin) => lightningStrike(origin.x, origin.y),
   },
   {
     word: "STORM",
+    hint: "Bolts, a flash, and a shake",
     // Several staggered bolts, a flash, and a rolling shake; STOOORM rages.
     chargeChar: "O",
     chargeMax: () => STORM_MAX_CHARGE,
@@ -337,6 +355,7 @@ export const INCANTATIONS = [
   },
   {
     word: "COMET",
+    hint: "A bright streak arcs past",
     // A single bright streak arcs past the cursor.
     cast: (origin) =>
       streak({
@@ -350,6 +369,7 @@ export const INCANTATIONS = [
   },
   {
     word: "WARP",
+    hint: "Lightspeed streaks from centre",
     // Streaks rip outward from centre like a jump to lightspeed; WAAARP launches
     // more.
     chargeChar: "A",
@@ -367,6 +387,7 @@ export const INCANTATIONS = [
   },
   {
     word: "GUST",
+    hint: "A wind of streaks blows across",
     // A wind of streaks blows across the page from scattered points; GUUUST
     // blows harder. Origin is ignored — the gust fills the viewport.
     chargeChar: "U",
@@ -383,6 +404,7 @@ export const INCANTATIONS = [
   },
   {
     word: "WISH",
+    hint: "A shooting star — make a wish",
     // A warm shooting star arcs up from the cursor — make a wish.
     cast: (origin) =>
       streak({
