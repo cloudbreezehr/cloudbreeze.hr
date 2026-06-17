@@ -68,6 +68,11 @@ const SNOW_DURATION_MS = 3200;
 const SUDO_COLOR = "#ffffff";
 const SUDO_PEAK = 0.55;
 const SUDO_DURATION_MS = 320;
+const GLOW_COLOR = "#5b9bf0";
+const GLOW_PEAK = 0.3;
+const GLOW_PEAK_PER_CHARGE = 0.08;
+const GLOW_MAX_CHARGE = 5;
+const GLOW_DURATION_MS = 700;
 
 export const INCANTATIONS = [
   {
@@ -173,6 +178,20 @@ export const INCANTATIONS = [
         color: SUDO_COLOR,
         peak: SUDO_PEAK,
         durationMs: SUDO_DURATION_MS,
+      }),
+  },
+  {
+    word: "GLOW",
+    // A soft bloom of light over the page; GLOOOW burns brighter.
+    chargeChar: "O",
+    chargeMax: () => GLOW_MAX_CHARGE,
+    cast: (origin, charge) =>
+      screenFlash({
+        color: GLOW_COLOR,
+        peak:
+          GLOW_PEAK +
+          Math.min(charge || 0, GLOW_MAX_CHARGE) * GLOW_PEAK_PER_CHARGE,
+        durationMs: GLOW_DURATION_MS,
       }),
   },
 ];
