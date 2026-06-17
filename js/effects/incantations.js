@@ -53,6 +53,8 @@ const NOVA_DURATION_MS = 900;
 const CONFETTI_BASE = 40;
 const CONFETTI_PER_CHARGE = 14;
 const CONFETTI_MAX_CHARGE = 10;
+const PARTY_CONFETTI = 50;
+const PARTY_ROCKETS = 3;
 
 export const INCANTATIONS = [
   {
@@ -125,6 +127,14 @@ export const INCANTATIONS = [
           CONFETTI_BASE +
           Math.min(charge || 0, CONFETTI_MAX_CHARGE) * CONFETTI_PER_CHARGE,
       }),
+  },
+  {
+    word: "PARTY",
+    // Confetti from the cursor plus a small rocket volley.
+    cast: (origin) => {
+      confettiBurst({ origin, count: PARTY_CONFETTI });
+      launchRocketFireworks({ count: PARTY_ROCKETS });
+    },
   },
 ];
 
