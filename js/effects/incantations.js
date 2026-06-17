@@ -14,6 +14,7 @@ import { spawnRipple } from "./ripple.js";
 import { confettiBurst } from "./confetti.js";
 import { screenFlash } from "./flash.js";
 import { screenShake } from "./screen-shake.js";
+import { hueSweep } from "./hue-sweep.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -79,6 +80,12 @@ const GLOW_DURATION_MS = 700;
 const QUAKE_AMPLITUDE = 8;
 const QUAKE_AMP_PER_CHARGE = 3;
 const QUAKE_MAX_CHARGE = 8;
+
+// ── DISCO / RAINBOW — hue sweeps ──
+const DISCO_TURNS = 3;
+const DISCO_DURATION_MS = 2400;
+const DISCO_SATURATE = 1.4;
+const RAINBOW_DURATION_MS = 1800;
 
 export const INCANTATIONS = [
   {
@@ -210,6 +217,16 @@ export const INCANTATIONS = [
         amplitude:
           QUAKE_AMPLITUDE +
           Math.min(charge || 0, QUAKE_MAX_CHARGE) * QUAKE_AMP_PER_CHARGE,
+      }),
+  },
+  {
+    word: "DISCO",
+    // The whole page spins through the colour wheel a few times.
+    cast: () =>
+      hueSweep({
+        turns: DISCO_TURNS,
+        durationMs: DISCO_DURATION_MS,
+        saturate: DISCO_SATURATE,
       }),
   },
 ];
