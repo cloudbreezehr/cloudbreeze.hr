@@ -12,7 +12,15 @@
 
 import { getThemes, toggleTheme } from "./registry.js";
 import { INCANTATIONS } from "../effects/incantations.js";
+import {
+  openCheatsheet,
+  markCheatsheetDiscovered,
+} from "../effects/cheatsheet.js";
 import { prefersReducedMotion } from "../motion.js";
+
+// Spelled like an incantation, but it reveals the reference panel rather than
+// casting an effect — kept out of INCANTATIONS so it isn't a collectible spell.
+const CHEATSHEET_WORD = "CHEATSHEET";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
@@ -333,6 +341,15 @@ function buildActions() {
       );
     });
   }
+
+  const cheatId = `incantation:${CHEATSHEET_WORD}`;
+  targets.push({ id: cheatId, name: CHEATSHEET_WORD });
+  actions.set(cheatId, () => {
+    // First spell persists the discovery (surfacing the corner button); every
+    // spell reveals the panel.
+    markCheatsheetDiscovered();
+    openCheatsheet();
+  });
 
   return { targets, actions };
 }

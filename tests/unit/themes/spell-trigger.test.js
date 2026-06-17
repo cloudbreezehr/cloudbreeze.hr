@@ -246,6 +246,13 @@ describe("themes/spell-trigger", () => {
       });
     });
 
+    it("reveals the cheatsheet and announces its discovery when CHEATSHEET is spelled", () => {
+      localStorage.clear(); // a prior test may have already discovered it
+      type("CHEATSHEET");
+      expect(document.querySelector(".cheatsheet-overlay")).not.toBeNull();
+      expect(achievements).toContainEqual({ type: "cheatsheet-discovered" });
+    });
+
     it("anchors a keyboard cast to a viewport fallback when the pointer hasn't moved", () => {
       type("BOOM");
       expect(casts[0]).toMatchObject({
