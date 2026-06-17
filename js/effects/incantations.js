@@ -122,6 +122,13 @@ const GUST_TRAVEL = 480;
 const GUST_DURATION_MS = 650;
 const GUST_COLOR = "#e8f4ff";
 
+// ── WISH — a warm shooting star arcing up from the cursor ──
+const WISH_ANGLE_RAD = -Math.PI * 0.12; // up-and-to-the-right
+const WISH_LENGTH = 200;
+const WISH_TRAVEL = 520;
+const WISH_DURATION_MS = 900;
+const WISH_COLOR = "#fff0c8";
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -336,6 +343,19 @@ export const INCANTATIONS = [
         travel: GUST_TRAVEL,
         durationMs: GUST_DURATION_MS,
         color: GUST_COLOR,
+      }),
+  },
+  {
+    word: "WISH",
+    // A warm shooting star arcs up from the cursor — make a wish.
+    cast: (origin) =>
+      streak({
+        origin,
+        angle: WISH_ANGLE_RAD,
+        length: WISH_LENGTH,
+        travel: WISH_TRAVEL,
+        durationMs: WISH_DURATION_MS,
+        color: WISH_COLOR,
       }),
   },
 ];
