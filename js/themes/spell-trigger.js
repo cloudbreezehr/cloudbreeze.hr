@@ -15,7 +15,9 @@ import { INCANTATIONS } from "../effects/incantations.js";
 import {
   openCheatsheet,
   markCheatsheetDiscovered,
+  isCheatsheetOpen,
 } from "../effects/cheatsheet.js";
+import { isHelpOpen } from "../effects/keyboard-help.js";
 import { prefersReducedMotion } from "../motion.js";
 
 // Spelled like an incantation, but it reveals the reference panel rather than
@@ -424,7 +426,14 @@ export function initSpellTrigger() {
     lastPointer = { x: e.clientX, y: e.clientY };
   }
 
+  // An open modal owns the foreground (and the cheatsheet literally lists the
+  // spellable words) — don't let letters cast or toggle through it.
+  function aModalIsOpen() {
+    return isCheatsheetOpen() || isHelpOpen();
+  }
+
   function onKeydown(e) {
+    if (aModalIsOpen()) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const tag = document.activeElement?.tagName;
     if (tag && INPUT_TAGS.has(tag)) return;
@@ -436,6 +445,7 @@ export function initSpellTrigger() {
   }
 
   function onClick(e) {
+    if (aModalIsOpen()) return;
     // Skip keyboard-synthesized clicks (Enter/Space on a focused control):
     // they carry detail 0 and no meaningful coordinates.
     if (e.detail === 0) return;

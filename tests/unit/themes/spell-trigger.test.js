@@ -253,6 +253,18 @@ describe("themes/spell-trigger", () => {
       expect(achievements).toContainEqual({ type: "cheatsheet-discovered" });
     });
 
+    it("ignores spelling while the cheatsheet modal is open", () => {
+      localStorage.clear();
+      type("CHEATSHEET"); // opens the panel
+      toggled.length = 0;
+      type("PAPER"); // would normally toggle the paper theme
+      expect(toggled).toEqual([]);
+      // Close it so the modal-open state doesn't leak into later assertions.
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
+    });
+
     it("anchors a keyboard cast to a viewport fallback when the pointer hasn't moved", () => {
       type("BOOM");
       expect(casts[0]).toMatchObject({
