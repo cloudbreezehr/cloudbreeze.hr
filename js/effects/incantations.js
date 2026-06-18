@@ -341,6 +341,9 @@ export const INCANTATIONS = [
     chargeChar: "O",
     chargeMax: () => STORM_MAX_CHARGE,
     cast: (origin, charge) => {
+      // Its callees each self-skip, but bail early so reduced motion doesn't
+      // schedule a fan of no-op bolt timers.
+      if (prefersReducedMotion()) return;
       const extra = Math.min(charge || 0, STORM_MAX_CHARGE);
       const bolts = STORM_BOLTS + extra;
       for (let i = 0; i < bolts; i++) {
