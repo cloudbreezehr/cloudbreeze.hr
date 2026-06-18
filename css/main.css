@@ -327,7 +327,7 @@ body.spell-kick #cursor-ring::after {
 .confetti-piece {
   position: fixed;
   pointer-events: none;
-  z-index: var(--z-cursor-ring);
+  z-index: var(--z-fireworks);
   will-change: transform, opacity;
 }
 /* Full-viewport flash wash (SUDO / GLOW / STORM). Colour + blend set inline. */
@@ -347,14 +347,14 @@ body.spell-kick #cursor-ring::after {
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: var(--z-cursor-ring);
+  z-index: var(--z-fireworks);
   filter: drop-shadow(0 0 6px rgba(220, 232, 255, 0.85));
 }
 /* Light streaks (COMET / WARP / GUST / WISH). Geometry + gradient set inline. */
 .streak {
   position: fixed;
   pointer-events: none;
-  z-index: var(--z-cursor-ring);
+  z-index: var(--z-fireworks);
   border-radius: 999px;
   will-change: transform, opacity;
 }
@@ -362,7 +362,7 @@ body.spell-kick #cursor-ring::after {
 .orbit-mote {
   position: fixed;
   pointer-events: none;
-  z-index: var(--z-cursor-ring);
+  z-index: var(--z-fireworks);
   border-radius: 50%;
   will-change: transform, opacity;
 }
