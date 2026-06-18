@@ -44,6 +44,24 @@ describe("effects/incantations", () => {
     expect(mod.INCANTATION_WORDS).toEqual(mod.INCANTATIONS.map((i) => i.word));
   });
 
+  it("gives every entry a hint (the cheatsheet renders it)", () => {
+    for (const inc of mod.INCANTATIONS) {
+      expect(inc.hint, inc.word).toBeTruthy();
+    }
+  });
+
+  it("pairs chargeChar with a numeric chargeMax, and the char is in the word", () => {
+    for (const inc of mod.INCANTATIONS) {
+      // A chargeChar without a chargeMax would charge unbounded and make
+      // `overkill` unreachable (maxed compares against undefined); guard both.
+      expect(Boolean(inc.chargeChar), inc.word).toBe(inc.chargeMax != null);
+      if (inc.chargeChar) {
+        expect(inc.word, inc.word).toContain(inc.chargeChar);
+        expect(typeof inc.chargeMax(), inc.word).toBe("number");
+      }
+    }
+  });
+
   it("BOOM launches a rocket volley", () => {
     cast("BOOM");
     expect(fireworks.rockets).toHaveLength(1);
