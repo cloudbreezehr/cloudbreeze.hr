@@ -11,7 +11,7 @@
 // other code paths that show their own greeting toast — keeping every
 // greeting under the same throttle.
 
-import { ACHIEVEMENTS } from "./registry.js";
+import { getReachableAchievements } from "./registry.js";
 import * as storage from "./storage.js";
 
 // ── Constants ──
@@ -62,9 +62,15 @@ export function maybeShowWelcomeBack(showActivationToast) {
   if (Date.now() - readLastGreeted() < THROTTLE_MS) return;
 
   if (!storage.isActive()) return;
-  const unlockedCount = storage.getUnlocked().length;
+  // Count against what this device can earn, so the "still hidden" tally never
+  // strands a touch user above a total they can't actually reach.
+  const reachable = getReachableAchievements();
+  const reachableIds = new Set(reachable.map((a) => a.id));
+  const unlockedCount = storage
+    .getUnlocked()
+    .filter((u) => reachableIds.has(u.id)).length;
   if (unlockedCount <= 0) return;
-  const remaining = ACHIEVEMENTS.length - unlockedCount;
+  const remaining = reachable.length - unlockedCount;
   if (remaining <= 0) return;
 
   // Mark the session greeted up-front so a fast double-init (hot

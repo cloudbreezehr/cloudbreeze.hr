@@ -47,6 +47,8 @@ A new theme's look is additive: a `body[data-active-theme="…"]` section in `ma
 
 **Achievement system** (`js/achievements/`): The Cloudlog tracks achievements across exploration, mastery, theme-specific, and meta sets. Integration is event-based: source modules dispatch `CustomEvent("achievement", { detail: { type, ...data } })` on `window`, and `tracker.js` is the sole module that evaluates conditions and triggers unlocks. Never duplicate detection logic — if a source module already knows something happened, dispatch an event from there and let the tracker listen. See `spec/spec-achievements.md` for the full spec and `js/achievements/registry.js` for definitions and point tiers.
 
+**Device reachability**: Every device must be able to reach 100% completion. An achievement earnable only with an input capability some devices lack declares `requires: "keyboard" | "hover"` in the registry (the `L` shortcut, the cursor-idle animations, etc.). `js/device.js` resolves capabilities — a touch-only device (`(hover: none)`) is assumed to lack both — and completion math filters through `isReachable()` (`getReachableAchievements`, `getAllNonMeta`, `getSetPrereqs`), so unreachable entries are hidden from the panel and dropped from set-mastery/completionist totals. When adding a keyboard- or hover-only achievement, tag it; if it's reachable by tapping its letters on the page (the spell path), it isn't gated.
+
 **Every new feature or interaction MUST include achievement integration.** When adding a new theme, particle effect, interaction, or user-facing feature:
 1. Dispatch appropriate `CustomEvent("achievement", ...)` events from the source module at meaningful moments
 2. Add corresponding achievement definitions to `js/achievements/registry.js`

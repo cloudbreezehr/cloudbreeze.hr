@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   ACHIEVEMENTS,
   SETS,
@@ -9,6 +9,8 @@ import {
   sumPoints,
   getSetPrereqs,
   getAllNonMeta,
+  getReachableAchievements,
+  isReachable,
   isThemeSet,
   getProgressiveAchievements,
 } from "../../../js/achievements/registry.js";
@@ -144,5 +146,64 @@ describe("getProgressiveAchievements", () => {
     const progressive = getProgressiveAchievements();
     expect(progressive.length).toBeGreaterThan(0);
     for (const a of progressive) expect(a.progressKey).toBeTruthy();
+  });
+});
+
+describe("device reachability", () => {
+  // Model a touch-only device by stubbing the (hover: none) query device.js
+  // reads; everything else resolves false (hover-capable).
+  function setTouchOnly(touchOnly) {
+    window.matchMedia = vi.fn((query) => ({
+      matches: query === "(hover: none)" ? touchOnly : false,
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+  }
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  // Keyboard/hover-only achievements that should drop out on touch.
+  // (reverse-engineer is reachable on touch via the #dev URL; magnetic-letters
+  // by tapping the wordmark — so neither is gated.)
+  const KEYBOARD_ONLY = ["shortcut-master", "cheat-code"];
+  const HOVER_ONLY = ["idle-hands", "idle-watcher", "phosphor-burn"];
+
+  it("tags exactly the keyboard/hover-gated achievements with a requires", () => {
+    const required = ACHIEVEMENTS.filter((a) => a.requires).map((a) => a.id);
+    expect(new Set(required)).toEqual(
+      new Set([...KEYBOARD_ONLY, ...HOVER_ONLY]),
+    );
+    for (const a of ACHIEVEMENTS) {
+      if (a.requires) expect(["keyboard", "hover"]).toContain(a.requires);
+    }
+  });
+
+  it("counts every achievement as reachable on a hover-capable device", () => {
+    setTouchOnly(false);
+    expect(getReachableAchievements()).toHaveLength(ACHIEVEMENTS.length);
+    for (const a of ACHIEVEMENTS) expect(isReachable(a)).toBe(true);
+  });
+
+  it("drops keyboard- and hover-gated achievements on a touch-only device", () => {
+    setTouchOnly(true);
+    const reachableIds = new Set(getReachableAchievements().map((a) => a.id));
+    for (const id of [...KEYBOARD_ONLY, ...HOVER_ONLY]) {
+      expect(reachableIds.has(id), id).toBe(false);
+    }
+    expect(getReachableAchievements()).toHaveLength(
+      ACHIEVEMENTS.length - KEYBOARD_ONLY.length - HOVER_ONLY.length,
+    );
+  });
+
+  it("excludes unreachable entries from completionist and set prereqs on touch", () => {
+    setTouchOnly(true);
+    expect(getAllNonMeta()).not.toContain("phosphor-burn");
+    expect(getAllNonMeta()).not.toContain("shortcut-master");
+    // phosphor-burn would otherwise block the VHS set-mastery on touch.
+    expect(getSetPrereqs("vhs")).not.toContain("phosphor-burn");
+    expect(getSetPrereqs("vhs").length).toBeGreaterThan(0);
   });
 });

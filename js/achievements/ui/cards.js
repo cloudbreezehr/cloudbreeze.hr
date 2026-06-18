@@ -8,7 +8,13 @@
 // and dev-active rules).  The panel owns the chrome (header, tabs)
 // and hands this module a container to paint into via renderSections.
 
-import { ACHIEVEMENTS, SETS, getAchievement, isThemeSet } from "../registry.js";
+import {
+  ACHIEVEMENTS,
+  SETS,
+  getAchievement,
+  getReachableAchievements,
+  isThemeSet,
+} from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import * as storage from "../storage.js";
 import { formatTimestamp, toggleTimestampMode } from "./timestamp.js";
@@ -118,7 +124,7 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 // ── Section helpers ──
 
 function setCountForSet(setId) {
-  const all = ACHIEVEMENTS.filter((a) => a.set === setId);
+  const all = getReachableAchievements().filter((a) => a.set === setId);
   const unlocked = all.filter((a) => storage.isUnlocked(a.id));
   return { total: all.length, unlocked: unlocked.length };
 }
@@ -462,8 +468,11 @@ export function renderSections(container) {
 
     section.appendChild(sHeader);
 
-    // Achievement cards
-    const setAchievements = ACHIEVEMENTS.filter((a) => a.set === set.id);
+    // Achievement cards — only those earnable on this device, so a touch user
+    // never sees a keyboard/hover-only entry they can't complete.
+    const setAchievements = getReachableAchievements().filter(
+      (a) => a.set === set.id,
+    );
     for (const ach of setAchievements) {
       const isUnlocked = storage.isUnlocked(ach.id);
       const card = document.createElement("div");

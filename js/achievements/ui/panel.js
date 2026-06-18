@@ -6,7 +6,11 @@
 // wiring — and the configure* calls that wire sibling submodules to
 // the live panel element.
 
-import { ACHIEVEMENTS, sumPoints, getAchievement } from "../registry.js";
+import {
+  getReachableAchievements,
+  sumPoints,
+  getAchievement,
+} from "../registry.js";
 import * as storage from "../storage.js";
 import * as activityLog from "../activity-log.js";
 import { paintRelativeTime } from "../../time-ago.js";
@@ -99,14 +103,23 @@ function totalPoints() {
   return sumPoints(storage.getUnlocked());
 }
 
+// Completion counts scoped to what this device can earn, so a touch-only
+// device isn't held below 100% by keyboard/hover-only achievements (and a
+// bonus unlock of one — e.g. on a hybrid — can't push the count past total).
+function reachableCounts() {
+  const reachable = getReachableAchievements();
+  const ids = new Set(reachable.map((a) => a.id));
+  const unlocked = storage.getUnlocked().filter((u) => ids.has(u.id)).length;
+  return { unlocked, total: reachable.length };
+}
+
 // Paint the overall-completion strip: fill width = unlocked / total,
 // plus an accessible label.  Re-callable so refreshPanel keeps it
 // current as unlocks land.
 function paintProgressStrip(strip) {
   if (!strip) return;
   const fill = strip.querySelector(".achievement-progress-strip-fill");
-  const unlocked = storage.getUnlocked().length;
-  const total = ACHIEVEMENTS.length;
+  const { unlocked, total } = reachableCounts();
   const pct = total > 0 ? Math.round((unlocked / total) * 100) : 0;
   if (fill) fill.style.width = `${pct}%`;
   strip.setAttribute("role", "progressbar");
@@ -586,11 +599,11 @@ function buildPanel(onHide) {
 
   const countEl = document.createElement("span");
   countEl.className = "achievement-count-total";
-  const unlocked = storage.getUnlocked().length;
-  countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+  const { unlocked, total } = reachableCounts();
+  countEl.textContent = `${unlocked}/${total}`;
   countEl.setAttribute(
     "data-tooltip",
-    `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
+    `Earned ${unlocked} of ${total} achievements`,
   );
 
   const importInput = buildImportInput();
@@ -638,11 +651,11 @@ export function refreshPanel() {
   paintLastUnlocked(panelEl.querySelector(".achievement-last-unlocked"));
   const countEl = panelEl.querySelector(".achievement-count-total");
   if (countEl) {
-    const unlocked = storage.getUnlocked().length;
-    countEl.textContent = `${unlocked}/${ACHIEVEMENTS.length}`;
+    const { unlocked, total } = reachableCounts();
+    countEl.textContent = `${unlocked}/${total}`;
     countEl.setAttribute(
       "data-tooltip",
-      `Earned ${unlocked} of ${ACHIEVEMENTS.length} achievements`,
+      `Earned ${unlocked} of ${total} achievements`,
     );
   }
 

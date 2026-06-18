@@ -1,8 +1,14 @@
 // ── Achievement Registry ──
 // All achievement definitions as pure data. No logic, no conditions —
 // detection lives elsewhere where event state is available.
+//
+// An entry may declare `requires: "keyboard" | "hover"` when it can only be
+// earned with that input capability (a keyboard shortcut, a hover-resting
+// cursor). Such achievements are filtered out of completion totals on devices
+// that lack the capability, so a touch-only device can still reach 100%.
 
 import { getTheme } from "../themes/registry.js";
+import { hasCapability } from "../device.js";
 
 // Inline SVG icons for the non-theme sets.  Theme sets reuse their theme's
 // icon so there's one source of truth per theme.  All icons use a 16×16
@@ -145,6 +151,7 @@ export const ACHIEVEMENTS = [
     set: "exploration",
     points: COMMON,
     hidden: true,
+    requires: "keyboard",
   },
   {
     id: "wordsmith",
@@ -504,6 +511,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: UNCOMMON,
     hidden: true,
+    requires: "hover",
   },
   {
     id: "idle-watcher",
@@ -514,6 +522,7 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
     progressKey: "idle-animations",
+    requires: "hover",
   },
   {
     id: "night-owl",
@@ -886,6 +895,7 @@ export const ACHIEVEMENTS = [
     set: "vhs",
     points: UNCOMMON,
     hidden: true,
+    requires: "hover",
   },
   {
     id: "channel-surfer",
@@ -1191,6 +1201,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: EPIC,
     hidden: true,
+    requires: "keyboard",
   },
   {
     id: "regular",
@@ -1266,6 +1277,23 @@ export function getAchievement(id) {
 }
 
 /**
+ * Whether an achievement can be earned on the current device — true unless it
+ * requires an input capability this device lacks (a keyboard, a hover cursor).
+ * Completion math and the panel listing both filter through this so a
+ * touch-only device isn't blocked from 100% by keyboard/hover-only entries.
+ */
+export function isReachable(achievement) {
+  return !achievement.requires || hasCapability(achievement.requires);
+}
+
+/**
+ * All achievements earnable on the current device.
+ */
+export function getReachableAchievements() {
+  return ACHIEVEMENTS.filter(isReachable);
+}
+
+/**
  * Sum point values for a list of unlocked entries [{id, ts}, ...].
  */
 export function sumPoints(unlockedList) {
@@ -1307,16 +1335,19 @@ export const SET_MASTERY_MAP = {
  */
 export function getSetPrereqs(setId) {
   const masteryId = SET_MASTERY_MAP[setId];
-  return ACHIEVEMENTS.filter((a) => a.set === setId && a.id !== masteryId).map(
-    (a) => a.id,
-  );
+  return ACHIEVEMENTS.filter(
+    (a) => a.set === setId && a.id !== masteryId && isReachable(a),
+  ).map((a) => a.id);
 }
 
 /**
- * Get all non-meta achievement IDs (for completionist check).
+ * Get all non-meta achievement IDs (for completionist check). Excludes entries
+ * unreachable on this device so set-mastery and completionist stay earnable.
  */
 export function getAllNonMeta() {
-  return ACHIEVEMENTS.filter((a) => a.set !== "meta").map((a) => a.id);
+  return ACHIEVEMENTS.filter((a) => a.set !== "meta" && isReachable(a)).map(
+    (a) => a.id,
+  );
 }
 
 /**
