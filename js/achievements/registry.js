@@ -1229,9 +1229,9 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
-    id: "cheat-codes",
-    title: "Cheat Codes",
-    description: "Found the secret that lists every secret.",
+    id: "open-secrets",
+    title: "Open Secrets",
+    description: "Found the panel that lists every secret.",
     hint: "Spell out a word for the curious",
     set: "exploration",
     points: UNCOMMON,

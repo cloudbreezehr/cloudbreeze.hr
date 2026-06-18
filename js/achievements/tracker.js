@@ -595,7 +595,7 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "cheatsheet-discovered"() {
-      tryUnlock("cheat-codes");
+      tryUnlock("open-secrets");
     },
   };
 
