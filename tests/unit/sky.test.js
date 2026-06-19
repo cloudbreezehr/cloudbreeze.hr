@@ -16,7 +16,10 @@ function makeFakeCtx() {
     {},
     {
       get(_, prop) {
-        if (prop === "createRadialGradient")
+        // Both gradient builders return a stub with addColorStop — the star
+        // glare draws a linear gradient, shooting-star glow a radial one, and
+        // either may run depending on random spawns / idle flashes.
+        if (prop === "createRadialGradient" || prop === "createLinearGradient")
           return () => ({ addColorStop: noop });
         return noop;
       },
@@ -25,11 +28,21 @@ function makeFakeCtx() {
   );
 }
 
+// Covers every field sky.js's draw reads, including the shooting-star path —
+// a star can spawn on any frame (Math.random), so an incomplete palette makes
+// the dwell tests flaky when one happens to draw its trail.
 function makeFakePalette() {
   return {
     starColor: [255, 255, 255],
     constellationLine: [200, 200, 255],
     constellationGlow: [200, 200, 255],
+    shootingColors: [
+      [180, 210, 255],
+      [200, 225, 255],
+      [230, 240, 255],
+    ],
+    auroraHueBase: 120,
+    auroraHueRange: 80,
   };
 }
 
