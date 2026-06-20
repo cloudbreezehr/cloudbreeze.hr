@@ -1,6 +1,8 @@
 import { drawTrail } from "./canvas-utils.js";
 import { SKY_SHARED } from "./sky.js";
 import { defineConstants, notifySectionActivate } from "./dev/registry.js";
+import { playSfx } from "./audio/sfx.js";
+import { prefersReducedMotion } from "./motion.js";
 
 // ── Click Fury ──
 const FURY = defineConstants("fury.click", {
@@ -998,6 +1000,9 @@ export function createFury() {
         const startX = cx + (Math.random() - 0.5) * LN.START_SPREAD;
         const startY = Math.random() * canvas.height * LN.START_Y;
         spawnBolt(lightningBolts, startX, startY, cx, cy, 0);
+        // Sound every bolt, not just the tier's first — but only when it's
+        // actually drawn (the render loop skips fury under reduced motion).
+        if (!prefersReducedMotion()) playSfx("lightning");
       }
 
       // Tier 3: Meteor shower burst

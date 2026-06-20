@@ -33,11 +33,15 @@ describe("audio/bridges/world", () => {
     expect(calls).toEqual(["charge", "wellEngage", "wellFull", "wellRelease"]);
   });
 
-  it("sounds the fury tiers", () => {
-    fire("fury-lightning");
+  it("sounds the aurora and meteor tiers once each", () => {
     fire("fury-aurora");
     fire("fury-meteor");
-    expect(calls).toEqual(["lightning", "aurora", "meteor"]);
+    expect(calls).toEqual(["aurora", "meteor"]);
+  });
+
+  it("does not sound the lightning tier event — fury sounds each bolt itself", () => {
+    fire("fury-lightning");
+    expect(calls).toEqual([]);
   });
 
   it("ignores events it doesn't map", () => {
