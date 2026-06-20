@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// The bridge maps canvas-internal effect events (gravity well, orbit, fury
-// tiers) to voices. sfx is mocked to capture what it would play.
+// The bridge maps the discrete canvas-internal effects (orbit, fury tiers) to
+// voices. sfx is mocked to capture what it would play. Lightning (per-bolt in
+// fury) and the gravity-well hum (continuous) are handled elsewhere.
 
 describe("audio/bridges/world", () => {
   let calls;
@@ -25,12 +26,9 @@ describe("audio/bridges/world", () => {
   const fire = (type) =>
     window.dispatchEvent(new CustomEvent("achievement", { detail: { type } }));
 
-  it("sounds the gravity-well arc", () => {
-    fire("hold");
-    fire("well-activate");
-    fire("well-full");
-    fire("well-release");
-    expect(calls).toEqual(["charge", "wellEngage", "wellFull", "wellRelease"]);
+  it("sounds the orbit a hold spins up", () => {
+    fire("orbit");
+    expect(calls).toEqual(["orbit"]);
   });
 
   it("sounds the aurora and meteor tiers once each", () => {
@@ -39,8 +37,11 @@ describe("audio/bridges/world", () => {
     expect(calls).toEqual(["aurora", "meteor"]);
   });
 
-  it("does not sound the lightning tier event — fury sounds each bolt itself", () => {
-    fire("fury-lightning");
+  it("leaves lightning and the well to their own handlers", () => {
+    fire("fury-lightning"); // per-bolt in fury.js
+    fire("hold"); // continuous well hum in continuous.js
+    fire("well-activate");
+    fire("well-release");
     expect(calls).toEqual([]);
   });
 
