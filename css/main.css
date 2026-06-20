@@ -2035,7 +2035,15 @@ nav.nav-light .nav-burger:hover {
 }
 
 /* Appearance toggle */
-.appearance-toggle {
+/* Sits the appearance + sound toggles together as a tight cluster, apart from
+   the wider nav-actions gap between chrome groups. */
+.nav-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.appearance-toggle,
+.sound-toggle {
   background: none;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
@@ -2050,12 +2058,14 @@ nav.nav-light .nav-burger:hover {
     background 0.3s;
   position: relative;
 }
-.appearance-toggle:hover {
+.appearance-toggle:hover,
+.sound-toggle:hover {
   color: #fff;
   border-color: rgba(var(--theme-glow), 0.4);
   background: rgba(var(--theme-glow), 0.08);
 }
-.appearance-toggle svg {
+.appearance-toggle svg,
+.sound-toggle svg {
   width: 14px;
   height: 14px;
   display: none;
@@ -2069,7 +2079,14 @@ nav.nav-light .nav-burger:hover {
 .appearance-toggle[data-appearance="auto"] .icon-auto {
   display: block;
 }
-.appearance-toggle::after {
+.sound-toggle[data-sound="on"] .icon-sound-on {
+  display: block;
+}
+.sound-toggle[data-sound="off"] .icon-sound-off {
+  display: block;
+}
+.appearance-toggle::after,
+.sound-toggle::after {
   content: attr(data-tooltip);
   position: absolute;
   top: calc(100% + 8px);
@@ -2087,19 +2104,23 @@ nav.nav-light .nav-burger:hover {
   opacity: 0;
   transition: opacity 0.2s;
 }
-.appearance-toggle:hover::after {
+.appearance-toggle:hover::after,
+.sound-toggle:hover::after {
   opacity: 1;
 }
-nav.nav-light .appearance-toggle {
+nav.nav-light .appearance-toggle,
+nav.nav-light .sound-toggle {
   color: rgba(var(--ink-rgb), 0.5);
   border-color: rgba(0, 0, 0, 0.1);
 }
-nav.nav-light .appearance-toggle:hover {
+nav.nav-light .appearance-toggle:hover,
+nav.nav-light .sound-toggle:hover {
   color: var(--ink);
   border-color: rgba(26, 95, 168, 0.4);
   background: rgba(var(--theme-glow), 0.08);
 }
-nav.nav-light .appearance-toggle::after {
+nav.nav-light .appearance-toggle::after,
+nav.nav-light .sound-toggle::after {
   color: rgba(var(--ink-rgb), 0.7);
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);

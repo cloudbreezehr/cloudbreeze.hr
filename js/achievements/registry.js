@@ -1249,6 +1249,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "sound-on",
+    title: "Sound On",
+    description: "Gave the sky a voice.",
+    hint: "Turn on the sound",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",

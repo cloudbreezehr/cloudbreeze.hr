@@ -123,6 +123,9 @@ const MODULES = [
   },
   { path: "./service-cards.js", init: (m) => m.initTilt() },
 
+  // Audio
+  { path: "./audio/index.js", init: (m) => m.initAudio() },
+
   // Effects
   { path: "./effects/button-ripple.js", init: (m) => m.initButtonRipple() },
   { path: "./effects/nav-sparkle.js", init: (m) => m.initNavSparkle() },

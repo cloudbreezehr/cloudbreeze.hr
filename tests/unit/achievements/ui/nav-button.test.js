@@ -13,7 +13,10 @@ describe("achievements/ui/nav-button", () => {
     document.body.innerHTML = `
       <nav>
         <div class="nav-actions">
-          <button class="appearance-toggle"></button>
+          <div class="nav-toggles">
+            <button class="appearance-toggle"></button>
+            <button class="sound-toggle"></button>
+          </div>
         </div>
       </nav>
     `;
@@ -33,13 +36,13 @@ describe("achievements/ui/nav-button", () => {
     expect(result).toBeNull();
   });
 
-  it("inserts the button before the appearance toggle", () => {
+  it("inserts the button before the appearance toggle, inside the toggle cluster", () => {
     mod.createNavButton(() => {});
-    const actions = document.querySelector(".nav-actions");
-    expect(actions.children[0].classList.contains("achievement-btn")).toBe(
+    const toggles = document.querySelector(".nav-toggles");
+    expect(toggles.children[0].classList.contains("achievement-btn")).toBe(
       true,
     );
-    expect(actions.children[1].classList.contains("appearance-toggle")).toBe(
+    expect(toggles.children[1].classList.contains("appearance-toggle")).toBe(
       true,
     );
   });

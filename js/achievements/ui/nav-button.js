@@ -31,10 +31,12 @@ export function createNavButton(onPanelToggle, { onBadgeChange } = {}) {
   badgeEl.textContent = "0";
   navBtn.appendChild(badgeEl);
 
-  // Insert before the appearance toggle
+  // Sit just before the appearance toggle. Insert into the toggle's own parent
+  // rather than assuming it's a direct child of nav-actions — the appearance
+  // and sound toggles share a wrapper, so the toggle may sit one level in.
   const appearanceToggle = actions.querySelector(".appearance-toggle");
   if (appearanceToggle) {
-    actions.insertBefore(navBtn, appearanceToggle);
+    appearanceToggle.parentNode.insertBefore(navBtn, appearanceToggle);
   } else {
     actions.insertBefore(navBtn, actions.firstChild);
   }

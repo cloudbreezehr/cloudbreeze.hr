@@ -831,6 +831,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("open-secrets")).toBe(true);
   });
 
+  it("unlocks sound-on when sound is enabled", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sound-enabled", {});
+    expect(storage.isUnlocked("sound-on")).toBe(true);
+  });
+
   it("unlocks triple-stack when three themes are active at once", async () => {
     const { storage } = await startTracker();
     document.body.classList.add("frozen", "deep-sea");

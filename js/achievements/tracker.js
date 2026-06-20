@@ -597,6 +597,10 @@ export function createTracker(onUnlock, onRelock) {
     "cheatsheet-discovered"() {
       tryUnlock("open-secrets");
     },
+
+    "sound-enabled"() {
+      tryUnlock("sound-on");
+    },
   };
 
   // ── Visibility tracking for night-owl ──
