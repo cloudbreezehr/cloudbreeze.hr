@@ -8,6 +8,7 @@
 // global CSS clamp).
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const DEFAULT_DURATION_MS = 1600;
 const FULL_TURN_DEG = 360;
@@ -23,6 +24,7 @@ export function hueSweep({
   if (prefersReducedMotion()) return;
   const sky = document.querySelector(SKY_SELECTOR);
   if (!sky) return;
+  playSfx("sweep");
   const end = FULL_TURN_DEG * turns;
   sky.animate(
     [

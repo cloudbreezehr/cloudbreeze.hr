@@ -369,6 +369,66 @@ const VOICES = {
       gain: 0.1,
     });
   },
+  // Confetti / snow scatter — a soft pop and a high flutter tail.
+  confetti(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.12,
+      type: "bandpass",
+      freq: 1800,
+      q: 0.8,
+      gain: 0.22,
+    });
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "highpass",
+      freq: 5000,
+      q: 0.4,
+      gain: 0.1,
+      attack: 0.05,
+    });
+  },
+  // A screen flash (surge / glow / sun) — a soft brightening swell.
+  flash(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 400,
+      slideTo: 820,
+      type: "sine",
+      attack: 0.04,
+      release: 0.32,
+      gain: 0.16,
+    });
+    breath(ctx, bus, {
+      dur: 0.36,
+      type: "lowpass",
+      freq: 600,
+      sweepTo: 4200,
+      gain: 0.13,
+      attack: 0.06,
+    });
+  },
+  // A quake — a low, short rumble.
+  rumble(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.7,
+      type: "lowpass",
+      freq: 130,
+      q: 1.2,
+      gain: 0.6,
+      attack: 0.05,
+    });
+  },
+  // A hue sweep (disco / rainbow) — a filtered whoosh that opens up.
+  sweep(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.8,
+      type: "bandpass",
+      freq: 400,
+      sweepTo: 5000,
+      q: 0.7,
+      gain: 0.18,
+      attack: 0.1,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {

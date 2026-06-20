@@ -4,6 +4,7 @@
 // page rather than covering it. Self-cleaning; skipped under reduced motion.
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const DEFAULT_COLOR = "#ffffff";
 const DEFAULT_DURATION_MS = 380;
@@ -17,6 +18,7 @@ export function screenFlash({
   blend = DEFAULT_BLEND,
 } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("flash");
   const el = document.createElement("div");
   el.className = "screen-flash";
   el.setAttribute("aria-hidden", "true");

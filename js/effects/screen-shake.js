@@ -10,6 +10,7 @@
 // global CSS clamp).
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const BASE_AMPLITUDE_PX = 8;
 const DEFAULT_DURATION_MS = 500;
@@ -24,6 +25,7 @@ export function screenShake({
   durationMs = DEFAULT_DURATION_MS,
 } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("rumble");
   const frames = [];
   for (let i = 0; i <= SHAKE_STEPS; i++) {
     const decay = 1 - i / SHAKE_STEPS; // amplitude fades toward zero

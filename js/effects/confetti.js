@@ -5,6 +5,7 @@
 // (origin null) or burst from a point.
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const DEFAULT_COUNT = 36;
 // Hard cap so a charge-scaled caller can't flood the DOM.
@@ -33,6 +34,7 @@ export function confettiBurst({
   spin = SPIN_DEG,
 } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("confetti");
   const w = window.innerWidth;
   const h = window.innerHeight;
   const n = Math.min(count, MAX_PIECES);
