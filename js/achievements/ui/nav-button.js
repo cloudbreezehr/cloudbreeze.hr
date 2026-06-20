@@ -31,15 +31,12 @@ export function createNavButton(onPanelToggle, { onBadgeChange } = {}) {
   badgeEl.textContent = "0";
   navBtn.appendChild(badgeEl);
 
-  // Sit just before the appearance toggle. Insert into the toggle's own parent
-  // rather than assuming it's a direct child of nav-actions — the appearance
-  // and sound toggles share a wrapper, so the toggle may sit one level in.
+  // Lead the toggle cluster (Cloudlog · sound · appearance). The toggles share
+  // a wrapper, so prepend into that wrapper rather than assuming a flat layout
+  // — querying the appearance toggle locates the cluster wherever it sits.
   const appearanceToggle = actions.querySelector(".appearance-toggle");
-  if (appearanceToggle) {
-    appearanceToggle.parentNode.insertBefore(navBtn, appearanceToggle);
-  } else {
-    actions.insertBefore(navBtn, actions.firstChild);
-  }
+  const cluster = appearanceToggle ? appearanceToggle.parentNode : actions;
+  cluster.insertBefore(navBtn, cluster.firstChild);
 
   navBtn.addEventListener("click", () => {
     onPanelToggle();

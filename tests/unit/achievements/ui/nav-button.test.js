@@ -14,8 +14,8 @@ describe("achievements/ui/nav-button", () => {
       <nav>
         <div class="nav-actions">
           <div class="nav-toggles">
-            <button class="appearance-toggle"></button>
             <button class="sound-toggle"></button>
+            <button class="appearance-toggle"></button>
           </div>
         </div>
       </nav>
@@ -36,13 +36,14 @@ describe("achievements/ui/nav-button", () => {
     expect(result).toBeNull();
   });
 
-  it("inserts the button before the appearance toggle, inside the toggle cluster", () => {
+  it("leads the toggle cluster — Cloudlog, then sound, then appearance", () => {
     mod.createNavButton(() => {});
     const toggles = document.querySelector(".nav-toggles");
     expect(toggles.children[0].classList.contains("achievement-btn")).toBe(
       true,
     );
-    expect(toggles.children[1].classList.contains("appearance-toggle")).toBe(
+    expect(toggles.children[1].classList.contains("sound-toggle")).toBe(true);
+    expect(toggles.children[2].classList.contains("appearance-toggle")).toBe(
       true,
     );
   });
