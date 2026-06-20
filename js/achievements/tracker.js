@@ -601,6 +601,10 @@ export function createTracker(onUnlock, onRelock) {
     "sound-enabled"() {
       tryUnlock("sound-on");
     },
+
+    "theme-bed-heard"(data) {
+      if (data && data.theme) tryProgressItem("theme-beds-heard", data.theme);
+    },
   };
 
   // ── Visibility tracking for night-owl ──

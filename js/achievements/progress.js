@@ -42,6 +42,7 @@ export const PROGRESS_ITEMS = {
   "panel-tabs-visited": () => PANEL_TABS,
   "quadrants-clicked": () => QUADRANTS,
   "incantations-cast": () => INCANTATION_WORDS,
+  "theme-beds-heard": () => THEME_SETS,
 };
 
 function countNonMetaUnlocked() {
