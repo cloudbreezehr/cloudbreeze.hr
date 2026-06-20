@@ -20,6 +20,7 @@ js/
   effects/                       Standalone self-cleaning DOM effects (ripples, fireworks, HUD, hints, sparkles)
   achievements/                  Cloudlog: tracker, registry, storage, progress, UI
   analytics/                     Event taxonomy, consent, adapters + bridges
+  audio/                         Opt-in Web Audio: engine, procedural SFX voices, per-theme bus tint, event bridges
   dev/                           Dev console + tunable-constant registry
 ```
 
@@ -54,6 +55,8 @@ A new theme's look is additive: a `body[data-active-theme="…"]` section in `ma
 2. Add corresponding achievement definitions to `js/achievements/registry.js`
 3. Add handlers in `js/achievements/tracker.js` that listen for those events
 4. Never track state in the tracker that the source module already tracks — reuse via events
+
+**Audio system** (`js/audio/`): Opt-in, off by default (no autoplay; reduced-motion-safe). `engine.js` owns the AudioContext and master gain → limiter; `sfx.js` is a catalogue of procedural voices (oscillators + filtered noise, no asset files); voices play through a per-theme tint filter (`bus.js` + `theme-sounds.js`) so the active theme re-colours every effect for free, while UI cues (toggle/unlock chimes) bypass the tint via `playSfx(name, { ui: true })`. **Sound is tied to the EFFECT, never the trigger** — a spell is heard via its fireworks/ripple, identical however it was cast. Two integration paths: a standalone self-contained effect in `js/effects/*` calls `playSfx()` directly, placed *after* its `prefersReducedMotion()` guard so the sound only fires when the visual renders; a canvas-internal effect that already dispatches an achievement event is sounded by mapping that event to a voice in an audio bridge (`bridges/*`, most built from `eventVoiceBridge({ eventType: voiceName })`). **Passive/continuous background animations stay silent** (drifting clouds, a jellyfish's pulse) — sounding them would be ambient noise, which this site deliberately omits. When adding an effect, give it a voice via whichever path fits; per-voice synthesis params are a readable data catalogue, with the SFX/master levels exposed as dev-console knobs.
 
 ## Code Standards
 
