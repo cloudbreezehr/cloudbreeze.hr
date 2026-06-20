@@ -33,7 +33,7 @@ const CONT = defineConstants("audio.continuous", {
 });
 
 const GLIDE_S = 0.06; // setTargetAtTime time constant — smooth but responsive
-const DRAG_SPEED_REF = 35; // px/frame mapping to full whoosh
+export const DRAG_SPEED_REF = 35; // px/frame mapping to full whoosh
 const DRAG_CUTOFF_MIN = 400; // bandpass cutoff at rest (Hz)
 const DRAG_CUTOFF_RANGE = 2600; // … added at full speed
 const WELL_FREQ_BASE = 55; // hum pitch at zero strength (Hz)
@@ -45,6 +45,8 @@ let well = null; // { gain, osc }
 let prevX = null;
 let prevY = null;
 let prevWell = 0;
+let dragActive = false; // true while the drag voice still needs per-frame writes
+let wellActive = false; // true while the well voice still needs per-frame writes
 
 function buildVoices(ctx, bus) {
   const noiseSrc = ctx.createBufferSource();
@@ -84,9 +86,13 @@ function tick() {
   const f = getForces();
   const t = ctx.currentTime;
 
-  // Drag whoosh — brightness + level from cursor speed while dragging.
+  // Drag whoosh — brightness + level from cursor speed while dragging. On the
+  // frame the drag ends we write the rest target once more and let the glide
+  // coast; after that we leave the params alone so an idle loop schedules
+  // nothing (setTargetAtTime keeps easing toward the last target on its own).
+  const dragging = !!(f && f.isDragging);
   let speed = 0;
-  if (f && f.isDragging) {
+  if (dragging) {
     if (prevX != null)
       speed = Math.hypot(f.dragPos.x - prevX, f.dragPos.y - prevY);
     prevX = f.dragPos.x;
@@ -94,13 +100,16 @@ function tick() {
   } else {
     prevX = prevY = null;
   }
-  const dragLevel = Math.min(speed / DRAG_SPEED_REF, 1);
-  drag.gain.gain.setTargetAtTime(dragLevel * CONT.DRAG_GAIN, t, GLIDE_S);
-  drag.filter.frequency.setTargetAtTime(
-    DRAG_CUTOFF_MIN + dragLevel * DRAG_CUTOFF_RANGE,
-    t,
-    GLIDE_S,
-  );
+  if (dragging || dragActive) {
+    const dragLevel = dragging ? Math.min(speed / DRAG_SPEED_REF, 1) : 0;
+    drag.gain.gain.setTargetAtTime(dragLevel * CONT.DRAG_GAIN, t, GLIDE_S);
+    drag.filter.frequency.setTargetAtTime(
+      DRAG_CUTOFF_MIN + dragLevel * DRAG_CUTOFF_RANGE,
+      t,
+      GLIDE_S,
+    );
+    dragActive = dragging;
+  }
 
   // Gravity-well hum — rises in pitch + level across the whole press-and-hold
   // (holdStrength, which starts the moment you hold), then discharges when a
@@ -108,12 +117,15 @@ function tick() {
   // click barely moves holdStrength and never forms a well, so it stays quiet.
   const hold = f ? f.holdStrength : 0;
   const w = f ? f.wellStrength : 0;
-  well.gain.gain.setTargetAtTime(hold * CONT.WELL_GAIN, t, GLIDE_S);
-  well.osc.frequency.setTargetAtTime(
-    WELL_FREQ_BASE + hold * WELL_FREQ_RANGE,
-    t,
-    GLIDE_S,
-  );
+  if (hold > 0 || wellActive) {
+    well.gain.gain.setTargetAtTime(hold * CONT.WELL_GAIN, t, GLIDE_S);
+    well.osc.frequency.setTargetAtTime(
+      WELL_FREQ_BASE + hold * WELL_FREQ_RANGE,
+      t,
+      GLIDE_S,
+    );
+    wellActive = hold > 0;
+  }
   if (prevWell > 0 && w === 0) playSfx("wellRelease");
   prevWell = w;
 }
@@ -129,16 +141,14 @@ function stop() {
   if (well) well.gain.gain.value = 0;
   prevX = prevY = null;
   prevWell = 0;
+  dragActive = wellActive = false;
 }
 
 export function initContinuous() {
-  onSoundChange((on) => (on ? start() : stop()));
+  const off = onSoundChange((on) => (on ? start() : stop()));
   if (isSoundEnabled()) start();
-}
-
-// Test hook — stop the loop and drop the voices.
-export function _resetForTests() {
-  stop();
-  drag = null;
-  well = null;
+  return () => {
+    off();
+    stop();
+  };
 }
