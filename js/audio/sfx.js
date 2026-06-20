@@ -272,6 +272,24 @@ const VOICES = {
       }),
     );
   },
+  // A bright rising fifth (E5 → B5) for an unlock — distinct from the toggle's
+  // chime so the two don't sound like a stutter when both land on first enable.
+  unlock(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 659.25,
+      type: "triangle",
+      attack: 0.004,
+      release: 0.2,
+      gain: 0.26,
+    });
+    tone(ctx, bus, {
+      freq: 987.77,
+      type: "triangle",
+      attack: 0.11,
+      release: 0.34,
+      gain: 0.24,
+    });
+  },
 };
 
 // Play a named voice. intensity (0..1) scales the charged variants. No-op when
