@@ -102,6 +102,9 @@ const SECTION_LABEL_MAP = {
   "effects.logoParallax": "Logo Parallax",
   "effects.themeHistoryHud": "Theme History HUD",
   "achievements.activityLog": "Activity Log",
+  "audio.engine": "Engine",
+  "audio.sfx": "Sound Effects",
+  "audio.beds": "Ambient Beds",
 };
 
 // ── Group categories into top-level sections ──
@@ -114,6 +117,7 @@ const GROUP_ORDER = [
   { label: "Cursor", prefix: "cursor" },
   { label: "Effects", prefix: "effects." },
   { label: "Achievements", prefix: "achievements." },
+  { label: "Audio", prefix: "audio." },
 ];
 
 // ── Theme metadata helpers ──
