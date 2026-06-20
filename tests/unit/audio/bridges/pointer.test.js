@@ -1,0 +1,38 @@
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// The bridge taps a soft click off the click-burst event canvas.js dispatches.
+// sfx is mocked to capture what it would play.
+
+describe("audio/bridges/pointer", () => {
+  let calls;
+  let stop;
+
+  beforeEach(async () => {
+    vi.resetModules();
+    calls = [];
+    vi.doMock("../../../../js/audio/sfx.js", () => ({
+      playSfx: (name) => calls.push(name),
+    }));
+    const mod = await import("../../../../js/audio/bridges/pointer.js");
+    stop = mod.initPointerAudioBridge();
+  });
+
+  afterEach(() => {
+    if (stop) stop();
+    vi.doUnmock("../../../../js/audio/sfx.js");
+  });
+
+  it("taps on a world click", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", { detail: { type: "click-burst" } }),
+    );
+    expect(calls).toEqual(["click"]);
+  });
+
+  it("ignores unrelated events", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", { detail: { type: "drag" } }),
+    );
+    expect(calls).toEqual([]);
+  });
+});

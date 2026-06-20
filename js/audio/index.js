@@ -9,6 +9,7 @@ import { initSoundToggle } from "./toggle.js";
 import { initBeds } from "./beds.js";
 import { initThemesAudioBridge } from "./bridges/themes.js";
 import { initAchievementsAudioBridge } from "./bridges/achievements.js";
+import { initPointerAudioBridge } from "./bridges/pointer.js";
 
 export function initAudio() {
   initEngine();
@@ -16,4 +17,5 @@ export function initAudio() {
   initSoundToggle(document.querySelector(".sound-toggle"));
   initThemesAudioBridge();
   initAchievementsAudioBridge();
+  initPointerAudioBridge();
 }

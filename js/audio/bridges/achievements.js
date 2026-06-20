@@ -7,7 +7,7 @@ import { playSfx } from "../sfx.js";
 
 export function initAchievementsAudioBridge() {
   function onUnlock() {
-    playSfx("unlock");
+    playSfx("unlock", { ui: true });
   }
   window.addEventListener("analytics-unlock", onUnlock);
   return () => window.removeEventListener("analytics-unlock", onUnlock);

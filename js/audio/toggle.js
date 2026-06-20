@@ -23,8 +23,9 @@ export function initSoundToggle(buttonEl) {
   buttonEl.addEventListener("click", () => {
     toggleSound();
     // A confirmation note on turn-on — the click resumed the context, so this
-    // is the first thing the visitor hears (and proof it's working).
-    if (isSoundEnabled()) playSfx("chime");
+    // is the first thing the visitor hears (and proof it's working). A UI cue,
+    // so it plays dry rather than through the active theme's tint.
+    if (isSoundEnabled()) playSfx("chime", { ui: true });
   });
   onSoundChange(paint);
 }

@@ -7,6 +7,7 @@
 
 import { defineConstants } from "../dev/registry.js";
 import { audioContext, masterBus, isSoundEnabled } from "./engine.js";
+import { effectsBus } from "./bus.js";
 import { whiteNoise } from "./noise.js";
 
 const SFX = defineConstants("audio.sfx", {
@@ -261,6 +262,24 @@ const VOICES = {
       gain: 0.34,
     });
   },
+  // A soft tap for a pointer click — short filtered-noise tick plus a faint
+  // body. Kept subtle: it fires on every click, so it can't grate.
+  click(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.05,
+      type: "bandpass",
+      freq: 2000,
+      q: 0.8,
+      gain: 0.18,
+    });
+    tone(ctx, bus, {
+      freq: 440,
+      type: "sine",
+      attack: 0.002,
+      release: 0.05,
+      gain: 0.1,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {
@@ -292,15 +311,18 @@ const VOICES = {
   },
 };
 
-// Play a named voice. intensity (0..1) scales the charged variants. No-op when
-// sound is off, unavailable, or the name is unknown.
-export function playSfx(name, { intensity = 0 } = {}) {
+// Play a named voice. intensity (0..1) scales the charged variants. World/effect
+// voices route through the per-theme effects bus; pass `ui: true` for theme-
+// agnostic cues (toggle, unlock) that should play dry. No-op when sound is off,
+// unavailable, or the name is unknown.
+export function playSfx(name, { intensity = 0, ui = false } = {}) {
   if (!isSoundEnabled()) return;
   const voice = VOICES[name];
   if (!voice) return;
   const ctx = audioContext();
-  const bus = masterBus();
-  if (!ctx || !bus) return;
+  if (!ctx) return;
+  const bus = ui ? masterBus() : effectsBus();
+  if (!bus) return;
   const sfxGain = ctx.createGain();
   sfxGain.gain.value = SFX.GAIN;
   sfxGain.connect(bus);
