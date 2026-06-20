@@ -3,12 +3,8 @@
 // dispatches (it fires only for clicks that aren't on UI controls). Routed
 // through the effects bus, so the active theme tints it for free.
 
-import { playSfx } from "../sfx.js";
+import { eventVoiceBridge } from "./event-voice.js";
 
-export function initPointerAudioBridge() {
-  function onAchievement(e) {
-    if ((e.detail || {}).type === "click-burst") playSfx("click");
-  }
-  window.addEventListener("achievement", onAchievement);
-  return () => window.removeEventListener("achievement", onAchievement);
-}
+export const initPointerAudioBridge = eventVoiceBridge({
+  "click-burst": "click",
+});

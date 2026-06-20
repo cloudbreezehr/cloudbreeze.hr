@@ -3,11 +3,10 @@
 // existing achievement event stream — the gravity well's charge → engage →
 // full → release arc, the orbit it spins up, and the click-fury tiers
 // (lightning, aurora, meteors) — so the canvas modules stay unaware of audio.
-// Routed through the effects bus, so the active theme colours them.
 
-import { playSfx } from "../sfx.js";
+import { eventVoiceBridge } from "./event-voice.js";
 
-const EVENT_VOICE = {
+export const initWorldAudioBridge = eventVoiceBridge({
   hold: "charge",
   "well-activate": "wellEngage",
   "well-full": "wellFull",
@@ -16,13 +15,4 @@ const EVENT_VOICE = {
   "fury-lightning": "lightning",
   "fury-aurora": "aurora",
   "fury-meteor": "meteor",
-};
-
-export function initWorldAudioBridge() {
-  function onAchievement(e) {
-    const voice = EVENT_VOICE[(e.detail || {}).type];
-    if (voice) playSfx(voice);
-  }
-  window.addEventListener("achievement", onAchievement);
-  return () => window.removeEventListener("achievement", onAchievement);
-}
+});
