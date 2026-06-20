@@ -4,6 +4,7 @@
 // self-cleaning, capped, skipped under reduced motion.
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const DEFAULT_COUNT = 6;
 // Hard cap so a charge-scaled caller can't flood the DOM.
@@ -26,6 +27,7 @@ export function orbit({
   color = DEFAULT_COLOR,
 } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("orbit");
   const cx = origin ? origin.x : window.innerWidth / 2;
   const cy = origin ? origin.y : window.innerHeight / 2;
   const n = Math.min(count, MAX_DOTS);

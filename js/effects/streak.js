@@ -5,6 +5,7 @@
 // skipped under reduced motion.
 
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 const DEFAULT_COUNT = 1;
 // Hard cap so a charge-scaled caller can't flood the DOM.
@@ -41,6 +42,7 @@ export function streak({
   radial = false, // spread evenly around a full circle from a single centre
 } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("streak");
   const n = Math.min(count, MAX_STREAKS);
   for (let i = 0; i < n; i++) {
     const a = radial

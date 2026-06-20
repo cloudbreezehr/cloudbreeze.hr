@@ -429,6 +429,48 @@ const VOICES = {
       attack: 0.1,
     });
   },
+  // A lightning strike — a sharp high crack over a low thunder tail.
+  lightning(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.12,
+      type: "highpass",
+      freq: 3000,
+      q: 0.5,
+      gain: 0.5,
+    });
+    breath(ctx, bus, {
+      dur: 0.6,
+      type: "lowpass",
+      freq: 320,
+      sweepTo: 80,
+      gain: 0.4,
+      attack: 0.02,
+    });
+  },
+  // A streak shooting across (comet / warp / gust / wish) — a quick airy zip.
+  streak(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "bandpass",
+      freq: 900,
+      sweepTo: 3200,
+      q: 0.7,
+      gain: 0.16,
+      attack: 0.04,
+    });
+  },
+  // Motes circling the cursor — a gentle rising shimmer.
+  orbit(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 520,
+      slideTo: 880,
+      type: "sine",
+      attack: 0.08,
+      hold: 0.4,
+      release: 0.5,
+      gain: 0.16,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {

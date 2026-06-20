@@ -4,6 +4,7 @@
 
 import { prefersReducedMotion } from "../motion.js";
 import { screenFlash } from "./flash.js";
+import { playSfx } from "../audio/sfx.js";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const SEGMENTS = 9; // zigzag segments from top to target
@@ -27,6 +28,7 @@ function boltPoints(targetX, targetY) {
 
 export function lightningStrike(targetX, targetY, { flash = true } = {}) {
   if (prefersReducedMotion()) return;
+  playSfx("lightning");
   const svg = document.createElementNS(SVG_NS, "svg");
   svg.setAttribute("class", "lightning");
   svg.setAttribute("aria-hidden", "true");
