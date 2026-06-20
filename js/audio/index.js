@@ -6,8 +6,10 @@
 
 import { initEngine } from "./engine.js";
 import { initSoundToggle } from "./toggle.js";
+import { initIncantationsAudioBridge } from "./bridges/incantations.js";
 
 export function initAudio() {
   initEngine();
   initSoundToggle(document.querySelector(".sound-toggle"));
+  initIncantationsAudioBridge();
 }

@@ -5,6 +5,7 @@
 // audio context.
 
 import { isSoundEnabled, toggleSound, onSoundChange } from "./engine.js";
+import { playSfx } from "./sfx.js";
 
 const TOOLTIP_ON = "Sound on";
 const TOOLTIP_OFF = "Sound off";
@@ -19,6 +20,11 @@ export function initSoundToggle(buttonEl) {
   }
 
   paint(isSoundEnabled());
-  buttonEl.addEventListener("click", () => toggleSound());
+  buttonEl.addEventListener("click", () => {
+    toggleSound();
+    // A confirmation note on turn-on — the click resumed the context, so this
+    // is the first thing the visitor hears (and proof it's working).
+    if (isSoundEnabled()) playSfx("chime");
+  });
   onSoundChange(paint);
 }
