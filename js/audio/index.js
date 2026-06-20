@@ -7,7 +7,6 @@
 import { initEngine } from "./engine.js";
 import { initSoundToggle } from "./toggle.js";
 import { initBeds } from "./beds.js";
-import { initIncantationsAudioBridge } from "./bridges/incantations.js";
 import { initThemesAudioBridge } from "./bridges/themes.js";
 import { initAchievementsAudioBridge } from "./bridges/achievements.js";
 
@@ -15,7 +14,6 @@ export function initAudio() {
   initEngine();
   initBeds();
   initSoundToggle(document.querySelector(".sound-toggle"));
-  initIncantationsAudioBridge();
   initThemesAudioBridge();
   initAchievementsAudioBridge();
 }
