@@ -2085,6 +2085,26 @@ nav.nav-light .nav-burger:hover {
 .sound-toggle[data-sound="off"] .icon-sound-off {
   display: block;
 }
+/* Progressive disclosure: the sound toggle is hidden — and non-interactive,
+   and out of the a11y tree — until the visitor shows interest (return visit /
+   dwell / already enabled), at which point JS adds `.revealed`. `visibility`
+   reserves the nav slot, so the reveal fades in without shifting anything. */
+.sound-toggle {
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+}
+.sound-toggle.revealed {
+  visibility: visible;
+  opacity: 1;
+  transform: scale(1);
+}
 .appearance-toggle::after,
 .sound-toggle::after {
   content: attr(data-tooltip);
