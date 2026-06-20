@@ -414,6 +414,42 @@ const VOICES = {
       gain: 0.14,
     });
   },
+  // Bursting the world into voxels in the blocky theme — a chunky crunch.
+  shatter(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.1,
+      type: "lowpass",
+      freq: 800,
+      sweepTo: 200,
+      gain: 0.4,
+    });
+    tone(ctx, bus, {
+      freq: 200,
+      slideTo: 90,
+      type: "square",
+      attack: 0.002,
+      release: 0.1,
+      gain: 0.16,
+    });
+  },
+  // A burst of bubbles in the deep-sea theme — a wet bloop.
+  bloop(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 500,
+      slideTo: 180,
+      type: "sine",
+      attack: 0.004,
+      release: 0.18,
+      gain: 0.22,
+    });
+    breath(ctx, bus, {
+      dur: 0.06,
+      type: "bandpass",
+      freq: 900,
+      q: 2,
+      gain: 0.1,
+    });
+  },
   // Clicking a star — a bright little ping.
   twinkle(ctx, bus) {
     tone(ctx, bus, {

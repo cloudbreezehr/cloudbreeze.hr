@@ -8,6 +8,7 @@ import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
 import { prefersReducedMotion } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 
 // ── Particle counts ──
 const COUNTS = defineConstants(
@@ -193,6 +194,7 @@ export function initDeepSea() {
     onClick({ cx, cy, reducedMotion }) {
       if (reducedMotion) return;
       deepSea.clickBurst(cx, cy);
+      playSfx("bloop");
     },
     onDragMove({ cx, cy, trailAdded, reducedMotion }) {
       if (reducedMotion) return;

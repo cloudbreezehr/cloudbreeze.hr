@@ -5,6 +5,7 @@ import { createBlocky } from "../particles/blocky.js";
 import { createTheme } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
+import { playSfx } from "../audio/sfx.js";
 
 // ── Particle counts ──
 const COUNTS = defineConstants(
@@ -168,6 +169,7 @@ export function initBlocky(toggleEl) {
     onClick({ cx, cy, reducedMotion }) {
       if (reducedMotion) return;
       blocky.clickBurst(cx, cy);
+      playSfx("shatter");
     },
   });
 
