@@ -13,6 +13,7 @@ import { Z_FIREWORKS } from "../layers.js";
 import { drawHaloParticle } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 import { mirrorYWhenInverted } from "../viewport.js";
+import { playSfx } from "../audio/sfx.js";
 import { prefersReducedMotion } from "../motion.js";
 
 // ── Constants ──
@@ -406,6 +407,11 @@ class Rocket {
       return false;
     }
 
+    // First frame off the ground — whistle. Per-rocket, so a staggered volley
+    // layers into a crescendo. Sound tracks the visual: if reduced motion or a
+    // quality tier skipped this rocket, this code never runs.
+    if (this.life === 0) playSfx("rocket");
+
     // Record current position in the trail ring buffer
     const slot = this.trail[this.trailIdx];
     slot.x = this.x + (Math.random() - 0.5) * FW.ROCKET_TRAIL_JITTER;
@@ -513,6 +519,9 @@ function createRendererCore() {
 
   // Spawn primary particles for a burst at (x, y).  Internal — no cap check.
   function spawnBurst(x, y, rgb) {
+    // The single chokepoint for every detonation (rocket arrival + public
+    // burst), so one boom per burst — denser shows grow louder on their own.
+    playSfx("burst");
     const count =
       FW.PRIMARY_COUNT_MIN + Math.floor(Math.random() * FW.PRIMARY_COUNT_RANGE);
     const palette = generateBurstPalette(rgb, count);

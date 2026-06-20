@@ -1,7 +1,8 @@
 // ── Ripple Ring Effect ──
 // Expanding concentric rings that emanate from a point and fade out.
-// Used by theme triggers (deep-sea hold, frozen/rainy card clicks).
 // CSS classes control the visual appearance (size, color, border).
+
+import { playSfx } from "../audio/sfx.js";
 
 /**
  * Spawn one or more expanding ripple rings at (x, y).
@@ -20,6 +21,7 @@
  * @param {number}      [opts.startOpacity] - Starting opacity (default: 0.6)
  */
 export function spawnRipple(x, y, opts) {
+  playSfx("drop");
   const parent = opts.parent || document.body;
   const count = opts.count || 1;
   const staggerMs = opts.staggerMs || 150;

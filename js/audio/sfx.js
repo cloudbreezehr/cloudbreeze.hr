@@ -304,6 +304,71 @@ const VOICES = {
       gain: 0.1,
     });
   },
+  // A firework rocket leaving the ground — a soft rising whistle. Fires once
+  // per rocket, so a staggered volley layers into a natural crescendo.
+  rocket(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 320,
+      slideTo: 1150,
+      type: "triangle",
+      attack: 0.02,
+      release: 0.34,
+      gain: 0.12,
+    });
+    breath(ctx, bus, {
+      dur: 0.34,
+      type: "bandpass",
+      freq: 1300,
+      q: 0.6,
+      gain: 0.09,
+      attack: 0.05,
+    });
+  },
+  // A firework detonation — a soft body thump, a sub, and a high crackle tail
+  // for the shimmer. One per burst, so denser shows sound bigger on their own.
+  burst(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "lowpass",
+      freq: 900,
+      sweepTo: 80,
+      gain: 0.6,
+    });
+    tone(ctx, bus, {
+      freq: 90,
+      slideTo: 45,
+      type: "sine",
+      attack: 0.005,
+      release: 0.34,
+      gain: 0.45,
+    });
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "highpass",
+      freq: 4200,
+      q: 0.5,
+      gain: 0.12,
+      attack: 0.03,
+    });
+  },
+  // A ripple ring — a soft water-drop plink.
+  drop(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 900,
+      slideTo: 320,
+      type: "sine",
+      attack: 0.002,
+      release: 0.18,
+      gain: 0.18,
+    });
+    breath(ctx, bus, {
+      dur: 0.05,
+      type: "bandpass",
+      freq: 1800,
+      q: 1.0,
+      gain: 0.1,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {
