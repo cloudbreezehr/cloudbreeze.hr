@@ -555,6 +555,117 @@ const VOICES = {
       attack: 0.1,
     });
   },
+  // Frost breath on a click in the frozen world — a crystalline tick.
+  ice(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.12,
+      type: "highpass",
+      freq: 6000,
+      q: 0.6,
+      gain: 0.18,
+    });
+    tone(ctx, bus, {
+      freq: 2400,
+      slideTo: 3200,
+      type: "triangle",
+      attack: 0.003,
+      release: 0.12,
+      gain: 0.1,
+    });
+  },
+  // A pencil stroke in the paper world — a short scratch.
+  pencil(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.14,
+      type: "bandpass",
+      freq: 1600,
+      q: 0.7,
+      gain: 0.16,
+      attack: 0.01,
+    });
+  },
+  // A snow-globe shake — a brief shaken rustle.
+  rattle(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "bandpass",
+      freq: 3000,
+      q: 0.5,
+      gain: 0.18,
+      attack: 0.01,
+    });
+  },
+  // A VHS click glitch — a short bitcrushed buzz.
+  glitch(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 140,
+      slideTo: 90,
+      type: "square",
+      attack: 0.002,
+      release: 0.12,
+      gain: 0.12,
+    });
+    breath(ctx, bus, {
+      dur: 0.12,
+      type: "bandpass",
+      freq: 1200,
+      q: 1.5,
+      gain: 0.14,
+    });
+  },
+  // Clicking a star — a bright little ping.
+  twinkle(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 1800,
+      type: "sine",
+      attack: 0.003,
+      release: 0.22,
+      gain: 0.16,
+    });
+  },
+  // Catching a shooting star — a descending whoosh with a sparkle.
+  starWhoosh(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "bandpass",
+      freq: 3000,
+      sweepTo: 800,
+      q: 0.6,
+      gain: 0.16,
+      attack: 0.02,
+    });
+    tone(ctx, bus, {
+      freq: 1600,
+      type: "sine",
+      attack: 0.005,
+      release: 0.2,
+      gain: 0.1,
+    });
+  },
+  // Completing a constellation — a warm three-note chord.
+  chord(ctx, bus) {
+    [392, 523.25, 659.25].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.02 + n * 0.04,
+        hold: 0.15,
+        release: 0.6,
+        gain: 0.16,
+      }),
+    );
+  },
+  // Tapping the wrong star while tracing — a soft low dud.
+  dud(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 160,
+      slideTo: 120,
+      type: "sine",
+      attack: 0.005,
+      release: 0.16,
+      gain: 0.14,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {

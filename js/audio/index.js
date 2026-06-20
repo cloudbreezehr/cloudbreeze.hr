@@ -10,6 +10,7 @@ import { initThemesAudioBridge } from "./bridges/themes.js";
 import { initAchievementsAudioBridge } from "./bridges/achievements.js";
 import { initPointerAudioBridge } from "./bridges/pointer.js";
 import { initWorldAudioBridge } from "./bridges/world.js";
+import { initThemeEffectsAudioBridge } from "./bridges/theme-effects.js";
 
 export function initAudio() {
   initEngine();
@@ -18,4 +19,5 @@ export function initAudio() {
   initAchievementsAudioBridge();
   initPointerAudioBridge();
   initWorldAudioBridge();
+  initThemeEffectsAudioBridge();
 }
