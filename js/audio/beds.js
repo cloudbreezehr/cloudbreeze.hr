@@ -1,10 +1,11 @@
 // ── Ambient Beds ──
-// A continuous ambient loop per easter-egg theme — looping filtered noise, some
-// with a slow LFO breathing the cutoff — that crossfades in when a theme wins
-// and out when it's gone. Only one bed plays at a time (the active theme), kept
-// deliberately quiet so it sits under the SFX. A bed builds only while sound is
-// on; the moment one actually starts playing it announces itself so the
-// "heard every theme" achievement only credits beds the visitor truly heard.
+// A continuous ambient loop for the two themes whose worlds have a natural
+// ambience — rain and the deep sea — crossfaded in when the theme wins and out
+// when it's gone (other themes carry their character through the effects-bus
+// tint and their entry cue, not a bed). Kept well under the SFX so it never
+// becomes the foreground. A bed builds only while sound is on; if the theme was
+// entered with sound off, the choice is remembered and honoured on the next
+// enable.
 
 import { defineConstants } from "../dev/registry.js";
 import {
@@ -17,7 +18,7 @@ import { whiteNoise } from "./noise.js";
 
 const BEDS = defineConstants("audio.beds", {
   GAIN: {
-    value: 0.18,
+    value: 0.08,
     min: 0,
     max: 1,
     step: 0.01,
@@ -35,72 +36,26 @@ const BEDS = defineConstants("audio.beds", {
 const FLOOR = 0.0001; // exponential ramps can't reach 0
 const STOP_SLACK_S = 0.1; // beyond the fade before a faded-out source is stopped
 
-// Per-theme character. type/freq/q shape the filter; gain is relative to the
-// bed bus; lfoDepth 0 means no cutoff movement (a steady bed).
+// The two ambient worlds. type/freq/q shape the filtered-noise loop; gain is
+// relative to the bed bus; a slow LFO breathes the cutoff (lfoDepth 0 = steady).
+// deep-sea: a low, slowly-swelling underwater hush. rainy: soft broadband
+// rainfall.
 const BED_DEFS = {
   "deep-sea": {
     type: "lowpass",
-    freq: 300,
+    freq: 350,
     q: 1.0,
     gain: 1.0,
-    lfoRate: 0.08,
+    lfoRate: 0.07,
     lfoDepth: 120,
-  },
-  frozen: {
-    type: "highpass",
-    freq: 2000,
-    q: 0.4,
-    gain: 0.6,
-    lfoRate: 0.12,
-    lfoDepth: 500,
-  },
-  blocky: {
-    type: "bandpass",
-    freq: 600,
-    q: 1.5,
-    gain: 0.5,
-    lfoRate: 0,
-    lfoDepth: 0,
   },
   rainy: {
     type: "lowpass",
-    freq: 1200,
-    q: 0.6,
+    freq: 3200,
+    q: 0.5,
     gain: 0.8,
     lfoRate: 0,
     lfoDepth: 0,
-  },
-  paper: {
-    type: "highpass",
-    freq: 3500,
-    q: 0.4,
-    gain: 0.35,
-    lfoRate: 0.05,
-    lfoDepth: 300,
-  },
-  vhs: {
-    type: "highpass",
-    freq: 1500,
-    q: 0.5,
-    gain: 0.5,
-    lfoRate: 0.2,
-    lfoDepth: 250,
-  },
-  "upside-down": {
-    type: "lowpass",
-    freq: 220,
-    q: 1.6,
-    gain: 0.7,
-    lfoRate: 0.06,
-    lfoDepth: 80,
-  },
-  constellation: {
-    type: "bandpass",
-    freq: 2600,
-    q: 0.8,
-    gain: 0.4,
-    lfoRate: 0.1,
-    lfoDepth: 600,
   },
 };
 
@@ -176,12 +131,6 @@ function sync() {
   }
   if (desired && BED_DEFS[desired]) {
     current = { theme: desired, ...startBed(ctx, bus, BED_DEFS[desired]) };
-    // Credited only here — when a bed truly becomes audible.
-    window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "theme-bed-heard", theme: desired },
-      }),
-    );
   }
 }
 

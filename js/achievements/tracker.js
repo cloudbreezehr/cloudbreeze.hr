@@ -602,8 +602,8 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("sound-on");
     },
 
-    "theme-bed-heard"(data) {
-      if (data && data.theme) tryProgressItem("theme-beds-heard", data.theme);
+    "theme-sound-heard"(data) {
+      if (data && data.theme) tryProgressItem("themes-heard", data.theme);
     },
   };
 

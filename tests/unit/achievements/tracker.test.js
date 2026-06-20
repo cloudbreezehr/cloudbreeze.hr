@@ -837,11 +837,11 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("sound-on")).toBe(true);
   });
 
-  it("unlocks perfect-pitch when every theme bed has been heard", async () => {
+  it("unlocks perfect-pitch when every theme has been heard", async () => {
     const { storage } = await startTracker();
     const { THEME_SETS } = await import("../../../js/achievements/registry.js");
     for (const theme of THEME_SETS) {
-      dispatchAchievement("theme-bed-heard", { theme });
+      dispatchAchievement("theme-sound-heard", { theme });
     }
     expect(storage.isUnlocked("perfect-pitch")).toBe(true);
   });

@@ -262,6 +262,30 @@ const VOICES = {
       gain: 0.34,
     });
   },
+  // A theme entering / leaving — a soft noise sweep up / down. Played through
+  // the effects bus after the tint is set, so it takes on the theme's colour.
+  themeIn(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.55,
+      type: "bandpass",
+      freq: 300,
+      sweepTo: 1800,
+      q: 0.7,
+      gain: 0.28,
+      attack: 0.18,
+    });
+  },
+  themeOut(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.45,
+      type: "bandpass",
+      freq: 1800,
+      sweepTo: 280,
+      q: 0.7,
+      gain: 0.24,
+      attack: 0.04,
+    });
+  },
   // A soft tap for a pointer click — short filtered-noise tick plus a faint
   // body. Kept subtle: it fires on every click, so it can't grate.
   click(ctx, bus) {

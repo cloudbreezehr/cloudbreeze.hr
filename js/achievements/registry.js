@@ -1260,12 +1260,12 @@ export const ACHIEVEMENTS = [
   {
     id: "perfect-pitch",
     title: "Perfect Pitch",
-    description: "Heard every world hum.",
-    hint: "Listen to every theme's ambient sound",
+    description: "Heard every world's voice.",
+    hint: "Enter every theme with the sound on",
     set: "exploration",
     points: RARE,
     hidden: true,
-    progressKey: "theme-beds-heard",
+    progressKey: "themes-heard",
   },
   {
     id: "triple-stack",

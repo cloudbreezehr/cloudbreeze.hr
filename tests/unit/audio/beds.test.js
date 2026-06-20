@@ -1,9 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// Beds only build while sound is on, and announce "theme-bed-heard" the moment
-// one actually starts — so the achievement credits beds the visitor truly
-// heard, including one chosen while sound was off and started when it came on.
-// A stub AudioContext stands in for happy-dom's missing Web Audio.
+// Beds exist only for the two ambient worlds (rainy, deep-sea) and build only
+// while sound is on — including one chosen while sound was off and started when
+// it came on. A stub AudioContext stands in for happy-dom's missing Web Audio
+// and tallies the buffer sources a bed creates.
 
 function stubAudioContext(created) {
   const param = () => ({
@@ -18,12 +18,8 @@ function stubAudioContext(created) {
     this.sampleRate = 44100;
     this.state = "suspended";
     this.destination = {};
-    this.resume = () => {
-      this.state = "running";
-    };
-    this.suspend = () => {
-      this.state = "suspended";
-    };
+    this.resume = () => {};
+    this.suspend = () => {};
     this.createGain = () => node({ gain: param() });
     this.createDynamicsCompressor = () =>
       node({ threshold: param(), knee: param(), ratio: param() });
@@ -48,7 +44,7 @@ function stubAudioContext(created) {
 }
 
 describe("audio/beds", () => {
-  let beds, engine, created, heard, onHeard;
+  let beds, engine, created;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -58,44 +54,41 @@ describe("audio/beds", () => {
     engine = await import("../../../js/audio/engine.js");
     beds = await import("../../../js/audio/beds.js");
     beds.initBeds();
-    heard = [];
-    onHeard = (e) => {
-      if (e.detail.type === "theme-bed-heard") heard.push(e.detail.theme);
-    };
-    window.addEventListener("achievement", onHeard);
   });
 
   afterEach(() => {
-    window.removeEventListener("achievement", onHeard);
     beds._resetForTests();
     engine._resetForTests();
     delete window.AudioContext;
   });
 
-  it("stays silent and uncredited while sound is off", () => {
-    beds.setBed("frozen");
+  it("stays silent while sound is off", () => {
+    beds.setBed("rainy");
     expect(created.sources).toBe(0);
-    expect(heard).toEqual([]);
   });
 
-  it("starts and announces a bed when sound is on", () => {
+  it("starts an ambient bed when sound is on", () => {
     engine.setSoundEnabled(true);
-    beds.setBed("frozen");
+    beds.setBed("rainy");
     expect(created.sources).toBeGreaterThan(0);
-    expect(heard).toEqual(["frozen"]);
   });
 
   it("honours a bed chosen while off once sound turns on", () => {
     beds.setBed("deep-sea");
-    expect(heard).toEqual([]);
+    expect(created.sources).toBe(0);
     engine.setSoundEnabled(true);
-    expect(heard).toEqual(["deep-sea"]);
+    expect(created.sources).toBeGreaterThan(0);
+  });
+
+  it("has no bed for non-ambient themes", () => {
+    engine.setSoundEnabled(true);
+    beds.setBed("frozen");
+    expect(created.sources).toBe(0);
   });
 
   it("ignores an unknown theme", () => {
     engine.setSoundEnabled(true);
     beds.setBed("not-a-theme");
     expect(created.sources).toBe(0);
-    expect(heard).toEqual([]);
   });
 });
