@@ -677,6 +677,18 @@ const VOICES = {
       attack: 0.01,
     });
   },
+  // Cursor settling on a primary call to action — the faintest high feather.
+  // The lightest voice in the catalogue: it fires on every hover, so it has to
+  // sit just under conscious notice.
+  hoverShimmer(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 1600,
+      type: "sine",
+      attack: 0.002,
+      release: 0.07,
+      gain: 0.05,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {
