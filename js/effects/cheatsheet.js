@@ -9,6 +9,7 @@ import { trapFocus } from "../achievements/focus-trap.js";
 import { getThemes } from "../themes/registry.js";
 import { INCANTATIONS } from "./incantations.js";
 import { getPref, setPref } from "../achievements/storage.js";
+import { playSfx } from "../audio/sfx.js";
 
 // Fallback removal delay — generously past the overlay's CSS fade so the node
 // is still removed if transitionend never fires (e.g. detached early).
@@ -147,6 +148,8 @@ export function openCheatsheet() {
   document.body.appendChild(overlayEl);
   void overlayEl.offsetHeight;
   overlayEl.classList.add("visible");
+  // A soft page-flip as the book of secrets opens (dry — it's a UI panel).
+  playSfx("pageflip", { ui: true });
   // Contain focus inside the dialog — without this an aria-modal dialog still
   // lets Tab reach the page behind it. Starts focus on the close button.
   _releaseFocusTrap = trapFocus(overlayEl, {

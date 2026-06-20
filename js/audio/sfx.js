@@ -568,6 +568,48 @@ const VOICES = {
       attack: 0.01,
     });
   },
+  // A theme charging toward its trigger — a tick whose pitch climbs with the
+  // build-up threshold (progress 0..1), so repeated input reads as a ramp.
+  buildup(ctx, bus, { progress = 0 } = {}) {
+    tone(ctx, bus, {
+      freq: 400 + progress * 900,
+      type: "triangle",
+      attack: 0.004,
+      release: 0.14,
+      gain: 0.16,
+    });
+  },
+  // Konami code accepted — a cheery ascending arpeggio (C E G C).
+  fanfare(ctx, bus) {
+    [523.25, 659.25, 783.99, 1046.5].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "triangle",
+        attack: 0.004 + n * 0.07,
+        release: 0.3,
+        gain: 0.2,
+      }),
+    );
+  },
+  // Opening the cheat-codes panel — a soft paper riffle and a faint chime.
+  pageflip(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.18,
+      type: "bandpass",
+      freq: 2200,
+      sweepTo: 3500,
+      q: 0.5,
+      gain: 0.12,
+      attack: 0.01,
+    });
+    tone(ctx, bus, {
+      freq: 880,
+      type: "sine",
+      attack: 0.02,
+      release: 0.25,
+      gain: 0.1,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {
@@ -601,8 +643,9 @@ const VOICES = {
 
 // Play a named voice. World/effect voices route through the per-theme effects
 // bus; pass `ui: true` for theme-agnostic cues (toggle, unlock) that should
-// play dry. No-op when sound is off, unavailable, or the name is unknown.
-export function playSfx(name, { ui = false } = {}) {
+// play dry. Any other options are forwarded to the voice (e.g. a buildup
+// tick's `progress`). No-op when sound is off, unavailable, or name unknown.
+export function playSfx(name, { ui = false, ...opts } = {}) {
   if (!isSoundEnabled()) return;
   const voice = VOICES[name];
   if (!voice) return;
@@ -613,5 +656,5 @@ export function playSfx(name, { ui = false } = {}) {
   const sfxGain = ctx.createGain();
   sfxGain.gain.value = SFX.GAIN;
   sfxGain.connect(bus);
-  voice(ctx, sfxGain);
+  voice(ctx, sfxGain, opts);
 }
