@@ -7,9 +7,10 @@
 // Progressive disclosure: an agency landing page shouldn't greet a first-time
 // visitor with an audio control, so the button stays hidden (CSS default) until
 // the visitor signals interest — sound was already enabled on a past visit,
-// they've come back, or they've dwelled past a threshold this visit. Once
-// revealed it stays revealed (the return-visit flag persists). Its nav slot is
-// reserved, so revealing it shifts nothing.
+// they've come back, they've dwelled past a threshold this visit, or they
+// spelled the reveal word (`revealSoundToggle`). Once revealed it stays
+// revealed (the return-visit flag persists). Its nav slot is reserved, so
+// revealing it shifts nothing.
 
 import { isSoundEnabled, toggleSound, onSoundChange } from "./engine.js";
 import { playSfx } from "./sfx.js";
@@ -31,6 +32,21 @@ const REVEAL = defineConstants("audio.toggle", {
   },
 });
 
+let buttonEl = null;
+let revealed = false;
+
+function reveal() {
+  if (revealed) return;
+  revealed = true;
+  if (buttonEl) buttonEl.classList.add("revealed");
+}
+
+// Surface the toggle on demand — used by the spell path (typing SOUND) so a
+// curious visitor doesn't have to wait out the dwell. Idempotent.
+export function revealSoundToggle() {
+  reveal();
+}
+
 // Read whether the site has been loaded before, marking it visited for next
 // time. Returns true for a returning visitor.
 function visitedBefore() {
@@ -43,7 +59,8 @@ function visitedBefore() {
   }
 }
 
-export function initSoundToggle(buttonEl) {
+export function initSoundToggle(el) {
+  buttonEl = el;
   if (!buttonEl) return;
 
   function paint(on) {
@@ -66,9 +83,12 @@ export function initSoundToggle(buttonEl) {
   // otherwise wait out the dwell. Always mark visited so the next visit is a
   // return regardless of which path fires.
   const returning = visitedBefore();
-  if (isSoundEnabled() || returning) {
-    buttonEl.classList.add("revealed");
-  } else {
-    setTimeout(() => buttonEl.classList.add("revealed"), REVEAL.DWELL_MS);
-  }
+  if (isSoundEnabled() || returning) reveal();
+  else setTimeout(reveal, REVEAL.DWELL_MS);
+}
+
+// Test hook — drop the singleton button + revealed latch between runs.
+export function _resetForTests() {
+  buttonEl = null;
+  revealed = false;
 }

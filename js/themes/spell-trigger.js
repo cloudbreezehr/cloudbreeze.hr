@@ -18,11 +18,16 @@ import {
   isCheatsheetOpen,
 } from "../effects/cheatsheet.js";
 import { isHelpOpen } from "../effects/keyboard-help.js";
+import { revealSoundToggle } from "../audio/toggle.js";
 import { prefersReducedMotion } from "../motion.js";
 
 // Spelled like an incantation, but it reveals the reference panel rather than
 // casting an effect — kept out of INCANTATIONS so it isn't a collectible spell.
 const CHEATSHEET_WORD = "CHEATSHEET";
+// Surfaces the progressively-disclosed sound toggle for the curious; also a
+// reveal word, not a collectible spell. SOUNDON works too — it completes SOUND
+// at the fifth letter.
+const SOUND_WORD = "SOUND";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
@@ -352,6 +357,10 @@ function buildActions() {
     markCheatsheetDiscovered();
     openCheatsheet();
   });
+
+  const soundId = `incantation:${SOUND_WORD}`;
+  targets.push({ id: soundId, name: SOUND_WORD });
+  actions.set(soundId, () => revealSoundToggle());
 
   return { targets, actions };
 }

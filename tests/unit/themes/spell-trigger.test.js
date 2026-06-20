@@ -149,6 +149,7 @@ describe("themes/spell-trigger", () => {
     let casts;
     let charges;
     let achievements;
+    let soundRevealed;
     let stop;
     let onAchievement;
 
@@ -184,6 +185,12 @@ describe("themes/spell-trigger", () => {
       vi.doMock("../../../js/motion.js", () => ({
         prefersReducedMotion: () => true,
       }));
+      soundRevealed = 0;
+      vi.doMock("../../../js/audio/toggle.js", () => ({
+        revealSoundToggle: () => {
+          soundRevealed++;
+        },
+      }));
 
       achievements = [];
       onAchievement = (e) => achievements.push(e.detail);
@@ -200,6 +207,7 @@ describe("themes/spell-trigger", () => {
       vi.doUnmock("../../../js/themes/registry.js");
       vi.doUnmock("../../../js/effects/incantations.js");
       vi.doUnmock("../../../js/motion.js");
+      vi.doUnmock("../../../js/audio/toggle.js");
     });
 
     function type(word) {
@@ -251,6 +259,16 @@ describe("themes/spell-trigger", () => {
       type("CHEATSHEET");
       expect(document.querySelector(".cheatsheet-overlay")).not.toBeNull();
       expect(achievements).toContainEqual({ type: "cheatsheet-discovered" });
+    });
+
+    it("reveals the sound toggle when SOUND is spelled", () => {
+      type("SOUND");
+      expect(soundRevealed).toBe(1);
+    });
+
+    it("also reveals it via SOUNDON — SOUND completes at the fifth letter", () => {
+      type("SOUNDON");
+      expect(soundRevealed).toBe(1);
     });
 
     it("ignores spelling while the cheatsheet modal is open", () => {
