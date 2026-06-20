@@ -618,6 +618,7 @@ function setupDocking(panel) {
   let floatX = 100;
   let floatY = 0;
   let dockAnimating = false;
+  let magnetEngaged = false; // latched true while the panel sits in the magnet zone
   let recalibrateDrag = false;
   let dragStartX = 0;
   let magnetSuppressedSide = null;
@@ -648,6 +649,7 @@ function setupDocking(panel) {
   document.body.appendChild(wallGlow);
 
   function clearMagnet() {
+    magnetEngaged = false;
     panel.style.setProperty("--dock-pull", 0);
     delete panel.dataset.dockTarget;
     wallGlow.style.opacity = "0";
@@ -895,6 +897,12 @@ function setupDocking(panel) {
     const magnetBlocked = magnetSuppressedSide === nearSide;
 
     if (!magnetBlocked && edgeDist < DOCK_MAGNET_ZONE) {
+      // Magnetism just grabbed the panel — fire once on entering the zone (the
+      // bridge plays a sparkly shiver); resets via clearMagnet on leaving/dock.
+      if (!magnetEngaged) {
+        magnetEngaged = true;
+        window.dispatchEvent(new CustomEvent("dock-magnet"));
+      }
       // Commit to dock when close enough (or overshot on a fast drag)
       if (edgeDist < DOCK_COMMIT_DISTANCE) {
         const side = nearLeft ? "left" : "right";

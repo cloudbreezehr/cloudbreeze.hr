@@ -11,6 +11,7 @@ import { initAchievementsAudioBridge } from "./bridges/achievements.js";
 import { initPointerAudioBridge } from "./bridges/pointer.js";
 import { initWorldAudioBridge } from "./bridges/world.js";
 import { initThemeEffectsAudioBridge } from "./bridges/theme-effects.js";
+import { initDockAudioBridge } from "./bridges/dock.js";
 
 export function initAudio() {
   initEngine();
@@ -20,4 +21,5 @@ export function initAudio() {
   initPointerAudioBridge();
   initWorldAudioBridge();
   initThemeEffectsAudioBridge();
+  initDockAudioBridge();
 }

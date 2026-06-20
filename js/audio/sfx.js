@@ -502,6 +502,72 @@ const VOICES = {
       gain: 0.14,
     });
   },
+  // Dev console nearing a screen edge — a sparkly rising shiver as the magnet
+  // grabs it: staggered high pings over an airy top.
+  shimmer(ctx, bus) {
+    [0, 1, 2, 3].forEach((n) =>
+      tone(ctx, bus, {
+        freq: 1400 * (1 + n * 0.28),
+        type: "triangle",
+        attack: 0.004 + n * 0.03,
+        release: 0.16,
+        gain: 0.11,
+      }),
+    );
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "highpass",
+      freq: 6000,
+      q: 0.5,
+      gain: 0.08,
+      attack: 0.05,
+    });
+  },
+  // The console snapping to the edge — a crisp click, a low thunk, a faint ring.
+  snap(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.04,
+      type: "highpass",
+      freq: 3500,
+      q: 0.5,
+      gain: 0.4,
+    });
+    tone(ctx, bus, {
+      freq: 180,
+      slideTo: 70,
+      type: "sine",
+      attack: 0.002,
+      release: 0.12,
+      gain: 0.4,
+    });
+    tone(ctx, bus, {
+      freq: 1200,
+      type: "triangle",
+      attack: 0.002,
+      release: 0.14,
+      gain: 0.12,
+    });
+  },
+  // Pulling the console off the edge — a downward peel and a detaching swish.
+  unsnap(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 600,
+      slideTo: 160,
+      type: "triangle",
+      attack: 0.003,
+      release: 0.22,
+      gain: 0.22,
+    });
+    breath(ctx, bus, {
+      dur: 0.18,
+      type: "bandpass",
+      freq: 1500,
+      sweepTo: 600,
+      q: 0.7,
+      gain: 0.14,
+      attack: 0.01,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {
