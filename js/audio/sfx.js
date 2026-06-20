@@ -95,173 +95,9 @@ function breath(
 }
 
 // ── Voice catalogue ──
-// Each entry receives (ctx, bus, intensity 0..1) — intensity beefs up the
-// charged casts (a maxed BOOOOM, a STOOORM). Frequencies in Hz, times in s.
+// Each entry is a recipe `(ctx, bus) => …` built from tone()/breath() onto the
+// given bus. Frequencies in Hz, times in seconds — a readable data table.
 const VOICES = {
-  boom(ctx, bus, i) {
-    breath(ctx, bus, {
-      dur: 0.5 + i * 0.3,
-      type: "lowpass",
-      freq: 700,
-      sweepTo: 90,
-      gain: 0.9,
-    });
-    tone(ctx, bus, {
-      freq: 120,
-      slideTo: 40,
-      type: "sine",
-      attack: 0.005,
-      release: 0.45,
-      gain: 0.7,
-    });
-  },
-  thunder(ctx, bus, i) {
-    VOICES.boom(ctx, bus, i);
-    breath(ctx, bus, {
-      dur: 1.1 + i * 0.5,
-      type: "lowpass",
-      freq: 200,
-      sweepTo: 60,
-      gain: 0.6,
-      attack: 0.08,
-    });
-  },
-  zap(ctx, bus) {
-    breath(ctx, bus, {
-      dur: 0.16,
-      type: "highpass",
-      freq: 2600,
-      q: 0.7,
-      gain: 0.6,
-    });
-    tone(ctx, bus, {
-      freq: 1800,
-      slideTo: 320,
-      type: "sawtooth",
-      attack: 0.002,
-      release: 0.12,
-      gain: 0.4,
-    });
-  },
-  whoosh(ctx, bus) {
-    breath(ctx, bus, {
-      dur: 0.5,
-      type: "bandpass",
-      freq: 500,
-      q: 0.8,
-      sweepTo: 2400,
-      gain: 0.5,
-      attack: 0.12,
-    });
-  },
-  sparkle(ctx, bus) {
-    const base = 1200;
-    [0, 1, 2].forEach((n) =>
-      tone(ctx, bus, {
-        freq: base * (1 + n * 0.5),
-        type: "triangle",
-        attack: 0.003 + n * 0.04,
-        release: 0.18,
-        gain: 0.28,
-      }),
-    );
-  },
-  pop(ctx, bus) {
-    breath(ctx, bus, {
-      dur: 0.09,
-      type: "bandpass",
-      freq: 1400,
-      q: 1.4,
-      gain: 0.5,
-    });
-  },
-  shimmer(ctx, bus) {
-    breath(ctx, bus, {
-      dur: 0.9,
-      type: "highpass",
-      freq: 5000,
-      q: 0.6,
-      gain: 0.32,
-      attack: 0.25,
-    });
-  },
-  surge(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 180,
-      slideTo: 900,
-      type: "sawtooth",
-      attack: 0.02,
-      release: 0.4,
-      gain: 0.4,
-    });
-    breath(ctx, bus, {
-      dur: 0.4,
-      type: "lowpass",
-      freq: 400,
-      sweepTo: 3000,
-      gain: 0.3,
-      attack: 0.15,
-    });
-  },
-  swell(ctx, bus, i) {
-    tone(ctx, bus, {
-      freq: 330,
-      type: "sine",
-      attack: 0.18,
-      hold: 0.1,
-      release: 0.5,
-      gain: 0.3 + i * 0.15,
-    });
-    tone(ctx, bus, {
-      freq: 495,
-      type: "sine",
-      attack: 0.22,
-      hold: 0.1,
-      release: 0.5,
-      gain: 0.18 + i * 0.1,
-    });
-  },
-  rumble(ctx, bus, i) {
-    breath(ctx, bus, {
-      dur: 0.7 + i * 0.4,
-      type: "lowpass",
-      freq: 140,
-      q: 1.2,
-      gain: 0.7,
-      attack: 0.06,
-    });
-  },
-  whirl(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 420,
-      slideTo: 760,
-      type: "triangle",
-      attack: 0.1,
-      hold: 0.3,
-      release: 0.4,
-      gain: 0.3,
-    });
-  },
-  gliss(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 260,
-      slideTo: 1300,
-      type: "sawtooth",
-      attack: 0.04,
-      release: 0.7,
-      gain: 0.3,
-    });
-  },
-  pulse(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 300,
-      type: "sine",
-      attack: 0.04,
-      hold: 0.25,
-      release: 0.45,
-      gain: 0.34,
-    });
-  },
   // A theme entering / leaving — a soft noise sweep up / down. Played through
   // the effects bus after the tint is set, so it takes on the theme's colour.
   themeIn(ctx, bus) {
@@ -697,11 +533,10 @@ const VOICES = {
   },
 };
 
-// Play a named voice. intensity (0..1) scales the charged variants. World/effect
-// voices route through the per-theme effects bus; pass `ui: true` for theme-
-// agnostic cues (toggle, unlock) that should play dry. No-op when sound is off,
-// unavailable, or the name is unknown.
-export function playSfx(name, { intensity = 0, ui = false } = {}) {
+// Play a named voice. World/effect voices route through the per-theme effects
+// bus; pass `ui: true` for theme-agnostic cues (toggle, unlock) that should
+// play dry. No-op when sound is off, unavailable, or the name is unknown.
+export function playSfx(name, { ui = false } = {}) {
   if (!isSoundEnabled()) return;
   const voice = VOICES[name];
   if (!voice) return;
@@ -712,5 +547,5 @@ export function playSfx(name, { intensity = 0, ui = false } = {}) {
   const sfxGain = ctx.createGain();
   sfxGain.gain.value = SFX.GAIN;
   sfxGain.connect(bus);
-  voice(ctx, sfxGain, Math.max(0, Math.min(1, intensity)));
+  voice(ctx, sfxGain);
 }

@@ -66,13 +66,13 @@ describe("audio/sfx", () => {
   });
 
   it("builds nothing when sound is off", () => {
-    sfx.playSfx("boom");
+    sfx.playSfx("burst");
     expect(created.oscillators + created.sources).toBe(0);
   });
 
   it("synthesises a known voice when enabled", () => {
     engine.setSoundEnabled(true);
-    expect(() => sfx.playSfx("boom")).not.toThrow();
+    expect(() => sfx.playSfx("burst")).not.toThrow();
     expect(created.oscillators + created.sources).toBeGreaterThan(0);
   });
 
