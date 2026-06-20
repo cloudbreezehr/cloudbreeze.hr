@@ -11,6 +11,7 @@ describe("audio/bridges/themes", () => {
   let cues;
   let heard;
   let soundOn;
+  let soundChangeCb;
   let stop;
   let onHeard;
 
@@ -20,6 +21,7 @@ describe("audio/bridges/themes", () => {
     cues = [];
     heard = [];
     soundOn = true;
+    soundChangeCb = null;
     vi.doMock("../../../../js/audio/bus.js", () => ({
       setThemeFilter: (f) => tints.push(f),
     }));
@@ -28,6 +30,10 @@ describe("audio/bridges/themes", () => {
     }));
     vi.doMock("../../../../js/audio/engine.js", () => ({
       isSoundEnabled: () => soundOn,
+      onSoundChange: (cb) => {
+        soundChangeCb = cb;
+        return () => {};
+      },
     }));
     onHeard = (e) => {
       if (e.detail.type === "theme-sound-heard") heard.push(e.detail.theme);
@@ -92,5 +98,20 @@ describe("audio/bridges/themes", () => {
     soundOn = false;
     activate("frozen");
     expect(heard).toEqual([]);
+  });
+
+  it("does not tint (build the audio graph) while sound is off", () => {
+    soundOn = false;
+    activate("frozen");
+    expect(tints).toEqual([]);
+  });
+
+  it("tints the active theme when sound is turned on", () => {
+    soundOn = false;
+    activate("frozen");
+    expect(tints).toEqual([]);
+    soundOn = true;
+    soundChangeCb(true); // visitor enables sound
+    expect(tints[tints.length - 1]).toMatchObject({ type: "highpass" });
   });
 });
