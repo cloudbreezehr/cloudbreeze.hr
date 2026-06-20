@@ -643,6 +643,40 @@ const VOICES = {
       gain: 0.1,
     });
   },
+  // Switching appearance — a small tonal tick, higher toward light, lower
+  // toward dark (progress 0 dark → 1 light).
+  uiTick(ctx, bus, { progress = 0.5 } = {}) {
+    tone(ctx, bus, {
+      freq: 500 + progress * 700,
+      type: "sine",
+      attack: 0.003,
+      release: 0.1,
+      gain: 0.12,
+    });
+  },
+  // The Cloudlog panel sliding open / closed — a soft rising / falling whoosh.
+  panelOpen(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.3,
+      type: "bandpass",
+      freq: 500,
+      sweepTo: 2000,
+      q: 0.6,
+      gain: 0.14,
+      attack: 0.02,
+    });
+  },
+  panelClose(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.25,
+      type: "bandpass",
+      freq: 2000,
+      sweepTo: 500,
+      q: 0.6,
+      gain: 0.12,
+      attack: 0.01,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {

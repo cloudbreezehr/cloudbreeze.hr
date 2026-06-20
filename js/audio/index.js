@@ -13,6 +13,7 @@ import { initWorldAudioBridge } from "./bridges/world.js";
 import { initThemeEffectsAudioBridge } from "./bridges/theme-effects.js";
 import { initDockAudioBridge } from "./bridges/dock.js";
 import { initDiscoveryAudioBridge } from "./bridges/discovery.js";
+import { initUiAudioBridge } from "./bridges/ui.js";
 import { initContinuous } from "./continuous.js";
 
 export function initAudio() {
@@ -25,5 +26,6 @@ export function initAudio() {
   initThemeEffectsAudioBridge();
   initDockAudioBridge();
   initDiscoveryAudioBridge();
+  initUiAudioBridge();
   initContinuous();
 }

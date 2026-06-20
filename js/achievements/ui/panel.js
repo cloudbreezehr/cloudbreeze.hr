@@ -18,6 +18,7 @@ import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
 import { hideHintTooltip } from "./tooltip.js";
+import { playSfx } from "../../audio/sfx.js";
 import { setActive as setNavActive, updateBadge } from "./nav-button.js";
 import { configureToasts, showActivationToast } from "./toast.js";
 import {
@@ -379,6 +380,7 @@ function openPanelUI(onHide) {
 export function closePanel() {
   if (!panelOpen || !panelEl) return;
   panelOpen = false;
+  playSfx("panelClose", { ui: true });
   setNavActive(false);
 
   // Stamp the close time so the next open can highlight unlocks earned
