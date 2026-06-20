@@ -9,6 +9,9 @@ function stubAudioContext(captured) {
     value: 0,
     setValueAtTime() {},
     exponentialRampToValueAtTime() {},
+    setTargetAtTime(v) {
+      this.value = v; // tests don't advance audio time — settle to the target
+    },
   });
   const node = (extra = {}) => ({ connect() {}, disconnect() {}, ...extra });
   return vi.fn(function () {
@@ -20,7 +23,7 @@ function stubAudioContext(captured) {
     this.createDynamicsCompressor = () =>
       node({ threshold: param(), knee: param(), ratio: param() });
     this.createBiquadFilter = () => {
-      captured.filter = node({ type: "", frequency: param(), Q: { value: 0 } });
+      captured.filter = node({ type: "", frequency: param(), Q: param() });
       return captured.filter;
     };
   });
