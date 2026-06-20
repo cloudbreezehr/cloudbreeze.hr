@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// The bridge applies a theme's sound identity (bed, bus tint, entry/exit cue)
-// from theme-activate/deactivate, mirroring the render loop's "last-triggered
-// wins" rule. Its collaborators are mocked to capture what it would do, and the
-// engine is mocked so sound-enabled can be flipped for the "heard" credit.
+// The bridge applies a theme's sound identity (bus tint + entry/exit cue) from
+// theme-activate/deactivate, mirroring the render loop's "last-triggered wins"
+// rule. Collaborators are mocked to capture what it would do; the engine is
+// mocked so sound-enabled can be flipped for the "heard" credit. The tint
+// sequence doubles as the readout of which theme currently wins.
 
 describe("audio/bridges/themes", () => {
-  let beds;
   let tints;
   let cues;
   let heard;
@@ -16,14 +16,10 @@ describe("audio/bridges/themes", () => {
 
   beforeEach(async () => {
     vi.resetModules();
-    beds = [];
     tints = [];
     cues = [];
     heard = [];
     soundOn = true;
-    vi.doMock("../../../../js/audio/beds.js", () => ({
-      setBed: (id) => beds.push(id),
-    }));
     vi.doMock("../../../../js/audio/bus.js", () => ({
       setThemeFilter: (f) => tints.push(f),
     }));
@@ -44,7 +40,6 @@ describe("audio/bridges/themes", () => {
   afterEach(() => {
     if (stop) stop();
     window.removeEventListener("achievement", onHeard);
-    vi.doUnmock("../../../../js/audio/beds.js");
     vi.doUnmock("../../../../js/audio/bus.js");
     vi.doUnmock("../../../../js/audio/sfx.js");
     vi.doUnmock("../../../../js/audio/engine.js");
@@ -56,37 +51,30 @@ describe("audio/bridges/themes", () => {
     );
   const activate = (t) => fire("theme-activate", t);
   const deactivate = (t) => fire("theme-deactivate", t);
+  const lastTint = () => tints[tints.length - 1];
 
-  it("plays the activated theme's bed", () => {
+  it("tints for the activated theme", () => {
     activate("frozen");
-    expect(beds).toEqual(["frozen"]);
+    expect(lastTint()).toMatchObject({ type: "highpass" }); // frozen's filter
   });
 
-  it("hands the bed to the most recently activated theme", () => {
+  it("hands the tint to the most recently activated theme", () => {
     activate("frozen");
     activate("vhs");
-    expect(beds).toEqual(["frozen", "vhs"]);
+    expect(lastTint()).toMatchObject({ type: "bandpass" }); // vhs's filter
   });
 
   it("falls back to the prior theme when the winner deactivates", () => {
     activate("frozen");
     activate("vhs");
     deactivate("vhs");
-    expect(beds).toEqual(["frozen", "vhs", "frozen"]);
+    expect(lastTint()).toMatchObject({ type: "highpass" }); // frozen again
   });
 
-  it("silences when the last active theme deactivates", () => {
+  it("returns to neutral when the last theme deactivates", () => {
     activate("frozen");
     deactivate("frozen");
-    expect(beds).toEqual(["frozen", null]);
-  });
-
-  it("tints the effects bus for the active theme, neutral when none", () => {
-    activate("frozen");
-    // frozen declares a real filter; the bridge passes it straight through.
-    expect(tints[tints.length - 1]).toMatchObject({ type: "highpass" });
-    deactivate("frozen");
-    expect(tints[tints.length - 1]).toBeNull();
+    expect(lastTint()).toBeNull();
   });
 
   it("plays an entry cue on activate and an exit cue on deactivate", () => {

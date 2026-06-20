@@ -20,7 +20,7 @@ const ENGINE = defineConstants("audio.engine", {
     step: 0.01,
     description: "Master output level",
   },
-  // Brick-wall-ish limiter so a BOOM volley or stacked beds never clip.
+  // Brick-wall-ish limiter so a volley of overlapping effects never clips.
   LIMITER_THRESHOLD_DB: {
     value: -6,
     min: -40,

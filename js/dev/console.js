@@ -104,7 +104,6 @@ const SECTION_LABEL_MAP = {
   "achievements.activityLog": "Activity Log",
   "audio.engine": "Engine",
   "audio.sfx": "Sound Effects",
-  "audio.beds": "Ambient Beds",
 };
 
 // ── Group categories into top-level sections ──

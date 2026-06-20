@@ -1,12 +1,11 @@
 // ── Themes Audio Bridge ──
-// Applies a theme's sound identity — its effects-bus tint, its ambient bed (for
-// the two ambient worlds), and an entry/exit cue — from the theme lifecycle
-// events the factory already dispatches, so a theme sounds the same however
-// it's entered (HUD, URL, hidden trigger, typing) and the theme modules stay
-// unaware of audio. Mirrors the render loop's "last-triggered wins" rule: the
-// most recently activated theme still in the stack owns the sound.
+// Applies a theme's sound identity — its effects-bus tint and an entry/exit cue
+// — from the theme lifecycle events the factory already dispatches, so a theme
+// sounds the same however it's entered (HUD, URL, hidden trigger, typing) and
+// the theme modules stay unaware of audio. Mirrors the render loop's
+// "last-triggered wins" rule: the most recently activated theme still in the
+// stack owns the tint.
 
-import { setBed } from "../beds.js";
 import { setThemeFilter } from "../bus.js";
 import { themeFilter } from "../theme-sounds.js";
 import { playSfx } from "../sfx.js";
@@ -17,7 +16,6 @@ export function initThemesAudioBridge() {
 
   function applyWinner() {
     const winner = stack.length ? stack[stack.length - 1] : null;
-    setBed(winner);
     // Set the tint before the cue plays so the cue takes on the new colour.
     setThemeFilter(themeFilter(winner));
   }

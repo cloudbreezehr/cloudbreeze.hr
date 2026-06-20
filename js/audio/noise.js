@@ -1,8 +1,7 @@
 // ── White Noise ──
 // A shared white-noise buffer, generated once per audio context and reused by
-// every noise-based voice — SFX bursts that play a slice and beds that loop it.
-// Buffers aren't consumed by playback (a fresh BufferSource points at this each
-// time), so one suffices for the whole graph.
+// every noise-based voice (booms, sweeps, whooshes). Buffers aren't consumed by
+// playback — a fresh BufferSource points at this each time — so one suffices.
 
 const NOISE_SECONDS = 3;
 
