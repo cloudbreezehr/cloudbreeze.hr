@@ -89,6 +89,12 @@ describe("audio/bridges/themes", () => {
     expect(cues).toEqual(["themeIn", "themeOut"]);
   });
 
+  it("uses a theme's own cue when it declares one (upside-down flip)", () => {
+    activate("upside-down");
+    deactivate("upside-down");
+    expect(cues).toEqual(["flip", "flip"]);
+  });
+
   it("credits the theme as heard on activate when sound is on", () => {
     activate("frozen");
     expect(heard).toEqual(["frozen"]);

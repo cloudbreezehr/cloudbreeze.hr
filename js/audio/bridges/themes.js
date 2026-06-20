@@ -17,7 +17,7 @@
 // moment sound is turned on.
 
 import { setThemeFilter } from "../bus.js";
-import { themeFilter } from "../theme-sounds.js";
+import { themeFilter, themeCue } from "../theme-sounds.js";
 import { playSfx } from "../sfx.js";
 import { isSoundEnabled, onSoundChange } from "../engine.js";
 
@@ -38,7 +38,7 @@ export function initThemesAudioBridge() {
       if (i >= 0) stack.splice(i, 1);
       stack.push(d.theme);
       applyWinner();
-      playSfx("themeIn");
+      playSfx(themeCue(d.theme) || "themeIn");
       // Credit "heard" only when sound is actually on, so Perfect Pitch tracks
       // themes the visitor truly heard — independent of how they were entered.
       if (isSoundEnabled()) {
@@ -52,7 +52,7 @@ export function initThemesAudioBridge() {
       const i = stack.indexOf(d.theme);
       if (i >= 0) stack.splice(i, 1);
       applyWinner();
-      playSfx("themeOut");
+      playSfx(themeCue(d.theme) || "themeOut");
     }
   }
 

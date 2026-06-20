@@ -12,6 +12,7 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "paper-stroke": "pencil",
   "snow-globe": "rattle",
   "vhs-glitch": "glitch",
+  "rain-thunder": "thunder",
   "star-clicked": "twinkle",
   "shooting-star-clicked": "starWhoosh",
   "constellation-formed": "chord",

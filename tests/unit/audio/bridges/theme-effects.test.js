@@ -30,7 +30,8 @@ describe("audio/bridges/theme-effects", () => {
     fire("paper-stroke");
     fire("snow-globe");
     fire("vhs-glitch");
-    expect(calls).toEqual(["ice", "pencil", "rattle", "glitch"]);
+    fire("rain-thunder");
+    expect(calls).toEqual(["ice", "pencil", "rattle", "glitch", "thunder"]);
   });
 
   it("maps the sky/constellation interactions", () => {

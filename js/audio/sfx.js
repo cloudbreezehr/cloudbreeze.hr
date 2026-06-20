@@ -450,6 +450,38 @@ const VOICES = {
       gain: 0.1,
     });
   },
+  // A distant rolling rumble for a lightning flash in the rain.
+  thunder(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 1.0,
+      type: "lowpass",
+      freq: 180,
+      sweepTo: 50,
+      q: 1,
+      gain: 0.32,
+      attack: 0.06,
+    });
+  },
+  // The world inverting (upside-down) — a tumbling, disorienting whoosh.
+  flip(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "bandpass",
+      freq: 1200,
+      sweepTo: 300,
+      q: 0.6,
+      gain: 0.22,
+      attack: 0.04,
+    });
+    tone(ctx, bus, {
+      freq: 400,
+      slideTo: 200,
+      type: "triangle",
+      attack: 0.02,
+      release: 0.4,
+      gain: 0.16,
+    });
+  },
   // Clicking a star — a bright little ping.
   twinkle(ctx, bus) {
     tone(ctx, bus, {
