@@ -471,6 +471,90 @@ const VOICES = {
       gain: 0.16,
     });
   },
+  // Holding to charge the cursor — a low rising hum.
+  charge(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 80,
+      slideTo: 160,
+      type: "sine",
+      attack: 0.1,
+      hold: 0.2,
+      release: 0.3,
+      gain: 0.14,
+    });
+  },
+  // The gravity well engaging — a deep settling onset.
+  wellEngage(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 70,
+      slideTo: 52,
+      type: "sine",
+      attack: 0.06,
+      hold: 0.3,
+      release: 0.4,
+      gain: 0.2,
+    });
+  },
+  // The well reaching full strength — a quiet higher harmonic.
+  wellFull(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 240,
+      type: "sine",
+      attack: 0.05,
+      hold: 0.2,
+      release: 0.3,
+      gain: 0.1,
+    });
+  },
+  // The well collapsing on release — a downward whoosh and a thump.
+  wellRelease(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.3,
+      type: "lowpass",
+      freq: 1200,
+      sweepTo: 100,
+      gain: 0.4,
+    });
+    tone(ctx, bus, {
+      freq: 200,
+      slideTo: 60,
+      type: "sine",
+      attack: 0.004,
+      release: 0.26,
+      gain: 0.3,
+    });
+  },
+  // Aurora settling in — a soft high shimmer pad.
+  aurora(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 660,
+      type: "sine",
+      attack: 0.4,
+      hold: 0.3,
+      release: 0.8,
+      gain: 0.1,
+    });
+    tone(ctx, bus, {
+      freq: 990,
+      type: "sine",
+      attack: 0.5,
+      hold: 0.2,
+      release: 0.9,
+      gain: 0.07,
+    });
+  },
+  // A meteor shower beginning — a soft falling whoosh.
+  meteor(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.7,
+      type: "bandpass",
+      freq: 600,
+      sweepTo: 200,
+      q: 0.6,
+      gain: 0.18,
+      attack: 0.1,
+    });
+  },
   chime(ctx, bus) {
     [523.25, 659.25, 783.99].forEach((freq, n) =>
       tone(ctx, bus, {

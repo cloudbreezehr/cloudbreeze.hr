@@ -820,6 +820,9 @@ export function createFury() {
       if (clickFury >= METEOR.TIER && !meteorsActive) {
         meteorsActive = true;
         notifySectionActivate("fury.meteors");
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "fury-meteor" } }),
+        );
       }
 
       // Fury decay — no decay while actively clicking, then ramps up fast

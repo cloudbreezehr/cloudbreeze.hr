@@ -463,6 +463,13 @@ export function createInteractions() {
           : 0;
       const blast = Math.max(normalBlast, wellBlast);
 
+      // A well that was holding mass collapses on release — its own moment.
+      if (forces.wellStrength > 0) {
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "well-release" } }),
+        );
+      }
+
       // Repel all nearby motes
       forces.clickImpulse.x = forces.dragPos.x;
       forces.clickImpulse.y = forces.dragPos.y;
