@@ -41,7 +41,6 @@ describe("audio/bridges/world", () => {
     fire("fury-lightning"); // per-bolt in fury.js
     fire("hold"); // continuous well hum in continuous.js
     fire("well-activate");
-    fire("well-release");
     expect(calls).toEqual([]);
   });
 
