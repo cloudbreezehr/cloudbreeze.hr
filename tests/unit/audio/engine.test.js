@@ -91,10 +91,24 @@ describe("audio/engine", () => {
       expect(resume).toHaveBeenCalled();
     });
 
-    it("suspends the context when turned back off", () => {
+    it("suspends the context a grace period after turning off", () => {
+      vi.useFakeTimers();
       mod.setSoundEnabled(true);
       mod.setSoundEnabled(false);
+      expect(suspend).not.toHaveBeenCalled(); // deferred, not immediate
+      vi.advanceTimersByTime(mod.SUSPEND_GRACE_MS);
       expect(suspend).toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it("cancels the deferred suspend if sound returns within the grace window", () => {
+      vi.useFakeTimers();
+      mod.setSoundEnabled(true);
+      mod.setSoundEnabled(false);
+      mod.setSoundEnabled(true); // back on before the grace elapses
+      vi.advanceTimersByTime(mod.SUSPEND_GRACE_MS);
+      expect(suspend).not.toHaveBeenCalled();
+      vi.useRealTimers();
     });
   });
 });

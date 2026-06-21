@@ -717,22 +717,48 @@ const VOICES = {
       gain: 0.05,
     });
   },
-  chime(ctx, bus) {
-    [523.25, 659.25, 783.99].forEach((freq, n) =>
-      tone(ctx, bus, {
-        freq,
-        type: "sine",
-        attack: 0.005 + n * 0.03,
-        release: 0.5,
-        gain: 0.26,
-      }),
-    );
+  // Powering sound on — a quick rising two-note bloom (C5 → G5).
+  toggleOn(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 523.25,
+      type: "triangle",
+      attack: 0.005,
+      release: 0.16,
+      gain: 0.2,
+    });
+    tone(ctx, bus, {
+      freq: 783.99,
+      type: "triangle",
+      attack: 0.04,
+      release: 0.2,
+      gain: 0.18,
+      delay: 0.06,
+    });
+  },
+  // Powering sound off — a softer falling two-note (E5 → G4). The engine holds
+  // its suspend briefly so this rings out before the context freezes.
+  toggleOff(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 659.25,
+      type: "triangle",
+      attack: 0.005,
+      release: 0.16,
+      gain: 0.16,
+    });
+    tone(ctx, bus, {
+      freq: 392,
+      type: "triangle",
+      attack: 0.03,
+      release: 0.22,
+      gain: 0.15,
+      delay: 0.06,
+    });
   },
   // An achievement unlocking — a "premium reward" jingle in the spirit of a
   // console trophy: a soft round pop, a warm bell for body, then a crystalline
   // C-major run climbing two octaves, each partial entering a beat later (via
   // `delay`) and ringing on so they shimmer together. Distinct from the toggle
-  // chime so the two don't smear when both land on first enable.
+  // power-up so the two don't smear when both land on first enable.
   unlock(ctx, bus) {
     // The pop — a round bubble that drops a touch in pitch.
     tone(ctx, bus, {

@@ -37,6 +37,10 @@ const ENGINE = defineConstants("audio.engine", {
   },
 });
 
+// Grace before muting suspends the context, so a power-down cue (or any other
+// in-flight voice) rings out instead of being clipped mid-render.
+export const SUSPEND_GRACE_MS = 280;
+
 let ctx = null;
 let master = null; // master gain node; the public output bus
 let enabled = readPreference() === "on";
@@ -117,7 +121,12 @@ export function setSoundEnabled(on) {
       );
     }
   } else if (ctx && ctx.state === "running") {
-    ctx.suspend();
+    // Defer the suspend so a power-down cue isn't clipped; skip it if sound is
+    // turned back on within the grace window.
+    const c = ctx;
+    setTimeout(() => {
+      if (!enabled && c.state === "running") c.suspend();
+    }, SUSPEND_GRACE_MS);
   }
   callbacks.forEach((cb) => cb(next));
 }

@@ -71,11 +71,14 @@ export function initSoundToggle(el) {
 
   paint(isSoundEnabled());
   buttonEl.addEventListener("click", () => {
+    // Directional UI cues, played dry rather than through the active theme's
+    // tint. The falling power-down must fire while the context is still live
+    // (the engine defers its suspend so it rings out); the rising power-up
+    // fires after the click resumes the context — the first thing heard.
+    const wasOn = isSoundEnabled();
+    if (wasOn) playSfx("toggleOff", { ui: true });
     toggleSound();
-    // A confirmation note on turn-on — the click resumed the context, so this
-    // is the first thing the visitor hears (and proof it's working). A UI cue,
-    // so it plays dry rather than through the active theme's tint.
-    if (isSoundEnabled()) playSfx("chime", { ui: true });
+    if (!wasOn) playSfx("toggleOn", { ui: true });
   });
   onSoundChange(paint);
 
