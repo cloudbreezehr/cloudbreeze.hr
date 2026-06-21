@@ -37,9 +37,10 @@ const ENGINE = defineConstants("audio.engine", {
   },
 });
 
-// Grace before muting suspends the context, so a power-down cue (or any other
-// in-flight voice) rings out instead of being clipped mid-render.
-export const SUSPEND_GRACE_MS = 280;
+// Grace before muting suspends the context, so the power-down cue (or any other
+// in-flight voice) rings out instead of being clipped mid-render. Must exceed
+// the longest power-down cue's tail (toggleOff) or that cue clips silently.
+export const SUSPEND_GRACE_MS = 360;
 
 let ctx = null;
 let master = null; // master gain node; the public output bus
