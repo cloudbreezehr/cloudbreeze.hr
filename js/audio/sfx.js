@@ -112,6 +112,16 @@ const VOICES = {
       gain: 0.28,
       attack: 0.18,
     });
+    // A tonal riser (G3 → G4) under the sweep, so entering a theme swells into
+    // place rather than just swishing.
+    tone(ctx, bus, {
+      freq: 196,
+      slideTo: 392,
+      type: "triangle",
+      attack: 0.2,
+      release: 0.4,
+      gain: 0.12,
+    });
   },
   themeOut(ctx, bus) {
     breath(ctx, bus, {
@@ -122,6 +132,15 @@ const VOICES = {
       q: 0.7,
       gain: 0.24,
       attack: 0.04,
+    });
+    // A tonal faller (G4 → E3) under the sweep — the theme releasing its hold.
+    tone(ctx, bus, {
+      freq: 392,
+      slideTo: 165,
+      type: "triangle",
+      attack: 0.03,
+      release: 0.34,
+      gain: 0.11,
     });
   },
   // A soft tap for a pointer click — a low woody tick over a faint body that
