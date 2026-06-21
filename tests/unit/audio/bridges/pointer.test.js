@@ -22,11 +22,20 @@ describe("audio/bridges/pointer", () => {
     vi.doUnmock("../../../../js/audio/sfx.js");
   });
 
-  it("taps on a world click", () => {
+  it("taps on a world click that drew the default burst", () => {
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "click-burst" } }),
     );
     expect(calls).toEqual(["click"]);
+  });
+
+  it("stays silent when a theme suppressed the default burst", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "click-burst", suppressDefault: true },
+      }),
+    );
+    expect(calls).toEqual([]);
   });
 
   it("ignores unrelated events", () => {

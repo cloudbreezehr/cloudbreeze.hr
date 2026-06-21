@@ -414,8 +414,13 @@ export function initCanvas(canvasEl, appearance, options) {
     if (!suppressDefault) {
       interactions.click(cx, cy, currentPal);
     }
+    // suppressDefault rides along so the generic click tap stays silent when a
+    // theme drew (and sounds) its own click visual — the count still lands for
+    // achievements/analytics, only the default burst's voice is gated.
     window.dispatchEvent(
-      new CustomEvent("achievement", { detail: { type: "click-burst" } }),
+      new CustomEvent("achievement", {
+        detail: { type: "click-burst", suppressDefault },
+      }),
     );
   });
 
