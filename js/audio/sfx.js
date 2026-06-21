@@ -124,22 +124,24 @@ const VOICES = {
       attack: 0.04,
     });
   },
-  // A soft tap for a pointer click — short filtered-noise tick plus a faint
-  // body. Kept subtle: it fires on every click, so it can't grate.
+  // A soft tap for a pointer click — a low woody tick over a faint body that
+  // drops a hair in pitch for a rounded "tok". Kept subtle and warm rather than
+  // bright: it fires on every click, so it can't grate.
   click(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.05,
+      dur: 0.04,
       type: "bandpass",
-      freq: 2000,
-      q: 0.8,
-      gain: 0.18,
+      freq: 1100,
+      q: 1.1,
+      gain: 0.14,
     });
     tone(ctx, bus, {
-      freq: 440,
-      type: "sine",
+      freq: 360,
+      slideTo: 280,
+      type: "triangle",
       attack: 0.002,
-      release: 0.05,
-      gain: 0.1,
+      release: 0.07,
+      gain: 0.12,
     });
   },
   // A firework rocket leaving the ground — a soft rising whistle. Fires once
