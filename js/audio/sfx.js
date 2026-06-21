@@ -311,22 +311,27 @@ const VOICES = {
       gain: 0.16,
     });
   },
-  // The well collapsing on release — a downward whoosh and a thump.
+  // The well collapsing on release — an implosion: air rushing in (a quick
+  // bright-to-low sweep) over a deep pitch-drop with a touch of hold, so the
+  // discharge lands with a satisfying whoomph that pays off the hold.
   wellRelease(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.3,
+      dur: 0.28,
       type: "lowpass",
-      freq: 1200,
-      sweepTo: 100,
-      gain: 0.4,
+      freq: 1600,
+      sweepTo: 80,
+      q: 0.9,
+      gain: 0.42,
+      attack: 0.006,
     });
     tone(ctx, bus, {
-      freq: 200,
-      slideTo: 60,
+      freq: 220,
+      slideTo: 48,
       type: "sine",
       attack: 0.004,
-      release: 0.26,
-      gain: 0.3,
+      hold: 0.02,
+      release: 0.32,
+      gain: 0.34,
     });
   },
   // Aurora settling in — a soft high shimmer pad.
