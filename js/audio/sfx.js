@@ -26,8 +26,8 @@ const TAIL_S = 0.03; // slack before a node is stopped/freed
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
-function envelope(ctx, gain, { attack, hold = 0, release, peak }) {
-  const t = ctx.currentTime;
+function envelope(ctx, gain, { attack, hold = 0, release, peak, start }) {
+  const t = start ?? ctx.currentTime;
   const g = gain.gain;
   g.setValueAtTime(FLOOR, t);
   g.exponentialRampToValueAtTime(peak, t + attack);
@@ -44,15 +44,17 @@ function freeOnEnd(node, ...nodes) {
   };
 }
 
-// A pitched voice: oscillator → gain → bus, with an optional pitch slide.
+// A pitched voice: oscillator → gain → bus, with an optional pitch slide and an
+// optional start `delay` (seconds) so a voice can sequence tones in time rather
+// than blooming them all at once.
 function tone(
   ctx,
   bus,
-  { freq, type = "sine", attack, hold, release, gain, slideTo },
+  { freq, type = "sine", attack, hold, release, gain, slideTo, delay = 0 },
 ) {
   const osc = ctx.createOscillator();
   osc.type = type;
-  const t = ctx.currentTime;
+  const t = ctx.currentTime + delay;
   osc.frequency.setValueAtTime(freq, t);
   if (slideTo) {
     osc.frequency.exponentialRampToValueAtTime(
@@ -63,7 +65,7 @@ function tone(
   const g = ctx.createGain();
   osc.connect(g);
   g.connect(bus);
-  const end = envelope(ctx, g, { attack, hold, release, peak: gain });
+  const end = envelope(ctx, g, { attack, hold, release, peak: gain, start: t });
   osc.start(t);
   osc.stop(end + TAIL_S);
   freeOnEnd(osc, g);
@@ -700,23 +702,42 @@ const VOICES = {
       }),
     );
   },
-  // A bright rising fifth (E5 → B5) for an unlock — distinct from the toggle's
-  // chime so the two don't sound like a stutter when both land on first enable.
+  // An achievement unlocking — a "premium reward" jingle in the spirit of a
+  // console trophy: a soft round pop, a warm bell for body, then a crystalline
+  // C-major run climbing two octaves, each partial entering a beat later (via
+  // `delay`) and ringing on so they shimmer together. Distinct from the toggle
+  // chime so the two don't smear when both land on first enable.
   unlock(ctx, bus) {
+    // The pop — a round bubble that drops a touch in pitch.
     tone(ctx, bus, {
-      freq: 659.25,
-      type: "triangle",
-      attack: 0.004,
-      release: 0.2,
-      gain: 0.26,
+      freq: 520,
+      slideTo: 320,
+      type: "sine",
+      attack: 0.003,
+      release: 0.14,
+      gain: 0.2,
     });
+    // A warm bell holds underneath for body and a lush tail.
     tone(ctx, bus, {
-      freq: 987.77,
+      freq: 523.25,
       type: "triangle",
-      attack: 0.11,
-      release: 0.34,
-      gain: 0.24,
+      attack: 0.015,
+      hold: 0.08,
+      release: 0.85,
+      gain: 0.15,
+      delay: 0.05,
     });
+    // The ascending sparkle — C6 E6 G6 C7 E7, staggered so it rises in time.
+    [1046.5, 1318.51, 1567.98, 2093.0, 2637.02].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.004,
+        release: 0.6 - n * 0.05,
+        gain: 0.12 - n * 0.011,
+        delay: 0.09 + n * 0.052,
+      }),
+    );
   },
 };
 
