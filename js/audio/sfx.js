@@ -362,6 +362,100 @@ const VOICES = {
       }
     }
   },
+  // RAINBOW — a dreamy ascending shimmer up a major pentatonic, the audible
+  // twin of the smooth spectral sweep; bells ring into one another over a soft
+  // pad.
+  rainbow(ctx, bus) {
+    const notes = [
+      523.25, 587.33, 659.25, 783.99, 880, 1046.5, 1174.66, 1318.51,
+    ];
+    notes.forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.01,
+        release: 0.6 - n * 0.03,
+        gain: 0.11,
+        delay: n * 0.16,
+      }),
+    );
+    [261.63, 392, 523.25].forEach((freq) =>
+      tone(ctx, bus, {
+        freq,
+        type: "triangle",
+        attack: 0.25,
+        hold: 0.7,
+        release: 0.7,
+        gain: 0.06,
+      }),
+    );
+  },
+  // WARP — jump to lightspeed: a pitch accelerating upward and a rising noise
+  // rush, then a low punch as it hits.
+  warp(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 110,
+      slideTo: 1760,
+      type: "sawtooth",
+      attack: 0.01,
+      release: 0.42,
+      gain: 0.16,
+    });
+    breath(ctx, bus, {
+      dur: 0.45,
+      type: "bandpass",
+      freq: 300,
+      sweepTo: 6000,
+      q: 0.6,
+      gain: 0.16,
+      attack: 0.05,
+    });
+    tone(ctx, bus, {
+      freq: 200,
+      slideTo: 50,
+      type: "sine",
+      attack: 0.002,
+      release: 0.26,
+      gain: 0.4,
+      delay: 0.42,
+    });
+  },
+  // WISH — a hopeful little rise: a soft arc of bells (E5 A5 E6) with a sparkle
+  // at the apex, like a wish taking flight.
+  wish(ctx, bus) {
+    [659.25, 880, 1318.51].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.02,
+        release: 0.5,
+        gain: 0.13,
+        delay: n * 0.12,
+      }),
+    );
+    tone(ctx, bus, {
+      freq: 2637.02,
+      type: "sine",
+      attack: 0.004,
+      release: 0.4,
+      gain: 0.07,
+      delay: 0.4,
+    });
+  },
+  // SUN — a warm major chord (C E G C) blooming open, sun breaking through:
+  // soft staggered attacks over a long radiant tail.
+  sun(ctx, bus) {
+    [261.63, 329.63, 392, 523.25].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "triangle",
+        attack: 0.06 + n * 0.03,
+        hold: 0.1,
+        release: 0.7,
+        gain: 0.12,
+      }),
+    );
+  },
   // A lightning strike — a sharp high crack over a low thunder tail.
   lightning(ctx, bus) {
     breath(ctx, bus, {

@@ -40,9 +40,10 @@ export function streak({
   durationMs = DEFAULT_DURATION_MS,
   color = DEFAULT_COLOR,
   radial = false, // spread evenly around a full circle from a single centre
+  sound = "streak",
 } = {}) {
   if (prefersReducedMotion()) return;
-  playSfx("streak");
+  playSfx(sound);
   const n = Math.min(count, MAX_STREAKS);
   for (let i = 0; i < n; i++) {
     const a = radial

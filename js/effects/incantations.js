@@ -311,6 +311,7 @@ export const INCANTATIONS = [
         color: SUN_COLOR,
         peak: SUN_PEAK,
         durationMs: SUN_DURATION_MS,
+        sound: "sun",
       }),
   },
   {
@@ -329,7 +330,7 @@ export const INCANTATIONS = [
     word: "RAINBOW",
     hint: "A smooth sweep through the spectrum",
     // One smooth pass of the whole page through the spectrum.
-    cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS }),
+    cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS, sound: "rainbow" }),
   },
   {
     word: "BOLT",
@@ -389,6 +390,7 @@ export const INCANTATIONS = [
         travel: WARP_TRAVEL,
         durationMs: WARP_DURATION_MS,
         color: WARP_COLOR,
+        sound: "warp",
       }),
   },
   {
@@ -420,6 +422,7 @@ export const INCANTATIONS = [
         travel: WISH_TRAVEL,
         durationMs: WISH_DURATION_MS,
         color: WISH_COLOR,
+        sound: "wish",
       }),
   },
 ];

@@ -16,9 +16,10 @@ export function screenFlash({
   durationMs = DEFAULT_DURATION_MS,
   peak = DEFAULT_PEAK,
   blend = DEFAULT_BLEND,
+  sound = "flash",
 } = {}) {
   if (prefersReducedMotion()) return;
-  playSfx("flash");
+  playSfx(sound);
   const el = document.createElement("div");
   el.className = "screen-flash";
   el.setAttribute("aria-hidden", "true");
