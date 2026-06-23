@@ -23,8 +23,11 @@ it reproduces the exact top-to-bottom order of the former single `main.css`.
   they sat in the original file; the directory grouping is for navigation, the
   link order is for correctness.)
 - **Invariant:** concatenating every partial in `<link>` order yields the former
-  `main.css` byte-for-byte. Any reorganisation that changes rendered output is a
-  separate, deliberate change — verify it visually per theme, in light and dark.
+  `main.css` identical modulo inter-section blank lines (whitespace-only, with no
+  rendering effect — Prettier trims the separator blank lines at each cut, so the
+  rebuild is a handful of blank lines shorter). Any reorganisation that changes
+  rendered output is a separate, deliberate change — verify it visually per theme,
+  in light and dark.
 
 ## Layout
 

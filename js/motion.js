@@ -5,8 +5,8 @@
 // motion enters the system.
 //
 // CSS-keyframe animations and CSS transitions are handled globally by
-// the @media (prefers-reduced-motion: reduce) rule in main.css.  The
-// helpers here cover the gaps the CSS rule can't reach.
+// the @media (prefers-reduced-motion: reduce) rule in css/01-base.css.
+// The helpers here cover the gaps the CSS rule can't reach.
 //
 // Three questions, three answers.  Pick the helper that matches what
 // your code is actually asking:
