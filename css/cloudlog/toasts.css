@@ -1,0 +1,373 @@
+/* ── Re-lock Toast ── */
+
+.achievement-toast-relock {
+  border-left-color: rgba(255, 200, 50, 0.5);
+}
+.achievement-toast-relock-icon {
+  opacity: 0.6;
+  transform-origin: center;
+}
+/* One-shot key-turn on entry gives re-locks a distinct signature.
+   Scoped to .enter so static renders of the same DOM don't replay it.
+   Delay matches the parent toast's slide-in so the rotation plays
+   against a settled position — running it concurrently with the
+   translateY masks the turn motion.  `backwards` pins the icon at
+   the initial keyframe (rotated, faint) during the slide-in.
+   The 0.4s delay is the JS TOAST_SLIDE_IN_MS in seconds; if that
+   constant moves, this value must follow. */
+.achievement-toast-relock.enter .achievement-toast-relock-icon {
+  animation: relock-key-turn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s
+    backwards;
+}
+@keyframes relock-key-turn {
+  0% {
+    transform: rotate(-90deg);
+    opacity: 0.15;
+  }
+  60% {
+    transform: rotate(12deg);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(0);
+    opacity: 0.6;
+  }
+}
+
+/* ── Achievement Tooltip ── */
+
+.achievement-tooltip {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  max-width: 320px;
+  padding: 0.4rem 0.65rem;
+  background: rgba(var(--ink-rgb), 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(-50%) translateY(4px);
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  white-space: nowrap;
+}
+.achievement-tooltip.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+body.light-appearance .achievement-tooltip {
+  background: rgba(240, 247, 255, 0.96);
+  border-color: rgba(0, 0, 0, 0.1);
+  color: rgba(var(--ink-rgb), 0.65);
+}
+
+/* ── Toast Notifications ── */
+
+.achievement-toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+}
+
+/* Surfaces queued-but-hidden unlocks.  `order` pins it past the
+   stack on the main axis, so column-reverse paints it at the visual
+   top regardless of when it was inserted in the DOM. */
+.achievement-toast-queue-counter {
+  order: 1;
+  align-self: flex-end;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+  background: rgba(var(--ink-rgb), 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 100px;
+  padding: 3px 10px;
+  pointer-events: none;
+}
+body.light-appearance .achievement-toast-queue-counter {
+  color: rgba(var(--ink-rgb), 0.6);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.achievement-toast {
+  --toast-accent: var(--achievement-default-accent);
+  --set-color: var(--toast-accent);
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 0.9rem;
+  background: rgba(var(--ink-rgb), 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 3px solid var(--toast-accent);
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  transform: translateY(120%);
+  opacity: 0;
+  transition:
+    transform 0.3s ease-in,
+    opacity 0.3s ease-in;
+  width: 340px;
+  max-width: calc(100vw - 3rem);
+}
+.achievement-toast.enter {
+  transform: translateY(0);
+  opacity: 1;
+  transition:
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 0.4s ease-out;
+}
+.achievement-toast.exit {
+  transform: translateY(120%);
+  opacity: 0;
+  transition:
+    transform 0.3s ease-in,
+    opacity 0.3s ease-in;
+}
+
+.achievement-toast-icon {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--toast-accent);
+}
+.achievement-toast-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.achievement-toast-body {
+  flex: 1;
+  min-width: 0;
+}
+.achievement-toast-title {
+  font-family: "Syne", sans-serif;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+}
+.achievement-toast-desc {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.achievement-toast-pts {
+  flex-shrink: 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--toast-accent);
+  min-width: 20px;
+  text-align: right;
+}
+
+/* Countdown bar at the bottom of live toasts — drains over the dismiss
+   timer.  Hover freezes the fill via inline style (set by toast.js);
+   the transition resumes from that scale when the pointer leaves. */
+.achievement-toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+}
+.achievement-toast-progress-fill {
+  height: 100%;
+  width: 100%;
+  background: var(--toast-accent);
+  opacity: 0.7;
+  transform: scaleX(1);
+  transform-origin: left center;
+  will-change: transform;
+}
+/* Global reduced-motion rule clamps transitions to ~0ms, which would
+   paint the bar empty on first frame.  Hide it instead so users who
+   opted out of motion don't see a misleading "expired" indicator. */
+@media (prefers-reduced-motion: reduce) {
+  .achievement-toast-progress {
+    display: none;
+  }
+}
+
+/* ── Activation Toast ── */
+
+.achievement-activation-toast {
+  position: fixed;
+  top: 5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(-12px);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1rem;
+  background: rgba(var(--ink-rgb), 0.92);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 100px;
+  z-index: var(--z-toast);
+  opacity: 0;
+  transition:
+    opacity 0.4s ease-out,
+    transform 0.4s ease-out;
+  pointer-events: none;
+}
+.achievement-activation-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.achievement-activation-toast span {
+  font-family: "DM Mono", monospace;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+}
+.achievement-activation-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--sky-3, #7dbfe8);
+}
+.achievement-activation-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Undo toast — bottom-center, action-bearing (so pointer-events on). */
+.achievement-undo-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.7rem 0.55rem 1rem;
+  background: rgba(var(--ink-rgb), 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  z-index: var(--z-toast);
+  opacity: 0;
+  transition:
+    opacity 0.4s ease-out,
+    transform 0.4s ease-out;
+}
+.achievement-undo-toast.visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+.achievement-undo-toast span {
+  font-family: "DM Mono", monospace;
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 0.05em;
+}
+.achievement-undo-btn {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sky-3, #7dbfe8);
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 100px;
+  padding: 4px 12px;
+  transition: background 0.2s;
+}
+.achievement-undo-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+body.light-appearance .achievement-undo-toast {
+  background: rgba(240, 247, 255, 0.96);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+body.light-appearance .achievement-undo-toast span {
+  color: rgba(var(--ink-rgb), 0.75);
+}
+
+/* ── Activation Pulse Ring ── */
+
+.achievement-pulse-ring {
+  position: fixed;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 2px solid var(--sky-3, #7dbfe8);
+  pointer-events: none;
+  z-index: var(--z-toast);
+  transform: translate(-50%, -50%) scale(0);
+  will-change: transform, opacity;
+  animation: achievement-pulse-expand 0.8s ease-out forwards;
+}
+@keyframes achievement-pulse-expand {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0;
+  }
+}
+
+/* ── Konami Confirm Prompt ── */
+.konami-confirm-prompt {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 0.85rem 1.4rem;
+  background: rgba(var(--ink-rgb), 0.95);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  z-index: var(--z-toast);
+  pointer-events: none;
+  animation: konami-prompt-in 0.25s ease-out;
+}
+@keyframes konami-prompt-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+body.light-appearance .konami-confirm-prompt {
+  background: rgba(240, 247, 255, 0.96);
+  color: rgba(var(--ink-rgb), 0.85);
+  border-color: rgba(0, 0, 0, 0.15);
+}

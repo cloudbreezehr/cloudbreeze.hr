@@ -1,0 +1,130 @@
+/* LIGHT APPEARANCE (class-based for manual toggle support) */
+body.light-appearance {
+  --theme-bg: #f0f7ff;
+}
+
+body.light-appearance .section-label {
+  color: var(--sky-5);
+}
+body.light-appearance .section-label::before {
+  background: var(--sky-5);
+}
+body.light-appearance .services-grid {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+body.light-appearance .service-card {
+  background: rgba(255, 255, 255, 0.75);
+}
+body.light-appearance .service-card:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+body.light-appearance .service-card::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--theme-glow), 0.3),
+    transparent
+  );
+}
+body.light-appearance .service-num {
+  color: rgba(26, 95, 168, 0.5);
+}
+body.light-appearance .service-title {
+  color: var(--ink);
+}
+body.light-appearance .service-desc {
+  color: rgba(var(--ink-rgb), 0.55);
+}
+
+body.light-appearance .about-heading {
+  color: var(--ink);
+}
+body.light-appearance .about-body {
+  color: rgba(var(--ink-rgb), 0.6);
+}
+body.light-appearance .stat-num {
+  color: var(--ink);
+}
+body.light-appearance .stat-label {
+  color: rgba(var(--ink-rgb), 0.45);
+}
+
+body.light-appearance .contact-card {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.8) 0%,
+    rgba(240, 247, 255, 0.9) 100%
+  );
+  border-color: rgba(var(--theme-glow), 0.2);
+}
+body.light-appearance .contact-card::before {
+  background: radial-gradient(
+    circle,
+    rgba(var(--theme-glow), 0.08),
+    transparent 70%
+  );
+}
+body.light-appearance .contact-heading {
+  color: var(--ink);
+}
+body.light-appearance .contact-sub {
+  color: rgba(var(--ink-rgb), 0.5);
+}
+body.light-appearance .contact-link {
+  color: rgba(var(--ink-rgb), 0.65);
+  border-color: rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.6);
+}
+body.light-appearance .contact-link:hover {
+  color: var(--ink);
+  border-color: rgba(var(--theme-glow), 0.3);
+  background: rgba(255, 255, 255, 0.85);
+}
+body.light-appearance .contact-link svg {
+  color: var(--sky-5);
+}
+
+body.light-appearance .footer-info {
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+body.light-appearance .footer-brand {
+  color: var(--ink);
+}
+body.light-appearance .footer-col-title {
+  color: var(--sky-5);
+}
+body.light-appearance .footer-text {
+  color: rgba(var(--ink-rgb), 0.5);
+}
+body.light-appearance .footer-link {
+  color: rgba(var(--ink-rgb), 0.5);
+}
+body.light-appearance .footer-link:hover {
+  color: var(--sky-5);
+}
+
+body.light-appearance footer {
+  border-top-color: rgba(0, 0, 0, 0.05);
+}
+body.light-appearance .footer-copy {
+  color: rgba(var(--ink-rgb), 0.3);
+}
+body.light-appearance .footer-badge {
+  color: rgba(var(--theme-glow), 0.5);
+}
+
+body.light-appearance::after {
+  opacity: 0.015;
+}
+body.light-appearance #cursor {
+  background: var(--sky-4);
+  mix-blend-mode: normal;
+  box-shadow:
+    0 0 6px rgba(var(--cursor-glow), 0.5),
+    0 0 2px rgba(255, 255, 255, 0.7);
+}
+body.light-appearance #cursor-ring {
+  border-color: rgba(var(--cursor-glow), 0.5);
+  box-shadow: 0 0 4px rgba(var(--cursor-glow), 0.15);
+}

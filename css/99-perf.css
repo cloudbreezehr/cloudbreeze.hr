@@ -1,0 +1,13 @@
+/* ── Live performance fallback ── */
+/* Toggled by the canvas FPS guard after a sustained frame-rate dip.
+   Sheds the costliest always-on decorative work — the animated grain
+   overlay and the glassy backdrop blurs — until frames recover. */
+body.perf-reduced::after {
+  display: none;
+}
+body.perf-reduced .achievement-panel,
+body.perf-reduced .achievement-toast,
+body.perf-reduced .achievement-tooltip {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

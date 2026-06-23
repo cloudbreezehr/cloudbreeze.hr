@@ -1,0 +1,95 @@
+/* ── Keyboard Help Overlay ── */
+.keyboard-help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+.keyboard-help-overlay.visible {
+  opacity: 1;
+}
+.keyboard-help-panel {
+  position: relative;
+  max-width: 420px;
+  width: calc(100vw - 3rem);
+  padding: 1.4rem 1.6rem;
+  background: rgba(var(--ink-rgb), 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  color: #fff;
+}
+.keyboard-help-close {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.8rem;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.4);
+  padding: 4px;
+  transition: color 0.2s;
+}
+.keyboard-help-close:hover {
+  color: #fff;
+}
+.keyboard-help-close svg {
+  width: 14px;
+  height: 14px;
+}
+body.light-appearance .keyboard-help-close {
+  color: rgba(var(--ink-rgb), 0.45);
+}
+.keyboard-help-title {
+  font-family: "Syne", sans-serif;
+  font-size: 1rem;
+  margin: 0 0 1rem;
+}
+.keyboard-help-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem 1rem;
+  margin: 0;
+}
+.keyboard-help-list dt {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.keyboard-help-list dd {
+  margin: 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.7);
+  align-self: center;
+}
+.keyboard-help-list kbd {
+  font-family: "DM Mono", monospace;
+  font-size: 0.62rem;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 4px;
+}
+.keyboard-help-hint {
+  margin: 1.2rem 0 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+body.light-appearance .keyboard-help-panel {
+  background: rgba(240, 247, 255, 0.97);
+  color: rgba(var(--ink-rgb), 0.9);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+body.light-appearance .keyboard-help-list kbd {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.18);
+}

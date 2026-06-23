@@ -1,0 +1,412 @@
+/* ── Activity view ── */
+/* Reverse-chron stack of toast-style rows.  Each row reuses the live
+   .achievement-toast markup so the two surfaces stay visually identical. */
+
+.activity-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.2rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+.activity-clear {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 100px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.activity-clear:hover {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.3);
+}
+/* Armed (awaiting confirm) — warn-tinted so the destructive second
+   click reads as deliberate. */
+.activity-clear.armed {
+  color: rgba(255, 140, 120, 0.95);
+  border-color: rgba(255, 140, 120, 0.5);
+}
+
+.activity-empty {
+  padding: 1.5rem 0.5rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: "DM Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* Date-bucket header (Today / Yesterday / …).  Sticks to the top of the
+   scroll container so the active band stays labeled while scrolling. */
+.activity-group-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0.3rem 0.2rem 0.2rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  background: rgba(var(--ink-rgb), 0.92);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+body.light-appearance .activity-group-header {
+  color: rgba(var(--ink-rgb), 0.45);
+  background: rgba(240, 247, 255, 0.92);
+}
+
+/* Onboarding hint shown above the activity list while the user is still
+   in the discovery phase.  Slimmer than the Achievements-tab intro card
+   so it reads as a tip, not a peer of the entries below it. */
+.activity-intro-hint {
+  padding: 0.5rem 0.65rem;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.1) 0%,
+    rgba(var(--theme-glow), 0.03) 100%
+  );
+  border-left: 2px solid var(--achievement-default-accent);
+  border-radius: 0 6px 6px 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.03em;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.activity-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+/* Embedded toast inside the activity list — override the live-toast's
+   slide-in styles so it sits as a normal list item.  Higher specificity
+   (two classes + one type) wins over the live-toast rules without needing
+   !important. */
+.activity-list .activity-row .achievement-toast {
+  position: relative;
+  transform: none;
+  translate: none;
+  opacity: 1;
+  width: 100%;
+}
+.activity-list .activity-row.unseen .achievement-toast {
+  outline: 1px solid rgba(125, 191, 232, 0.4);
+  outline-offset: 1px;
+}
+.activity-list .activity-row.shine .achievement-toast {
+  animation: activity-row-shine 0.8s ease-out;
+}
+@keyframes activity-row-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  100% {
+    background: transparent;
+  }
+}
+.activity-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0.4rem;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.04em;
+}
+.activity-time {
+  flex: 1;
+}
+.activity-dismiss,
+.activity-restore {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.3);
+  padding: 2px;
+  display: inline-flex;
+  align-items: center;
+  transition: color 0.2s ease;
+}
+.activity-dismiss:hover {
+  color: rgba(255, 100, 100, 0.8);
+}
+.activity-restore:hover {
+  color: rgba(125, 191, 232, 0.95);
+}
+.activity-dismiss svg,
+.activity-restore svg {
+  width: 10px;
+  height: 10px;
+}
+
+/* Trashed rows are dimmed so they read as "out of sight, recoverable". */
+.activity-list .activity-row.trashed .achievement-toast {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+.activity-list .activity-row.trashed:hover .achievement-toast {
+  opacity: 0.85;
+  filter: none;
+}
+
+/* ── Theme-switch row ── */
+/* Slimmer than achievement rows so they read as ambient transitions
+   rather than peer events.  Theme color flows through --theme-color
+   set inline; the left border + icon adopt it so each theme has a
+   distinct visual signature in the log. */
+.activity-theme-switch {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-left: 2px solid var(--theme-color, rgba(255, 255, 255, 0.2));
+  border-radius: 0 4px 4px 0;
+  transition:
+    background 0.2s ease,
+    opacity 0.2s ease;
+}
+.activity-theme-switch:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.activity-theme-switch-icon {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+  color: var(--theme-color, rgba(255, 255, 255, 0.5));
+  flex-shrink: 0;
+}
+.activity-theme-switch-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.activity-theme-switch-text {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.7);
+  letter-spacing: 0.03em;
+}
+.activity-list .activity-row.trashed .activity-theme-switch {
+  opacity: 0.55;
+  filter: saturate(0.7);
+}
+.activity-list .activity-row.trashed:hover .activity-theme-switch {
+  opacity: 0.85;
+  filter: none;
+}
+
+/* Footer — trash-view toggle.  Absent when the log is empty AND there's
+   nothing in the trash. */
+.activity-footer {
+  display: flex;
+  justify-content: center;
+  padding: 0.4rem 0 0.2rem;
+  margin-top: 0.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.activity-trash-toggle {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 100px;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+.activity-trash-toggle:hover {
+  color: rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ── Panel Body ── */
+
+.achievement-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── Panel Footer ── */
+
+.achievement-footer {
+  padding: 0.8rem 1.2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+/* Right-anchored info + actions group.  margin-left:auto pins it to the
+   right whether or not the streak occupies the left. */
+.achievement-footer-end {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+.achievement-streak {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 180, 90, 0.85);
+  letter-spacing: 0.04em;
+}
+.achievement-visit-count {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.04em;
+}
+
+/* Overflow menu — kebab button + drop-up list of rare footer actions. */
+.achievement-menu {
+  position: relative;
+  display: inline-flex;
+}
+.achievement-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+  transition:
+    color 0.2s,
+    background 0.2s;
+}
+.achievement-menu-btn svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+}
+.achievement-menu-btn:hover,
+.achievement-menu.open .achievement-menu-btn {
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.08);
+}
+.achievement-menu-list {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  min-width: 156px;
+  /* Local stacking only — sits above the panel's own in-scroll sticky
+     content (the activity date headers). */
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px;
+  background: rgba(var(--ink-rgb), 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 7px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(4px);
+  pointer-events: none;
+  transition:
+    opacity 0.15s,
+    transform 0.15s,
+    visibility 0.15s;
+}
+.achievement-menu.open .achievement-menu-list {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.achievement-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 6px 9px;
+  background: none;
+  border: none;
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: "DM Mono", monospace;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+.achievement-menu-item:hover,
+.achievement-menu-item:focus-visible {
+  color: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.08);
+}
+.achievement-menu-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.5);
+}
+.achievement-menu-item:hover .achievement-menu-icon,
+.achievement-menu-item:focus-visible .achievement-menu-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
+.achievement-menu-icon svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+.achievement-count-total {
+  position: relative;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.3);
+  letter-spacing: 0.05em;
+}
+.achievement-count-total::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(var(--ink-rgb), 0.92);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.achievement-count-total:hover::after {
+  opacity: 1;
+}

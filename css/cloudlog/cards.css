@@ -1,0 +1,605 @@
+/* ── Achievement Set ── */
+
+/* Live achievement search — filters cards by title/description. */
+.achievement-search {
+  margin-bottom: 0.5rem;
+}
+.achievement-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.45rem 0.7rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-family: "DM Mono", monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.03em;
+}
+.achievement-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+body.light-appearance .achievement-search-input {
+  color: rgba(var(--ink-rgb), 0.85);
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.12);
+}
+.achievement-card.search-hidden,
+.achievement-set.search-hidden {
+  display: none;
+}
+
+.achievement-set {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.achievement-set.dimmed {
+  opacity: 0.6;
+}
+.achievement-set-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.5rem;
+  border-left: 3px solid rgba(255, 255, 255, 0.15);
+  border-radius: 0 4px 4px 0;
+  background: rgba(10, 18, 32, 0.95);
+}
+.achievement-set-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "Syne", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  flex: 1;
+}
+/* Theme icon shown next to the set name — tinted to the set accent color
+   via currentColor on the SVG.  Matches the HUD's theme icon sizing. */
+.achievement-set-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  color: var(--set-color, rgba(255, 255, 255, 0.7));
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.achievement-set-icon svg {
+  width: 100%;
+  height: 100%;
+}
+.achievement-set.dimmed .achievement-set-icon {
+  filter: none;
+  opacity: 0.6;
+}
+.achievement-set-count {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.04em;
+}
+
+/* Progress bar */
+.achievement-progress {
+  width: 100%;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.achievement-progress-bar {
+  height: 100%;
+  background: var(--achievement-default-accent);
+  border-radius: 1px;
+  transition: width 0.4s ease-out;
+}
+
+/* ── Achievement Card ── */
+
+.achievement-card {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.02);
+  position: relative;
+  transition:
+    opacity 0.3s,
+    background 0.3s,
+    translate 0.2s ease-out,
+    box-shadow 0.2s ease-out;
+}
+.achievement-card.locked,
+.achievement-card.hidden-ach {
+  opacity: 0.4;
+}
+.achievement-card.unlocked {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.04);
+}
+.achievement-card.unlocked:hover {
+  background: rgba(255, 255, 255, 0.06);
+  translate: 0 -2px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+/* Glow pseudo-element — opacity animation is GPU-composited */
+.achievement-card.unlocked::before,
+.achievement-toast::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    0 0 20px -2px var(--set-color, #7dbfe8),
+    0 0 4px 0 var(--set-color, #7dbfe8);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  will-change: opacity;
+}
+.achievement-card.unlocked:hover::before,
+.achievement-toast:hover::before {
+  animation: card-glow 2s ease-in-out infinite;
+}
+@keyframes card-glow {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Shimmer sweep on hover */
+.achievement-card.unlocked::after,
+.achievement-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    transparent 40%,
+    rgba(255, 255, 255, 0.06) 50%,
+    transparent 60%,
+    transparent 100%
+  );
+  background-size: 400% 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.achievement-card.unlocked:hover::after,
+.achievement-toast:hover::after {
+  opacity: 1;
+  animation: card-shimmer 6s linear infinite;
+}
+@keyframes card-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+/* Click pop — squish then spring back.  Rarity-flavored variants
+   below give epic and legendary unlocks a distinct re-click feel. */
+.achievement-card.unlocked.clicked,
+.achievement-toast.clicked {
+  animation: card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes card-pop {
+  0% {
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    transform: translateY(0) scale(0.96);
+  }
+  70% {
+    transform: translateY(0) scale(1.03);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Locked-card click shake — "nothing happens here yet". */
+.achievement-card.shake {
+  animation: card-shake 0.3s ease-in-out;
+}
+@keyframes card-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-3px);
+  }
+  40% {
+    transform: translateX(3px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+}
+
+.achievement-toast[data-rarity="epic"].clicked {
+  animation: card-pop-epic 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes card-pop-epic {
+  0% {
+    transform: translateY(0) scale(1) rotate(0);
+  }
+  35% {
+    transform: translateY(0) scale(0.95) rotate(-1.5deg);
+  }
+  70% {
+    transform: translateY(0) scale(1.04) rotate(1.5deg);
+  }
+  100% {
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+.achievement-toast[data-rarity="legendary"].clicked {
+  animation: card-pop-legendary 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes card-pop-legendary {
+  0% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+  30% {
+    transform: translateY(0) scale(0.94);
+    filter: brightness(1.5) saturate(1.4);
+  }
+  70% {
+    transform: translateY(0) scale(1.06);
+    filter: brightness(1.2) saturate(1.2);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* Click shimmer — fast single sweep */
+.achievement-toast.clicked::after {
+  opacity: 1;
+  animation: card-shimmer-flash 0.4s ease-out;
+}
+@keyframes card-shimmer-flash {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+
+.achievement-card.shine {
+  animation: achievement-shine 0.8s ease-out;
+}
+@keyframes achievement-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.15);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.04);
+  }
+}
+
+/* One-shot pop-in for cards unlocked since the panel last closed —
+   forwards fill so the card settles at its resting state after. */
+.achievement-card.just-unlocked {
+  animation: achievement-card-reveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)
+    backwards;
+}
+@keyframes achievement-card-reveal {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.achievement-icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+}
+.achievement-icon svg {
+  width: 18px;
+  height: 18px;
+}
+.achievement-card.unlocked .achievement-icon {
+  color: var(--sky-3, #7dbfe8);
+}
+
+.achievement-text {
+  flex: 1;
+  min-width: 0;
+  min-height: 2.9rem;
+}
+.achievement-card-title {
+  font-family: "Syne", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.achievement-card.locked .achievement-card-title,
+.achievement-card.hidden-ach .achievement-card-title {
+  color: rgba(255, 255, 255, 0.5);
+}
+.achievement-card-desc {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+  line-height: 1.4;
+  margin-top: 1px;
+}
+.achievement-card.unlocked .achievement-card-desc {
+  color: rgba(255, 255, 255, 0.5);
+}
+.achievement-card-time {
+  display: inline-block;
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.25);
+  margin-top: 2px;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+.achievement-card-time:hover {
+  color: rgba(255, 255, 255, 0.45);
+}
+.achievement-card-pts {
+  flex-shrink: 0;
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: var(--achievement-default-accent);
+  opacity: 0.6;
+  min-width: 20px;
+  text-align: right;
+}
+.achievement-card.unlocked .achievement-card-pts {
+  opacity: 1;
+}
+
+/* ── Hint affordance ── */
+/* Tiny "?" badge over the icon's corner for cards whose hover *would*
+   surface a hint.  Scoped to non-unlocked cards — once a card is
+   unlocked the user already discovered the achievement, and the
+   shimmer ::after on .unlocked already occupies the layering tier. */
+.achievement-card[data-has-hint]:not(.unlocked) .achievement-icon {
+  position: relative;
+}
+.achievement-card[data-has-hint]:not(.unlocked) .achievement-icon::after {
+  content: "?";
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  font-weight: 700;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: rgba(var(--ink-rgb), 0.9);
+  color: rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+  transition:
+    opacity 0.2s,
+    color 0.2s;
+  pointer-events: none;
+}
+.achievement-card[data-has-hint]:not(.unlocked):hover .achievement-icon::after {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Unseen Indicator ── */
+
+.achievement-card.unseen .achievement-card-time::before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--set-color, var(--achievement-default-accent));
+  box-shadow: 0 0 6px var(--set-color, var(--achievement-default-accent));
+  margin-right: 5px;
+  vertical-align: middle;
+  position: relative;
+  top: -0.5px;
+  animation: unseen-pulse 2s ease-in-out infinite;
+  transition:
+    opacity 0.4s,
+    transform 0.4s;
+}
+@keyframes unseen-pulse {
+  0%,
+  100% {
+    opacity: 0.7;
+    box-shadow: 0 0 4px var(--set-color, var(--achievement-default-accent));
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 10px var(--set-color, var(--achievement-default-accent));
+  }
+}
+.achievement-card.seen-fade .achievement-card-time::before {
+  opacity: 0;
+  transform: scale(0);
+}
+
+/* ── Card Progress (progressive achievements) ── */
+
+.achievement-card-progress-text {
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  color: rgba(255, 255, 255, 0.35);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+.achievement-card-progress-bar-wrap {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 0 0 6px 6px;
+  overflow: hidden;
+}
+.achievement-card-progress-bar-fill {
+  height: 100%;
+  background: var(--set-color, var(--achievement-default-accent));
+  border-radius: 0 0 6px 6px;
+  transition: width 0.4s ease-out;
+}
+/* Segmented variant — one tick per progress unit, used when the count
+   is small enough that individual segments are still readable.  The
+   wrap's own track background shows through the gaps as the unfilled
+   tick. */
+.achievement-card-progress-bar-wrap.segmented {
+  display: flex;
+  gap: 2px;
+  background: transparent;
+}
+.achievement-card-progress-bar-segment {
+  flex: 1;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.3s ease-out;
+}
+.achievement-card-progress-bar-segment.filled {
+  background: var(--set-color, var(--achievement-default-accent));
+}
+/* One-shot shine when a segment ticks from unfilled to filled on a
+   subsequent render.  Plays on initial paint of the new node — the
+   class is only applied to segments newly past the prior snapshot. */
+.achievement-card-progress-bar-segment.just-filled {
+  animation: progress-segment-shine 0.7s ease-out;
+}
+@keyframes progress-segment-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+  }
+  60% {
+    background: rgba(255, 255, 255, 0.45);
+    box-shadow: 0 0 3px rgba(255, 255, 255, 0.2);
+  }
+  100% {
+    background: var(--set-color, var(--achievement-default-accent));
+    box-shadow: none;
+  }
+}
+
+/* ── Relocked Card State ── */
+
+.achievement-card.relocked {
+  opacity: 0.7;
+  border-left: 2px dashed rgba(255, 200, 50, 0.35);
+}
+.achievement-card.relocked .achievement-icon {
+  opacity: 0.7;
+}
+.achievement-card.relocked .achievement-card-pts {
+  opacity: 0.5;
+}
+.achievement-card.de-shine {
+  animation: achievement-de-shine 0.8s ease-out;
+}
+@keyframes achievement-de-shine {
+  0% {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  30% {
+    background: rgba(255, 200, 50, 0.08);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.02);
+  }
+}
+
+/* ── Intro Card ── */
+
+/* Onboarding card prepended to the Achievements view while the user is
+   still in the discovery phase.  Visually distinct from regular cards
+   (gradient tint, accent left border, soft pulse) so it reads as
+   contextual guidance rather than another locked entry. */
+.achievement-card.achievement-intro-card {
+  opacity: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.12) 0%,
+    rgba(var(--theme-glow), 0.04) 100%
+  );
+  border-left: 2px solid var(--achievement-default-accent);
+  padding-left: calc(0.5rem - 2px);
+  overflow: hidden;
+}
+.achievement-card.achievement-intro-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 0 0 24px -8px rgba(125, 191, 232, 0.3),
+    0 0 12px -4px rgba(var(--theme-glow), 0.2);
+  pointer-events: none;
+  animation: achievement-intro-pulse 4s ease-in-out infinite;
+}
+@keyframes achievement-intro-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.achievement-intro-icon {
+  color: var(--achievement-default-accent);
+  filter: drop-shadow(0 0 6px rgba(var(--theme-glow), 0.6));
+}
+.achievement-card.achievement-intro-card .achievement-card-title {
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+}
+.achievement-card.achievement-intro-card .achievement-card-desc {
+  color: rgba(255, 255, 255, 0.7);
+}

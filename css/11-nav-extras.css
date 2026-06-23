@@ -1,0 +1,138 @@
+/* Nav scroll-driven light transition (applied via JS) */
+nav.nav-light .logo-text {
+  color: var(--ink);
+}
+nav.nav-light .nav-links a {
+  color: rgba(var(--ink-rgb), 0.55);
+}
+nav.nav-light .nav-links a:hover {
+  color: var(--ink);
+}
+nav.nav-light .nav-links a::after {
+  background: var(--sky-5);
+}
+nav.nav-light .nav-cta {
+  color: var(--sky-5);
+  border-color: rgba(26, 95, 168, 0.4);
+}
+nav.nav-light .nav-cta:hover {
+  background: rgba(var(--theme-glow), 0.1);
+}
+nav.nav-light .nav-burger {
+  color: rgba(var(--ink-rgb), 0.6);
+}
+nav.nav-light .nav-burger:hover {
+  color: var(--ink);
+}
+
+/* Appearance toggle */
+/* Sits the appearance + sound toggles together as a tight cluster, apart from
+   the wider nav-actions gap between chrome groups. */
+.nav-toggles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.appearance-toggle,
+.sound-toggle {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+  position: relative;
+}
+.appearance-toggle:hover,
+.sound-toggle:hover {
+  color: #fff;
+  border-color: rgba(var(--theme-glow), 0.4);
+  background: rgba(var(--theme-glow), 0.08);
+}
+.appearance-toggle svg,
+.sound-toggle svg {
+  width: 14px;
+  height: 14px;
+  display: none;
+}
+.appearance-toggle[data-appearance="light"] .icon-sun {
+  display: block;
+}
+.appearance-toggle[data-appearance="dark"] .icon-moon {
+  display: block;
+}
+.appearance-toggle[data-appearance="auto"] .icon-auto {
+  display: block;
+}
+.sound-toggle[data-sound="on"] .icon-sound-on {
+  display: block;
+}
+.sound-toggle[data-sound="off"] .icon-sound-off {
+  display: block;
+}
+/* Progressive disclosure: the sound toggle is hidden — and non-interactive,
+   and out of the a11y tree — until the visitor shows interest (return visit /
+   dwell / already enabled), at which point JS adds `.revealed`. `visibility`
+   reserves the nav slot, so the reveal fades in without shifting anything. */
+.sound-toggle {
+  visibility: hidden;
+  opacity: 0;
+  transform: scale(0.85);
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease,
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s;
+}
+.sound-toggle.revealed {
+  visibility: visible;
+  opacity: 1;
+  transform: scale(1);
+}
+.appearance-toggle::after,
+.sound-toggle::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: rgba(255, 255, 255, 0.65);
+  background: rgba(var(--ink-rgb), 0.92);
+  padding: 4px 8px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.appearance-toggle:hover::after,
+.sound-toggle:hover::after {
+  opacity: 1;
+}
+nav.nav-light .appearance-toggle,
+nav.nav-light .sound-toggle {
+  color: rgba(var(--ink-rgb), 0.5);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+nav.nav-light .appearance-toggle:hover,
+nav.nav-light .sound-toggle:hover {
+  color: var(--ink);
+  border-color: rgba(26, 95, 168, 0.4);
+  background: rgba(var(--theme-glow), 0.08);
+}
+nav.nav-light .appearance-toggle::after,
+nav.nav-light .sound-toggle::after {
+  color: rgba(var(--ink-rgb), 0.7);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}

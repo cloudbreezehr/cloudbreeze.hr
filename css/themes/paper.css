@@ -1,0 +1,260 @@
+/* ── Paper Theme ── */
+
+/* Wipe — ink brush sweep diagonally */
+.paper-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(var(--ink-color-rgb), 0.85) 40%,
+    rgba(var(--ink-color-rgb), 0.95) 50%,
+    rgba(var(--ink-color-rgb), 0.85) 60%,
+    transparent 100%
+  );
+  background-size: 250% 100%;
+  background-position: 100% 0;
+  opacity: 0;
+  transition: opacity 0.4s ease-in-out;
+  pointer-events: none;
+}
+.paper-wipe.eraser {
+  background: linear-gradient(
+    -115deg,
+    transparent 0%,
+    rgba(245, 232, 210, 0.88) 40%,
+    rgba(245, 232, 210, 0.96) 50%,
+    rgba(245, 232, 210, 0.88) 60%,
+    transparent 100%
+  );
+  background-size: 250% 100%;
+}
+
+/* Progressive overlay — edge ink-seep, vignette */
+.paper-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 55%,
+      rgba(var(--ink-color-rgb), 0.18) 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(var(--ink-color-rgb), 0.08) 0%,
+      transparent 8%,
+      transparent 92%,
+      rgba(var(--ink-color-rgb), 0.08) 100%
+    );
+}
+
+/* Page-turn transform — applied only when paper is active.
+   Motion smoothing is handled in JS via rAF lerp; no CSS transition. */
+body.paper .page {
+  translate: var(--paper-page-x, 0) 0;
+  rotate: var(--paper-page-rot, 0);
+}
+
+/* ── Paper — visual theme (only when active theme) ── */
+
+body[data-active-theme="paper"] {
+  --ink-color: #1a1512;
+  --ink-color-rgb: 26, 21, 18;
+  --paper-color: #f5efdc;
+  --theme-primary: #a89580;
+  --theme-glow: 60, 40, 30;
+  --logo-text-color: #d4c0a8;
+  --theme-bg: var(--paper-color);
+}
+body[data-active-theme="paper"] #bg-canvas {
+  /* Canvas still runs (fury + ink), but sky/atmosphere are skipped in JS.
+     The filter desaturates whatever fury renders so lightning reads as ink. */
+  filter: saturate(0.15) contrast(1.1) sepia(0.35);
+}
+
+/* Grain — boost well above the default while paper is active */
+body[data-active-theme="paper"]::after {
+  opacity: var(--paper-grain-opacity, 0.18);
+}
+
+/* Cloud SVG — reduce to inky outline feel */
+body.paper .cloud-svg {
+  filter: saturate(0) contrast(1.25) brightness(0.35);
+}
+
+/* Cursor — little pencil.
+   The pencil SVG is drawn with its graphite tip at viewBox center (12, 12),
+   shaft rotated -45° up-right so the cursor hotspot is the tip itself.
+   mix-blend-mode is removed: screen-blending a dark pencil onto warm
+   paper wipes it out. The ring becomes a faint square guide. */
+body[data-active-theme="paper"] #cursor {
+  background: url("data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg transform='rotate(-45 12 12)'%3E%3Cpolygon points='12,12 15,10 15,14' fill='%232a1f18'/%3E%3Cpolygon points='15,10 15,14 17,14.2 17,9.8' fill='%23e8c485'/%3E%3Crect x='17' y='9.8' width='4.5' height='4.4' fill='%23d4a55a'/%3E%3Crect x='21.5' y='9.8' width='0.7' height='4.4' fill='%23a8a8b0'/%3E%3Crect x='22.2' y='9.8' width='1.4' height='4.4' fill='%23e54a4a'/%3E%3Cpolygon points='12,12 15,10 17,9.8 21.5,9.8 22.2,9.8 23.6,9.8 23.6,14.2 22.2,14.2 21.5,14.2 17,14.2 15,14' fill='none' stroke='%231a1512' stroke-width='0.6' stroke-linejoin='round'/%3E%3C/g%3E%3C/svg%3E")
+    center center / 100% 100% no-repeat;
+  width: 24px;
+  height: 24px;
+  mix-blend-mode: normal;
+  border-radius: 0;
+}
+body[data-active-theme="paper"] #cursor-ring {
+  border-width: 1px;
+  border-color: rgba(var(--ink-color-rgb), 0.3);
+  border-radius: 0;
+}
+
+/* Hero — ink on paper, no gradients */
+body[data-active-theme="paper"] .hero-tag {
+  color: rgba(var(--ink-color-rgb), 0.85);
+}
+body[data-active-theme="paper"] .hero-title {
+  background: none;
+  color: var(--ink-color);
+  -webkit-text-fill-color: var(--ink-color);
+}
+body[data-active-theme="paper"] .hero-title .line-1,
+body[data-active-theme="paper"] .hero-title .line-2 {
+  background: none;
+  color: var(--ink-color);
+  -webkit-text-fill-color: var(--ink-color);
+}
+body[data-active-theme="paper"] .hero-sub {
+  color: rgba(var(--ink-color-rgb), 0.75);
+}
+
+/* Hover thickening — every semantic text element gets a shadow scaled by
+   its --paper-ink-proximity var (0..1), set by JS based on cursor distance.
+   Intentionally broad: nav, buttons, footer, any UI visible while paper is
+   active all participate. The site's just playing at being a sketchbook
+   anyway — no reason to carve out chrome. */
+body[data-active-theme="paper"]
+  :is(h1, h2, h3, h4, h5, h6, p, span, a, li, em, strong) {
+  text-shadow: 0 0 calc(3px * var(--paper-ink-proximity, 0))
+    rgba(var(--ink-color-rgb), calc(0.55 * var(--paper-ink-proximity, 0)));
+}
+
+/* Buttons — inked */
+body[data-active-theme="paper"] .btn-primary {
+  background: var(--ink-color);
+  color: var(--paper-color);
+  box-shadow: 0 2px 0 0 rgba(var(--ink-color-rgb), 0.35);
+}
+body[data-active-theme="paper"] .btn-primary:hover {
+  box-shadow: 0 3px 0 0 rgba(var(--ink-color-rgb), 0.5);
+}
+body[data-active-theme="paper"] .btn-ghost,
+body[data-active-theme="paper"] .btn-outline {
+  border-color: var(--ink-color);
+  color: var(--ink-color);
+}
+
+/* Service cards — lined-paper notebook, slight per-card rotation */
+body[data-active-theme="paper"] .service-card {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 22px,
+      rgba(var(--ink-color-rgb), 0.1) 22px,
+      rgba(var(--ink-color-rgb), 0.1) 23px
+    ),
+    var(--paper-color);
+  border: 1.5px solid var(--ink-color);
+  color: var(--ink-color);
+}
+body[data-active-theme="paper"] .service-num {
+  color: rgba(var(--ink-color-rgb), 0.5);
+}
+body[data-active-theme="paper"] .service-title {
+  color: var(--ink-color);
+}
+body[data-active-theme="paper"] .service-desc {
+  color: rgba(var(--ink-color-rgb), 0.75);
+}
+body.paper .paper-card:nth-child(3n + 1) {
+  transform: rotate(-0.6deg);
+}
+body.paper .paper-card:nth-child(3n + 2) {
+  transform: rotate(0.35deg);
+}
+body.paper .paper-card:nth-child(3n + 3) {
+  transform: rotate(-0.2deg);
+}
+
+body[data-active-theme="paper"] .nav-cta {
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+body[data-active-theme="paper"] .nav-cta:hover,
+body[data-active-theme="paper"] .nav-cta.active {
+  background: var(--theme-primary);
+  color: var(--paper-color);
+}
+
+/* Contact */
+body[data-active-theme="paper"] #contact {
+  border-color: rgba(var(--ink-color-rgb), 0.25);
+}
+body[data-active-theme="paper"] .contact-heading {
+  color: var(--ink-color);
+}
+body[data-active-theme="paper"] .contact-sub {
+  color: rgba(var(--ink-color-rgb), 0.7);
+}
+body[data-active-theme="paper"] .contact-link {
+  background: transparent;
+  border-color: rgba(var(--ink-color-rgb), 0.3);
+  color: var(--ink-color);
+}
+
+/* Footer */
+body[data-active-theme="paper"] footer {
+  border-top-color: rgba(var(--ink-color-rgb), 0.2);
+}
+body[data-active-theme="paper"] .footer-info {
+  border-top-color: rgba(var(--ink-color-rgb), 0.15);
+}
+body[data-active-theme="paper"] .footer-badge::before {
+  background: var(--ink-color);
+}
+body[data-active-theme="paper"] .footer-copy,
+body[data-active-theme="paper"] .footer-text,
+body[data-active-theme="paper"] .footer-brand,
+body[data-active-theme="paper"] .footer-col-title,
+body[data-active-theme="paper"] .footer-link,
+body[data-active-theme="paper"] .footer-badge {
+  color: var(--ink-color);
+}
+
+/* Section labels, about headings — all ink */
+body[data-active-theme="paper"] .section-label,
+body[data-active-theme="paper"] .about-heading,
+body[data-active-theme="paper"] .about-body,
+body[data-active-theme="paper"] .stat-num,
+body[data-active-theme="paper"] .stat-label {
+  color: var(--ink-color);
+}
+
+/* "Full-stack" emphasis — base rule applies a sky-blue gradient via
+   -webkit-text-fill-color: transparent.  Override both the gradient
+   and the fill so the emphasis reads as ink, matching the rest of the
+   heading rather than reverting to brand blue. */
+body[data-active-theme="paper"] .about-heading em {
+  background: none;
+  color: var(--ink-color);
+  -webkit-text-fill-color: var(--ink-color);
+}
+
+/* Light-appearance paper — brighter paper, darker ink */
+body.light-appearance[data-active-theme="paper"] {
+  --paper-color: #fbf2dd;
+  --ink-color: #140e0a;
+  --ink-color-rgb: 20, 14, 10;
+}
+body.light-appearance[data-active-theme="paper"] #bg-canvas {
+  filter: saturate(0.2) contrast(1.05) sepia(0.3);
+}

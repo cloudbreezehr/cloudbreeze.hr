@@ -114,7 +114,44 @@
       href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/main.css" />
+    <!--
+      Stylesheet partials, linked in CASCADE ORDER. This order IS the cascade —
+      do not reorder, and add a new partial at the position matching where its
+      rules belong in the cascade. The concatenation of these files in this
+      order is the former css/main.css, verbatim. See css/README.md; the
+      tests/unit/css-manifest test guards that every partial is linked exactly
+      once.
+    -->
+    <link rel="stylesheet" href="css/01-base.css" />
+    <link rel="stylesheet" href="css/02-cursor.css" />
+    <link rel="stylesheet" href="css/03-canvas.css" />
+    <link rel="stylesheet" href="css/04-layout.css" />
+    <link rel="stylesheet" href="css/05-nav.css" />
+    <link rel="stylesheet" href="css/06-hero.css" />
+    <link rel="stylesheet" href="css/07-content.css" />
+    <link rel="stylesheet" href="css/08-footer.css" />
+    <link rel="stylesheet" href="css/09-animations.css" />
+    <link rel="stylesheet" href="css/10-responsive.css" />
+    <link rel="stylesheet" href="css/11-nav-extras.css" />
+    <link rel="stylesheet" href="css/12-appearance-light.css" />
+    <link rel="stylesheet" href="css/themes/upside-down.css" />
+    <link rel="stylesheet" href="css/themes/frozen.css" />
+    <link rel="stylesheet" href="css/themes/deep-sea.css" />
+    <link rel="stylesheet" href="css/themes/blocky.css" />
+    <link rel="stylesheet" href="css/themes/rainy.css" />
+    <link rel="stylesheet" href="css/themes/paper.css" />
+    <link rel="stylesheet" href="css/cloudlog/panel.css" />
+    <link rel="stylesheet" href="css/cloudlog/activity.css" />
+    <link rel="stylesheet" href="css/cloudlog/cards.css" />
+    <link rel="stylesheet" href="css/cloudlog/toasts.css" />
+    <link rel="stylesheet" href="css/effects/first-paint.css" />
+    <link rel="stylesheet" href="css/cloudlog/theme-history-hud.css" />
+    <link rel="stylesheet" href="css/themes/vhs.css" />
+    <link rel="stylesheet" href="css/themes/constellation.css" />
+    <link rel="stylesheet" href="css/99-overrides.css" />
+    <link rel="stylesheet" href="css/overlays/keyboard-help.css" />
+    <link rel="stylesheet" href="css/overlays/cheatsheet.css" />
+    <link rel="stylesheet" href="css/99-perf.css" />
 
     <!--
       Start fetching the first-paint modules during HTML parse instead

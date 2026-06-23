@@ -1,0 +1,151 @@
+/* ── Z-Index ──
+ * Cross-cutting stacking values come from `js/layers.js`, which
+ * injects them as `--z-*` custom properties on :root at bootstrap.
+ * Use `z-index: var(--z-name)` for anything that has to stack against
+ * another module's overlay; keep raw integers only for local stacking
+ * (sibling nodes inside one component).  See js/layers.js for the
+ * range table and naming.
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --sky-0: #f0f7ff;
+  --sky-1: #daeeff;
+  --sky-2: #b5d9f7;
+  --sky-3: #7dbfe8;
+  --sky-4: #378add;
+  --sky-5: #1a5fa8;
+  --sky-6: #0c3d72;
+  --ink: #0a1628;
+  --ink-rgb: 10, 22, 40;
+  --ink-mid: #1e3a5f;
+  --mist: rgba(255, 255, 255, 0.55);
+  --glass: rgba(255, 255, 255, 0.18);
+  --glass-border: rgba(255, 255, 255, 0.35);
+  /* Default accent for achievement toasts/cards when the set has no color.
+     Deliberately NOT bound to --sky-4 so themes that retheme the sky
+     (e.g. upside-down turns --sky-4 red) don't hijack unrelated toasts. */
+  --achievement-default-accent: #378add;
+}
+
+/* ── Reduced Motion ──
+   Users who request reduced motion (OS-level setting) get static visuals.
+   Durations collapse to near-zero so transitions still settle end-state without
+   animating; infinite keyframe animations pause on their first frame. Canvas
+   dampening is handled in js/canvas.js. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Skip Link ── */
+/* Off-screen by default; slides into view when focused via Tab so
+   keyboard users can bypass the nav and theme overlays in one keystroke. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: var(--z-skip-link);
+  padding: 0.6rem 1rem;
+  background: rgba(var(--ink-rgb), 0.96);
+  color: #fff;
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transform: translateY(-150%);
+  transition: transform 0.2s ease-out;
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline: 2px solid rgb(var(--theme-glow));
+  outline-offset: 2px;
+}
+body.light-appearance .skip-link {
+  background: rgba(240, 247, 255, 0.97);
+  color: rgba(var(--ink-rgb), 0.85);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+/* #main is focused programmatically by the skip-link to redirect Tab
+   sequence into page content; the section itself isn't a focusable
+   control, so no focus ring should render on it. */
+#main:focus {
+  outline: none;
+}
+
+/* ── Keyboard Focus Rings ── */
+/* Explicit width + style so the ring doesn't fall back to the UA
+   default (which varies and can be near-invisible on busy canvas
+   backgrounds).  The box-shadow adds a soft dark halo *outside* the
+   bright outline so the ring reads against both light and dark
+   surfaces without depending on the page color behind it. */
+:focus-visible {
+  outline: 2px solid rgb(var(--theme-glow));
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.35);
+  border-radius: 2px;
+  animation: focusPulse 2s ease-in-out infinite;
+}
+body.light-appearance :focus-visible {
+  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.55);
+}
+@keyframes focusPulse {
+  0%,
+  100% {
+    outline-color: rgba(var(--theme-glow), 0.4);
+  }
+  50% {
+    outline-color: rgba(var(--theme-glow), 0.9);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Syne", sans-serif;
+  background: var(--theme-bg);
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+  --theme-primary: var(--sky-3);
+  --theme-glow: 55, 138, 221;
+  --theme-bg: var(--ink);
+  --cursor-glow: var(--theme-glow);
+  --logo-text-color: #fff;
+  --logo-accent-color: var(--theme-primary);
+}
+
+/* Native <a>/<button> elements get cursor: pointer for free; div-based
+   controls promoted via bindClickable get role="button" but no inherent
+   cursor change.  Apply pointer at :where(0) specificity so the
+   custom-cursor rule below still overrides to `none` (source-order
+   resolves the tie). */
+:where([role="button"]) {
+  cursor: pointer;
+}
+
+/* OS cursor stays visible until cursor.js has both initialized and
+   received its first mousemove — otherwise slow loads leave a window
+   where neither cursor is showing. */
+:where(body.has-custom-cursor),
+:where(body.has-custom-cursor) :where(a, button, [role="button"], label) {
+  cursor: none;
+}

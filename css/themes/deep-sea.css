@@ -1,0 +1,219 @@
+/* ═══════════════════════════════════════════════
+   Deep Sea Theme
+   ═══════════════════════════════════════════════ */
+
+/* Ripple rings — concentric expanding circles from cursor */
+.deep-sea-ripple {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 200, 180, 0.5);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: var(--z-theme-effect);
+}
+
+/* Reduced-motion ripple substitute — one static ring that follows the
+   hold position.  The .tick class is briefly toggled on each would-be
+   spawn interval to mark the cadence; the transition is clamped to
+   ~0ms under reduced motion so the brightness change reads as discrete
+   acknowledgments rather than a sustained pulse. */
+.deep-sea-static-ring {
+  position: fixed;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(0, 200, 180, 0.45);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: var(--z-theme-effect);
+  transition: border-color 0.15s;
+}
+.deep-sea-static-ring.tick {
+  border-color: rgba(0, 220, 200, 0.9);
+}
+
+/* Water creep overlay — dark teal gradients from edges */
+.deep-sea-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  --water-size: 8%;
+  background:
+    radial-gradient(
+      ellipse at 0% 0%,
+      rgba(0, 60, 80, 0.5) 0%,
+      transparent var(--water-size)
+    ),
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(0, 50, 70, 0.45) 0%,
+      transparent var(--water-size)
+    ),
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(0, 50, 70, 0.45) 0%,
+      transparent var(--water-size)
+    ),
+    radial-gradient(
+      ellipse at 100% 100%,
+      rgba(0, 60, 80, 0.5) 0%,
+      transparent var(--water-size)
+    );
+}
+
+/* Pressure vignette — deep navy/black from edges */
+.deep-sea-vignette {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 30%,
+    rgba(0, 10, 20, 0.9) 100%
+  );
+}
+
+/* Deep sea wipe transition */
+.deep-sea-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 20, 40, 0.98),
+    rgba(0, 40, 60, 0.95),
+    rgba(0, 20, 40, 0.98)
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+  pointer-events: none;
+}
+.deep-sea-wipe.resurface {
+  background: linear-gradient(
+    180deg,
+    rgba(180, 220, 240, 0.95),
+    rgba(255, 240, 200, 0.95),
+    rgba(180, 220, 240, 0.95)
+  );
+}
+
+/* ── Deep Sea — visual theme (only when active theme) ── */
+body[data-active-theme="deep-sea"] {
+  --sky-3: #0a5060;
+  --sky-4: #064050;
+  --sky-5: #003040;
+  --sky-6: #001a28;
+  --theme-primary: #00ffc8;
+  --logo-text-color: #b8f5e0;
+  --logo-accent-color: rgb(var(--theme-glow));
+  --theme-bg: #001018;
+}
+
+body[data-active-theme="deep-sea"] #bg-canvas {
+  filter: hue-rotate(310deg) saturate(1.4) brightness(0.35);
+}
+
+body[data-active-theme="deep-sea"] .cloud-svg {
+  filter: grayscale(1) brightness(0.55)
+    drop-shadow(0 0 14px rgba(0, 255, 180, 0.5));
+}
+
+body[data-active-theme="deep-sea"] {
+  --theme-glow: 0, 200, 160;
+  --cursor-ring-animation: cursor-wobble 3s ease-in-out infinite;
+}
+body[data-active-theme="deep-sea"] #cursor {
+  box-shadow:
+    -3px -3px 4px rgba(180, 255, 230, 0.35) inset,
+    1px 1px 2px rgba(0, 60, 50, 0.25) inset;
+}
+body[data-active-theme="deep-sea"] #cursor-ring {
+  border-color: rgba(0, 255, 180, 0.4);
+}
+
+body[data-active-theme="deep-sea"] .hero-title .line-2 {
+  background: linear-gradient(
+    135deg,
+    #80ffd4 0%,
+    rgb(var(--theme-glow)) 50%,
+    #00a080 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="deep-sea"] .btn-primary {
+  background: linear-gradient(135deg, #00806a, #005848);
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
+}
+body[data-active-theme="deep-sea"] .btn-primary::before {
+  background: linear-gradient(135deg, #00a088, #00806a);
+}
+body[data-active-theme="deep-sea"] .btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
+}
+
+body[data-active-theme="deep-sea"] .about-heading em {
+  background: linear-gradient(135deg, #80ffd4, rgb(var(--theme-glow)));
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Card caustic interaction — animated water-light ripple + shimmer border */
+body.deep-sea .caustic-card {
+  transition:
+    background 0.4s,
+    box-shadow 0.6s ease;
+}
+body.deep-sea .caustic-card:hover {
+  box-shadow:
+    inset 0 0 30px rgba(0, 255, 180, 0.04),
+    0 0 20px rgba(0, 255, 180, 0.06);
+}
+body.deep-sea .caustic-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at var(--caustic-x, 50%) var(--caustic-y, 50%),
+    rgba(0, 255, 180, 0.12) 0%,
+    rgba(var(--theme-glow), 0.04) 40%,
+    transparent 60%
+  );
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+body.deep-sea .caustic-card:hover::after {
+  opacity: 1;
+  animation: causticShimmer 3s ease-in-out infinite;
+}
+@keyframes causticShimmer {
+  0%,
+  100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.3);
+  }
+}
+
+body[data-active-theme="deep-sea"] .contact-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.08) 0%,
+    rgba(0, 16, 24, 0.92) 100%
+  );
+}
+
+body[data-active-theme="deep-sea"]::after {
+  opacity: 0.04;
+}

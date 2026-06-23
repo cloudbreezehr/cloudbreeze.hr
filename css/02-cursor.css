@@ -1,0 +1,819 @@
+/* Custom cursor.
+   --cursor-dot-size / --cursor-ring-size are registered so they
+   interpolate smoothly when hover/press changes size. String-based
+   idle animations (pendulum, metronome, yo-yo) read these vars for
+   pivot offsets and rod-tip translations, so the dot keeps tracking
+   the rod end even while the ring grows or shrinks. */
+@property --cursor-dot-size {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 12px;
+}
+@property --cursor-ring-size {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 36px;
+}
+/* --rod-scale-y: ring's vertical scale factor when collapsed into a
+   rod (pendulum, metronome, yo-yo). Registered so animations can
+   interpolate it smoothly and the --rod-tip calc() cascades.
+   Inherited so a single keyframe on :root can drive both the ring
+   scaleY and the dot's derived translateY in lockstep. */
+@property --rod-scale-y {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+:root {
+  --cursor-dot-size: 12px;
+  --cursor-ring-size: 36px;
+  /* Pivot points on the cursor column where rod-style idle animations
+     hinge. Ring pivots via center top/bottom; the dot reaches the same
+     point by translating its transform-origin by these offsets. */
+  --cursor-pivot-top: calc(
+    (var(--cursor-dot-size) - var(--cursor-ring-size)) / 2
+  );
+  --cursor-pivot-bottom: calc(
+    (var(--cursor-dot-size) + var(--cursor-ring-size)) / 2
+  );
+  transition:
+    --cursor-dot-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    --cursor-ring-size 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+:root:has(#cursor.pressing) {
+  transition:
+    --cursor-dot-size 0.15s ease-out,
+    --cursor-ring-size 0.15s ease-out;
+}
+#cursor {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--cursor-dot-size);
+  height: var(--cursor-dot-size);
+  background: rgb(var(--cursor-glow));
+  border-radius: var(--cursor-dot-radius, 50%);
+  clip-path: var(--cursor-dot-clip, none);
+  pointer-events: none;
+  z-index: var(--z-cursor);
+  will-change: translate;
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+/* Brand-default keeps the lighter sky dot for higher contrast on the dark
+   canvas; themes follow the cascade through --cursor-glow. */
+body:not([data-active-theme]) #cursor {
+  background: var(--sky-3);
+}
+#cursor-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: var(--cursor-ring-size);
+  height: var(--cursor-ring-size);
+  border-width: var(--cursor-ring-width, 1px);
+  border-style: var(--cursor-ring-style, solid);
+  border-color: rgba(var(--cursor-glow), 0.5);
+  border-radius: var(--cursor-ring-radius, 50%);
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+  will-change: translate;
+  animation: var(--cursor-ring-animation, none);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+#cursor.gravity-well {
+  box-shadow: 0 0 calc(4px + 12px * var(--well-strength, 0))
+    rgba(var(--cursor-glow), 0.6);
+}
+#cursor-ring.gravity-well::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  box-shadow: 0 0 12px rgba(var(--cursor-glow), 0.5);
+  pointer-events: none;
+  will-change: opacity;
+  animation: well-breathe 2s ease-in-out infinite;
+}
+@keyframes well-breathe {
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+/* Spell-charge halo — the cursor ring swells and brightens as a word builds
+   (--spell-charge, set by the speller), discharging when it completes. Surplus
+   charge letters (BOOOOM) set body.spell-overcharging for a hot, furious
+   pulse. The ::before is the gravity-well's, so the halo uses ::after. */
+#cursor-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1.5px solid
+    rgba(var(--cursor-glow), calc(0.7 * var(--spell-charge, 0)));
+  transform: scale(calc(1 + 0.9 * var(--spell-charge, 0)));
+  opacity: var(--spell-charge, 0);
+  pointer-events: none;
+  will-change: transform, opacity;
+  transition:
+    transform 0.18s ease-out,
+    opacity 0.25s ease-out,
+    border-color 0.18s ease-out;
+}
+body.spell-overcharging #cursor-ring::after {
+  border-color: rgba(255, 184, 92, 0.85);
+  /* The more surplus charge letters, the bigger the hot glow (capped). */
+  box-shadow: 0 0 calc(2px + 3px * min(var(--spell-overcharge, 0), 8))
+    rgba(255, 184, 92, 0.55);
+}
+/* Each surplus charge letter (an extra O in BOOOOM) fires a discrete twitch,
+   restarted per letter by re-adding body.spell-kick. The buildup stops at the
+   charge cap, where the speller stops re-adding the class. */
+body.spell-kick #cursor-ring::after {
+  animation: spell-kick 0.16s ease-out;
+}
+@keyframes spell-kick {
+  0% {
+    transform: scale(calc(1 + 0.9 * var(--spell-charge, 0)));
+  }
+  40% {
+    transform: scale(calc(1.45 + 0.9 * var(--spell-charge, 0)));
+  }
+  100% {
+    transform: scale(calc(1 + 0.9 * var(--spell-charge, 0)));
+  }
+}
+.well-pulse-ring {
+  position: fixed;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(var(--cursor-glow, 180, 180, 255), 0.6);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+}
+/* Concentric rings cast by the PULSE incantation. */
+.incantation-ring {
+  position: fixed;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid rgba(var(--cursor-glow), 0.7);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+  z-index: var(--z-cursor-ring);
+}
+/* Falling pieces cast by CONFETTI / PARTY / SNOW. Size, colour and motion are
+   set inline by the confetti effect; this is just the shared shell. */
+.confetti-piece {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-fireworks);
+  will-change: transform, opacity;
+}
+/* Full-viewport flash wash (SUDO / GLOW / STORM). Colour + blend set inline. */
+.screen-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-theme-flash);
+  opacity: 0;
+  will-change: opacity;
+}
+/* Lightning bolt (BOLT / STORM) — full-viewport SVG; the bolt geometry is set
+   inline, this adds the glow. */
+.lightning {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: var(--z-fireworks);
+  filter: drop-shadow(0 0 6px rgba(220, 232, 255, 0.85));
+}
+/* Light streaks (COMET / WARP / GUST / WISH). Geometry + gradient set inline. */
+.streak {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-fireworks);
+  border-radius: 999px;
+  will-change: transform, opacity;
+}
+/* Orbiting motes (ORBIT). Size, colour and motion set inline. */
+.orbit-mote {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-fireworks);
+  border-radius: 50%;
+  will-change: transform, opacity;
+}
+@keyframes cursor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes cursor-wobble {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  33% {
+    transform: scale(1.06, 0.95);
+  }
+  66% {
+    transform: scale(0.95, 1.06);
+  }
+}
+@keyframes cursor-ripple {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+}
+
+/* ── Cursor Idle Animations ── */
+@keyframes cursor-idle-blink {
+  0%,
+  30%,
+  100% {
+    opacity: 1;
+  }
+  15% {
+    opacity: 0;
+  }
+}
+#cursor.idle-blink {
+  animation: cursor-idle-blink 4s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.15);
+  }
+}
+#cursor-ring.idle-breathe {
+  animation: cursor-idle-breathe 4s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-coin-spin-ring {
+  0% {
+    transform: perspective(100px) rotateY(0deg);
+  }
+  100% {
+    transform: perspective(100px) rotateY(360deg);
+  }
+}
+#cursor-ring.idle-coin-spin {
+  animation: cursor-idle-coin-spin-ring 0.6s linear infinite;
+}
+
+@keyframes cursor-idle-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(3px, -3px);
+  }
+  50% {
+    transform: translate(0, -5px);
+  }
+  75% {
+    transform: translate(-3px, -3px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+#cursor.idle-drift {
+  animation: cursor-idle-drift 6s ease-in-out infinite;
+}
+#cursor-ring.idle-drift {
+  animation: cursor-idle-drift 6s ease-in-out infinite;
+  animation-delay: -1.5s;
+}
+
+/* Fidget spinner: ring becomes one of three lobes orbiting the dot
+   (the bearing) at radius 18px. Two box-shadow copies render the
+   other lobes in the element's local frame, so a single rotate()
+   spins the tri-lobe silhouette around the cursor. Main lobe sits
+   at (18, 0); shadow for lobe at angle φ is (18·cos φ − 18, 18·sin φ).
+   φ = 120°: (−27, 15.59). φ = 240°: (−27, −15.59). */
+@keyframes cursor-idle-fidget-spinner-intro {
+  0% {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border-color: rgba(var(--cursor-glow), 0.5);
+    transform: translate(0, 0);
+    box-shadow:
+      0 0 0 rgba(var(--cursor-glow), 0),
+      0 0 0 rgba(var(--cursor-glow), 0);
+  }
+  100% {
+    width: 14px;
+    height: 14px;
+    background: rgba(var(--cursor-glow), 0.5);
+    border-color: transparent;
+    transform: translate(18px, 0);
+    box-shadow:
+      -27px 15.59px 0 rgba(var(--cursor-glow), 0.5),
+      -27px -15.59px 0 rgba(var(--cursor-glow), 0.5);
+  }
+}
+#cursor-ring.idle-fidget-spinner-intro {
+  animation: cursor-idle-fidget-spinner-intro 0.5s ease-in forwards;
+}
+
+@keyframes cursor-idle-fidget-spinner {
+  0% {
+    transform: rotate(0deg) translate(18px, 0);
+  }
+  100% {
+    transform: rotate(360deg) translate(18px, 0);
+  }
+}
+#cursor-ring.idle-fidget-spinner {
+  width: 14px;
+  height: 14px;
+  background: rgba(var(--cursor-glow), 0.5);
+  border-color: transparent;
+  box-shadow:
+    -27px 15.59px 0 rgba(var(--cursor-glow), 0.5),
+    -27px -15.59px 0 rgba(var(--cursor-glow), 0.5);
+  animation: cursor-idle-fidget-spinner 0.9s linear infinite;
+}
+
+@keyframes cursor-idle-fidget-spinner-outro {
+  0% {
+    width: 14px;
+    height: 14px;
+    background: rgba(var(--cursor-glow), 0.5);
+    border-color: transparent;
+    transform: translate(18px, 0);
+    box-shadow:
+      -27px 15.59px 0 rgba(var(--cursor-glow), 0.5),
+      -27px -15.59px 0 rgba(var(--cursor-glow), 0.5);
+  }
+  100% {
+    width: 36px;
+    height: 36px;
+    background: transparent;
+    border-color: rgba(var(--cursor-glow), 0.5);
+    transform: translate(0, 0);
+    box-shadow:
+      0 0 0 rgba(var(--cursor-glow), 0),
+      0 0 0 rgba(var(--cursor-glow), 0);
+  }
+}
+#cursor-ring.idle-fidget-spinner-outro {
+  animation: cursor-idle-fidget-spinner-outro 0.3s ease-out forwards;
+}
+
+@keyframes cursor-idle-hula-hoop-ring {
+  0% {
+    transform: translate(8px, 0) scale(1.06);
+  }
+  8% {
+    transform: translate(7px, 4px) scale(1.03);
+  }
+  17% {
+    transform: translate(4px, 7px) scale(0.97);
+  }
+  25% {
+    transform: translate(0, 8px) scale(0.94);
+  }
+  33% {
+    transform: translate(-4px, 7px) scale(0.97);
+  }
+  42% {
+    transform: translate(-7px, 4px) scale(1.03);
+  }
+  50% {
+    transform: translate(-8px, 0) scale(1.06);
+  }
+  58% {
+    transform: translate(-7px, -4px) scale(1.03);
+  }
+  67% {
+    transform: translate(-4px, -7px) scale(0.97);
+  }
+  75% {
+    transform: translate(0, -8px) scale(0.94);
+  }
+  83% {
+    transform: translate(4px, -7px) scale(0.97);
+  }
+  92% {
+    transform: translate(7px, -4px) scale(1.03);
+  }
+  100% {
+    transform: translate(8px, 0) scale(1.06);
+  }
+}
+@keyframes cursor-idle-hula-hoop-dot {
+  0% {
+    transform: translate(-1.5px, 0);
+  }
+  25% {
+    transform: translate(0, -1.5px);
+  }
+  50% {
+    transform: translate(1.5px, 0);
+  }
+  75% {
+    transform: translate(0, 1.5px);
+  }
+  100% {
+    transform: translate(-1.5px, 0);
+  }
+}
+#cursor-ring.idle-hula-hoop {
+  animation: cursor-idle-hula-hoop-ring 0.8s linear infinite;
+}
+#cursor.idle-hula-hoop {
+  animation: cursor-idle-hula-hoop-dot 0.8s ease-in-out infinite;
+}
+
+/* ── String-based idle animations (pendulum, metronome, yo-yo) ──
+
+   All three collapse the ring into a vertical rod and attach the dot
+   at its free tip. They share three invariants so hover/press size
+   changes stay aligned automatically:
+
+     1. Ring scaleY determines rod length. Default is --rod-scale-y
+        (1.8 for pendulum & metronome; yo-yo overrides per keyframe).
+     2. Rod tip sits at ring_size · (scaleY − 0.5) from the hinge pivot.
+        --rod-tip encodes this so the dot's translateY matches.
+     3. Dot's transform-origin is --cursor-pivot-top (ring top, for rods
+        hanging below the cursor) or --cursor-pivot-bottom (for rods
+        rising above), both defined on :root.
+
+   To add a new rod-style animation: set --rod-tip on the dot rule,
+   choose a pivot, and write paired keyframes. No pixel math required. */
+
+#cursor-ring[class*="idle-pendulum"],
+#cursor-ring[class*="idle-metronome"] {
+  border-radius: 2px;
+}
+#cursor-ring[class*="idle-pendulum"],
+#cursor[class*="idle-pendulum"],
+#cursor-ring[class*="idle-metronome"],
+#cursor[class*="idle-metronome"] {
+  --rod-scale-y: 1.8;
+}
+#cursor-ring[class*="idle-pendulum"] {
+  transform-origin: center top;
+}
+#cursor-ring[class*="idle-metronome"] {
+  transform-origin: center bottom;
+}
+#cursor[class*="idle-pendulum"] {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5));
+  transform-origin: 50% var(--cursor-pivot-top);
+}
+#cursor[class*="idle-metronome"] {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5) * -1);
+  transform-origin: 50% var(--cursor-pivot-bottom);
+}
+
+/* Metronome: rod ticks back and forth above the cursor at a fixed
+   tempo with a brief pause at each extreme. The weight dot rides
+   the tip of the rod (rising upward via the negative --rod-tip). */
+@keyframes cursor-idle-metronome-intro-ring {
+  0% {
+    transform: rotate(0deg) scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+  100% {
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
+    border-radius: 2px;
+  }
+}
+@keyframes cursor-idle-metronome-intro-dot {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: rotate(-18deg) translateY(var(--rod-tip));
+  }
+}
+#cursor-ring.idle-metronome-intro {
+  animation: cursor-idle-metronome-intro-ring 0.4s ease-out forwards;
+}
+#cursor.idle-metronome-intro {
+  animation: cursor-idle-metronome-intro-dot 0.4s ease-out forwards;
+}
+
+@keyframes cursor-idle-metronome-ring {
+  0%,
+  8% {
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
+  }
+  50%,
+  58% {
+    transform: rotate(18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
+  }
+  100% {
+    transform: rotate(-18deg) scaleX(0.1) scaleY(var(--rod-scale-y));
+  }
+}
+@keyframes cursor-idle-metronome-dot {
+  0%,
+  8% {
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1);
+  }
+  4% {
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1.4);
+  }
+  50%,
+  58% {
+    transform: rotate(18deg) translateY(var(--rod-tip)) scale(1);
+  }
+  54% {
+    transform: rotate(18deg) translateY(var(--rod-tip)) scale(1.4);
+  }
+  100% {
+    transform: rotate(-18deg) translateY(var(--rod-tip)) scale(1);
+  }
+}
+#cursor-ring.idle-metronome {
+  animation: cursor-idle-metronome-ring 1.2s linear infinite;
+}
+#cursor.idle-metronome {
+  animation: cursor-idle-metronome-dot 1.2s linear infinite;
+}
+
+@keyframes cursor-idle-metronome-outro-ring {
+  0% {
+    transform: scaleX(0.1) scaleY(var(--rod-scale-y));
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+}
+@keyframes cursor-idle-metronome-outro-dot {
+  0% {
+    transform: translateY(var(--rod-tip)) scale(1);
+  }
+  100% {
+    transform: translateY(0) scale(1);
+  }
+}
+#cursor-ring.idle-metronome-outro {
+  animation: cursor-idle-metronome-outro-ring 0.3s ease-out forwards;
+}
+#cursor.idle-metronome-outro {
+  animation: cursor-idle-metronome-outro-dot 0.3s ease-out forwards;
+}
+
+@keyframes cursor-idle-orbit {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.08);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+#cursor-ring.idle-orbit {
+  animation: cursor-idle-orbit 8s ease-in-out infinite;
+}
+
+/* Pendulum: rod hangs from the cursor pivot and swings ±25°; dot
+   rides at the rod's tip on the same arc. */
+@keyframes cursor-idle-pendulum-intro-ring {
+  0% {
+    transform: rotate(0deg) scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+  100% {
+    transform: rotate(-25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
+    border-radius: 2px;
+  }
+}
+@keyframes cursor-idle-pendulum-intro-dot {
+  0% {
+    transform: translateY(0);
+  }
+  100% {
+    transform: rotate(-25deg) translateY(var(--rod-tip));
+  }
+}
+#cursor-ring.idle-pendulum-intro {
+  animation: cursor-idle-pendulum-intro-ring 0.4s ease-out forwards;
+}
+#cursor.idle-pendulum-intro {
+  animation: cursor-idle-pendulum-intro-dot 0.4s ease-out forwards;
+}
+
+@keyframes cursor-idle-pendulum-ring {
+  0%,
+  100% {
+    transform: rotate(-25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
+  }
+  50% {
+    transform: rotate(25deg) scaleX(0.08) scaleY(var(--rod-scale-y));
+  }
+}
+@keyframes cursor-idle-pendulum-dot {
+  0%,
+  100% {
+    transform: rotate(-25deg) translateY(var(--rod-tip));
+  }
+  50% {
+    transform: rotate(25deg) translateY(var(--rod-tip));
+  }
+}
+#cursor-ring.idle-pendulum {
+  animation: cursor-idle-pendulum-ring 2.6s ease-in-out infinite;
+}
+#cursor.idle-pendulum {
+  animation: cursor-idle-pendulum-dot 2.6s ease-in-out infinite;
+}
+
+@keyframes cursor-idle-pendulum-outro-ring {
+  0% {
+    transform: scaleX(0.08) scaleY(var(--rod-scale-y));
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+}
+@keyframes cursor-idle-pendulum-outro-dot {
+  0% {
+    transform: translateY(var(--rod-tip));
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+#cursor-ring.idle-pendulum-outro {
+  animation: cursor-idle-pendulum-outro-ring 0.3s ease-out forwards;
+}
+#cursor.idle-pendulum-outro {
+  animation: cursor-idle-pendulum-outro-dot 0.3s ease-out forwards;
+}
+
+/* Yo-yo: ring acts like a rope cut under tension, then winds up to the
+   hand — string and dot end at the wound-at-rest state so the main loop
+   can begin its first throw. The dot stays put (translateY 0) for the
+   entire intro; the ring does all the motion. Invariant across every
+   keyframe of the main loop: translateY = 36·scaleY − 18. */
+@keyframes cursor-idle-yo-yo-intro {
+  0% {
+    transform: scaleX(1) scaleY(1) rotate(0deg);
+    border-radius: 50%;
+  }
+  10% {
+    transform: scaleX(1.08) scaleY(0.88) rotate(0deg);
+    border-radius: 45%;
+  }
+  25% {
+    transform: scaleX(0.78) scaleY(1.3) rotate(14deg);
+    border-radius: 35%;
+  }
+  40% {
+    transform: scaleX(0.55) scaleY(1.6) rotate(-10deg);
+    border-radius: 25%;
+  }
+  55% {
+    transform: scaleX(0.32) scaleY(1.74) rotate(6deg);
+    border-radius: 15%;
+  }
+  70% {
+    transform: scaleX(0.16) scaleY(1.3) rotate(-3deg);
+    border-radius: 8%;
+  }
+  85% {
+    transform: scaleX(0.07) scaleY(0.8) rotate(1deg);
+    border-radius: 4px;
+  }
+  100% {
+    transform: scaleX(0.04) scaleY(0.5) rotate(0deg);
+    border-radius: 2px;
+  }
+}
+#cursor-ring.idle-yo-yo-intro {
+  transform-origin: center top;
+  animation: cursor-idle-yo-yo-intro 0.7s cubic-bezier(0.34, 1.4, 0.64, 1)
+    forwards;
+}
+
+/* The yo-yo's scaleY timeline lives on :root as a single keyframes
+   block; :has() activates it only while the ring is animating. Ring
+   and dot then read --rod-scale-y and --rod-tip, keeping the string
+   bottom and dot center paired without duplicated timelines. */
+:root:has(#cursor.idle-yo-yo) {
+  animation: cursor-idle-yo-yo-rod 1.6s linear infinite;
+}
+@keyframes cursor-idle-yo-yo-rod {
+  0% {
+    --rod-scale-y: 0.5;
+    animation-timing-function: cubic-bezier(0.55, 0.05, 0.85, 0.4);
+  }
+  32% {
+    --rod-scale-y: 2.67;
+    animation-timing-function: cubic-bezier(0.2, 0, 0.3, 1);
+  }
+  37% {
+    --rod-scale-y: 2.5;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.5, 1);
+  }
+  42% {
+    --rod-scale-y: 2.58;
+    animation-timing-function: cubic-bezier(0.12, 0.55, 0.45, 1);
+  }
+  80% {
+    --rod-scale-y: 0.5;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.6, 1);
+  }
+  100% {
+    --rod-scale-y: 0.5;
+  }
+}
+/* Ring animates its own transform (scaleX narrows as the string goes
+   taut); scaleY reads the shared --rod-scale-y. Dot carries the bounce
+   squash on keyframe 37%/42% and reads --rod-tip for position. */
+@keyframes cursor-idle-yo-yo-string {
+  0%,
+  32%,
+  42%,
+  80%,
+  100% {
+    transform: scaleX(0.04) scaleY(var(--rod-scale-y));
+  }
+  37% {
+    transform: scaleX(0.06) scaleY(var(--rod-scale-y));
+  }
+}
+@keyframes cursor-idle-yo-yo-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(var(--rod-tip));
+  }
+  37% {
+    transform: translateY(var(--rod-tip)) scaleX(1.3) scaleY(0.72);
+  }
+  42% {
+    transform: translateY(var(--rod-tip)) scaleX(1) scaleY(1);
+  }
+}
+#cursor-ring.idle-yo-yo {
+  transform-origin: center top;
+  border-radius: 2px;
+  animation: cursor-idle-yo-yo-string 1.6s linear infinite;
+}
+#cursor.idle-yo-yo {
+  --rod-tip: calc(var(--cursor-ring-size) * (var(--rod-scale-y) - 0.5));
+  animation: cursor-idle-yo-yo-dot 1.6s linear infinite;
+}
+
+@keyframes cursor-idle-yo-yo-outro {
+  0% {
+    transform: scaleX(0.04) scaleY(0.5);
+    border-radius: 2px;
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    border-radius: 50%;
+  }
+}
+#cursor-ring.idle-yo-yo-outro {
+  transform-origin: center top;
+  animation: cursor-idle-yo-yo-outro 0.3s ease-out forwards;
+}
+
+#cursor.visible,
+#cursor-ring.visible {
+  opacity: 1;
+}
+@media (hover: none), (pointer: coarse) {
+  #cursor,
+  #cursor-ring {
+    display: none !important;
+  }
+  body {
+    cursor: auto;
+  }
+}

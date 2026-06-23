@@ -1,0 +1,472 @@
+/* ── VHS Theme ── */
+
+/* Wipe — vertical-roll static.  The rolling animation runs continuously
+   so the static keeps moving for the entire cover+reveal window; without
+   `infinite`, the keyframe finishes early and the wipe freezes mid-fade. */
+.vhs-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.9) 0,
+      rgba(0, 0, 0, 0.9) 3px,
+      rgba(255, 255, 255, 0.7) 3px,
+      rgba(255, 255, 255, 0.7) 4px,
+      rgba(0, 0, 0, 0.9) 4px,
+      rgba(0, 0, 0, 0.9) 7px,
+      rgba(140, 180, 220, 0.45) 7px,
+      rgba(140, 180, 220, 0.45) 8px,
+      rgba(255, 80, 220, 0.25) 8px,
+      rgba(255, 80, 220, 0.25) 9px,
+      rgba(80, 255, 220, 0.25) 9px,
+      rgba(80, 255, 220, 0.25) 10px
+    ),
+    rgba(40, 50, 70, 0.7);
+  background-size: 100% 24%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s linear;
+  animation: vhs-wipe-roll 0.4s linear infinite paused;
+}
+.vhs-wipe.active {
+  opacity: 1;
+  animation-play-state: running;
+}
+@keyframes vhs-wipe-roll {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 100%;
+  }
+}
+.vhs-wipe.eject {
+  background: linear-gradient(
+    to bottom,
+    rgba(40, 50, 70, 0.6) 0%,
+    rgba(0, 0, 0, 0.97) 48%,
+    rgba(0, 0, 0, 0.97) 52%,
+    rgba(40, 50, 70, 0.6) 100%
+  );
+  background-size: 100% 100%;
+  animation: vhs-wipe-eject 0.5s ease-in-out forwards;
+}
+@keyframes vhs-wipe-eject {
+  from {
+    background-size: 100% 100%;
+  }
+  to {
+    background-size: 100% 1px;
+    background-position-y: 50%;
+  }
+}
+
+/* ── VHS — visual theme (only when active theme) ── */
+
+body[data-active-theme="vhs"] {
+  --vhs-phosphor: #b4f0b4;
+  --vhs-phosphor-rgb: 180, 240, 180;
+  --vhs-tape: #708ca0;
+  --theme-primary: var(--vhs-phosphor);
+  --theme-glow: 220, 255, 220;
+}
+
+body[data-active-theme="vhs"] #bg-canvas {
+  filter: saturate(0.7) contrast(1.15) brightness(0.88);
+}
+
+/* Persistent scanline overlay — always on while VHS is active.  Bright
+   line + dark gap + faint cyan tint per band; the slow vertical drift
+   keeps the lines from looking pasted on, exactly like a CRT held up
+   against a real signal. */
+body[data-active-theme="vhs"]::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.32) 0,
+    rgba(0, 0, 0, 0.32) 2px,
+    rgba(120, 200, 180, 0.05) 2px,
+    rgba(120, 200, 180, 0.05) 3px,
+    transparent 3px,
+    transparent 4px
+  );
+  animation: vhs-scanline-drift 4s linear infinite;
+}
+@keyframes vhs-scanline-drift {
+  from {
+    background-position-y: 0;
+  }
+  to {
+    background-position-y: 4px;
+  }
+}
+
+/* CRT vignette — corners darken slightly so the page reads as a curved
+   tube.  Sits above scanlines (z 2) and below page content. */
+body[data-active-theme="vhs"]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 50%,
+    rgba(0, 0, 0, 0.35) 90%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Static noise overlay — full-screen SVG turbulence at low alpha.  The
+   slow position drift gives it the constant boil that real tape hiss
+   has, without the cost of a JS-driven canvas redraw every frame. */
+body[data-active-theme="vhs"] .vhs-noise {
+  position: fixed;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  pointer-events: none;
+  z-index: 3;
+  opacity: 0.18;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.7 0 0 0 0 0.85 0 0 0 0 0.75 0 0 0 0.55 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+  animation: vhs-noise-drift 0.6s steps(6) infinite;
+  mix-blend-mode: screen;
+}
+@keyframes vhs-noise-drift {
+  0% {
+    transform: translate(0, 0);
+  }
+  20% {
+    transform: translate(-3%, 2%);
+  }
+  40% {
+    transform: translate(2%, -2%);
+  }
+  60% {
+    transform: translate(-2%, -1%);
+  }
+  80% {
+    transform: translate(1%, 3%);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+/* Iconic VHS rolling tracking band — drifts down the screen on a long
+   cycle and *distorts* the content directly beneath it using
+   backdrop-filter (hue-rotate + saturate + brightness + blur), which is
+   what reads as the actual tearing on real worn tape.  ::before and
+   ::after are the tear's leading/trailing chroma fringes.
+   z 4 sits above the noise (z 3). */
+body[data-active-theme="vhs"] .vhs-tracking-band {
+  position: fixed;
+  left: 0;
+  right: 0;
+  height: 30px;
+  pointer-events: none;
+  z-index: 4;
+  top: -10%;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 255, 255, 0.5) 0,
+      rgba(255, 255, 255, 0.5) 1px,
+      rgba(0, 0, 0, 0.6) 1px,
+      rgba(0, 0, 0, 0.6) 2px,
+      rgba(160, 220, 240, 0.4) 2px,
+      rgba(160, 220, 240, 0.4) 3px
+    ),
+    linear-gradient(
+      to bottom,
+      rgba(255, 80, 220, 0.2) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(80, 255, 220, 0.2) 100%
+    );
+  backdrop-filter: hue-rotate(25deg) saturate(0.35) brightness(1.45)
+    contrast(1.6) blur(1.4px);
+  -webkit-backdrop-filter: hue-rotate(25deg) saturate(0.35) brightness(1.45)
+    contrast(1.6) blur(1.4px);
+  animation: vhs-tracking-roll 7s linear infinite;
+}
+/* Leading edge — the bright chromatic tear that peels away from the
+   band's top.  Strong hue rotation makes the underlying pixels
+   visibly shift colour the instant the band reaches them. */
+body[data-active-theme="vhs"] .vhs-tracking-band::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -5px;
+  height: 5px;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 80, 220, 0.55) 0%,
+    rgba(255, 80, 220, 0.2) 100%
+  );
+  backdrop-filter: hue-rotate(120deg) saturate(2.4) brightness(1.25) blur(0.6px);
+  -webkit-backdrop-filter: hue-rotate(120deg) saturate(2.4) brightness(1.25)
+    blur(0.6px);
+}
+/* Trailing edge — the darker, desaturated drag that remains as the
+   band passes by.  Reads as content "snapping back" after the tear. */
+body[data-active-theme="vhs"] .vhs-tracking-band::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -4px;
+  height: 4px;
+  background: linear-gradient(
+    to bottom,
+    rgba(80, 255, 220, 0.35) 0%,
+    transparent 100%
+  );
+  backdrop-filter: hue-rotate(-40deg) saturate(0.5) brightness(0.85) blur(0.8px);
+  -webkit-backdrop-filter: hue-rotate(-40deg) saturate(0.5) brightness(0.85)
+    blur(0.8px);
+}
+@keyframes vhs-tracking-roll {
+  0% {
+    top: -10%;
+    opacity: 0;
+  }
+  4% {
+    opacity: 1;
+  }
+  92% {
+    opacity: 1;
+  }
+  100% {
+    top: 110%;
+    opacity: 0;
+  }
+}
+
+/* Cursor — CRT pixel with chromatic edges + phosphor bloom */
+body[data-active-theme="vhs"] #cursor {
+  background: rgba(220, 245, 220, 0.95);
+  box-shadow:
+    -1px 0 0 rgba(255, 80, 220, 0.55),
+    1px 0 0 rgba(80, 255, 220, 0.55),
+    0 0 8px rgba(var(--theme-glow), 0.45);
+  width: 8px;
+  height: 8px;
+}
+body[data-active-theme="vhs"] #cursor-ring {
+  border-color: rgba(160, 200, 160, 0.35);
+  border-width: 1px;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 3px
+  );
+}
+
+/* Cloud SVG — slight tint and brightness drop (tape decay feel) */
+body.vhs .cloud-svg {
+  filter: saturate(0.5) hue-rotate(70deg) brightness(0.85);
+}
+
+/* Hero — chromatic offset on text.  Doubled-up shadows produce the
+   characteristic NTSC channel split — magenta to the left, cyan to the
+   right — with a soft phosphor halo behind the white core. */
+body[data-active-theme="vhs"] .hero-title {
+  color: #e0f0e0;
+  text-shadow:
+    -2.5px 0 0 rgba(255, 60, 200, 0.7),
+    -1px 0 0 rgba(255, 120, 220, 0.4),
+    2.5px 0 0 rgba(60, 255, 220, 0.7),
+    1px 0 0 rgba(120, 255, 220, 0.4),
+    0 0 14px rgba(var(--vhs-phosphor-rgb), 0.35);
+  -webkit-text-fill-color: #e0f0e0;
+  background: none;
+}
+body[data-active-theme="vhs"] .hero-tag {
+  color: rgba(190, 245, 190, 0.9);
+  text-shadow:
+    -1.5px 0 0 rgba(255, 60, 200, 0.55),
+    1.5px 0 0 rgba(60, 255, 220, 0.55),
+    0 0 8px rgba(var(--vhs-phosphor-rgb), 0.3);
+}
+body[data-active-theme="vhs"] .hero-sub {
+  color: rgba(210, 230, 210, 0.9);
+  text-shadow:
+    -0.8px 0 0 rgba(255, 60, 200, 0.3),
+    0.8px 0 0 rgba(60, 255, 220, 0.3);
+}
+
+/* Buttons — tape-deck style with phosphor glow */
+body[data-active-theme="vhs"] .btn-primary {
+  background: linear-gradient(180deg, #2a3a3a 0%, #1a2a2a 100%);
+  color: var(--vhs-phosphor);
+  border: 1px solid rgba(var(--vhs-phosphor-rgb), 0.4);
+  box-shadow: inset 0 0 8px rgba(var(--vhs-phosphor-rgb), 0.15);
+}
+body[data-active-theme="vhs"] .btn-outline {
+  border-color: rgba(var(--vhs-phosphor-rgb), 0.55);
+  color: var(--vhs-phosphor);
+}
+
+/* Service cards — tape labels.  Class is applied by enableCardEffects. */
+body.vhs .vhs-card {
+  background: linear-gradient(
+    180deg,
+    rgba(60, 70, 80, 0.85) 0%,
+    rgba(40, 50, 60, 0.85) 100%
+  );
+  border: 1px solid rgba(var(--vhs-phosphor-rgb), 0.25);
+  position: relative;
+}
+body.vhs .vhs-card::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 14px;
+  background: rgba(var(--vhs-phosphor-rgb), 0.12);
+  border: 1px dashed rgba(var(--vhs-phosphor-rgb), 0.3);
+}
+
+/* Nav CTA, contact, footer */
+body[data-active-theme="vhs"] .nav-cta {
+  border-color: rgba(var(--vhs-phosphor-rgb), 0.5);
+  text-shadow:
+    -1px 0 0 rgba(255, 80, 220, 0.4),
+    1px 0 0 rgba(80, 255, 220, 0.4);
+}
+body[data-active-theme="vhs"] .nav-cta:hover {
+  background: var(--vhs-phosphor);
+  color: #0a1a0a;
+  text-shadow: none;
+}
+body[data-active-theme="vhs"] #contact {
+  border-color: rgba(var(--vhs-phosphor-rgb), 0.25);
+}
+body[data-active-theme="vhs"] footer {
+  border-top-color: rgba(var(--vhs-phosphor-rgb), 0.2);
+}
+
+/* Light-appearance VHS: keep chromatic edges, reduce filter aggression */
+body.light-appearance[data-active-theme="vhs"] {
+  --vhs-phosphor: #4ca84c;
+  --vhs-phosphor-rgb: 76, 168, 76;
+}
+body.light-appearance[data-active-theme="vhs"] #bg-canvas {
+  filter: saturate(0.85) contrast(1.05);
+}
+body.light-appearance[data-active-theme="vhs"] .hero-title {
+  color: #1a3a1a;
+  -webkit-text-fill-color: #1a3a1a;
+  text-shadow:
+    -1.5px 0 0 rgba(200, 60, 170, 0.6),
+    1.5px 0 0 rgba(60, 200, 170, 0.6);
+}
+
+/* Progressive indicator — buildup scanlines.  Opacity ramps via a custom
+   property as force grows.  Lives at z 50 (theme buildup range). */
+.vhs-scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-theme-buildup);
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent 2px,
+    rgba(0, 0, 0, 0.18) 2px,
+    rgba(0, 0, 0, 0.18) 3px
+  );
+  opacity: var(--vhs-scanline-opacity, 0);
+  transition: opacity 0.2s linear;
+}
+
+/* One-shot static interruption flash. */
+.vhs-static-flash {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: var(--z-theme-buildup-flash);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.6) 0,
+      rgba(0, 0, 0, 0.6) 1px,
+      rgba(255, 255, 255, 0.4) 1px,
+      rgba(255, 255, 255, 0.4) 2px
+    ),
+    rgba(60, 70, 90, 0.4);
+  opacity: 0;
+  animation: vhs-static-flash 0.1s linear forwards;
+}
+@keyframes vhs-static-flash {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Click-glitch one-shot.  Sized + positioned by JS at the click point. */
+.vhs-glitch-rect {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-theme-click-glitch);
+  background: rgba(var(--vhs-phosphor-rgb), 0.18);
+  border: 1px solid rgba(255, 80, 220, 0.45);
+  animation: vhs-glitch-snap 50ms linear forwards;
+}
+@keyframes vhs-glitch-snap {
+  0% {
+    transform: translateX(6px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+}
+
+/* Tracking-drift wobble — applied to .page via JS-driven custom property.
+   Uses the standalone `translate` property so it composes with upside-down's
+   `transform: scaleY(-1)` instead of clobbering it. */
+body[data-active-theme="vhs"] .page {
+  translate: var(--vhs-drift-x, 0) 0;
+  transition: translate 60ms linear;
+}
+
+/* Color-cast filter ramps via custom property as force grows.  Indicator
+   stages 2/4 set --vhs-buildup-cast on body to drive the effect. */
+body.vhs[data-vhs-buildup="true"] #bg-canvas {
+  filter: saturate(var(--vhs-buildup-saturate, 1))
+    sepia(var(--vhs-buildup-sepia, 0)) contrast(1.1) brightness(0.92);
+}
+
+/* Reduced motion — keep the static look (scanlines, vignette, chromatic
+   text) but suppress the animated overlays that move continuously.  The
+   theme still reads as VHS without the rolling tracking band, the noise
+   boil, or the scanline drift. */
+@media (prefers-reduced-motion: reduce) {
+  body[data-active-theme="vhs"]::before {
+    animation: none;
+  }
+  body[data-active-theme="vhs"] .vhs-noise,
+  body[data-active-theme="vhs"] .vhs-tracking-band {
+    display: none;
+  }
+}

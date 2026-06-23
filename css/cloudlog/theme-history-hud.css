@@ -1,0 +1,269 @@
+/* ── Theme History HUD ── */
+/* Two stacked pills: a small handle tab on top (with a chevron), and a
+   wider track pill below (with theme icons).  The handle tab looks
+   identical in tucked and expanded states — the track just shows/hides
+   beneath it.  That way the chevron's visual position is always "a small
+   tab hanging off the nav bar", never embedded in the track. */
+
+.theme-history-hud {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  translate: -50% -4px;
+  margin-top: 8px;
+  opacity: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: auto;
+  transition:
+    opacity 0.5s ease-out,
+    translate 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.theme-history-hud.ready {
+  opacity: 1;
+  translate: -50% 0;
+}
+
+/* ── Handle pill ── */
+/* Small floating tab at the top of the HUD column.  A single chevron
+   button rotates with the HUD's tucked/expanded state. */
+.thh-handle-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background: rgba(10, 18, 32, 0.5);
+  border: 1px solid rgba(120, 160, 220, 0.14);
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+.theme-history-hud:not(.tucked) .thh-handle-slot {
+  background: rgba(10, 18, 32, 0.6);
+  border-color: rgba(120, 160, 220, 0.22);
+}
+.thh-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 12px;
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(180, 210, 240, 0.55);
+  transition: color 0.2s ease;
+}
+.thh-handle:hover,
+.thh-handle:focus-visible {
+  color: rgba(200, 230, 255, 0.95);
+  outline: none;
+}
+.thh-handle svg {
+  width: 12px;
+  height: 6px;
+  transition: transform 0.25s ease;
+}
+/* Chevron points down when tucked (invitation to expand), and flips up
+   when the HUD is open (invitation to tuck). */
+.theme-history-hud:not(.tucked) .thh-handle svg {
+  transform: rotate(180deg);
+}
+
+/* ── Track pill ── */
+/* Separate pill below the handle, holding the theme icons and labels.
+   Hidden entirely when tucked. */
+.thh-track {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  max-width: calc(100vw - 1rem);
+  background: rgba(10, 18, 32, 0.55);
+  border: 1px solid rgba(120, 160, 220, 0.18);
+  border-radius: 100px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition:
+    padding 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.3s ease,
+    border-color 0.3s ease;
+}
+.theme-history-hud.expanded .thh-track {
+  padding: 8px 14px;
+  background: rgba(10, 18, 32, 0.82);
+  border-color: rgba(120, 160, 220, 0.32);
+}
+.theme-history-hud.tucked .thh-track {
+  display: none;
+}
+
+.thh-slot {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px;
+  margin: 0;
+  /* Match the label's font-size so `1ch` in --thh-slot-width resolves at
+     label scale — otherwise ch inherits the 16px body size and slots are
+     roughly 2x wider than needed. */
+  font-size: 9px;
+  width: var(--thh-slot-width, 8ch);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  font-family: "DM Mono", monospace;
+  cursor: default;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.thh-slot.discovered {
+  color: var(--theme-color, #7dbfe8);
+}
+.thh-slot.discovered:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-1px);
+}
+.thh-slot.discovered:focus-visible {
+  outline: 1px solid var(--theme-color, #7dbfe8);
+  outline-offset: 2px;
+}
+.thh-slot.active::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--theme-color, #7dbfe8);
+  box-shadow: 0 0 6px 1px var(--theme-color, #7dbfe8);
+  translate: -50% 0;
+}
+
+.thh-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  filter: drop-shadow(0 0 4px currentColor);
+}
+.thh-slot.undiscovered .thh-icon {
+  filter: none;
+  opacity: 0.35;
+}
+
+.thh-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    max-height 0.3s ease,
+    opacity 0.25s ease 0.05s;
+}
+.theme-history-hud.expanded .thh-label {
+  max-height: 14px;
+  opacity: 0.9;
+}
+
+/* Active-theme pulse — soft halo in the theme's accent color */
+@keyframes thh-pulse {
+  0% {
+    box-shadow: 0 0 0 0 var(--theme-color, #7dbfe8);
+    opacity: 0.6;
+  }
+  100% {
+    box-shadow: 0 0 0 14px transparent;
+    opacity: 0;
+  }
+}
+.thh-stats-tip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  translate: -50% 0;
+  white-space: nowrap;
+  padding: 3px 7px;
+  background: rgba(10, 18, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+  z-index: 1;
+}
+.thh-slot.showing-stats .thh-stats-tip {
+  display: block;
+}
+.thh-slot.pulse .thh-icon {
+  animation: thh-pulse 1.2s ease-out;
+}
+
+/* Newly discovered — periodic sheen sweep for the first few seconds.
+   Uses the same pattern as card-shimmer: linear easing + full off-screen
+   sweep per cycle so there's no visible pause at either edge when looping. */
+@keyframes thh-shimmer {
+  0% {
+    background-position: 150% 0;
+  }
+  100% {
+    background-position: -150% 0;
+  }
+}
+.thh-slot.just-discovered::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  pointer-events: none;
+  background: linear-gradient(
+    110deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 60%
+  );
+  background-size: 400% 100%;
+  animation: thh-shimmer 2.2s linear infinite;
+}
+
+/* Reduced motion — keep HUD functional but drop shimmer + pulse */
+@media (prefers-reduced-motion: reduce) {
+  .thh-slot.just-discovered::before,
+  .thh-slot.pulse .thh-icon {
+    animation: none;
+  }
+}
+
+/* Narrow viewport — below this, the labelled track would overflow past
+   nav's edges even with all five labels fitting individually (gaps +
+   padding accumulate).  Hide labels, collapse slot width to the icon. */
+@media (max-width: 560px) {
+  .thh-track {
+    gap: 2px;
+  }
+  .thh-slot {
+    width: auto;
+    padding: 3px 6px;
+  }
+  .thh-label {
+    display: none;
+  }
+}

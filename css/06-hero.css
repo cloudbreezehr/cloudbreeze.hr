@@ -1,0 +1,208 @@
+/* HERO */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 2rem;
+  position: relative;
+  min-height: calc(100vh - 120px);
+}
+
+.hero-tag {
+  font-family: "DM Mono", monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--sky-3);
+  margin-bottom: 2rem;
+  opacity: 0;
+  animation: fadeUp 0.9s 0.2s ease forwards;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-tag::before,
+.hero-tag::after {
+  content: "";
+  display: block;
+  width: 28px;
+  height: 1px;
+  background: var(--sky-4);
+  opacity: 0.5;
+}
+
+.hero-title {
+  font-size: clamp(3.2rem, 8vw, 7.5rem);
+  font-weight: 800;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  margin-bottom: 1.8rem;
+  opacity: 0;
+  animation: fadeUp 0.9s 0.4s ease forwards;
+}
+
+.hero-title .line-1 {
+  display: block;
+  color: #fff;
+}
+.hero-title .line-2 {
+  display: block;
+  background: linear-gradient(
+    135deg,
+    var(--sky-2) 0%,
+    var(--sky-4) 50%,
+    var(--sky-3) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  position: relative;
+}
+
+.hero-sub {
+  font-family: "DM Mono", monospace;
+  font-size: 0.88rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.04em;
+  line-height: 1.7;
+  max-width: 420px;
+  margin-bottom: 3rem;
+  opacity: 0;
+  animation: fadeUp 0.9s 0.6s ease forwards;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  opacity: 0;
+  animation: fadeUp 0.9s 0.8s ease forwards;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sky-4), var(--sky-5));
+  color: #fff;
+  text-decoration: none;
+  font-family: "DM Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.9rem 2rem;
+  border-radius: 100px;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.3s,
+    box-shadow 0.3s;
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.35);
+}
+.btn-primary::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, var(--sky-3), var(--sky-4));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.5);
+}
+.btn-primary:hover::before {
+  opacity: 1;
+}
+.btn-primary span {
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Button Click Ripple ── */
+.btn-ripple-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 0;
+}
+.btn-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.btn-ghost {
+  color: rgba(255, 255, 255, 0.55);
+  text-decoration: none;
+  font-family: "DM Mono", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.9rem 1.5rem;
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn-ghost:hover {
+  color: #fff;
+}
+.btn-ghost svg {
+  transition: transform 0.3s;
+}
+.btn-ghost:hover svg {
+  transform: translateX(4px);
+}
+
+/* Floating cloud hero visual */
+.hero-cloud-wrap {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Scroll indicator */
+.scroll-hint {
+  position: absolute;
+  bottom: 2.5rem;
+  left: 50%;
+  translate: -50% 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  animation: fadeUp 1s 1.2s ease forwards;
+}
+.scroll-hint span {
+  font-family: "DM Mono", monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.25);
+}
+.scroll-line {
+  width: 1px;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--theme-glow), 0.6),
+    transparent
+  );
+  animation: scrollPulse 2s ease infinite;
+}
+
+/* On short viewports the vertically-centered hero content reaches the
+   bottom band where this absolutely-positioned cue sits, so it would
+   overlap the hero buttons. Drop the decorative cue there — scrolling is
+   self-evident on a short screen. */
+@media (max-height: 640px) {
+  .scroll-hint {
+    display: none;
+  }
+}

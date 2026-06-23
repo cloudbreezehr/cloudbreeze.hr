@@ -1,0 +1,197 @@
+/* ═══════════════════════════════════════════════════════════════
+   Blocky Theme — "Voxelbreeze"
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Progressive indicator overlays ── */
+.blocky-scanlines {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-effect);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.15) 2px,
+    rgba(0, 0, 0, 0.15) 4px
+  );
+}
+.blocky-grid {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-effect);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background-image:
+    linear-gradient(rgba(var(--theme-glow), 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(var(--theme-glow), 0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+}
+.blocky-static {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-effect);
+  pointer-events: none;
+  opacity: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.03) 0px,
+    rgba(0, 0, 0, 0.05) 1px,
+    rgba(255, 255, 255, 0.02) 2px,
+    transparent 3px
+  );
+}
+
+/* ── Blocky wipe transition — resolution cascade ── */
+.blocky-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(90, 180, 60, 0.95),
+    rgba(60, 40, 20, 0.98)
+  );
+  opacity: 0;
+  transition: opacity 0.5s ease-in;
+  pointer-events: none;
+}
+.blocky-wipe.unblocky {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(160, 200, 240, 0.95),
+    rgba(20, 40, 80, 0.98)
+  );
+  transition: opacity 0.4s ease-in;
+}
+
+/* ── Blocky — visual theme (only when active theme) ── */
+body[data-active-theme="blocky"] {
+  --theme-bg: #0a1230;
+}
+
+body[data-active-theme="blocky"] #bg-canvas {
+  filter: contrast(1.15) saturate(1.3);
+  image-rendering: pixelated;
+}
+
+body[data-active-theme="blocky"] .nav-logo {
+  filter: saturate(0.8) brightness(1.1);
+}
+body[data-active-theme="blocky"] .cloud-svg {
+  filter: drop-shadow(0 0 10px rgba(var(--theme-glow), 0.4));
+}
+
+body[data-active-theme="blocky"] {
+  --theme-primary: #ffa040;
+  --theme-glow: 100, 255, 100;
+  --logo-accent-color: rgb(var(--theme-glow));
+  --cursor-dot-radius: 0;
+  --cursor-ring-radius: 0;
+}
+body[data-active-theme="blocky"] #cursor-ring {
+  border-color: rgba(var(--theme-glow), 0.4);
+}
+
+body[data-active-theme="blocky"] .hero-title .line-2 {
+  background: linear-gradient(135deg, #a0ff80 0%, #60d040 50%, #40b030 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="blocky"] .btn-primary {
+  background: linear-gradient(135deg, #2d8a2e, #1a6b1b);
+  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.25);
+}
+body[data-active-theme="blocky"] .btn-primary::before {
+  background: linear-gradient(135deg, #40b040, #2d8a2e);
+}
+body[data-active-theme="blocky"] .btn-primary:hover {
+  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.4);
+}
+
+body[data-active-theme="blocky"] .about-heading em {
+  background: linear-gradient(135deg, #a0ff80, #60d040);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Card pixel interaction — pulsing selection border + scan-line sweep */
+body.blocky .pixel-card {
+  transition: background 0.4s;
+}
+body.blocky .pixel-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(var(--theme-glow), 0.08) 48%,
+    rgba(var(--theme-glow), 0.15) 50%,
+    rgba(var(--theme-glow), 0.08) 52%,
+    transparent 100%
+  );
+  background-size: 100% 300%;
+  background-position: 0% 0%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+body.blocky .pixel-card:hover {
+  outline: 2px dashed rgba(var(--theme-glow), 0.5);
+  outline-offset: 2px;
+  animation: pixelPulse 1s ease-in-out infinite alternate;
+}
+body.blocky .pixel-card:hover::after {
+  opacity: 1;
+  animation: pixelScan 2s steps(12) infinite;
+}
+@keyframes pixelPulse {
+  0% {
+    outline-offset: 2px;
+    outline-color: rgba(var(--theme-glow), 0.3);
+  }
+  100% {
+    outline-offset: 4px;
+    outline-color: rgba(var(--theme-glow), 0.6);
+  }
+}
+@keyframes pixelScan {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 0% 100%;
+  }
+}
+
+body[data-active-theme="blocky"] .contact-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.08) 0%,
+    rgba(10, 18, 48, 0.92) 100%
+  );
+}
+
+body[data-active-theme="blocky"]::after {
+  opacity: 0.03;
+}
+
+/* ── Light appearance overrides for blocky ── */
+body.light-appearance[data-active-theme="blocky"] {
+  --theme-bg: #e8f0ff;
+}
+body.light-appearance[data-active-theme="blocky"] #bg-canvas {
+  filter: contrast(1.1) saturate(1.2);
+  image-rendering: pixelated;
+}
+body.light-appearance[data-active-theme="blocky"] #cursor {
+  background: rgb(60, 200, 60);
+}
+body.light-appearance[data-active-theme="blocky"] #cursor-ring {
+  border-color: rgba(60, 200, 60, 0.4);
+}

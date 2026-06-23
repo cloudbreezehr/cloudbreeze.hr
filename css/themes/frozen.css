@@ -1,0 +1,208 @@
+/* ═══════════════════════════════════════════════
+   Frozen Theme
+   ═══════════════════════════════════════════════ */
+
+/* Frost breath particles */
+.frost-breath {
+  position: fixed;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(180, 230, 255, 0.9),
+    rgba(var(--frost-edge-rgb), 0.3)
+  );
+  pointer-events: none;
+  z-index: var(--z-theme-effect);
+}
+.frost-breath.warm {
+  background: radial-gradient(
+    circle,
+    rgba(255, 200, 120, 0.9),
+    rgba(255, 140, 40, 0.3)
+  );
+}
+
+/* Frost overlay — corner creep */
+.frost-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  --frost-size: 8%;
+  background:
+    radial-gradient(
+      ellipse at 0% 0%,
+      rgba(180, 230, 255, 0.35) 0%,
+      transparent var(--frost-size)
+    ),
+    radial-gradient(
+      ellipse at 100% 0%,
+      rgba(200, 240, 255, 0.3) 0%,
+      transparent var(--frost-size)
+    ),
+    radial-gradient(
+      ellipse at 0% 100%,
+      rgba(200, 240, 255, 0.3) 0%,
+      transparent var(--frost-size)
+    ),
+    radial-gradient(
+      ellipse at 100% 100%,
+      rgba(180, 230, 255, 0.35) 0%,
+      transparent var(--frost-size)
+    );
+}
+
+/* Frost wipe transition */
+.frost-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: radial-gradient(
+    ellipse at center,
+    rgba(200, 240, 255, 0.95),
+    rgba(140, 210, 245, 0.98)
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+  pointer-events: none;
+}
+.frost-wipe.thaw {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(255, 220, 160, 0.95),
+    rgba(255, 180, 100, 0.98)
+  );
+}
+
+/* Frost ripple on card click */
+.frost-ripple {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(var(--frost-edge-rgb), 0.3),
+    transparent 70%
+  );
+  pointer-events: none;
+}
+
+/* ── Frozen — visual theme (only when active theme) ── */
+body[data-active-theme="frozen"] #bg-canvas {
+  filter: saturate(0.4) brightness(1.25);
+}
+
+body[data-active-theme="frozen"] .nav-logo {
+  filter: saturate(0.2) brightness(1.4);
+}
+body[data-active-theme="frozen"] .cloud-svg {
+  filter: drop-shadow(0 0 14px rgba(var(--frost-edge-rgb), 0.7));
+}
+
+body[data-active-theme="frozen"] {
+  --theme-primary: #88d4f7;
+  --theme-glow: 0, 200, 240;
+  --frost-edge-rgb: 0, 220, 255;
+  --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  --cursor-ring-width: 1.5px;
+}
+body[data-active-theme="frozen"] #cursor-ring {
+  border-color: rgba(var(--frost-edge-rgb), 0.5);
+  box-shadow: 0 0 8px rgba(var(--frost-edge-rgb), 0.25);
+}
+
+body[data-active-theme="frozen"] .hero-title .line-2 {
+  background: linear-gradient(135deg, #b5f0ff 0%, #00c8ff 50%, #60d8f0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body[data-active-theme="frozen"] .btn-primary {
+  background: linear-gradient(135deg, #00b8e8, #0090c0);
+}
+body[data-active-theme="frozen"] .btn-primary::before {
+  background: linear-gradient(135deg, #40d0f0, #00b8e8);
+}
+
+body[data-active-theme="frozen"] .about-heading em {
+  background: linear-gradient(135deg, #b5f0ff, #00c8ff);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Card frost interaction — mouse-tracking gradient + frost creep edges */
+body.frozen .frost-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      circle at var(--frost-x, 50%) var(--frost-y, 50%),
+      rgba(var(--frost-edge-rgb), 0.12) 0%,
+      transparent 60%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(var(--frost-edge-rgb), 0.08) 0%,
+      transparent 15%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(var(--frost-edge-rgb), 0.06) 0%,
+      transparent 12%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(var(--frost-edge-rgb), 0.05) 0%,
+      transparent 10%
+    ),
+    linear-gradient(
+      270deg,
+      rgba(var(--frost-edge-rgb), 0.05) 0%,
+      transparent 10%
+    );
+  background-size:
+    100% 100%,
+    100% 0%,
+    100% 0%,
+    0% 100%,
+    0% 100%;
+  background-repeat: no-repeat;
+  background-position: center, top, bottom, left, right;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.3s,
+    background-size 0.6s ease-out;
+}
+body.frozen .frost-card:hover::after {
+  opacity: 1;
+  background-size:
+    100% 100%,
+    100% 40%,
+    100% 30%,
+    25% 100%,
+    25% 100%;
+}
+
+/* Frozen card state */
+body.frozen .service-card.card-frozen {
+  background: rgba(var(--theme-glow), 0.08);
+  box-shadow: inset 0 0 20px rgba(var(--frost-edge-rgb), 0.1);
+}
+body.frozen .service-card.card-frozen::before {
+  transform: scaleX(1);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(var(--frost-edge-rgb), 0.6),
+    transparent
+  );
+}
+
+body[data-active-theme="frozen"]::after {
+  opacity: 0.04;
+}
