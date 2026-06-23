@@ -91,32 +91,20 @@ body[data-active-theme="blocky"] {
   --logo-accent-color: rgb(var(--theme-glow));
   --cursor-dot-radius: 0;
   --cursor-ring-radius: 0;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #a0ff80 0%,
+    #60d040 50%,
+    #40b030 100%
+  );
+  --theme-btn-bg: linear-gradient(135deg, #2d8a2e, #1a6b1b);
+  --theme-btn-before-bg: linear-gradient(135deg, #40b040, #2d8a2e);
+  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.25);
+  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.4);
+  --theme-heading-em-bg: linear-gradient(135deg, #a0ff80, #60d040);
 }
 body[data-active-theme="blocky"] #cursor-ring {
   border-color: rgba(var(--theme-glow), 0.4);
-}
-
-body[data-active-theme="blocky"] .hero-title .line-2 {
-  background: linear-gradient(135deg, #a0ff80 0%, #60d040 50%, #40b030 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-body[data-active-theme="blocky"] .btn-primary {
-  background: linear-gradient(135deg, #2d8a2e, #1a6b1b);
-  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.25);
-}
-body[data-active-theme="blocky"] .btn-primary::before {
-  background: linear-gradient(135deg, #40b040, #2d8a2e);
-}
-body[data-active-theme="blocky"] .btn-primary:hover {
-  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.4);
-}
-
-body[data-active-theme="blocky"] .about-heading em {
-  background: linear-gradient(135deg, #a0ff80, #60d040);
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 /* Card pixel interaction — pulsing selection border + scan-line sweep */

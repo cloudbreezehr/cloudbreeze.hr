@@ -220,6 +220,13 @@ body[data-active-theme="upside-down"] {
   --cursor-ring-width: 1.5px;
   --cursor-ring-animation: cursor-spin 6s linear infinite;
   --theme-bg: #280a0a;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #f7b5b5 0%,
+    var(--sky-4) 50%,
+    var(--sky-3) 100%
+  );
+  --theme-heading-em-bg: linear-gradient(135deg, #f7b5b5, var(--sky-4));
 }
 
 body[data-active-theme="upside-down"] #bg-canvas {
@@ -232,30 +239,6 @@ body[data-active-theme="upside-down"] #cursor {
     2px -1px 0 rgba(255, 50, 50, 0.5),
     -2px 1px 0 rgba(80, 120, 255, 0.4);
 }
-body[data-active-theme="upside-down"] .hero-title .line-2 {
-  background: linear-gradient(
-    135deg,
-    #f7b5b5 0%,
-    var(--sky-4) 50%,
-    var(--sky-3) 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-body[data-active-theme="upside-down"] .btn-primary {
-  background: linear-gradient(135deg, var(--sky-4), var(--sky-5));
-}
-body[data-active-theme="upside-down"] .btn-primary::before {
-  background: linear-gradient(135deg, var(--sky-3), var(--sky-4));
-}
-
-body[data-active-theme="upside-down"] .about-heading em {
-  background: linear-gradient(135deg, #f7b5b5, var(--sky-4));
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
 /* Card gravity-defying hover — cards float up in the flipped world.
    The page is flipped via scaleY(-1), so positive translateY in CSS
    renders as upward motion on screen. Shadow offsets are also inverted. */

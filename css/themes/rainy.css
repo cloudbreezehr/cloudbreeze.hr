@@ -37,6 +37,9 @@ body[data-active-theme="rainy"] {
   --cursor-dot-radius: 0 50% 50% 50%;
   --cursor-ring-animation: cursor-ripple 2s ease-in-out infinite;
   --theme-bg: #101820;
+  --theme-btn-bg: linear-gradient(135deg, #5a7a9a, #3a5a7a);
+  --theme-btn-shadow: 0 0 20px rgba(var(--rainy-deep-rgb), 0.3);
+  --theme-btn-hover-shadow: 0 0 30px rgba(var(--rainy-deep-rgb), 0.5);
 }
 body[data-active-theme="rainy"] #bg-canvas {
   filter: saturate(0.6) brightness(0.7) hue-rotate(10deg);
@@ -58,13 +61,6 @@ body[data-active-theme="rainy"] .hero-sub {
   color: rgba(160, 180, 200, 0.85);
 }
 
-body[data-active-theme="rainy"] .btn-primary {
-  background: linear-gradient(135deg, #5a7a9a, #3a5a7a);
-  box-shadow: 0 0 20px rgba(var(--rainy-deep-rgb), 0.3);
-}
-body[data-active-theme="rainy"] .btn-primary:hover {
-  box-shadow: 0 0 30px rgba(var(--rainy-deep-rgb), 0.5);
-}
 body[data-active-theme="rainy"] .btn-outline {
   border-color: rgba(140, 170, 200, 0.35);
   color: rgba(var(--theme-glow), 0.9);

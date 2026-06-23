@@ -115,6 +115,21 @@ body[data-active-theme="deep-sea"] {
   --logo-text-color: #b8f5e0;
   --logo-accent-color: rgb(var(--theme-glow));
   --theme-bg: #001018;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #80ffd4 0%,
+    rgb(var(--theme-glow)) 50%,
+    #00a080 100%
+  );
+  --theme-btn-bg: linear-gradient(135deg, #00806a, #005848);
+  --theme-btn-before-bg: linear-gradient(135deg, #00a088, #00806a);
+  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
+  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
+  --theme-heading-em-bg: linear-gradient(
+    135deg,
+    #80ffd4,
+    rgb(var(--theme-glow))
+  );
 }
 
 body[data-active-theme="deep-sea"] #bg-canvas {
@@ -137,34 +152,6 @@ body[data-active-theme="deep-sea"] #cursor {
 }
 body[data-active-theme="deep-sea"] #cursor-ring {
   border-color: rgba(0, 255, 180, 0.4);
-}
-
-body[data-active-theme="deep-sea"] .hero-title .line-2 {
-  background: linear-gradient(
-    135deg,
-    #80ffd4 0%,
-    rgb(var(--theme-glow)) 50%,
-    #00a080 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-body[data-active-theme="deep-sea"] .btn-primary {
-  background: linear-gradient(135deg, #00806a, #005848);
-  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
-}
-body[data-active-theme="deep-sea"] .btn-primary::before {
-  background: linear-gradient(135deg, #00a088, #00806a);
-}
-body[data-active-theme="deep-sea"] .btn-primary:hover {
-  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
-}
-
-body[data-active-theme="deep-sea"] .about-heading em {
-  background: linear-gradient(135deg, #80ffd4, rgb(var(--theme-glow)));
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 /* Card caustic interaction — animated water-light ripple + shimmer border */

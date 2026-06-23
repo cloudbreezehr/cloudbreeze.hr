@@ -49,11 +49,14 @@
 }
 .hero-title .line-2 {
   display: block;
-  background: linear-gradient(
-    135deg,
-    var(--sky-2) 0%,
-    var(--sky-4) 50%,
-    var(--sky-3) 100%
+  background: var(
+    --theme-hero-line2-bg,
+    linear-gradient(
+      135deg,
+      var(--sky-2) 0%,
+      var(--sky-4) 50%,
+      var(--sky-3) 100%
+    )
   );
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -83,7 +86,10 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--sky-4), var(--sky-5));
+  background: var(
+    --theme-btn-bg,
+    linear-gradient(135deg, var(--sky-4), var(--sky-5))
+  );
   color: #fff;
   text-decoration: none;
   font-family: "DM Mono", monospace;
@@ -97,19 +103,25 @@
   transition:
     transform 0.3s,
     box-shadow 0.3s;
-  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.35);
+  box-shadow: var(--theme-btn-shadow, 0 0 30px rgba(var(--theme-glow), 0.35));
 }
 .btn-primary::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(135deg, var(--sky-3), var(--sky-4));
+  background: var(
+    --theme-btn-before-bg,
+    linear-gradient(135deg, var(--sky-3), var(--sky-4))
+  );
   opacity: 0;
   transition: opacity 0.3s;
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.5);
+  box-shadow: var(
+    --theme-btn-hover-shadow,
+    0 8px 40px rgba(var(--theme-glow), 0.5)
+  );
 }
 .btn-primary:hover::before {
   opacity: 1;

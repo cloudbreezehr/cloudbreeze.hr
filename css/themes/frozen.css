@@ -108,29 +108,19 @@ body[data-active-theme="frozen"] {
   --frost-edge-rgb: 0, 220, 255;
   --cursor-dot-clip: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
   --cursor-ring-width: 1.5px;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #b5f0ff 0%,
+    #00c8ff 50%,
+    #60d8f0 100%
+  );
+  --theme-btn-bg: linear-gradient(135deg, #00b8e8, #0090c0);
+  --theme-btn-before-bg: linear-gradient(135deg, #40d0f0, #00b8e8);
+  --theme-heading-em-bg: linear-gradient(135deg, #b5f0ff, #00c8ff);
 }
 body[data-active-theme="frozen"] #cursor-ring {
   border-color: rgba(var(--frost-edge-rgb), 0.5);
   box-shadow: 0 0 8px rgba(var(--frost-edge-rgb), 0.25);
-}
-
-body[data-active-theme="frozen"] .hero-title .line-2 {
-  background: linear-gradient(135deg, #b5f0ff 0%, #00c8ff 50%, #60d8f0 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-body[data-active-theme="frozen"] .btn-primary {
-  background: linear-gradient(135deg, #00b8e8, #0090c0);
-}
-body[data-active-theme="frozen"] .btn-primary::before {
-  background: linear-gradient(135deg, #40d0f0, #00b8e8);
-}
-
-body[data-active-theme="frozen"] .about-heading em {
-  background: linear-gradient(135deg, #b5f0ff, #00c8ff);
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 /* Card frost interaction — mouse-tracking gradient + frost creep edges */

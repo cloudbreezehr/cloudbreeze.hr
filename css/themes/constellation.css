@@ -75,6 +75,21 @@ body[data-active-theme="constellation"] {
   --logo-text-color: #d8e0ff;
   --logo-accent-color: rgb(var(--theme-glow));
   --theme-bg: #07091a;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #e8eeff 0%,
+    rgb(var(--theme-glow)) 50%,
+    #6878d0 100%
+  );
+  --theme-btn-bg: linear-gradient(135deg, #4858a8, #2a3270);
+  --theme-btn-before-bg: linear-gradient(135deg, #5868c0, #3a4290);
+  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
+  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
+  --theme-heading-em-bg: linear-gradient(
+    135deg,
+    #e8eeff,
+    rgb(var(--theme-glow))
+  );
 }
 
 body[data-active-theme="constellation"] #bg-canvas {
@@ -93,34 +108,6 @@ body[data-active-theme="constellation"] #cursor {
 }
 body[data-active-theme="constellation"] #cursor-ring {
   border-color: rgba(var(--theme-glow), 0.45);
-}
-
-body[data-active-theme="constellation"] .hero-title .line-2 {
-  background: linear-gradient(
-    135deg,
-    #e8eeff 0%,
-    rgb(var(--theme-glow)) 50%,
-    #6878d0 100%
-  );
-  -webkit-background-clip: text;
-  background-clip: text;
-}
-
-body[data-active-theme="constellation"] .btn-primary {
-  background: linear-gradient(135deg, #4858a8, #2a3270);
-  box-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
-}
-body[data-active-theme="constellation"] .btn-primary::before {
-  background: linear-gradient(135deg, #5868c0, #3a4290);
-}
-body[data-active-theme="constellation"] .btn-primary:hover {
-  box-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
-}
-
-body[data-active-theme="constellation"] .about-heading em {
-  background: linear-gradient(135deg, #e8eeff, rgb(var(--theme-glow)));
-  -webkit-background-clip: text;
-  background-clip: text;
 }
 
 /* Service-card constellation accent — a thin star-line divider that
