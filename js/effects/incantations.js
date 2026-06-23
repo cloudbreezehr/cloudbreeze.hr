@@ -99,7 +99,9 @@ const SUN_DURATION_MS = 900;
 
 // ── DISCO / RAINBOW — hue sweeps ──
 const DISCO_TURNS = 3;
-const DISCO_DURATION_MS = 2400;
+// Matches the length of the two-bar `disco` voice so the colour spin and the
+// music end together.
+const DISCO_DURATION_MS = 4000;
 const DISCO_SATURATE = 1.4;
 const RAINBOW_DURATION_MS = 1800;
 
@@ -313,13 +315,14 @@ export const INCANTATIONS = [
   },
   {
     word: "DISCO",
-    hint: "The page spins through colour",
-    // The whole page spins through the colour wheel a few times.
+    hint: "The page spins through colour to a disco beat",
+    // The whole page spins through the colour wheel to a two-bar disco groove.
     cast: () =>
       hueSweep({
         turns: DISCO_TURNS,
         durationMs: DISCO_DURATION_MS,
         saturate: DISCO_SATURATE,
+        sound: "disco",
       }),
   },
   {

@@ -276,7 +276,7 @@ const VOICES = {
       attack: 0.05,
     });
   },
-  // A hue sweep (disco / rainbow) — a filtered whoosh that opens up.
+  // A hue sweep (rainbow) — a filtered whoosh that opens up.
   sweep(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.8,
@@ -287,6 +287,80 @@ const VOICES = {
       gain: 0.18,
       attack: 0.1,
     });
+  },
+  // The DISCO incantation — a two-bar groove at 120 BPM: four-on-the-floor
+  // kick, off-beat hi-hats, an octave-bouncing bass, and syncopated Am7→Dm7
+  // chord stabs. Sequenced in time via each tone's `delay`, so it plays as
+  // actual music rather than a single hit; self-cleans like any one-shot.
+  disco(ctx, bus) {
+    const BEAT = 0.5; // 120 BPM
+    const BARS = 2;
+    const beats = BARS * 4;
+    const off = BEAT / 2; // the "and" between beats
+
+    for (let b = 0; b < beats; b++) {
+      const at = b * BEAT;
+      // Four-on-the-floor kick.
+      tone(ctx, bus, {
+        freq: 130,
+        slideTo: 45,
+        type: "sine",
+        attack: 0.002,
+        release: 0.16,
+        gain: 0.42,
+        delay: at,
+      });
+      // Closed hi-hat on the off-beat.
+      breath(ctx, bus, {
+        dur: 0.05,
+        type: "highpass",
+        freq: 8000,
+        q: 1.4,
+        gain: 0.12,
+        delay: at + off,
+      });
+      // Octave bass — root on the beat, octave on the "and"; A minor for the
+      // first bar, D minor for the second.
+      const root = b < 4 ? 55 : 73.42; // A1, D2
+      tone(ctx, bus, {
+        freq: root,
+        type: "triangle",
+        attack: 0.005,
+        release: 0.2,
+        gain: 0.3,
+        delay: at,
+      });
+      tone(ctx, bus, {
+        freq: root * 2,
+        type: "triangle",
+        attack: 0.005,
+        release: 0.16,
+        gain: 0.26,
+        delay: at + off,
+      });
+    }
+
+    // Syncopated chord stabs on the "and" of beats 2 and 4 — Am7, then Dm7.
+    const chords = [
+      [220, 261.63, 329.63, 392], // Am7: A3 C4 E4 G4
+      [293.66, 349.23, 440, 523.25], // Dm7: D4 F4 A4 C5
+    ];
+    for (let bar = 0; bar < BARS; bar++) {
+      for (const beatInBar of [1, 3]) {
+        const at = (bar * 4 + beatInBar) * BEAT + off;
+        for (const freq of chords[bar]) {
+          tone(ctx, bus, {
+            freq,
+            type: "sawtooth",
+            attack: 0.004,
+            hold: 0.02,
+            release: 0.12,
+            gain: 0.06,
+            delay: at,
+          });
+        }
+      }
+    }
   },
   // A lightning strike — a sharp high crack over a low thunder tail.
   lightning(ctx, bus) {

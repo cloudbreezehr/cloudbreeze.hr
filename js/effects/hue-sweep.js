@@ -20,11 +20,12 @@ export function hueSweep({
   turns = DEFAULT_TURNS,
   durationMs = DEFAULT_DURATION_MS,
   saturate = DEFAULT_SATURATE,
+  sound = "sweep",
 } = {}) {
   if (prefersReducedMotion()) return;
   const sky = document.querySelector(SKY_SELECTOR);
   if (!sky) return;
-  playSfx("sweep");
+  playSfx(sound);
   const end = FULL_TURN_DEG * turns;
   sky.animate(
     [
