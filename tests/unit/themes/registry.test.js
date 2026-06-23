@@ -23,6 +23,18 @@ describe("themes/registry — metadata", () => {
     ]);
   });
 
+  it("marks exactly the immersive themes as darkOnly", () => {
+    // darkOnly themes keep their dark identity in light mode (canvas.js sets the
+    // theme-dark-only body class from this flag; see css/12-appearance-light.css).
+    // Pinned so adding/removing the flag is a deliberate, reviewed change.
+    const darkOnly = getThemes()
+      .filter((t) => t.darkOnly)
+      .map((t) => t.id);
+    expect(new Set(darkOnly)).toEqual(
+      new Set(["deep-sea", "upside-down", "constellation"]),
+    );
+  });
+
   it("returns a defensive copy from getThemes()", () => {
     const first = getThemes();
     first.push({ id: "fake" });

@@ -3,23 +3,35 @@ body.light-appearance {
   --theme-bg: #f0f7ff;
 }
 
-body.light-appearance .section-label {
+/* The element surfaces below are the DEFAULT light treatment — white-ish cards,
+   ink text, a light cursor. They apply to the default look and to themes that
+   have a light variant (frozen, rainy, blocky, paper, vhs add their own tint on
+   top). They are suppressed under `.theme-dark-only` themes (deep-sea,
+   upside-down, constellation — set in canvas.js from the registry `darkOnly`
+   flag), which have no bright form and keep their dark identity in light mode;
+   without this guard, their dark pages would show white cards and ink text.
+   The exclusion is wrapped in :where() so it adds ZERO specificity — a bare
+   :not(.theme-dark-only) would outrank a theme's own same-specificity element
+   override (e.g. paper's pencil #cursor) and clobber it; :where keeps these at
+   their original weight so source order still lets a theme win where it sets
+   its own surfaces. */
+body.light-appearance:where(:not(.theme-dark-only)) .section-label {
   color: var(--sky-5);
 }
-body.light-appearance .section-label::before {
+body.light-appearance:where(:not(.theme-dark-only)) .section-label::before {
   background: var(--sky-5);
 }
-body.light-appearance .services-grid {
+body.light-appearance:where(:not(.theme-dark-only)) .services-grid {
   background: rgba(0, 0, 0, 0.04);
   border-color: rgba(0, 0, 0, 0.06);
 }
-body.light-appearance .service-card {
+body.light-appearance:where(:not(.theme-dark-only)) .service-card {
   background: rgba(255, 255, 255, 0.75);
 }
-body.light-appearance .service-card:hover {
+body.light-appearance:where(:not(.theme-dark-only)) .service-card:hover {
   background: rgba(255, 255, 255, 0.9);
 }
-body.light-appearance .service-card::before {
+body.light-appearance:where(:not(.theme-dark-only)) .service-card::before {
   background: linear-gradient(
     90deg,
     transparent,
@@ -27,30 +39,30 @@ body.light-appearance .service-card::before {
     transparent
   );
 }
-body.light-appearance .service-num {
+body.light-appearance:where(:not(.theme-dark-only)) .service-num {
   color: rgba(26, 95, 168, 0.5);
 }
-body.light-appearance .service-title {
+body.light-appearance:where(:not(.theme-dark-only)) .service-title {
   color: var(--ink);
 }
-body.light-appearance .service-desc {
+body.light-appearance:where(:not(.theme-dark-only)) .service-desc {
   color: rgba(var(--ink-rgb), 0.55);
 }
 
-body.light-appearance .about-heading {
+body.light-appearance:where(:not(.theme-dark-only)) .about-heading {
   color: var(--ink);
 }
-body.light-appearance .about-body {
+body.light-appearance:where(:not(.theme-dark-only)) .about-body {
   color: rgba(var(--ink-rgb), 0.6);
 }
-body.light-appearance .stat-num {
+body.light-appearance:where(:not(.theme-dark-only)) .stat-num {
   color: var(--ink);
 }
-body.light-appearance .stat-label {
+body.light-appearance:where(:not(.theme-dark-only)) .stat-label {
   color: rgba(var(--ink-rgb), 0.45);
 }
 
-body.light-appearance .contact-card {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-card {
   background: linear-gradient(
     135deg,
     rgba(255, 255, 255, 0.8) 0%,
@@ -58,73 +70,73 @@ body.light-appearance .contact-card {
   );
   border-color: rgba(var(--theme-glow), 0.2);
 }
-body.light-appearance .contact-card::before {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-card::before {
   background: radial-gradient(
     circle,
     rgba(var(--theme-glow), 0.08),
     transparent 70%
   );
 }
-body.light-appearance .contact-heading {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-heading {
   color: var(--ink);
 }
-body.light-appearance .contact-sub {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-sub {
   color: rgba(var(--ink-rgb), 0.5);
 }
-body.light-appearance .contact-link {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-link {
   color: rgba(var(--ink-rgb), 0.65);
   border-color: rgba(0, 0, 0, 0.08);
   background: rgba(255, 255, 255, 0.6);
 }
-body.light-appearance .contact-link:hover {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-link:hover {
   color: var(--ink);
   border-color: rgba(var(--theme-glow), 0.3);
   background: rgba(255, 255, 255, 0.85);
 }
-body.light-appearance .contact-link svg {
+body.light-appearance:where(:not(.theme-dark-only)) .contact-link svg {
   color: var(--sky-5);
 }
 
-body.light-appearance .footer-info {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-info {
   border-top-color: rgba(0, 0, 0, 0.06);
 }
-body.light-appearance .footer-brand {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-brand {
   color: var(--ink);
 }
-body.light-appearance .footer-col-title {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-col-title {
   color: var(--sky-5);
 }
-body.light-appearance .footer-text {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-text {
   color: rgba(var(--ink-rgb), 0.5);
 }
-body.light-appearance .footer-link {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-link {
   color: rgba(var(--ink-rgb), 0.5);
 }
-body.light-appearance .footer-link:hover {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-link:hover {
   color: var(--sky-5);
 }
 
-body.light-appearance footer {
+body.light-appearance:where(:not(.theme-dark-only)) footer {
   border-top-color: rgba(0, 0, 0, 0.05);
 }
-body.light-appearance .footer-copy {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-copy {
   color: rgba(var(--ink-rgb), 0.3);
 }
-body.light-appearance .footer-badge {
+body.light-appearance:where(:not(.theme-dark-only)) .footer-badge {
   color: rgba(var(--theme-glow), 0.5);
 }
 
-body.light-appearance::after {
+body.light-appearance:where(:not(.theme-dark-only))::after {
   opacity: 0.015;
 }
-body.light-appearance #cursor {
+body.light-appearance:where(:not(.theme-dark-only)) #cursor {
   background: var(--sky-4);
   mix-blend-mode: normal;
   box-shadow:
     0 0 6px rgba(var(--cursor-glow), 0.5),
     0 0 2px rgba(255, 255, 255, 0.7);
 }
-body.light-appearance #cursor-ring {
+body.light-appearance:where(:not(.theme-dark-only)) #cursor-ring {
   border-color: rgba(var(--cursor-glow), 0.5);
   box-shadow: 0 0 4px rgba(var(--cursor-glow), 0.15);
 }

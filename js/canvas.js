@@ -10,7 +10,7 @@ import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
-import { getThemeIds } from "./themes/registry.js";
+import { getThemeIds, getTheme } from "./themes/registry.js";
 import { getQualityTier, PARTICLE_SCALE, observeFps } from "./quality.js";
 
 // ── Scroll Velocity ──
@@ -220,6 +220,12 @@ export function initCanvas(canvasEl, appearance, options) {
     if (theme !== prevTheme) {
       if (theme) document.body.dataset.activeTheme = theme;
       else delete document.body.dataset.activeTheme;
+      // A dark-only winner suppresses the default light surfaces (see
+      // css/12-appearance-light.css) so it keeps its dark identity in light mode.
+      document.body.classList.toggle(
+        "theme-dark-only",
+        !!(theme && getTheme(theme)?.darkOnly),
+      );
     }
     const pal = resolvePalette(isDark ? "dark" : "light", theme);
     currentPal = pal;

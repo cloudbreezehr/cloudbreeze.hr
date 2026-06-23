@@ -31,6 +31,11 @@ const THEMES = [
     id: "deep-sea",
     label: "Deep Sea",
     color: "#00ffc8",
+    // No light variant: an immersive deep-dark theme has no natural bright
+    // form, so it keeps its dark identity even when light appearance is on.
+    // Drives the `theme-dark-only` body class (see canvas.js) so the default
+    // light surfaces don't bleed in. [[light-appearance]]
+    darkOnly: true,
     icon:
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
       '<path d="M1 6c1.5-1.5 3-1.5 4.5 0s3 1.5 4.5 0 3-1.5 4.5 0"/>' +
@@ -88,6 +93,7 @@ const THEMES = [
     id: "upside-down",
     label: "Upside Down",
     color: "#e04050",
+    darkOnly: true, // immersive — no light variant (see deep-sea)
     icon:
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M3 6l5-4 5 4"/>' +
@@ -98,6 +104,7 @@ const THEMES = [
     id: "constellation",
     label: "Constellation",
     color: "#c0c8ff",
+    darkOnly: true, // immersive — no light variant (see deep-sea)
     icon:
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<path d="M3 12l4-7 3 4 3-2"/>' +
