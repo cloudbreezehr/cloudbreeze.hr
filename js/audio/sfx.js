@@ -23,7 +23,7 @@ const SFX = defineConstants("audio.sfx", {
 // ── Synthesis constants ──
 const FLOOR = 0.0001; // exponential ramps can't reach 0
 const TAIL_S = 0.03; // slack before a node is stopped/freed
-const BURST_CRACKLE_POPS = 7; // tiny high pops scattered after a firework boom
+const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework boom
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -195,8 +195,8 @@ const VOICES = {
     });
   },
   // A firework detonation — a deep body thump and sub, then a real crackling
-  // sparkle tail: a brief airy hiss and a scatter of tiny high pops as the
-  // embers fall. One per burst, so denser shows sound bigger on their own.
+  // sparkle tail: a brief airy hiss and a dense scatter of sharp noise cracks as
+  // the embers snap and fall. One per burst, so denser shows sound bigger.
   burst(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.4,
@@ -223,16 +223,19 @@ const VOICES = {
       attack: 0.03,
       delay: 0.04,
     });
-    // Crackle — tiny high pops scattered (randomised for an organic crackle) as
-    // the sparks decay after the boom.
+    // Crackle — a dense scatter of sharp broadband noise cracks (randomised for
+    // an organic, irregular crackle) as the sparks snap and pop after the boom.
+    // Noise rather than tones: pitched pops read as bubbles, real crackle is
+    // broadband transients.
     for (let i = 0; i < BURST_CRACKLE_POPS; i++) {
-      tone(ctx, bus, {
-        freq: 2200 + Math.random() * 3200,
-        type: "sine",
+      breath(ctx, bus, {
+        dur: 0.015 + Math.random() * 0.025,
+        type: "highpass",
+        freq: 2600 + Math.random() * 3400,
+        q: 0.5,
+        gain: 0.14 + Math.random() * 0.1,
         attack: 0.001,
-        release: 0.03 + Math.random() * 0.05,
-        gain: 0.05,
-        delay: 0.1 + Math.random() * 0.45,
+        delay: 0.05 + Math.random() * 0.5,
       });
     }
   },
