@@ -25,6 +25,7 @@ const FLOOR = 0.0001; // exponential ramps can't reach 0
 const TAIL_S = 0.03; // slack before a node is stopped/freed
 const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework boom
 const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confetti
+const SHATTER_FRAGMENTS = 5; // pitched chips tumbling away when a block breaks
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -908,6 +909,8 @@ const VOICES = {
     });
   },
   // Bursting the world into voxels in the blocky theme — a chunky crunch.
+  // Blocks breaking apart — a crunchy low crack and a scatter of square-wave
+  // chips tumbling away (square fits the blocky, 8-bit aesthetic).
   shatter(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.1,
@@ -924,23 +927,46 @@ const VOICES = {
       release: 0.1,
       gain: 0.16,
     });
+    for (let i = 0; i < SHATTER_FRAGMENTS; i++) {
+      tone(ctx, bus, {
+        freq: 300 + Math.random() * 500,
+        slideTo: 120 + Math.random() * 120,
+        type: "square",
+        attack: 0.001,
+        release: 0.05 + Math.random() * 0.05,
+        gain: 0.06,
+        delay: 0.03 + Math.random() * 0.12,
+      });
+    }
   },
   // A burst of bubbles in the deep-sea theme — a wet bloop.
+  // A deep-sea bubble — a round underwater "bloop" with a smaller bubble rising
+  // behind it and a soft surface tick.
   bloop(ctx, bus) {
     tone(ctx, bus, {
-      freq: 500,
-      slideTo: 180,
+      freq: 520,
+      slideTo: 170,
       type: "sine",
       attack: 0.004,
-      release: 0.18,
+      hold: 0.02,
+      release: 0.2,
       gain: 0.22,
     });
+    tone(ctx, bus, {
+      freq: 360,
+      slideTo: 600,
+      type: "sine",
+      attack: 0.006,
+      release: 0.12,
+      gain: 0.1,
+      delay: 0.08,
+    });
     breath(ctx, bus, {
-      dur: 0.06,
+      dur: 0.05,
       type: "bandpass",
       freq: 900,
       q: 2,
-      gain: 0.1,
+      gain: 0.08,
     });
   },
   // Thunder for a lightning flash in the rain — a sharp distant crack, a rolling
@@ -975,23 +1001,44 @@ const VOICES = {
     });
   },
   // The world inverting (upside-down) — a tumbling, disorienting whoosh.
+  // The world inverting — a tumbling, disorienting whoosh that wheels over and
+  // settles: a falling sweep, a pitch somersaulting up then over and down, and a
+  // low landing as it comes to rest inverted.
   flip(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.5,
       type: "bandpass",
-      freq: 1200,
-      sweepTo: 300,
+      freq: 1400,
+      sweepTo: 250,
       q: 0.6,
       gain: 0.22,
       attack: 0.04,
     });
     tone(ctx, bus, {
-      freq: 400,
-      slideTo: 200,
+      freq: 300,
+      slideTo: 600,
       type: "triangle",
       attack: 0.02,
-      release: 0.4,
-      gain: 0.16,
+      release: 0.18,
+      gain: 0.14,
+    });
+    tone(ctx, bus, {
+      freq: 600,
+      slideTo: 180,
+      type: "triangle",
+      attack: 0.02,
+      release: 0.3,
+      gain: 0.14,
+      delay: 0.2,
+    });
+    tone(ctx, bus, {
+      freq: 120,
+      slideTo: 70,
+      type: "sine",
+      attack: 0.005,
+      release: 0.3,
+      gain: 0.2,
+      delay: 0.42,
     });
   },
   // Clicking a star — a bright little ping.
