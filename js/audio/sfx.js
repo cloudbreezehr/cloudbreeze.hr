@@ -72,17 +72,27 @@ function tone(
 }
 
 // A breath of filtered noise: source → biquad → gain → bus, with an optional
-// cutoff sweep across the voice.
+// cutoff sweep across the voice and an optional start `delay` (seconds) so a
+// voice can sequence breaths in time.
 function breath(
   ctx,
   bus,
-  { dur, type = "lowpass", freq, q = 1, gain, sweepTo, attack = 0.005 },
+  {
+    dur,
+    type = "lowpass",
+    freq,
+    q = 1,
+    gain,
+    sweepTo,
+    attack = 0.005,
+    delay = 0,
+  },
 ) {
   const src = ctx.createBufferSource();
   src.buffer = whiteNoise(ctx);
   const filter = ctx.createBiquadFilter();
   filter.type = type;
-  const t = ctx.currentTime;
+  const t = ctx.currentTime + delay;
   filter.frequency.setValueAtTime(freq, t);
   filter.Q.value = q;
   if (sweepTo) filter.frequency.exponentialRampToValueAtTime(sweepTo, t + dur);
@@ -90,7 +100,7 @@ function breath(
   src.connect(filter);
   filter.connect(g);
   g.connect(bus);
-  envelope(ctx, g, { attack, release: dur - attack, peak: gain });
+  envelope(ctx, g, { attack, release: dur - attack, peak: gain, start: t });
   src.start(t);
   src.stop(t + dur + TAIL_S);
   freeOnEnd(src, filter, g);
@@ -640,27 +650,51 @@ const VOICES = {
       gain: 0.14,
     });
   },
-  // The well collapsing on release — an implosion: air rushing in (a quick
-  // bright-to-low sweep) over a deep pitch-drop with a touch of hold, so the
-  // discharge lands with a satisfying whoomph that pays off the hold.
+  // The well collapsing on release — it pays off the whole hold: energy rushing
+  // inward, a deep resonant boom as it implodes, then a bright scatter as the
+  // captured motes fling back out.
   wellRelease(ctx, bus) {
+    // The inward suck — a quick bright-to-low rush feeding the collapse.
     breath(ctx, bus, {
-      dur: 0.28,
+      dur: 0.2,
       type: "lowpass",
-      freq: 1600,
-      sweepTo: 80,
+      freq: 2400,
+      sweepTo: 70,
       q: 0.9,
-      gain: 0.42,
-      attack: 0.006,
+      gain: 0.4,
+      attack: 0.005,
     });
+    // The deep collapse boom, with a resonant tail.
     tone(ctx, bus, {
-      freq: 220,
-      slideTo: 48,
+      freq: 180,
+      slideTo: 36,
       type: "sine",
       attack: 0.004,
-      hold: 0.02,
-      release: 0.32,
-      gain: 0.34,
+      hold: 0.04,
+      release: 0.55,
+      gain: 0.42,
+    });
+    // A sub layer for weight.
+    tone(ctx, bus, {
+      freq: 90,
+      slideTo: 27,
+      type: "triangle",
+      attack: 0.006,
+      hold: 0.03,
+      release: 0.48,
+      gain: 0.2,
+    });
+    // The outward scatter — a bright noise sweep flung up and out as the motes
+    // release, landing just after the boom.
+    breath(ctx, bus, {
+      dur: 0.45,
+      type: "bandpass",
+      freq: 1400,
+      sweepTo: 6500,
+      q: 0.5,
+      gain: 0.13,
+      attack: 0.02,
+      delay: 0.07,
     });
   },
   // Aurora settling in — a soft high shimmer pad.
