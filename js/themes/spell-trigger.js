@@ -39,6 +39,13 @@ const INTERACTIVE_SELECTOR =
 // Generous enough to hunt for the next letter elsewhere on the page, tight
 // enough that ordinary reading-taps don't accumulate into a match.
 export const SPELL_GAP_MS = 15000;
+// How many non-matching letters a word tolerates *between* its letters before
+// its progress drops. Counted consecutively — each correct letter zeroes it —
+// so a few fat-fingers (or letters hunted from elsewhere on the page) are fine,
+// but letters scattered far apart don't accidentally complete a secret as a
+// subsequence (e.g. RAINY emerging from PAR·WA·WI·SN·DEPLOY). Long words and
+// slow hunting aren't penalised, since only the run since the last hit counts.
+export const SPELL_STRAY_BUDGET = 4;
 // Names shorter than this aren't spell targets — guards a future one- or
 // two-letter name from completing on a stray tap or two.
 const MIN_SPELL_LEN = 3;
@@ -71,12 +78,16 @@ function normalizeName(s) {
 // letter advanced any name's progress, the id of a name that just completed
 // (if any), the charge it completed with, and whether it broke an in-progress
 // streak (a dead letter tapped while mid-spell — drives the miss feedback).
-// Forgiving: a non-matching letter is ignored rather than resetting progress
-// (fat-finger tolerance); only an idle gap longer than gapMs clears progress.
-// A target may declare a `chargeChar`: extra repeats of it right after its run
-// accumulate `matchedCharge` instead of being ignored (e.g. the surplus O's in
-// BOOOOM).
-export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
+// Forgiving: a non-matching letter doesn't reset progress immediately —
+// `strayBudget` of them in a row is tolerated (fat-finger / hunting), and an
+// idle gap longer than gapMs clears everything. A target may declare a
+// `chargeChar`: extra repeats of it right after its run accumulate
+// `matchedCharge` instead of being ignored (e.g. the surplus O's in BOOOOM).
+export function createSpellMatcher(
+  names,
+  gapMs = SPELL_GAP_MS,
+  strayBudget = SPELL_STRAY_BUDGET,
+) {
   const targets = names
     .map((n) => ({
       id: n.id,
@@ -89,12 +100,15 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
     .filter((n) => n.letters.length >= MIN_SPELL_LEN);
   const prog = new Map(targets.map((t) => [t.id, 0]));
   const charge = new Map(targets.map((t) => [t.id, 0]));
+  // Consecutive non-matching letters since each target last advanced.
+  const stray = new Map(targets.map((t) => [t.id, 0]));
   let lastTime = -Infinity;
 
   function reset() {
     for (const t of targets) {
       prog.set(t.id, 0);
       charge.set(t.id, 0);
+      stray.set(t.id, 0);
     }
   }
 
@@ -111,6 +125,7 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
       const i = prog.get(t.id);
       if (t.letters[i] === letter) {
         advanced = true;
+        stray.set(t.id, 0); // a correct letter resets the tolerance
         const next = i + 1;
         if (next === t.letters.length) {
           if (!matchedId) {
@@ -131,6 +146,8 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
         // An extra repeat of the just-finished charge run — accumulate rather
         // than ignore, so BOOOOM carries more charge than BOOM. Past chargeMax
         // it's recognised but inert (no advance), so the buildup stops cleanly.
+        // Recognised either way, so it keeps the run alive (no stray).
+        stray.set(t.id, 0);
         chargeMatched = true;
         const max =
           typeof t.chargeMax === "function" ? t.chargeMax() : t.chargeMax;
@@ -138,6 +155,19 @@ export function createSpellMatcher(names, gapMs = SPELL_GAP_MS) {
           advanced = true;
           charged = true;
           charge.set(t.id, charge.get(t.id) + 1);
+        }
+      } else if (i > 0) {
+        // A non-matching letter mid-word. Tolerate a run of them (fat-finger /
+        // hunting for the next glyph), but once they pile up past the budget
+        // this probably was never heading for this word — drop its progress so
+        // distant accidental subsequences don't complete it.
+        const s = stray.get(t.id) + 1;
+        if (s > strayBudget) {
+          prog.set(t.id, 0);
+          charge.set(t.id, 0);
+          stray.set(t.id, 0);
+        } else {
+          stray.set(t.id, s);
         }
       }
     }

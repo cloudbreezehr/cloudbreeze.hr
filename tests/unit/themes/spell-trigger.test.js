@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   createSpellMatcher,
   SPELL_GAP_MS,
+  SPELL_STRAY_BUDGET,
   CHARGE_SETTLE_MS,
 } from "../../../js/themes/spell-trigger.js";
 
@@ -57,6 +58,29 @@ describe("themes/spell-trigger", () => {
     it("is forgiving: a non-matching letter doesn't reset progress", () => {
       const m = createSpellMatcher(NAMES);
       expect(spell(m, "PAQPER").matchedId).toBe("paper");
+    });
+
+    it("tolerates up to the stray budget in a row, even between every letter", () => {
+      const m = createSpellMatcher(NAMES);
+      // The max tolerated run of junk between each letter — far more than the
+      // budget in total, but never more in a row, so it still completes
+      // (strays are counted consecutively, forgiven by each correct letter).
+      const gap = "Q".repeat(SPELL_STRAY_BUDGET);
+      expect(spell(m, `P${gap}A${gap}P${gap}E${gap}R`).matchedId).toBe("paper");
+    });
+
+    it("drops a word's progress once a junk run exceeds the budget", () => {
+      const m = createSpellMatcher(NAMES);
+      const tooMany = "Q".repeat(SPELL_STRAY_BUDGET + 1);
+      expect(spell(m, `PA${tooMany}PER`).matchedId).toBeNull();
+    });
+
+    it("rejects a word spelled as a distant subsequence", () => {
+      const m = createSpellMatcher([{ id: "rainy", name: "Rainy" }]);
+      // RAIN reached, then a junk run past the budget before Y — the kind of
+      // scatter that used to let RAINY fall out of PAR·WA·WI·SN·DEPLOY.
+      const gap = "X".repeat(SPELL_STRAY_BUDGET + 1);
+      expect(spell(m, `RAIN${gap}Y`).matchedId).toBeNull();
     });
 
     it("flags brokeStreak when a dead letter is tapped mid-spell", () => {
