@@ -755,33 +755,67 @@ const VOICES = {
   },
   // Aurora settling in — a soft high shimmer pad.
   aurora(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 660,
-      type: "sine",
-      attack: 0.4,
-      hold: 0.3,
-      release: 0.8,
-      gain: 0.1,
-    });
-    tone(ctx, bus, {
-      freq: 990,
-      type: "sine",
-      attack: 0.5,
-      hold: 0.2,
-      release: 0.9,
-      gain: 0.07,
+    // A lush, slowly-swelling shimmer pad — a stacked chord (E B E B E across
+    // octaves) whose partials each have a gently detuned partner beating against
+    // them, so it shimmers like curtains of light. Ethereal, soft, long.
+    const partials = [
+      { freq: 330, gain: 0.09 },
+      { freq: 494, gain: 0.08 },
+      { freq: 660, gain: 0.07 },
+      { freq: 988, gain: 0.05 },
+      { freq: 1320, gain: 0.035 },
+    ];
+    partials.forEach(({ freq, gain }, n) => {
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.4 + n * 0.08,
+        hold: 0.4,
+        release: 1.0,
+        gain,
+      });
+      tone(ctx, bus, {
+        freq: freq * 1.004,
+        type: "sine",
+        attack: 0.45 + n * 0.08,
+        hold: 0.35,
+        release: 1.0,
+        gain: gain * 0.7,
+      });
     });
   },
   // A meteor shower beginning — a soft falling whoosh.
   meteor(ctx, bus) {
+    // A meteor tearing in — a descending whoosh, a heavy low impact as it lands,
+    // and a bright scatter of debris after.
     breath(ctx, bus, {
-      dur: 0.7,
+      dur: 0.5,
       type: "bandpass",
-      freq: 600,
-      sweepTo: 200,
-      q: 0.6,
-      gain: 0.18,
-      attack: 0.1,
+      freq: 1400,
+      sweepTo: 150,
+      q: 0.7,
+      gain: 0.2,
+      attack: 0.05,
+    });
+    tone(ctx, bus, {
+      freq: 140,
+      slideTo: 40,
+      type: "sine",
+      attack: 0.004,
+      hold: 0.03,
+      release: 0.45,
+      gain: 0.4,
+      delay: 0.32,
+    });
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "highpass",
+      freq: 3000,
+      sweepTo: 6000,
+      q: 0.5,
+      gain: 0.12,
+      attack: 0.02,
+      delay: 0.36,
     });
   },
   // Frost breath on a click in the frozen world — a crystalline tick.
@@ -931,12 +965,30 @@ const VOICES = {
   },
   // Clicking a star — a bright little ping.
   twinkle(ctx, bus) {
+    // Tapping a star — a tiny bright chime with shimmering overtones entering a
+    // hair apart, like a struck bell of light.
     tone(ctx, bus, {
-      freq: 1800,
+      freq: 1760,
       type: "sine",
-      attack: 0.003,
-      release: 0.22,
-      gain: 0.16,
+      attack: 0.002,
+      release: 0.25,
+      gain: 0.15,
+    });
+    tone(ctx, bus, {
+      freq: 2637.02,
+      type: "sine",
+      attack: 0.004,
+      release: 0.3,
+      gain: 0.07,
+      delay: 0.02,
+    });
+    tone(ctx, bus, {
+      freq: 3520,
+      type: "sine",
+      attack: 0.006,
+      release: 0.2,
+      gain: 0.04,
+      delay: 0.04,
     });
   },
   // Catching a shooting star — a descending whoosh with a sparkle.
@@ -960,16 +1012,28 @@ const VOICES = {
   },
   // Completing a constellation — a warm three-note chord.
   chord(ctx, bus) {
-    [392, 523.25, 659.25].forEach((freq, n) =>
+    // Completing a constellation — a warm C-major chord blooming with an
+    // arpeggiated entry (the stars lighting up and connecting one by one) and a
+    // high sparkle settling on top as it resolves.
+    [261.63, 329.63, 392, 523.25, 659.25].forEach((freq, n) =>
       tone(ctx, bus, {
         freq,
         type: "sine",
-        attack: 0.02 + n * 0.04,
-        hold: 0.15,
-        release: 0.6,
-        gain: 0.16,
+        attack: 0.02,
+        hold: 0.2,
+        release: 0.8,
+        gain: 0.13 - n * 0.012,
+        delay: n * 0.07,
       }),
     );
+    tone(ctx, bus, {
+      freq: 1046.5,
+      type: "sine",
+      attack: 0.06,
+      release: 0.7,
+      gain: 0.06,
+      delay: 0.32,
+    });
   },
   // Tapping the wrong star while tracing — a soft low dud.
   dud(ctx, bus) {
