@@ -688,29 +688,28 @@ const VOICES = {
       delay: 0.2,
     });
   },
-  // Motes gathering into orbit — a soft sweep up with open bell tones (E5 B5
-  // E6) entering one after another, settling into a brief sustained ring.
+  // Motes drawn into orbit around the cursor — a soft airy swirl rising and
+  // settling into the ring, with a warm low tone easing up beneath it. Breathy,
+  // not a chime; it fires on any sustained hold, so it stays quiet and
+  // unobtrusive rather than ringing out like a collectible.
   orbit(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.5,
+      dur: 0.55,
       type: "bandpass",
-      freq: 600,
-      sweepTo: 1600,
-      q: 0.8,
+      freq: 450,
+      sweepTo: 1300,
+      q: 1.4,
       gain: 0.1,
-      attack: 0.1,
+      attack: 0.14,
     });
-    [659.25, 987.77, 1318.51].forEach((freq, n) =>
-      tone(ctx, bus, {
-        freq,
-        type: "sine",
-        attack: 0.03,
-        hold: 0.1,
-        release: 0.5,
-        gain: 0.1,
-        delay: n * 0.08,
-      }),
-    );
+    tone(ctx, bus, {
+      freq: 330,
+      slideTo: 494,
+      type: "sine",
+      attack: 0.12,
+      release: 0.4,
+      gain: 0.07,
+    });
   },
   // The gravity well forming — a low tone sinking into the register the
   // continuous hum then carries (mass gathering, space bending inward) under a
