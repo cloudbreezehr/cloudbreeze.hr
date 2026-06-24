@@ -415,6 +415,7 @@ export function createInteractions() {
               duration: WELL.PULSE_RING_DURATION_MS,
               maxScale: WELL.PULSE_RING_MAX_SCALE,
               startOpacity: WELL.PULSE_RING_OPACITY,
+              sound: "wellPulse",
             },
           );
         }

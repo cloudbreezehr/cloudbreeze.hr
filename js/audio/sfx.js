@@ -594,15 +594,50 @@ const VOICES = {
     });
   },
   // Motes circling the cursor — a gentle rising shimmer.
+  // Motes gathering into orbit — a soft sweep up with open bell tones (E5 B5
+  // E6) entering one after another, settling into a brief sustained ring.
   orbit(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "bandpass",
+      freq: 600,
+      sweepTo: 1600,
+      q: 0.8,
+      gain: 0.1,
+      attack: 0.1,
+    });
+    [659.25, 987.77, 1318.51].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.03,
+        hold: 0.1,
+        release: 0.5,
+        gain: 0.1,
+        delay: n * 0.08,
+      }),
+    );
+  },
+  // The gravity well locking in — a deep resonant pulse: a low bloom with a
+  // fifth above, like mass settling into place. The continuous hum carries on
+  // from here; this is the moment it forms.
+  wellPulse(ctx, bus) {
     tone(ctx, bus, {
-      freq: 520,
-      slideTo: 880,
+      freq: 110,
+      slideTo: 80,
       type: "sine",
-      attack: 0.08,
-      hold: 0.4,
+      attack: 0.01,
+      hold: 0.06,
       release: 0.5,
-      gain: 0.16,
+      gain: 0.32,
+    });
+    tone(ctx, bus, {
+      freq: 165,
+      type: "sine",
+      attack: 0.02,
+      hold: 0.04,
+      release: 0.4,
+      gain: 0.14,
     });
   },
   // The well collapsing on release — an implosion: air rushing in (a quick
