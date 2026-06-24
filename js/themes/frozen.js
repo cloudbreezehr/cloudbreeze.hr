@@ -3,8 +3,9 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createSnow } from "../particles/frozen.js";
-import { reducedDuration } from "../motion.js";
+import { reducedDuration, prefersReducedMotion } from "../motion.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
+import { playSfx } from "../audio/sfx.js";
 import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -199,9 +200,20 @@ export function initFrozen() {
       if (reversalTimes.length >= SHAKE.REVERSALS_NEEDED) {
         snowTurbulence.value = 1;
         reversalTimes.length = 0;
+        // The event fires unconditionally so the achievement stays reachable
+        // for users who never entered frozen. The rattle, though, is the sound
+        // of the flakes *bursting* — so it plays only when that visual actually
+        // renders (frozen active, motion allowed). Otherwise a plain shake-scroll
+        // would rattle with nothing on screen.
         window.dispatchEvent(
           new CustomEvent("achievement", { detail: { type: "snow-globe" } }),
         );
+        if (
+          document.body.classList.contains("frozen") &&
+          !prefersReducedMotion()
+        ) {
+          playSfx("rattle");
+        }
       }
     }
     lastScrollDir = dir;

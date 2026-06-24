@@ -28,10 +28,9 @@ describe("audio/bridges/theme-effects", () => {
   it("maps theme effects to their voices", () => {
     fire("frost-breath");
     fire("paper-stroke");
-    fire("snow-globe");
     fire("vhs-glitch");
     fire("rain-thunder");
-    expect(calls).toEqual(["ice", "pencil", "rattle", "glitch", "thunder"]);
+    expect(calls).toEqual(["ice", "pencil", "glitch", "thunder"]);
   });
 
   it("maps the sky/constellation interactions", () => {
@@ -45,6 +44,14 @@ describe("audio/bridges/theme-effects", () => {
   it("leaves passive background animations silent", () => {
     fire("jellyfish-pulse"); // a periodic animation, not a triggered effect
     fire("scroll");
+    expect(calls).toEqual([]);
+  });
+
+  it("does not sound the snow-globe shake — frozen.js rattles at the source", () => {
+    // The event fires on any shake-scroll (achievement reachability), but the
+    // rattle is the burst's sound, played by frozen.js only when frozen renders
+    // it. Sounding it here would rattle on a plain scroll with nothing on screen.
+    fire("snow-globe");
     expect(calls).toEqual([]);
   });
 });
