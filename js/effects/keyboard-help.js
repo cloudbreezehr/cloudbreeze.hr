@@ -9,6 +9,7 @@
 
 import { onKey } from "../keyboard.js";
 import { trapFocus } from "../achievements/focus-trap.js";
+import { playSfx } from "../audio/sfx.js";
 
 // Fallback removal delay — generously past the overlay's CSS fade so the
 // node is still removed if transitionend never fires (e.g. detached early).
@@ -96,6 +97,9 @@ export function openHelp() {
   document.body.appendChild(overlayEl);
   void overlayEl.offsetHeight;
   overlayEl.classList.add("visible");
+  // A soft panel whoosh as the help sheet opens, like the Cloudlog panel and
+  // cheatsheet — a dry UI cue.
+  playSfx("panelOpen", { ui: true });
   // Contain focus inside the dialog — without this an aria-modal dialog
   // still lets Tab reach the page behind it.  Starts focus on the close
   // button.
@@ -127,6 +131,7 @@ export function closeHelp() {
     _escHandler = null;
   }
   el.classList.remove("visible");
+  playSfx("panelClose", { ui: true });
   el.addEventListener("transitionend", () => el.remove(), { once: true });
   // Belt-and-suspenders: remove even if transitionend doesn't fire.
   setTimeout(() => el.remove(), FADE_FALLBACK_MS);
