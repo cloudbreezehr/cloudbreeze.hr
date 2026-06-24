@@ -1,9 +1,10 @@
 // ── Continuous Voices ──
 // Sustained voices driven each frame by the live interaction state: a drag
 // whoosh that brightens and swells with cursor speed, and a gravity-well hum
-// that rises in pitch and level across a press-and-hold, discharging when the
-// well it formed is released. Unlike the one-shot effect voices, these are
-// persistent nodes whose gain/cutoff/pitch are eased toward per-frame targets
+// that deepens, throbs, and gathers an overtone across a press-and-hold,
+// discharging when the well it formed is released. Unlike the one-shot voices,
+// these are persistent nodes whose gain/cutoff/pitch are eased toward per-frame
+// targets
 // (setTargetAtTime, so no zipper). The polling loop runs only while sound is
 // enabled, and the nodes are built lazily the first time it ticks — so a muted
 // visitor never spins up a context or a rAF.
@@ -24,7 +25,7 @@ const CONT = defineConstants("audio.continuous", {
     description: "Drag whoosh level at full speed",
   },
   WELL_GAIN: {
-    value: 0.22,
+    value: 0.1,
     min: 0,
     max: 1,
     step: 0.01,
@@ -36,8 +37,14 @@ const GLIDE_S = 0.06; // setTargetAtTime time constant — smooth but responsive
 export const DRAG_SPEED_REF = 35; // px/frame mapping to full whoosh
 const DRAG_CUTOFF_MIN = 400; // bandpass cutoff at rest (Hz)
 const DRAG_CUTOFF_RANGE = 2600; // … added at full speed
-const WELL_FREQ_BASE = 55; // hum pitch at zero strength (Hz)
-const WELL_FREQ_RANGE = 110; // … added at full strength
+const WELL_FREQ_BASE = 40; // deep hum fundamental at zero strength (Hz)
+const WELL_FREQ_RANGE = 90; // … added at full strength
+const WELL_DETUNE_BASE = 0.8; // beat between the two oscillators at rest (Hz)
+const WELL_DETUNE_RANGE = 2.2; // … added at full — the throb quickens as it builds
+const WELL_FIFTH_RATIO = 1.5; // a perfect-fifth overtone above the fundamental
+const WELL_FIFTH_LEVEL = 0.4; // its level (relative to the fundamentals) at full
+const WELL_CUTOFF_BASE = 130; // lowpass at rest — deep and muffled (Hz)
+const WELL_CUTOFF_RANGE = 680; // … opens as the well intensifies
 
 let rafId = null;
 let drag = null; // { gain, filter }
@@ -64,15 +71,42 @@ function buildVoices(ctx, bus) {
   noiseSrc.start();
   drag = { gain: dragGain, filter: dragFilter };
 
-  const osc = ctx.createOscillator();
-  osc.type = "triangle";
-  osc.frequency.value = WELL_FREQ_BASE;
+  // Gravity-well hum — two near-detuned sub oscillators beat against each other
+  // for a slow throb, a perfect-fifth overtone swells in as the well builds, and
+  // a lowpass opens with strength: a deep mass gathering, not a flat buzz.
   const wellGain = ctx.createGain();
   wellGain.gain.value = 0;
-  osc.connect(wellGain);
-  wellGain.connect(bus);
-  osc.start();
-  well = { gain: wellGain, osc };
+  const wellFilter = ctx.createBiquadFilter();
+  wellFilter.type = "lowpass";
+  wellFilter.frequency.value = WELL_CUTOFF_BASE;
+  wellFilter.Q.value = 0.8;
+  wellGain.connect(wellFilter);
+  wellFilter.connect(bus);
+
+  const sub = ctx.createOscillator();
+  sub.type = "sine";
+  sub.frequency.value = WELL_FREQ_BASE;
+  sub.connect(wellGain);
+  sub.start();
+
+  const beat = ctx.createOscillator();
+  beat.type = "sine";
+  beat.frequency.value = WELL_FREQ_BASE + WELL_DETUNE_BASE;
+  beat.connect(wellGain);
+  beat.start();
+
+  // The fifth rides its own gain so it can emerge with hold (≈ hold², since the
+  // master gain also scales with hold) rather than being present from the start.
+  const fifth = ctx.createOscillator();
+  fifth.type = "sine";
+  fifth.frequency.value = WELL_FREQ_BASE * WELL_FIFTH_RATIO;
+  const fifthGain = ctx.createGain();
+  fifthGain.gain.value = 0;
+  fifth.connect(fifthGain);
+  fifthGain.connect(wellGain);
+  fifth.start();
+
+  well = { gain: wellGain, filter: wellFilter, sub, beat, fifth, fifthGain };
 }
 
 function tick() {
@@ -118,12 +152,21 @@ function tick() {
   const hold = f ? f.holdStrength : 0;
   const w = f ? f.wellStrength : 0;
   if (hold > 0 || wellActive) {
-    well.gain.gain.setTargetAtTime(hold * CONT.WELL_GAIN, t, GLIDE_S);
-    well.osc.frequency.setTargetAtTime(
-      WELL_FREQ_BASE + hold * WELL_FREQ_RANGE,
+    const freq = WELL_FREQ_BASE + hold * WELL_FREQ_RANGE;
+    well.sub.frequency.setTargetAtTime(freq, t, GLIDE_S);
+    well.beat.frequency.setTargetAtTime(
+      freq + WELL_DETUNE_BASE + hold * WELL_DETUNE_RANGE,
       t,
       GLIDE_S,
     );
+    well.fifth.frequency.setTargetAtTime(freq * WELL_FIFTH_RATIO, t, GLIDE_S);
+    well.fifthGain.gain.setTargetAtTime(hold * WELL_FIFTH_LEVEL, t, GLIDE_S);
+    well.filter.frequency.setTargetAtTime(
+      WELL_CUTOFF_BASE + hold * WELL_CUTOFF_RANGE,
+      t,
+      GLIDE_S,
+    );
+    well.gain.gain.setTargetAtTime(hold * CONT.WELL_GAIN, t, GLIDE_S);
     wellActive = hold > 0;
   }
   if (prevWell > 0 && w === 0) playSfx("wellRelease");

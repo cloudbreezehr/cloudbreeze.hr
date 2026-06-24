@@ -138,7 +138,7 @@ describe("audio/continuous", () => {
     dispose = mod.initContinuous();
     expect(gains).toHaveLength(0); // scheduled, not yet ticked
     step();
-    expect(gains).toHaveLength(2); // drag + well
+    expect(gains).toHaveLength(3); // drag + well master + well fifth
   });
 
   it("maps drag speed to level, clamping at the speed reference", () => {
