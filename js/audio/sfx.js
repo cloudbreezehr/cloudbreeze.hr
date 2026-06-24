@@ -24,6 +24,7 @@ const SFX = defineConstants("audio.sfx", {
 const FLOOR = 0.0001; // exponential ramps can't reach 0
 const TAIL_S = 0.03; // slack before a node is stopped/freed
 const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework boom
+const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confetti
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -185,12 +186,14 @@ const VOICES = {
       release: 0.34,
       gain: 0.12,
     });
+    // An airy fizzing trail that climbs with the whistle.
     breath(ctx, bus, {
       dur: 0.34,
       type: "bandpass",
-      freq: 1300,
+      freq: 800,
+      sweepTo: 2600,
       q: 0.6,
-      gain: 0.09,
+      gain: 0.1,
       attack: 0.05,
     });
   },
@@ -239,32 +242,42 @@ const VOICES = {
       });
     }
   },
-  // A ripple ring — a soft water-drop plink.
+  // A ripple ring — a soft, resonant water-drop ploop: a quick downward plink
+  // with a gentle ring under it and a tiny surface tick.
   drop(ctx, bus) {
     tone(ctx, bus, {
-      freq: 900,
-      slideTo: 320,
+      freq: 1100,
+      slideTo: 420,
       type: "sine",
       attack: 0.002,
-      release: 0.18,
-      gain: 0.18,
+      release: 0.22,
+      gain: 0.16,
+    });
+    tone(ctx, bus, {
+      freq: 660,
+      type: "sine",
+      attack: 0.01,
+      release: 0.3,
+      gain: 0.07,
+      delay: 0.03,
     });
     breath(ctx, bus, {
-      dur: 0.05,
+      dur: 0.04,
       type: "bandpass",
-      freq: 1800,
-      q: 1.0,
-      gain: 0.1,
+      freq: 2200,
+      q: 1.2,
+      gain: 0.08,
     });
   },
-  // Confetti / snow scatter — a soft pop and a high flutter tail.
+  // Confetti / snow scatter — a soft pop, a high flutter tail, and a sprinkle of
+  // tiny bright sparkles fluttering down behind it.
   confetti(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.12,
       type: "bandpass",
       freq: 1800,
       q: 0.8,
-      gain: 0.22,
+      gain: 0.2,
     });
     breath(ctx, bus, {
       dur: 0.5,
@@ -274,23 +287,36 @@ const VOICES = {
       gain: 0.1,
       attack: 0.05,
     });
+    for (let i = 0; i < CONFETTI_SPARKLES; i++) {
+      tone(ctx, bus, {
+        freq: 2500 + Math.random() * 2500,
+        type: "sine",
+        attack: 0.002,
+        release: 0.08,
+        gain: 0.04,
+        delay: 0.05 + Math.random() * 0.4,
+      });
+    }
   },
-  // A screen flash (surge / glow / sun) — a soft brightening swell.
+  // A screen flash (surge / glow) — a radiant bloom: a small stack of rising
+  // tones swelling open as the light brightens.
   flash(ctx, bus) {
-    tone(ctx, bus, {
-      freq: 400,
-      slideTo: 820,
-      type: "sine",
-      attack: 0.04,
-      release: 0.32,
-      gain: 0.16,
-    });
+    [400, 600, 800].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        slideTo: freq * 1.6,
+        type: "sine",
+        attack: 0.04 + n * 0.02,
+        release: 0.34,
+        gain: 0.1 - n * 0.02,
+      }),
+    );
     breath(ctx, bus, {
       dur: 0.36,
       type: "lowpass",
       freq: 600,
-      sweepTo: 4200,
-      gain: 0.13,
+      sweepTo: 4800,
+      gain: 0.12,
       attack: 0.06,
     });
   },
@@ -819,22 +845,27 @@ const VOICES = {
     });
   },
   // Frost breath on a click in the frozen world — a crystalline tick.
+  // Frost forming — a glassy crystalline shimmer: a frosty hiss and a thin glass
+  // bell with slightly inharmonic overtones, like ice crystals spreading.
   ice(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.12,
+      dur: 0.16,
       type: "highpass",
-      freq: 6000,
+      freq: 7000,
       q: 0.6,
-      gain: 0.18,
+      gain: 0.12,
+      attack: 0.005,
     });
-    tone(ctx, bus, {
-      freq: 2400,
-      slideTo: 3200,
-      type: "triangle",
-      attack: 0.003,
-      release: 0.12,
-      gain: 0.1,
-    });
+    [2800, 4400, 6100].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.004 + n * 0.002,
+        release: 0.4 - n * 0.07,
+        gain: 0.1 - n * 0.035,
+        delay: n * 0.02,
+      }),
+    );
   },
   // A pencil stroke in the paper world — a short scratch.
   pencil(ctx, bus) {
@@ -1004,11 +1035,23 @@ const VOICES = {
     });
     tone(ctx, bus, {
       freq: 1600,
+      slideTo: 700,
       type: "sine",
       attack: 0.005,
-      release: 0.2,
+      release: 0.25,
       gain: 0.1,
     });
+    // A descending sparkle trail (E7 B6 E6) twinkling down in its wake.
+    [2637.02, 1975.53, 1318.51].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sine",
+        attack: 0.003,
+        release: 0.2,
+        gain: 0.06,
+        delay: n * 0.06,
+      }),
+    );
   },
   // Completing a constellation — a warm three-note chord.
   chord(ctx, bus) {
