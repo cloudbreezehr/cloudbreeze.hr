@@ -32,9 +32,10 @@ export function confettiBurst({
   round = false, // circles (snow) instead of rects (confetti)
   sway = DRIFT_PX,
   spin = SPIN_DEG,
+  sound = "confetti",
 } = {}) {
   if (prefersReducedMotion()) return;
-  playSfx("confetti");
+  playSfx(sound);
   const w = window.innerWidth;
   const h = window.innerHeight;
   const n = Math.min(count, MAX_PIECES);

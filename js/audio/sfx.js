@@ -456,6 +456,113 @@ const VOICES = {
       }),
     );
   },
+  // STORM — a deep rolling boom rumbling out under the bolts: low noise
+  // swelling and decaying with a sub thump beneath.
+  thunderclap(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 1.1,
+      type: "lowpass",
+      freq: 200,
+      sweepTo: 60,
+      q: 0.8,
+      gain: 0.5,
+      attack: 0.04,
+    });
+    tone(ctx, bus, {
+      freq: 70,
+      slideTo: 38,
+      type: "sine",
+      attack: 0.01,
+      hold: 0.1,
+      release: 0.9,
+      gain: 0.4,
+    });
+  },
+  // QUAKE — a grinding sub-bass earthquake that swells and rolls off; lower and
+  // longer than the generic shake, with a gritty saw sub under the rumble.
+  quake(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 1.4,
+      type: "lowpass",
+      freq: 160,
+      sweepTo: 45,
+      q: 1.2,
+      gain: 0.5,
+      attack: 0.12,
+    });
+    tone(ctx, bus, {
+      freq: 42,
+      type: "sawtooth",
+      attack: 0.08,
+      hold: 0.5,
+      release: 0.85,
+      gain: 0.32,
+    });
+  },
+  // PARTY — a quick brassy fanfare flourish: a rising triad capped by a held
+  // party-horn top note.
+  party(ctx, bus) {
+    [392, 523.25, 659.25, 783.99].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "sawtooth",
+        attack: 0.01,
+        hold: 0.04,
+        release: 0.18,
+        gain: 0.12,
+        delay: n * 0.09,
+      }),
+    );
+    tone(ctx, bus, {
+      freq: 1046.5,
+      type: "sawtooth",
+      attack: 0.02,
+      hold: 0.12,
+      release: 0.3,
+      gain: 0.12,
+      delay: 0.36,
+    });
+  },
+  // NOVA — the shock ring ripping outward: a deep impact boom under a high zing
+  // that sweeps up and away.
+  shockwave(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 160,
+      slideTo: 40,
+      type: "sine",
+      attack: 0.002,
+      release: 0.35,
+      gain: 0.45,
+    });
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "bandpass",
+      freq: 1200,
+      sweepTo: 7000,
+      q: 0.5,
+      gain: 0.18,
+      attack: 0.01,
+    });
+  },
+  // PULSE — a soft resonant ping for the ripple rings: a clean bell tone with a
+  // gentle shimmer a fifth above.
+  ping(ctx, bus) {
+    tone(ctx, bus, {
+      freq: 880,
+      type: "sine",
+      attack: 0.003,
+      release: 0.5,
+      gain: 0.16,
+    });
+    tone(ctx, bus, {
+      freq: 1318.51,
+      type: "sine",
+      attack: 0.01,
+      release: 0.4,
+      gain: 0.08,
+      delay: 0.04,
+    });
+  },
   // A lightning strike — a sharp high crack over a low thunder tail.
   lightning(ctx, bus) {
     breath(ctx, bus, {

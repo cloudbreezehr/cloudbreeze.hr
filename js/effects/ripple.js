@@ -19,9 +19,10 @@ import { playSfx } from "../audio/sfx.js";
  * @param {number}      [opts.duration]    - Animation duration in ms (default: 600)
  * @param {number}      [opts.maxScale]    - Final scale multiplier (default: 4)
  * @param {number}      [opts.startOpacity] - Starting opacity (default: 0.6)
+ * @param {string}      [opts.sound]       - Voice to play (default: "drop")
  */
 export function spawnRipple(x, y, opts) {
-  playSfx("drop");
+  playSfx(opts.sound || "drop");
   const parent = opts.parent || document.body;
   const count = opts.count || 1;
   const staggerMs = opts.staggerMs || 150;

@@ -23,9 +23,10 @@ const SHAKE_SELECTOR = ".page, #bg-canvas";
 export function screenShake({
   amplitude = BASE_AMPLITUDE_PX,
   durationMs = DEFAULT_DURATION_MS,
+  sound = "rumble",
 } = {}) {
   if (prefersReducedMotion()) return;
-  playSfx("rumble");
+  playSfx(sound);
   const frames = [];
   for (let i = 0; i <= SHAKE_STEPS; i++) {
     const decay = 1 - i / SHAKE_STEPS; // amplitude fades toward zero

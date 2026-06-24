@@ -176,6 +176,7 @@ export const INCANTATIONS = [
         count: PULSE_RINGS,
         maxScale: PULSE_MAX_SCALE,
         duration: PULSE_DURATION_MS,
+        sound: "ping",
       });
     },
   },
@@ -207,6 +208,7 @@ export const INCANTATIONS = [
           NOVA_BASE_SCALE +
           Math.min(charge || 0, NOVA_MAX_CHARGE) * NOVA_SCALE_PER_CHARGE,
         duration: NOVA_DURATION_MS,
+        sound: "shockwave",
       });
     },
   },
@@ -228,7 +230,7 @@ export const INCANTATIONS = [
     hint: "Confetti and a rocket volley",
     // Confetti from the cursor plus a small rocket volley.
     cast: (origin) => {
-      confettiBurst({ origin, count: PARTY_CONFETTI });
+      confettiBurst({ origin, count: PARTY_CONFETTI, sound: "party" });
       launchRocketFireworks({ count: PARTY_ROCKETS });
     },
   },
@@ -286,6 +288,7 @@ export const INCANTATIONS = [
         amplitude:
           QUAKE_AMPLITUDE +
           Math.min(charge || 0, QUAKE_MAX_CHARGE) * QUAKE_AMP_PER_CHARGE,
+        sound: "quake",
       }),
   },
   {
@@ -357,7 +360,10 @@ export const INCANTATIONS = [
           i * STORM_STAGGER_MS,
         );
       }
-      screenShake({ amplitude: STORM_SHAKE + extra * STORM_SHAKE_PER_CHARGE });
+      screenShake({
+        amplitude: STORM_SHAKE + extra * STORM_SHAKE_PER_CHARGE,
+        sound: "thunderclap",
+      });
     },
   },
   {
