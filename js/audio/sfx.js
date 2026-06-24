@@ -26,6 +26,7 @@ const TAIL_S = 0.03; // slack before a node is stopped/freed
 const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework boom
 const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confetti
 const SHATTER_FRAGMENTS = 5; // pitched chips tumbling away when a block breaks
+const SNOWGLOBE_SPARKLES = 8; // tiny glints of snow swirling on a globe shake
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -880,15 +881,39 @@ const VOICES = {
     });
   },
   // A snow-globe shake — a brief shaken rustle.
+  // Shaking a snow globe — a soft watery slosh (the liquid swirling one way then
+  // back) under a delicate flurry of glittery snow swirling and settling. Soft
+  // and snowy, not a hard rattle.
   rattle(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.4,
+      dur: 0.3,
       type: "bandpass",
-      freq: 3000,
-      q: 0.5,
-      gain: 0.18,
-      attack: 0.01,
+      freq: 500,
+      sweepTo: 1100,
+      q: 0.7,
+      gain: 0.14,
+      attack: 0.06,
     });
+    breath(ctx, bus, {
+      dur: 0.35,
+      type: "bandpass",
+      freq: 1100,
+      sweepTo: 400,
+      q: 0.7,
+      gain: 0.12,
+      attack: 0.05,
+      delay: 0.18,
+    });
+    for (let i = 0; i < SNOWGLOBE_SPARKLES; i++) {
+      tone(ctx, bus, {
+        freq: 3000 + Math.random() * 3000,
+        type: "sine",
+        attack: 0.004,
+        release: 0.12 + Math.random() * 0.1,
+        gain: 0.035,
+        delay: 0.05 + Math.random() * 0.45,
+      });
+    }
   },
   // A VHS click glitch — a short bitcrushed buzz.
   glitch(ctx, bus) {
