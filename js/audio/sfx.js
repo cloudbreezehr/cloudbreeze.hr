@@ -870,14 +870,26 @@ const VOICES = {
     );
   },
   // A pencil stroke in the paper world — a short scratch.
+  // A pencil stroke on paper — a short gritty scratch: a mid-band graphite drag
+  // sweeping down with a rougher high grain (the paper's tooth) riding on top.
   pencil(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.14,
       type: "bandpass",
-      freq: 1600,
-      q: 0.7,
-      gain: 0.16,
+      freq: 1500,
+      sweepTo: 900,
+      q: 0.8,
+      gain: 0.13,
       attack: 0.01,
+    });
+    breath(ctx, bus, {
+      dur: 0.11,
+      type: "highpass",
+      freq: 4500,
+      q: 0.5,
+      gain: 0.06,
+      attack: 0.008,
+      delay: 0.01,
     });
   },
   // A snow-globe shake — a brief shaken rustle.
