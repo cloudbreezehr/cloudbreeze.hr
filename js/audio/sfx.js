@@ -712,26 +712,27 @@ const VOICES = {
       }),
     );
   },
-  // The gravity well locking in — a deep resonant pulse: a low bloom with a
-  // fifth above, like mass settling into place. The continuous hum carries on
-  // from here; this is the moment it forms.
+  // The gravity well forming — a low tone sinking into the register the
+  // continuous hum then carries (mass gathering, space bending inward) under a
+  // gentle inward air-rush. Soft and dark, no bright interval, and quiet — so it
+  // hands off to the hum rather than announcing itself like a chime.
   wellPulse(ctx, bus) {
     tone(ctx, bus, {
-      freq: 110,
-      slideTo: 80,
+      freq: 200,
+      slideTo: 55,
       type: "sine",
-      attack: 0.01,
-      hold: 0.06,
-      release: 0.5,
-      gain: 0.32,
+      attack: 0.03,
+      release: 0.45,
+      gain: 0.16,
     });
-    tone(ctx, bus, {
-      freq: 165,
-      type: "sine",
-      attack: 0.02,
-      hold: 0.04,
-      release: 0.4,
-      gain: 0.14,
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "lowpass",
+      freq: 700,
+      sweepTo: 90,
+      q: 0.8,
+      gain: 0.11,
+      attack: 0.05,
     });
   },
   // The well collapsing on release — it pays off the whole hold: energy rushing
