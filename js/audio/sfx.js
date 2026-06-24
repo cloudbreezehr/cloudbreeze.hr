@@ -23,6 +23,7 @@ const SFX = defineConstants("audio.sfx", {
 // ── Synthesis constants ──
 const FLOOR = 0.0001; // exponential ramps can't reach 0
 const TAIL_S = 0.03; // slack before a node is stopped/freed
+const BURST_CRACKLE_POPS = 7; // tiny high pops scattered after a firework boom
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -193,8 +194,9 @@ const VOICES = {
       attack: 0.05,
     });
   },
-  // A firework detonation — a soft body thump, a sub, and a high crackle tail
-  // for the shimmer. One per burst, so denser shows sound bigger on their own.
+  // A firework detonation — a deep body thump and sub, then a real crackling
+  // sparkle tail: a brief airy hiss and a scatter of tiny high pops as the
+  // embers fall. One per burst, so denser shows sound bigger on their own.
   burst(ctx, bus) {
     breath(ctx, bus, {
       dur: 0.4,
@@ -211,14 +213,28 @@ const VOICES = {
       release: 0.34,
       gain: 0.45,
     });
+    // A brief airy hiss of scattering embers.
     breath(ctx, bus, {
-      dur: 0.5,
+      dur: 0.4,
       type: "highpass",
       freq: 4200,
       q: 0.5,
-      gain: 0.12,
+      gain: 0.09,
       attack: 0.03,
+      delay: 0.04,
     });
+    // Crackle — tiny high pops scattered (randomised for an organic crackle) as
+    // the sparks decay after the boom.
+    for (let i = 0; i < BURST_CRACKLE_POPS; i++) {
+      tone(ctx, bus, {
+        freq: 2200 + Math.random() * 3200,
+        type: "sine",
+        attack: 0.001,
+        release: 0.03 + Math.random() * 0.05,
+        gain: 0.05,
+        delay: 0.1 + Math.random() * 0.45,
+      });
+    }
   },
   // A ripple ring — a soft water-drop plink.
   drop(ctx, bus) {
@@ -573,37 +589,74 @@ const VOICES = {
       delay: 0.04,
     });
   },
-  // A lightning strike — a sharp high crack over a low thunder tail.
+  // A lightning strike — a razor-sharp snap, a brief sizzling electric crackle
+  // and a pitched zap, then a deeper rolling thunder that lags behind the flash.
   lightning(ctx, bus) {
+    // The snap — an instant broadband crack.
     breath(ctx, bus, {
-      dur: 0.12,
+      dur: 0.04,
       type: "highpass",
-      freq: 3000,
-      q: 0.5,
-      gain: 0.5,
+      freq: 3500,
+      q: 0.4,
+      gain: 0.6,
+      attack: 0.001,
     });
+    // The sizzle — a bright resonant crackle riding just after.
     breath(ctx, bus, {
-      dur: 0.6,
+      dur: 0.18,
+      type: "bandpass",
+      freq: 5000,
+      sweepTo: 2000,
+      q: 1.4,
+      gain: 0.26,
+      attack: 0.002,
+      delay: 0.02,
+    });
+    // A pitched zap for the electric edge.
+    tone(ctx, bus, {
+      freq: 2200,
+      slideTo: 900,
+      type: "sawtooth",
+      attack: 0.001,
+      release: 0.12,
+      gain: 0.1,
+      delay: 0.01,
+    });
+    // The rolling thunder, arriving a beat after the flash.
+    breath(ctx, bus, {
+      dur: 0.7,
       type: "lowpass",
-      freq: 320,
-      sweepTo: 80,
+      freq: 360,
+      sweepTo: 60,
+      q: 0.9,
       gain: 0.4,
-      attack: 0.02,
+      attack: 0.05,
+      delay: 0.12,
     });
   },
-  // A streak shooting across (comet / warp / gust / wish) — a quick airy zip.
+  // A streak shooting across (comet / gust) — a doppler swoosh: the pitch rises
+  // as it approaches, then drops as it sweeps past and recedes.
   streak(ctx, bus) {
     breath(ctx, bus, {
-      dur: 0.4,
+      dur: 0.25,
       type: "bandpass",
-      freq: 900,
-      sweepTo: 3200,
+      freq: 700,
+      sweepTo: 2800,
       q: 0.7,
       gain: 0.16,
       attack: 0.04,
     });
+    breath(ctx, bus, {
+      dur: 0.4,
+      type: "bandpass",
+      freq: 2800,
+      sweepTo: 500,
+      q: 0.7,
+      gain: 0.15,
+      attack: 0.02,
+      delay: 0.2,
+    });
   },
-  // Motes circling the cursor — a gentle rising shimmer.
   // Motes gathering into orbit — a soft sweep up with open bell tones (E5 B5
   // E6) entering one after another, settling into a brief sustained ring.
   orbit(ctx, bus) {
@@ -822,16 +875,35 @@ const VOICES = {
       gain: 0.1,
     });
   },
-  // A distant rolling rumble for a lightning flash in the rain.
+  // Thunder for a lightning flash in the rain — a sharp distant crack, a rolling
+  // low rumble, and a second clap echoing off a beat later.
   thunder(ctx, bus) {
     breath(ctx, bus, {
-      dur: 1.0,
+      dur: 0.08,
+      type: "highpass",
+      freq: 1800,
+      q: 0.5,
+      gain: 0.3,
+      attack: 0.002,
+    });
+    breath(ctx, bus, {
+      dur: 1.1,
       type: "lowpass",
-      freq: 180,
+      freq: 200,
+      sweepTo: 45,
+      q: 1,
+      gain: 0.34,
+      attack: 0.05,
+    });
+    breath(ctx, bus, {
+      dur: 0.5,
+      type: "lowpass",
+      freq: 120,
       sweepTo: 50,
       q: 1,
-      gain: 0.32,
-      attack: 0.06,
+      gain: 0.18,
+      attack: 0.04,
+      delay: 0.5,
     });
   },
   // The world inverting (upside-down) — a tumbling, disorienting whoosh.
