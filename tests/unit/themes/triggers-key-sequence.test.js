@@ -153,6 +153,32 @@ describe("createKeySequenceTrigger", () => {
     expect(ctx.complete).toHaveBeenCalledOnce();
   });
 
+  it("re-activates after the theme was toggled off by a non-trigger path", () => {
+    // Repro: activate via the key sequence, then exit by some other route
+    // (the speller, the HUD, a programmatic toggle) that never flows through
+    // this trigger. The activation words must work again afterward.
+    const ctx = makeStubCtx();
+    const trigger = createKeySequenceTrigger({
+      activationWords: ["DRAW"],
+      deactivationWords: ["ERASE"],
+    });
+    trigger.start(ctx);
+
+    typeWord("DRAW");
+    expect(ctx.complete).toHaveBeenCalledOnce();
+    ctx.state.active = true; // the midpoint flip the factory performs
+
+    // A keystroke while active swings the accumulator to the deactivation set.
+    typeKey("E");
+    // Now the theme is dismissed by a different path — only isActive flips,
+    // the trigger is never told.
+    ctx.state.active = false;
+    ctx.complete.mockClear();
+
+    typeWord("DRAW");
+    expect(ctx.complete).toHaveBeenCalledOnce();
+  });
+
   it("resets the accumulator once force fully drains so stale prefixes can't complete later", () => {
     const ctx = makeStubCtx();
     const trigger = createKeySequenceTrigger({

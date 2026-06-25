@@ -281,12 +281,25 @@ export function createKeySequenceTrigger({
   let force = 0;
   let lastAdvanceTime = 0;
   let accumulator;
+  // The isActive value the accumulator was built for. The theme can be toggled
+  // by paths other than this trigger (the speller, the HUD, a programmatic
+  // toggle), so swapping word-sets at our own completion isn't enough — we
+  // re-derive the tracked set from the live isActive whenever it has drifted.
+  let accumulatorActive;
   let ctx = null;
+
+  function rebuildAccumulator() {
+    accumulatorActive = ctx.isActive();
+    accumulator = createSequenceAccumulator(
+      accumulatorActive ? deactivationWords : activationWords,
+      maxGapMs,
+    );
+  }
 
   return {
     start(_ctx) {
       ctx = _ctx;
-      accumulator = createSequenceAccumulator(activationWords, maxGapMs);
+      rebuildAccumulator();
 
       function onKeydown(e) {
         if (ctx.isTransitioning()) return;
@@ -300,6 +313,10 @@ export function createKeySequenceTrigger({
         if (e.key.length !== 1) return;
         const letter = e.key.toUpperCase();
         if (letter < "A" || letter > "Z") return;
+
+        // Resync to the current direction if the theme was toggled by another
+        // path (or by our own just-completed sequence) since the last keystroke.
+        if (ctx.isActive() !== accumulatorActive) rebuildAccumulator();
 
         const now = Date.now();
         const { matchForce, completed, anyAdvanced } = accumulator.ingest(
@@ -316,11 +333,8 @@ export function createKeySequenceTrigger({
         if (completed) {
           force = 0;
           ctx.complete();
-          // Swap tracked words for the opposite direction
-          accumulator = createSequenceAccumulator(
-            ctx.isActive() ? activationWords : deactivationWords,
-            maxGapMs,
-          );
+          // The accumulator resyncs to the opposite direction on the next
+          // keystroke once isActive has flipped (see the guard above).
         }
       }
       window.addEventListener("keydown", onKeydown);
