@@ -11,8 +11,9 @@ import { prefersReducedMotion } from "../motion.js";
 // This file is for behavior only.
 
 // ── Force, HUD & Score ──
-// Typing GIMMEHEAT raises the heat (lighting wanted stars 1→5); LAYLOW cools
-// off. (Spelling the theme's name — WANTED — also toggles it via the speller.)
+// Typing HESOYAM or BRINGITON raises the heat (lighting wanted stars 1→5);
+// TURNDOWNTHEHEAT cools off. (Spelling the theme's name — WANTED — also toggles
+// it via the speller.)
 const WF = defineConstants(
   "themes.wanted",
   {
@@ -48,8 +49,8 @@ function makeStars(parent, n) {
 export function initWanted() {
   const wanted = createWanted();
 
-  // Buildup star strip — lights up as GIMMEHEAT is typed (DOM, opacity 0 at
-  // rest), like the other themes' indicator overlays.
+  // Buildup star strip — lights up as the activation code is typed (DOM,
+  // opacity 0 at rest), like the other themes' indicator overlays.
   const buildup = document.createElement("div");
   buildup.className = "wanted-buildup";
   buildup.setAttribute("aria-hidden", "true");
@@ -154,15 +155,17 @@ export function initWanted() {
   createTheme({
     id: "wanted",
     trigger: createKeySequenceTrigger({
-      // HESOYAM is the most recognizable cheat code there is; GIMMEHEAT is our
-      // own on-theme alias. Either raises the heat.
-      activationWords: ["GIMMEHEAT", "HESOYAM"],
-      deactivationWords: ["LAYLOW"],
+      // Real SA codes whose meaning matches the gesture: BRINGITON (max wanted)
+      // and HESOYAM raise the heat; TURNDOWNTHEHEAT (remove wanted) cools off.
+      // BRINGITON and HESOYAM each also double as an in-theme cheat, firing only
+      // once the theme is active.
+      activationWords: ["HESOYAM", "BRINGITON"],
+      deactivationWords: ["TURNDOWNTHEHEAT"],
       completionHoldMs: WF.HOLD_MS,
     }),
     indicators: [
       // Wanted-level meter. Activation raises the heat — stars light 1→5 as the
-      // code lands; deactivation sheds it — LAYLOW empties 5→0. Both run the
+      // code lands; deactivation sheds it — TURNDOWNTHEHEAT empties 5→0. Both run the
       // force 0→1, so the displayed level is inverted while the theme is active.
       // The strip flashes red/blue whenever the level is near the top.
       {
