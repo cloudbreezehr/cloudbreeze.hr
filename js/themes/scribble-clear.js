@@ -10,22 +10,34 @@
 
 import { getThemes, toggleTheme } from "./registry.js";
 
-export const SCRIBBLE_REVERSALS = 6;
+// Tuned to demand a deliberate, vigorous scrub — many wide reversals in a
+// short window — so the back-and-forth dragging that plays with the pointer
+// forces (gravity well, orbit) doesn't accidentally clear every theme.
+export const SCRIBBLE_REVERSALS = 9;
 export const SCRIBBLE_WINDOW_MS = 1500;
-export const SCRIBBLE_MIN_SWING_PX = 30;
+export const SCRIBBLE_MIN_SWING_PX = 55;
+// A swing only counts as a horizontal scrub if its vertical excursion stays
+// under this fraction of its horizontal distance. A circular/diagonal drag
+// swings sideways too, but carries a large vertical excursion (~0.5 for a
+// circle), so it's rejected — the gesture must be genuinely left-right.
+export const SCRIBBLE_MAX_VERTICAL_RATIO = 0.4;
 
-// Pure detector: feed pointer x positions with timestamps; returns true once
+// Pure detector: feed pointer x/y positions with timestamps; returns true once
 // enough back-and-forth reversals land within the window, then re-arms. A
 // reversal counts only when the pointer turns and travels at least minSwingPx
-// the other way, so ordinary drags and small jitter don't register.
+// horizontally *and* the swing stayed roughly flat (small vertical excursion),
+// so ordinary drags, small jitter, and circular/diagonal motion don't register.
 export function createScribbleDetector({
   reversalsNeeded = SCRIBBLE_REVERSALS,
   windowMs = SCRIBBLE_WINDOW_MS,
   minSwingPx = SCRIBBLE_MIN_SWING_PX,
+  maxVerticalRatio = SCRIBBLE_MAX_VERTICAL_RATIO,
 } = {}) {
   let extremeX = null; // furthest point reached in the current direction
   let dir = 0; // -1, 0, +1
   let reversals = [];
+  let minY = 0; // vertical extent travelled during the current swing
+  let maxY = 0;
 
   function reset() {
     extremeX = null;
@@ -33,17 +45,22 @@ export function createScribbleDetector({
     reversals = [];
   }
 
-  function feed(x, now) {
+  function feed(x, y, now) {
     if (extremeX === null) {
       extremeX = x;
+      minY = maxY = y;
       return false;
     }
+    // Track how far the pointer wandered vertically during this swing.
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
     const delta = x - extremeX;
     if (dir === 0) {
       // Establish a direction once the first swing clears the threshold.
       if (Math.abs(delta) >= minSwingPx) {
         dir = Math.sign(delta);
         extremeX = x;
+        minY = maxY = y; // start measuring the next swing's vertical extent
       }
       return false;
     }
@@ -52,9 +69,18 @@ export function createScribbleDetector({
       return false;
     }
     if (Math.abs(delta) < minSwingPx) return false; // small backtrack / jitter
-    // A genuine reversal: turned and travelled a full swing the other way.
+    // The swing reversed far enough horizontally — but only count it if it
+    // stayed flat. A circular/diagonal drag swings sideways too, yet carries a
+    // large vertical excursion; any such swing resets the run so circling never
+    // accumulates toward a clear.
+    if (maxY - minY > maxVerticalRatio * Math.abs(delta)) {
+      reset();
+      return false;
+    }
+    // A genuine horizontal reversal: turned and travelled a full flat swing.
     dir = -dir;
     extremeX = x;
+    minY = maxY = y;
     reversals.push(now);
     while (reversals.length && now - reversals[0] > windowMs) reversals.shift();
     if (reversals.length >= reversalsNeeded) {
@@ -77,7 +103,7 @@ export function initScribbleClear() {
       detector.reset();
       return;
     }
-    if (!detector.feed(e.clientX, performance.now())) return;
+    if (!detector.feed(e.clientX, e.clientY, performance.now())) return;
     const active = getThemes().filter((m) =>
       document.body.classList.contains(m.id),
     );

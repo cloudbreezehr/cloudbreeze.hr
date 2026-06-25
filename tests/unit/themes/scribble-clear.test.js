@@ -2,19 +2,25 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   createScribbleDetector,
   SCRIBBLE_MIN_SWING_PX,
+  SCRIBBLE_REVERSALS,
   SCRIBBLE_WINDOW_MS,
 } from "../../../js/themes/scribble-clear.js";
+
+// Samples to feed for a guaranteed fire: two prime the direction, then one
+// reversal per alternation after that, plus slack. Derived from the source
+// constant so retuning the reversal count keeps these tests honest.
+const FIRING_SAMPLES = SCRIBBLE_REVERSALS + 3;
 
 describe("themes/scribble-clear", () => {
   describe("createScribbleDetector", () => {
     const SWING = SCRIBBLE_MIN_SWING_PX + 10; // comfortably past the threshold
 
-    // Feed an alternating 0 / SWING zigzag; return true if it ever fires.
+    // Feed an alternating 0 / SWING zigzag at a flat y; return true if it fires.
     function zigzag(detector, samples, stepMs = 1) {
       let fired = false;
       for (let i = 0; i < samples; i++) {
         const x = i % 2 === 0 ? 0 : SWING;
-        if (detector.feed(x, i * stepMs)) fired = true;
+        if (detector.feed(x, 0, i * stepMs)) fired = true;
       }
       return fired;
     }
@@ -22,7 +28,7 @@ describe("themes/scribble-clear", () => {
     it("fires after enough rapid full-swing reversals", () => {
       const detector = createScribbleDetector();
       // Two samples establish direction; each later alternation is a reversal.
-      expect(zigzag(detector, 10)).toBe(true);
+      expect(zigzag(detector, FIRING_SAMPLES)).toBe(true);
     });
 
     it("ignores jitter smaller than the swing threshold", () => {
@@ -31,7 +37,20 @@ describe("themes/scribble-clear", () => {
       let fired = false;
       for (let i = 0; i < 40; i++) {
         const x = i % 2 === 0 ? 0 : tiny;
-        if (detector.feed(x, i)) fired = true;
+        if (detector.feed(x, 0, i)) fired = true;
+      }
+      expect(fired).toBe(false);
+    });
+
+    it("ignores circular motion (each swing carries too much vertical travel)", () => {
+      const detector = createScribbleDetector();
+      // Trace circles: x swings past the threshold, but every horizontal swing
+      // also climbs and falls through ~the radius, so none counts as flat.
+      const R = SCRIBBLE_MIN_SWING_PX + 30;
+      let fired = false;
+      for (let i = 0; i < 80; i++) {
+        const a = (i / 10) * Math.PI;
+        if (detector.feed(Math.cos(a) * R, Math.sin(a) * R, i)) fired = true;
       }
       expect(fired).toBe(false);
     });
@@ -43,16 +62,16 @@ describe("themes/scribble-clear", () => {
       let fired = false;
       for (let i = 0; i < 40; i++) {
         const x = i % 2 === 0 ? 0 : SWING;
-        if (detector.feed(x, i * (SCRIBBLE_WINDOW_MS + 1))) fired = true;
+        if (detector.feed(x, 0, i * (SCRIBBLE_WINDOW_MS + 1))) fired = true;
       }
       expect(fired).toBe(false);
     });
 
     it("re-arms after firing", () => {
       const detector = createScribbleDetector();
-      expect(zigzag(detector, 10)).toBe(true);
+      expect(zigzag(detector, FIRING_SAMPLES)).toBe(true);
       // A fresh zigzag fires again.
-      expect(zigzag(detector, 10, 1)).toBe(true);
+      expect(zigzag(detector, FIRING_SAMPLES, 1)).toBe(true);
     });
   });
 
@@ -94,7 +113,7 @@ describe("themes/scribble-clear", () => {
     // buttons defaults to 1 (a held drag); pass 0 to simulate idle mouse drift.
     function scribble(buttons = 1) {
       const swing = SCRIBBLE_MIN_SWING_PX + 10;
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < FIRING_SAMPLES; i++) {
         window.dispatchEvent(
           new MouseEvent("pointermove", {
             clientX: i % 2 === 0 ? 0 : swing,
