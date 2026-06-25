@@ -20,6 +20,7 @@ describe("themes/registry — metadata", () => {
       "vhs",
       "upside-down",
       "constellation",
+      "matrix",
     ]);
   });
 
@@ -31,7 +32,7 @@ describe("themes/registry — metadata", () => {
       .filter((t) => t.darkOnly)
       .map((t) => t.id);
     expect(new Set(darkOnly)).toEqual(
-      new Set(["deep-sea", "upside-down", "constellation"]),
+      new Set(["deep-sea", "upside-down", "constellation", "matrix"]),
     );
   });
 

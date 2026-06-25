@@ -131,6 +131,10 @@ export const PROGRESS_COUNTS = {
     current: () => countSetUnlocked("constellation"),
     total: () => getSetPrereqs("constellation").length,
   },
+  "matrix-set": {
+    current: () => countSetUnlocked("matrix"),
+    total: () => getSetPrereqs("matrix").length,
+  },
 };
 
 export function isCollectionProgress(progressKey) {

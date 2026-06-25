@@ -40,6 +40,10 @@ const LAYERS = Object.freeze({
   // ── Background (0–9) ──
   Z_CANVAS: 0,
   Z_GRAIN: 1,
+  // Code-rain backdrop — above the sky canvas, below content. Deliberately
+  // shares the grain tier: grain's body::after paints over the rain by
+  // document order, layering its texture on top, which is the intent.
+  Z_MATRIX_RAIN: 1,
   Z_PAGE_CONTENT: 2,
   Z_RAIN_GLASS: 6,
   Z_NAV: 10,

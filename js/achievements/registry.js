@@ -99,6 +99,12 @@ export const SETS = [
     color: "#c0c8ff",
     icon: getTheme("constellation")?.icon,
   },
+  {
+    id: "matrix",
+    label: "Matrix",
+    color: "#33d96a",
+    icon: getTheme("matrix")?.icon,
+  },
   { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
 
@@ -1085,6 +1091,36 @@ export const ACHIEVEMENTS = [
     progressKey: "constellation-set",
   },
 
+  // ── Matrix ──
+  {
+    id: "enter-the-matrix",
+    title: "Enter the Matrix",
+    description: "You took the red pill.",
+    hint: "Activate matrix theme",
+    set: "matrix",
+    points: EPIC,
+    hidden: true,
+  },
+  {
+    id: "back-to-reality",
+    title: "Back to Reality",
+    description: "The blue pill. The story ends.",
+    hint: "Leave matrix theme",
+    set: "matrix",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "the-one",
+    title: "The One",
+    description: "You bent the code to your will.",
+    hint: "Unlock all other matrix achievements",
+    set: "matrix",
+    points: LEGENDARY,
+    hidden: true,
+    progressKey: "matrix-set",
+  },
+
   // ── Meta / Milestones ──
   {
     id: "curious-mind",
@@ -1334,6 +1370,7 @@ export const THEME_SETS = [
   "vhs",
   "upside-down",
   "constellation",
+  "matrix",
 ];
 
 // Map from theme set id to its "unlock all" achievement id
@@ -1346,6 +1383,7 @@ export const SET_MASTERY_MAP = {
   vhs: "analog-mastery",
   "upside-down": "world-turner",
   constellation: "dark-skies",
+  matrix: "the-one",
 };
 
 /**

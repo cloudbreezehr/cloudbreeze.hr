@@ -5,6 +5,12 @@ import { defineConstants } from "../dev/registry.js";
 export const MATRIX_GLYPHS =
   "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖ0123456789:.=*+<>".split("");
 
+// Intrinsic rain colours — Matrix is green whatever the appearance, so these
+// live with the renderer rather than the per-appearance palette.
+export const MATRIX_BG = "#020c05"; // dark backdrop the trail fades toward
+export const MATRIX_HEAD = "#d8ffe4"; // bright leading glyph
+export const MATRIX_TRAIL = "#33d96a"; // green trail / still-field glyphs
+
 export const MATRIX = defineConstants("particles.matrix", {
   GLYPH_SIZE: {
     value: 16,

@@ -1,0 +1,175 @@
+/* ═══════════════════════════════════════════════
+   Matrix Theme
+   ═══════════════════════════════════════════════ */
+
+/* ── Code-rain backdrop ── */
+
+/* The rain owns its own full-screen canvas, mounted while the theme is active.
+   It sits behind the page content (its own backdrop layer) and never eats
+   pointer events. The dark fill is the colour the glyph trail fades toward, so
+   the canvas reads solid even on the first frame before any fade has built up. */
+.matrix-rain {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-matrix-rain);
+  pointer-events: none;
+  /* Must match MATRIX_BG in matrix.constants.js — the colour the trail fades
+     toward; this paints it on the first frame before any fade has built up. */
+  background: #020c05;
+}
+
+/* ── Progressive indicator overlays ── */
+
+/* Charge wash — a green vignette that deepens as REDPILL is typed. */
+.matrix-charge {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(40, 230, 110, 0.18) 0%,
+    rgba(4, 18, 9, 0.7) 100%
+  );
+}
+
+/* Pre-trigger pulse — a faint scanline shimmer at the final threshold. */
+@keyframes matrix-pretrigger-pulse {
+  0%,
+  100% {
+    opacity: 0.06;
+  }
+  50% {
+    opacity: 0.18;
+  }
+}
+body.matrix-pre-trigger::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(51, 217, 106, 0.5) 0px,
+    rgba(51, 217, 106, 0.5) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  animation: matrix-pretrigger-pulse 0.5s ease-in-out infinite;
+}
+
+/* Matrix wipe transition — a downward green sweep. */
+.matrix-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  background: linear-gradient(
+    180deg,
+    rgba(2, 12, 5, 0.98),
+    rgba(20, 70, 38, 0.96),
+    rgba(2, 12, 5, 0.98)
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease-in;
+  pointer-events: none;
+}
+.matrix-wipe.reverse {
+  background: linear-gradient(
+    180deg,
+    rgba(2, 12, 5, 0.98),
+    rgba(40, 120, 64, 0.96),
+    rgba(2, 12, 5, 0.98)
+  );
+}
+
+/* ── Matrix — visual theme (only when active theme) ── */
+body[data-active-theme="matrix"] {
+  --sky-3: #04160a;
+  --sky-4: #031207;
+  --sky-5: #020c05;
+  --sky-6: #010703;
+  --theme-primary: #33d96a;
+  --theme-glow: 51, 217, 106;
+  --logo-text-color: #d8ffe4;
+  --logo-accent-color: rgb(var(--theme-glow));
+  --theme-bg: #020c05;
+  --theme-hero-line2-bg: linear-gradient(
+    135deg,
+    #d8ffe4 0%,
+    rgb(var(--theme-glow)) 50%,
+    #0e7a3a 100%
+  );
+  --theme-btn-bg: linear-gradient(135deg, #0d4a24, #052e15);
+  --theme-btn-before-bg: linear-gradient(135deg, #14693a, #0a3d1f);
+  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
+  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
+  --theme-heading-em-bg: linear-gradient(
+    135deg,
+    #d8ffe4,
+    rgb(var(--theme-glow))
+  );
+}
+
+/* The rain replaces the backdrop, so the shared bg-canvas stays hidden behind
+   it — no canvas filter needed (the sky/atmosphere draws are suppressed). */
+body[data-active-theme="matrix"] .cloud-svg {
+  filter: grayscale(0.8) brightness(0.6)
+    drop-shadow(0 0 14px rgba(var(--theme-glow), 0.5));
+}
+
+body[data-active-theme="matrix"] #cursor {
+  box-shadow:
+    -3px -3px 4px rgba(216, 255, 228, 0.4) inset,
+    1px 1px 2px rgba(2, 30, 14, 0.4) inset;
+}
+body[data-active-theme="matrix"] #cursor-ring {
+  border-color: rgba(var(--theme-glow), 0.5);
+}
+
+/* Service-card terminal accent — a thin green underline revealed on hover
+   (pure CSS, no JS event wiring). */
+body.matrix .service-card {
+  transition:
+    background 0.4s,
+    box-shadow 0.6s ease;
+}
+body.matrix .service-card:hover {
+  box-shadow:
+    inset 0 0 30px rgba(var(--theme-glow), 0.06),
+    0 0 20px rgba(var(--theme-glow), 0.12);
+}
+body.matrix .service-card::after {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 12px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(var(--theme-glow), 0.6) 50%,
+    transparent 100%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+body.matrix .service-card:hover::after {
+  opacity: 1;
+}
+
+body[data-active-theme="matrix"] .contact-card {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--theme-glow), 0.08) 0%,
+    rgba(2, 12, 5, 0.92) 100%
+  );
+}
+
+body[data-active-theme="matrix"]::after {
+  opacity: 0.05;
+}

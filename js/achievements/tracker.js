@@ -402,6 +402,7 @@ export function createTracker(onUnlock, onRelock) {
         vhs: "tracking-lost",
         "upside-down": "the-flip",
         constellation: "night-sky-mapped",
+        matrix: "enter-the-matrix",
       };
       if (themeMap[data.theme]) tryUnlock(themeMap[data.theme]);
 
@@ -447,6 +448,7 @@ export function createTracker(onUnlock, onRelock) {
         paper: "blank-page",
         vhs: "tape-eject",
         "upside-down": "restoration",
+        matrix: "back-to-reality",
       };
       if (deactivateMap[data.theme]) tryUnlock(deactivateMap[data.theme]);
     },

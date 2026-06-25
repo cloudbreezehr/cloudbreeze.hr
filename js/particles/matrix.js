@@ -8,7 +8,13 @@
 // (no fall, no fade) so the theme still reads as Matrix without animation.
 
 import { scaled, chance, prefersReducedMotion } from "../motion.js";
-import { MATRIX, MATRIX_GLYPHS } from "./matrix.constants.js";
+import {
+  MATRIX,
+  MATRIX_GLYPHS,
+  MATRIX_BG,
+  MATRIX_HEAD,
+  MATRIX_TRAIL,
+} from "./matrix.constants.js";
 
 function randGlyph() {
   return MATRIX_GLYPHS[(Math.random() * MATRIX_GLYPHS.length) | 0];
@@ -56,6 +62,7 @@ export function createMatrix() {
 
   let columns = [];
   let still = []; // precomputed reduced-motion field: [{ c, row, glyph }]
+  let stillPainted = false; // RM field persists once drawn; only resize dirties it
   let cols = 0;
   let rows = 0;
   let lastW = -1;
@@ -79,9 +86,10 @@ export function createMatrix() {
     }
     lastW = w;
     lastH = h;
+    stillPainted = false;
   }
 
-  function draw(pal) {
+  function draw() {
     if (!ctx) return;
     if (window.innerWidth !== lastW || window.innerHeight !== lastH) resize();
     const cell = MATRIX.GLYPH_SIZE;
@@ -89,26 +97,32 @@ export function createMatrix() {
     ctx.textBaseline = "top";
 
     if (prefersReducedMotion()) {
-      // A frozen field — redrawn each frame so it persists without a fade loop.
+      // A frozen field — painted once and left on the canvas (the bitmap
+      // survives mount/unmount), so the rAF loop can skip it every frame.
+      if (stillPainted) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = pal.matrixTrail;
+      ctx.fillStyle = MATRIX_TRAIL;
       for (const g of still) ctx.fillText(g.glyph, g.c * cell, g.row * cell);
+      stillPainted = true;
       return;
     }
 
+    // Toggling motion back on must re-arm the still field for a later RM switch.
+    stillPainted = false;
+
     // Fade the trail toward the dark backdrop.
     ctx.globalAlpha = MATRIX.FADE_ALPHA;
-    ctx.fillStyle = pal.matrixBg;
+    ctx.fillStyle = MATRIX_BG;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1;
 
-    ctx.shadowColor = pal.matrixHead;
+    ctx.shadowColor = MATRIX_HEAD;
+    ctx.shadowBlur = MATRIX.HEAD_GLOW;
+    ctx.fillStyle = MATRIX_HEAD;
     for (let c = 0; c < cols; c++) {
       const col = columns[c];
       col.update(cell, canvas.height);
       if (!col.stepped) continue;
-      ctx.fillStyle = pal.matrixHead;
-      ctx.shadowBlur = MATRIX.HEAD_GLOW;
       ctx.fillText(col.glyph, c * cell, col.head * cell);
     }
     ctx.shadowBlur = 0;

@@ -17,6 +17,7 @@ const THEME_SOUND = {
     cue: "flip",
   },
   constellation: { filter: { type: "highpass", freq: 1400, q: 0.6 } },
+  matrix: { filter: { type: "bandpass", freq: 1100, q: 1.4 } },
 };
 
 // The bus tint for a theme, or null when the theme has none (→ neutral).

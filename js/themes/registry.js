@@ -114,6 +114,17 @@ const THEMES = [
       '<circle cx="13" cy="7" r="1" fill="currentColor"/>' +
       "</svg>",
   },
+  {
+    id: "matrix",
+    label: "Matrix",
+    color: "#33d96a",
+    darkOnly: true, // immersive code-rain — no light variant (see deep-sea)
+    icon:
+      '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
+      '<path d="M3 1.5v7M8 1.5v10M13 1.5v5"/>' +
+      '<path d="M3 11v2M13 9v2"/>' +
+      "</svg>",
+  },
 ];
 
 const _byId = new Map(THEMES.map((m) => [m.id, m]));
