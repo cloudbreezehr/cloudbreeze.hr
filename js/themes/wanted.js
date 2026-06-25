@@ -18,6 +18,7 @@ const WF = defineConstants(
     STAR_COUNT: 5,
     SHOW_AT: 0.02, // buildup stars appear once the code starts landing
     HOT_AT: 0.6, // red/blue police flicker kicks in near the top
+    HOLD_MS: 650, // all 5 stars flash for this long before the wipe
     WIPE_COVER_MS: 420,
     WIPE_REVEAL_MS: 620,
     BUSTED_MS: 3500, // how long the HUD stars flash after the level is obtained
@@ -145,6 +146,7 @@ export function initWanted() {
       // own on-theme alias. Either raises the heat.
       activationWords: ["GIMMEHEAT", "HESOYAM"],
       deactivationWords: ["LAYLOW"],
+      completionHoldMs: WF.HOLD_MS,
     }),
     indicators: [
       // Wanted-level buildup — stars light 1→5 with the typed force, and the

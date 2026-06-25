@@ -40,20 +40,35 @@
   text-shadow: 0 0 12px rgba(255, 210, 63, 0.9);
   transform: scale(1.12);
 }
+/* Animate the strip's colour, not each star, so every lit star flashes in
+   lockstep regardless of when it lit (per-star animations start at different
+   times and drift out of phase). The stars take the colour via currentColor;
+   text-shadow inherits from the strip too. */
 @keyframes wanted-siren {
   0%,
   49% {
-    -webkit-text-fill-color: #ff2b4a;
+    color: #ff2b4a;
     text-shadow: 0 0 14px rgba(255, 43, 74, 0.95);
   }
   50%,
   100% {
-    -webkit-text-fill-color: #2b6bff;
+    color: #2b6bff;
     text-shadow: 0 0 14px rgba(43, 107, 255, 0.95);
   }
 }
-.wanted-buildup.hot .wanted-pip.lit {
+.wanted-buildup.hot {
   animation: wanted-siren 0.4s steps(1) infinite;
+}
+.wanted-buildup.hot .wanted-pip.lit {
+  -webkit-text-fill-color: currentColor;
+  text-shadow: inherit; /* take the strip's animated glow, not the gold one */
+  /* No per-star transition during the flash: otherwise each star eases the
+     strip's colour change on its own clock (started when it lit) and they
+     drift out of phase. Snap instantly so all five blink as one. */
+  transition: none;
+}
+.wanted-buildup.hot .wanted-pip:not(.lit) {
+  text-shadow: none; /* keep the empty stars from glowing */
 }
 
 /* ── HUD: wanted level + score ── */
@@ -82,9 +97,15 @@
   -webkit-text-stroke: 2px #101010;
   text-shadow: 0 0 8px rgba(255, 210, 63, 0.8);
 }
-/* Freshly obtained: the stars flash like a just-raised wanted level. */
-.wanted-hud.busted .wanted-hud-stars .wanted-pip {
+/* Freshly obtained: the stars flash like a just-raised wanted level — driven
+   from the row so all five stay in sync. */
+.wanted-hud.busted .wanted-hud-stars {
   animation: wanted-siren 0.36s steps(1) infinite;
+}
+.wanted-hud.busted .wanted-hud-stars .wanted-pip {
+  -webkit-text-fill-color: currentColor;
+  text-shadow: inherit;
+  transition: none;
 }
 .wanted-hud-cash {
   margin-top: 2px;
@@ -316,8 +337,8 @@ body[data-active-theme="wanted"]::after {
 /* Reduced motion: drop the siren flash and the HUD/buildup slide — stars and
    score still update, just without the animated flicker. */
 @media (prefers-reduced-motion: reduce) {
-  .wanted-buildup.hot .wanted-pip.lit,
-  .wanted-hud.busted .wanted-hud-stars .wanted-pip {
+  .wanted-buildup.hot,
+  .wanted-hud.busted .wanted-hud-stars {
     animation: none;
   }
   .wanted-buildup,

@@ -153,6 +153,43 @@ describe("createKeySequenceTrigger", () => {
     expect(ctx.complete).toHaveBeenCalledOnce();
   });
 
+  it("pins force at full and delays completion by completionHoldMs", () => {
+    const ctx = makeStubCtx();
+    const HOLD_MS = 650;
+    const trigger = createKeySequenceTrigger({
+      activationWords: ["DRAW"],
+      deactivationWords: ["ERASE"],
+      completionHoldMs: HOLD_MS,
+    });
+    trigger.start(ctx);
+
+    typeWord("DRAW");
+    // The final letter lands the meter at full but holds the wipe so the
+    // climax is visible.
+    expect(ctx.state.force).toBe(1);
+    expect(ctx.complete).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(HOLD_MS);
+    expect(ctx.complete).toHaveBeenCalledOnce();
+  });
+
+  it("ignores keystrokes during the completion hold", () => {
+    const ctx = makeStubCtx();
+    const HOLD_MS = 650;
+    const trigger = createKeySequenceTrigger({
+      activationWords: ["DRAW"],
+      deactivationWords: ["ERASE"],
+      completionHoldMs: HOLD_MS,
+    });
+    trigger.start(ctx);
+
+    typeWord("DRAW");
+    ctx.setForce.mockClear();
+    // Mid-hold keystrokes must not disturb the pinned meter.
+    typeKey("D");
+    expect(ctx.setForce).not.toHaveBeenCalled();
+  });
+
   it("re-activates after the theme was toggled off by a non-trigger path", () => {
     // Repro: activate via the key sequence, then exit by some other route
     // (the speller, the HUD, a programmatic toggle) that never flows through

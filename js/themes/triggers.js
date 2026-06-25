@@ -277,9 +277,15 @@ export function createKeySequenceTrigger({
   maxGapMs = 600,
   decayTimeoutMs = 2000,
   decayRate = 0.4,
+  completionHoldMs = 0,
 }) {
   let force = 0;
   let lastAdvanceTime = 0;
+  // While true, the final word has landed and the indicator is pinned at full
+  // force for completionHoldMs before the wipe fires — so the buildup's climax
+  // is visible instead of being cut off by instant completion. Input and decay
+  // are suspended for the beat.
+  let holding = false;
   let accumulator;
   // The isActive value the accumulator was built for. The theme can be toggled
   // by paths other than this trigger (the speller, the HUD, a programmatic
@@ -302,7 +308,7 @@ export function createKeySequenceTrigger({
       rebuildAccumulator();
 
       function onKeydown(e) {
-        if (ctx.isTransitioning()) return;
+        if (ctx.isTransitioning() || holding) return;
         if (e.ctrlKey || e.metaKey || e.altKey) return;
         const tag = document.activeElement?.tagName;
         if (tag && INPUT_TAGS.has(tag)) return;
@@ -331,8 +337,21 @@ export function createKeySequenceTrigger({
           ctx.setForce(force);
         }
         if (completed) {
-          force = 0;
-          ctx.complete();
+          if (completionHoldMs > 0) {
+            // Pin the meter at full (all indicators at 1.0) and let it flash
+            // for a beat before the wipe, then complete.
+            holding = true;
+            force = 1;
+            ctx.setForce(1);
+            setTimeout(() => {
+              holding = false;
+              force = 0;
+              ctx.complete();
+            }, completionHoldMs);
+          } else {
+            force = 0;
+            ctx.complete();
+          }
           // The accumulator resyncs to the opposite direction on the next
           // keystroke once isActive has flipped (see the guard above).
         }
@@ -348,7 +367,7 @@ export function createKeySequenceTrigger({
         getIdleMs: () => Date.now() - lastAdvanceTime,
         getRatePerSec: () => decayRate,
         idleThresholdMs: decayTimeoutMs,
-        isBlocked: () => ctx.isTransitioning(),
+        isBlocked: () => holding || ctx.isTransitioning(),
         onDrain(next) {
           // Reset the accumulator once the running force fully drains —
           // otherwise a stale prefix could complete a word after a long idle.
