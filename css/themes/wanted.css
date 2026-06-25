@@ -139,8 +139,8 @@ body[data-active-theme="wanted"] {
   --logo-accent-color: #ff6a00;
   --theme-bg: #101010;
   /* Buttons read as hard-edged stickers — flat fills, ink outline below. */
-  --theme-btn-bg: linear-gradient(135deg, #ff6a00, #ff6a00);
-  --theme-btn-before-bg: linear-gradient(135deg, #1aa6a0, #1aa6a0);
+  --theme-btn-bg: #ff6a00;
+  --theme-btn-before-bg: #1aa6a0;
   --theme-btn-shadow: 4px 4px 0 #101010;
   --theme-btn-hover-shadow: 6px 6px 0 #101010;
 }

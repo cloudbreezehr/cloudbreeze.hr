@@ -60,7 +60,9 @@ const LAYERS = Object.freeze({
   Z_THEME_EFFECT: 100,
   Z_THEME_FLASH: 100,
   Z_THEME_WARNING: 100,
-  Z_WANTED_HUD: 100, // pop-art HUD chrome — over content, under panels/wipes
+  // Pop-art HUD chrome — deliberately shares the theme-effect tier; sits over
+  // content, under wipes and panels.
+  Z_WANTED_HUD: 100,
 
   // ── Transition wipes (200–299) ──
   Z_THEME_WIPE: 200,
