@@ -120,6 +120,15 @@ export function createWanted() {
     ctx.fill();
   }
 
+  // Kick every dot upward (with a little sideways scatter); the per-dot spring
+  // reels them home, so the whole field lifts off and settles — "low gravity".
+  function float() {
+    for (const d of dots) {
+      d.vy -= WANTED.FLOAT_MIN + Math.random() * WANTED.FLOAT_RANGE;
+      d.vx += (Math.random() - 0.5) * WANTED.FLOAT_SIDE;
+    }
+  }
+
   function draw(ctx, canvas, forces) {
     const w = canvas.width;
     const h = canvas.height;
@@ -140,5 +149,5 @@ export function createWanted() {
     ctx.restore();
   }
 
-  return { draw };
+  return { draw, float };
 }

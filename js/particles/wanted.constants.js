@@ -117,4 +117,27 @@ export const WANTED = defineConstants("particles.wanted", {
     step: 0.02,
     description: "Teal corner-block size (min-dimension frac)",
   },
+  // Low-gravity cheat: the upward impulse given to every dot, which the spring
+  // then reels back home.
+  FLOAT_MIN: {
+    value: 14,
+    min: 0,
+    max: 60,
+    step: 1,
+    description: "Min upward kick on the low-gravity cheat (px/frame)",
+  },
+  FLOAT_RANGE: {
+    value: 22,
+    min: 0,
+    max: 60,
+    step: 1,
+    description: "Extra upward-kick range per dot",
+  },
+  FLOAT_SIDE: {
+    value: 8,
+    min: 0,
+    max: 40,
+    step: 1,
+    description: "Sideways scatter on the low-gravity kick",
+  },
 });

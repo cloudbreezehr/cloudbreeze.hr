@@ -461,6 +461,12 @@ export function createTracker(onUnlock, onRelock) {
       if (data && data.total >= HIGH_ROLLER_CASH) tryUnlock("high-roller");
     },
 
+    "wanted-cheat"(data) {
+      if (!data || !data.code) return;
+      tryUnlock("cheat-the-system");
+      tryProgressItem("wanted-cheats-entered", data.code);
+    },
+
     "upside-down-warning"() {
       tryUnlock("boundary-break");
     },

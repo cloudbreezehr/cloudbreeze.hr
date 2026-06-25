@@ -17,6 +17,7 @@ import {
 } from "./registry.js";
 import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 import { INCANTATION_WORDS } from "../effects/incantations.js";
+import { CHEAT_CODES } from "../themes/wanted-cheats.js";
 
 export const APPEARANCES = ["dark", "light", "auto"];
 export const QUADRANTS = ["tl", "tr", "bl", "br"];
@@ -43,6 +44,7 @@ export const PROGRESS_ITEMS = {
   "quadrants-clicked": () => QUADRANTS,
   "incantations-cast": () => INCANTATION_WORDS,
   "themes-heard": () => THEME_SETS,
+  "wanted-cheats-entered": () => CHEAT_CODES,
 };
 
 function countNonMetaUnlocked() {

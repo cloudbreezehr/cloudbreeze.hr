@@ -168,7 +168,12 @@ describe("device reachability", () => {
   // Keyboard/hover-only achievements that should drop out on touch.
   // (reverse-engineer is reachable on touch via the #dev URL; magnetic-letters
   // by tapping the wordmark — so neither is gated.)
-  const KEYBOARD_ONLY = ["shortcut-master", "cheat-code"];
+  const KEYBOARD_ONLY = [
+    "shortcut-master",
+    "cheat-code",
+    "cheat-the-system",
+    "cheat-sheet",
+  ];
   const HOVER_ONLY = ["idle-hands", "idle-watcher", "phosphor-burn"];
 
   it("tags exactly the keyboard/hover-gated achievements with a requires", () => {

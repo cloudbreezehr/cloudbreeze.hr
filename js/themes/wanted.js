@@ -3,6 +3,7 @@ import { createWanted } from "../particles/wanted.js";
 import { createTheme } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeySequenceTrigger } from "./triggers.js";
+import { initWantedCheats } from "./wanted-cheats.js";
 import { playSfx } from "../audio/sfx.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -113,6 +114,17 @@ export function initWanted() {
     renderCash(0);
   }
 
+  // Flash the HUD stars like a freshly-raised wanted level, then settle them to
+  // a steady glow. Used on activation and by the max-heat cheat.
+  function bustStars() {
+    if (bustedTimer) clearTimeout(bustedTimer);
+    hud.classList.add("busted");
+    bustedTimer = setTimeout(() => {
+      hud.classList.remove("busted");
+      bustedTimer = null;
+    }, WF.BUSTED_MS);
+  }
+
   // Reusable entry for any cash gain: bumps the total, cha-chings, reports the
   // running total, and counts the HUD up to it.
   function addCash(amount) {
@@ -180,14 +192,7 @@ export function initWanted() {
     onActivate() {
       resetCash();
       hud.classList.add("show");
-      // Freshly busted: flash the stars like a just-obtained wanted level, then
-      // settle to a steady glow.
-      if (bustedTimer) clearTimeout(bustedTimer);
-      hud.classList.add("busted");
-      bustedTimer = setTimeout(() => {
-        hud.classList.remove("busted");
-        bustedTimer = null;
-      }, WF.BUSTED_MS);
+      bustStars();
     },
     onDeactivate() {
       hud.classList.remove("show", "busted");
@@ -198,4 +203,8 @@ export function initWanted() {
       }
     },
   });
+
+  // Cheat codes — typed while the theme is active. The two effects that touch
+  // theme state get wired in; the rest are self-contained.
+  initWantedCheats({ addCash, bustStars, floatDots: wanted.float });
 }

@@ -116,6 +116,39 @@
   letter-spacing: 0.02em;
 }
 
+/* ── Cheat-code toast — a pop-art sticker confirming a code ── */
+.wanted-cheat-toast {
+  position: fixed;
+  top: 120px;
+  left: 50%;
+  z-index: var(--z-wanted-hud);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 22px;
+  background: #f4ead3;
+  border: 3px solid #101010;
+  border-radius: 5px;
+  box-shadow: 5px 5px 0 #101010;
+  font-family: "Syne", sans-serif;
+  text-align: center;
+}
+.wanted-cheat-tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #ff6a00;
+}
+.wanted-cheat-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #101010;
+}
+
 /* ── Pop-art wipe — bold diagonal hazard stripes ── */
 .wanted-wipe {
   position: fixed;
