@@ -34,9 +34,15 @@ function buildSection(heading, rows) {
   section.appendChild(h);
   const dl = document.createElement("dl");
   dl.className = "cheatsheet-list";
-  for (const [term, desc] of rows) {
+  for (const [term, desc, icon] of rows) {
     const dt = document.createElement("dt");
-    dt.textContent = term;
+    if (icon) {
+      const ic = document.createElement("span");
+      ic.className = "cheatsheet-icon";
+      ic.innerHTML = icon; // trusted static markup from our own icon sets
+      dt.appendChild(ic);
+    }
+    dt.appendChild(document.createTextNode(term));
     const dd = document.createElement("dd");
     dd.textContent = desc;
     dl.appendChild(dt);
@@ -80,13 +86,13 @@ function buildOverlay() {
   body.appendChild(
     buildSection(
       "Themes",
-      getThemes().map((t) => [t.label, "Spell the name to toggle"]),
+      getThemes().map((t) => [t.label, "Spell the name to toggle", t.icon]),
     ),
   );
   body.appendChild(
     buildSection(
       "Incantations",
-      INCANTATIONS.map((inc) => [inc.word, inc.hint || ""]),
+      INCANTATIONS.map((inc) => [inc.word, inc.hint || "", inc.icon]),
     ),
   );
   panel.appendChild(body);
