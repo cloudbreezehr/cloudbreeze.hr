@@ -27,6 +27,7 @@ const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework 
 const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confetti
 const SHATTER_FRAGMENTS = 5; // pitched chips tumbling away when a block breaks
 const SNOWGLOBE_SPARKLES = 8; // tiny glints of snow swirling on a globe shake
+const ECHO_PINGS = 4; // sonar pings, each softer and lower, for the ECHO spell
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -619,6 +620,35 @@ const VOICES = {
       gain: 0.08,
       delay: 0.04,
     });
+  },
+  // ECHO — a sonar ping echoing outward: a clean tone repeating, each return a
+  // touch lower and softer, fading into the distance.
+  echo(ctx, bus) {
+    for (let i = 0; i < ECHO_PINGS; i++) {
+      tone(ctx, bus, {
+        freq: 1400 * Math.pow(0.92, i),
+        type: "sine",
+        attack: 0.003,
+        release: 0.25,
+        gain: 0.16 * Math.pow(0.62, i),
+        delay: i * 0.22,
+      });
+    }
+  },
+  // BLOOM — petals opening: a soft warm major chord (F A C F) swelling gently
+  // open, staggered like petals unfurling.
+  bloom(ctx, bus) {
+    [349.23, 440, 523.25, 698.46].forEach((freq, n) =>
+      tone(ctx, bus, {
+        freq,
+        type: "triangle",
+        attack: 0.08 + n * 0.04,
+        hold: 0.15,
+        release: 0.8,
+        gain: 0.1 - n * 0.012,
+        delay: n * 0.06,
+      }),
+    );
   },
   // A lightning strike — a razor-sharp snap, a brief sizzling electric crackle
   // and a pitched zap, then a deeper rolling thunder that lags behind the flash.

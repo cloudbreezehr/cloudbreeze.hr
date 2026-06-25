@@ -8,11 +8,15 @@ describe("effects/incantations", () => {
   let mod;
   let fireworks;
   let ripple;
+  let streaks;
+  let confetti;
 
   beforeEach(async () => {
     vi.resetModules();
     fireworks = { rockets: [], bursts: [] };
     ripple = { rings: [] };
+    streaks = [];
+    confetti = [];
     vi.doMock("../../../js/effects/fireworks.js", () => ({
       launchRocketFireworks: (opts) => fireworks.rockets.push(opts),
       burstFireworks: (x, y, opts) => fireworks.bursts.push({ x, y, opts }),
@@ -20,12 +24,20 @@ describe("effects/incantations", () => {
     vi.doMock("../../../js/effects/ripple.js", () => ({
       spawnRipple: (x, y, opts) => ripple.rings.push({ x, y, opts }),
     }));
+    vi.doMock("../../../js/effects/streak.js", () => ({
+      streak: (opts) => streaks.push(opts),
+    }));
+    vi.doMock("../../../js/effects/confetti.js", () => ({
+      confettiBurst: (opts) => confetti.push(opts),
+    }));
     mod = await import("../../../js/effects/incantations.js");
   });
 
   afterEach(() => {
     vi.doUnmock("../../../js/effects/fireworks.js");
     vi.doUnmock("../../../js/effects/ripple.js");
+    vi.doUnmock("../../../js/effects/streak.js");
+    vi.doUnmock("../../../js/effects/confetti.js");
   });
 
   function cast(word, origin, charge) {
@@ -92,5 +104,40 @@ describe("effects/incantations", () => {
     cast("PULSE", { x: 5, y: 6 });
     expect(ripple.rings[0]).toMatchObject({ x: 5, y: 6 });
     expect(ripple.rings[0].opts.className).toBe("incantation-ring");
+  });
+
+  it("METEOR streaks downward from the origin with the meteor voice", () => {
+    cast("METEOR", { x: 1, y: 2 });
+    expect(streaks[0].sound).toBe("meteor");
+    expect(streaks[0].angle).toBeGreaterThan(0); // falling, not arcing up
+  });
+
+  it("SUPERNOVA detonates and rings out with the shockwave voice", () => {
+    cast("SUPERNOVA", { x: 3, y: 4 }, 0);
+    expect(fireworks.bursts[0]).toMatchObject({ x: 3, y: 4 });
+    expect(ripple.rings[0].opts.sound).toBe("shockwave");
+  });
+
+  it("SUPERNOVA's shock ring grows with charge, up to the cap", () => {
+    cast("SUPERNOVA", { x: 0, y: 0 }, 0);
+    cast("SUPERNOVA", { x: 0, y: 0 }, 9999);
+    const capped = ripple.rings[1].opts.maxScale;
+    expect(capped).toBeGreaterThan(ripple.rings[0].opts.maxScale);
+    cast("SUPERNOVA", { x: 0, y: 0 }, 100000);
+    expect(ripple.rings[2].opts.maxScale).toBe(capped);
+  });
+
+  it("ECHO echoes staggered rings with the echo voice", () => {
+    cast("ECHO", { x: 7, y: 8 });
+    expect(ripple.rings[0]).toMatchObject({ x: 7, y: 8 });
+    expect(ripple.rings[0].opts.sound).toBe("echo");
+    expect(ripple.rings[0].opts.staggerMs).toBeGreaterThan(0);
+  });
+
+  it("BLOOM scatters round petals from the origin with the bloom voice", () => {
+    cast("BLOOM", { x: 9, y: 10 });
+    expect(confetti[0].sound).toBe("bloom");
+    expect(confetti[0].round).toBe(true);
+    expect(confetti[0].origin).toMatchObject({ x: 9, y: 10 });
   });
 });

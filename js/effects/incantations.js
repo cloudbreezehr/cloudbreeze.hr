@@ -145,6 +145,33 @@ const WISH_TRAVEL = 520;
 const WISH_DURATION_MS = 900;
 const WISH_COLOR = "#fff0c8";
 
+// ── METEOR — a fiery meteor crashing down ──
+const METEOR_ANGLE_RAD = Math.PI * 0.32; // steep down-and-to-the-right
+const METEOR_LENGTH = 260;
+const METEOR_TRAVEL = 680;
+const METEOR_DURATION_MS = 700;
+const METEOR_COLOR = "#ffd9a8";
+
+// ── SUPERNOVA — a colossal burst and an expanding shock ring ──
+const SUPERNOVA_RINGS = 3;
+const SUPERNOVA_BASE_SCALE = 40;
+const SUPERNOVA_SCALE_PER_CHARGE = 12;
+const SUPERNOVA_MAX_CHARGE = 6;
+const SUPERNOVA_DURATION_MS = 1100;
+
+// ── ECHO — rings echoing outward like sonar ──
+const ECHO_RINGS = 5;
+const ECHO_STAGGER_MS = 180;
+const ECHO_MAX_SCALE = 16;
+const ECHO_DURATION_MS = 1400;
+
+// ── BLOOM — petals blossoming from the cursor ──
+const BLOOM_PETALS = 28;
+const BLOOM_COLORS = ["#ffd1e8", "#ffc4d6", "#ffe0ec", "#f8b8d0"];
+const BLOOM_SWAY = 50;
+const BLOOM_SPIN = 200;
+const BLOOM_DURATION_MS = 2600;
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -429,6 +456,75 @@ export const INCANTATIONS = [
         durationMs: WISH_DURATION_MS,
         color: WISH_COLOR,
         sound: "wish",
+      }),
+  },
+  {
+    word: "METEOR",
+    hint: "A fiery meteor streaks down and burns up",
+    // A steep, fast streak with a warm tail; the meteor voice carries the
+    // descent, impact, and trailing debris.
+    cast: (origin) =>
+      streak({
+        origin,
+        angle: METEOR_ANGLE_RAD,
+        length: METEOR_LENGTH,
+        travel: METEOR_TRAVEL,
+        durationMs: METEOR_DURATION_MS,
+        color: METEOR_COLOR,
+        sound: "meteor",
+      }),
+  },
+  {
+    word: "SUPERNOVA",
+    hint: "A colossal burst with a shock ring; SUPERNOOOVA goes bigger",
+    // A central detonation plus an expanding shock ring; extra O's widen it.
+    chargeChar: "O",
+    chargeMax: () => SUPERNOVA_MAX_CHARGE,
+    cast: (origin, charge) => {
+      burstFireworks(origin.x, origin.y);
+      if (prefersReducedMotion()) return;
+      spawnRipple(origin.x, origin.y, {
+        className: "incantation-ring",
+        count: SUPERNOVA_RINGS,
+        maxScale:
+          SUPERNOVA_BASE_SCALE +
+          Math.min(charge || 0, SUPERNOVA_MAX_CHARGE) *
+            SUPERNOVA_SCALE_PER_CHARGE,
+        duration: SUPERNOVA_DURATION_MS,
+        sound: "shockwave",
+      });
+    },
+  },
+  {
+    word: "ECHO",
+    hint: "Rings echo outward like sonar",
+    // Several staggered rings rippling out, with the sonar echo voice.
+    cast: (origin) => {
+      if (prefersReducedMotion()) return;
+      spawnRipple(origin.x, origin.y, {
+        className: "incantation-ring",
+        count: ECHO_RINGS,
+        staggerMs: ECHO_STAGGER_MS,
+        maxScale: ECHO_MAX_SCALE,
+        duration: ECHO_DURATION_MS,
+        sound: "echo",
+      });
+    },
+  },
+  {
+    word: "BLOOM",
+    hint: "Petals blossom from the cursor",
+    // Soft round petals drifting out from the cursor over a warm chord.
+    cast: (origin) =>
+      confettiBurst({
+        origin,
+        count: BLOOM_PETALS,
+        colors: BLOOM_COLORS,
+        round: true,
+        sway: BLOOM_SWAY,
+        spin: BLOOM_SPIN,
+        durationMs: BLOOM_DURATION_MS,
+        sound: "bloom",
       }),
   },
 ];
