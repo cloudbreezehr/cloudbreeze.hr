@@ -135,6 +135,10 @@ export const PROGRESS_COUNTS = {
     current: () => countSetUnlocked("matrix"),
     total: () => getSetPrereqs("matrix").length,
   },
+  "wanted-set": {
+    current: () => countSetUnlocked("wanted"),
+    total: () => getSetPrereqs("wanted").length,
+  },
 };
 
 export function isCollectionProgress(progressKey) {

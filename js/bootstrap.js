@@ -166,6 +166,7 @@ const MODULES = [
   { path: "./themes/vhs.js", init: (m) => m.initVhs() },
   { path: "./themes/constellation.js", init: (m) => m.initConstellation() },
   { path: "./themes/matrix.js", init: (m) => m.initMatrix() },
+  { path: "./themes/wanted.js", init: (m) => m.initWanted() },
   { path: "./themes/konami.js", init: (m) => m.initKonami() },
   { path: "./themes/lights-out.js", init: (m) => m.initLightsOut() },
   { path: "./themes/spell-trigger.js", init: (m) => m.initSpellTrigger() },

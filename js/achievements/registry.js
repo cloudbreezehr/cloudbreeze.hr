@@ -105,6 +105,12 @@ export const SETS = [
     color: "#33d96a",
     icon: getTheme("matrix")?.icon,
   },
+  {
+    id: "wanted",
+    label: "Wanted",
+    color: "#ff6a00",
+    icon: getTheme("wanted")?.icon,
+  },
   { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
 
@@ -1121,6 +1127,45 @@ export const ACHIEVEMENTS = [
     progressKey: "matrix-set",
   },
 
+  // ── Wanted ──
+  {
+    id: "most-wanted",
+    title: "Most Wanted",
+    description: "Five stars. The whole city's looking for you.",
+    hint: "Activate wanted theme",
+    set: "wanted",
+    points: EPIC,
+    hidden: true,
+  },
+  {
+    id: "high-roller",
+    title: "High Roller",
+    description: "Crime pays, apparently.",
+    hint: "Bank a big score in wanted theme",
+    set: "wanted",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "lay-low",
+    title: "Lay Low",
+    description: "Heat's off. For now.",
+    hint: "Leave wanted theme",
+    set: "wanted",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "kingpin",
+    title: "Kingpin",
+    description: "You ran the whole town.",
+    hint: "Unlock all other wanted achievements",
+    set: "wanted",
+    points: LEGENDARY,
+    hidden: true,
+    progressKey: "wanted-set",
+  },
+
   // ── Meta / Milestones ──
   {
     id: "curious-mind",
@@ -1371,6 +1416,7 @@ export const THEME_SETS = [
   "upside-down",
   "constellation",
   "matrix",
+  "wanted",
 ];
 
 // Map from theme set id to its "unlock all" achievement id
@@ -1384,6 +1430,7 @@ export const SET_MASTERY_MAP = {
   "upside-down": "world-turner",
   constellation: "dark-skies",
   matrix: "the-one",
+  wanted: "kingpin",
 };
 
 /**

@@ -125,6 +125,18 @@ const THEMES = [
       '<path d="M3 11v2M13 9v2"/>' +
       "</svg>",
   },
+  {
+    id: "wanted",
+    label: "Wanted",
+    color: "#ff6a00",
+    // Pop-art repaints the whole backdrop in its own inks on a dark ground;
+    // it keeps that identity in light mode rather than washing out.
+    darkOnly: true,
+    icon:
+      '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+      '<path d="M8 1l1.9 4.1 4.5.5-3.4 3 1 4.4L8 10.8 3.99 13l1-4.4-3.4-3 4.5-.5z"/>' +
+      "</svg>",
+  },
 ];
 
 const _byId = new Map(THEMES.map((m) => [m.id, m]));

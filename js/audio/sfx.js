@@ -178,6 +178,51 @@ const VOICES = {
       gain: 0.12,
     });
   },
+  // A two-tone police wail — a hi/lo sawtooth alternation. The theme's entry
+  // and exit cue: the law arriving, then pulling away.
+  siren(ctx, bus) {
+    const lo = 600;
+    const hi = 820;
+    const step = 0.22;
+    for (let i = 0; i < 4; i++) {
+      tone(ctx, bus, {
+        freq: i % 2 === 0 ? lo : hi,
+        type: "sawtooth",
+        attack: 0.02,
+        hold: 0.14,
+        release: 0.04,
+        gain: 0.1,
+        delay: i * step,
+      });
+    }
+  },
+  // A cash-register "cha-ching" — a short noise "cha" then a bright bell ding
+  // with its octave shimmer. Fires once per click that banks score.
+  cash(ctx, bus) {
+    breath(ctx, bus, {
+      dur: 0.05,
+      type: "highpass",
+      freq: 2500,
+      q: 0.7,
+      gain: 0.1,
+    });
+    tone(ctx, bus, {
+      freq: 1318,
+      type: "triangle",
+      attack: 0.005,
+      release: 0.18,
+      gain: 0.16,
+      delay: 0.05,
+    });
+    tone(ctx, bus, {
+      freq: 1976,
+      type: "triangle",
+      attack: 0.005,
+      release: 0.16,
+      gain: 0.1,
+      delay: 0.06,
+    });
+  },
   // A firework rocket leaving the ground — a soft rising whistle. Fires once
   // per rocket, so a staggered volley layers into a natural crescendo.
   rocket(ctx, bus) {

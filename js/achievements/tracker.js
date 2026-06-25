@@ -45,6 +45,8 @@ export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
 const THEME_HOPPER_COUNT = 3;
+// Score banked via clicks in a single wanted-theme run to earn high-roller.
+const HIGH_ROLLER_CASH = 10000;
 // Channel Surfer — distinct click-glitches in a single VHS session.
 const CHANNEL_SURFER_COUNT = 5;
 // Storm Forecaster — distinct themes the user must trigger lightning
@@ -403,6 +405,7 @@ export function createTracker(onUnlock, onRelock) {
         "upside-down": "the-flip",
         constellation: "night-sky-mapped",
         matrix: "enter-the-matrix",
+        wanted: "most-wanted",
       };
       if (themeMap[data.theme]) tryUnlock(themeMap[data.theme]);
 
@@ -449,8 +452,13 @@ export function createTracker(onUnlock, onRelock) {
         vhs: "tape-eject",
         "upside-down": "restoration",
         matrix: "back-to-reality",
+        wanted: "lay-low",
       };
       if (deactivateMap[data.theme]) tryUnlock(deactivateMap[data.theme]);
+    },
+
+    "wanted-cash"(data) {
+      if (data && data.total >= HIGH_ROLLER_CASH) tryUnlock("high-roller");
     },
 
     "upside-down-warning"() {
