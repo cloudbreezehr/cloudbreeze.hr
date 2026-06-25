@@ -144,6 +144,7 @@ const MODULES = [
   { path: "./effects/footer-year.js", init: (m) => m.initFooterYear() },
   { path: "./effects/keyboard-help.js", init: (m) => m.initKeyboardHelp() },
   { path: "./effects/cheatsheet.js", init: (m) => m.initCheatsheet() },
+  { path: "./effects/weapon-hud.js", init: (m) => m.initWeaponHud() },
   {
     path: "./effects/first-paint-mote.js",
     init: (m) => m.initFirstPaintMote(),

@@ -60,6 +60,9 @@ const LAYERS = Object.freeze({
   Z_THEME_EFFECT: 100,
   Z_THEME_FLASH: 100,
   Z_THEME_WARNING: 100,
+  // GTA-style weapon slot — deliberately shares the theme-effect tier; a
+  // top-right HUD over content, under wipes and panels.
+  Z_WEAPON_HUD: 100,
   // Pop-art HUD chrome — deliberately shares the theme-effect tier; sits over
   // content, under wipes and panels.
   Z_WANTED_HUD: 100,

@@ -19,6 +19,7 @@ import { hueSweep } from "./hue-sweep.js";
 import { lightningStrike } from "./lightning.js";
 import { streak } from "./streak.js";
 import { orbit } from "./orbit.js";
+import { ICONS } from "./effect-icons.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
@@ -175,6 +176,7 @@ const BLOOM_DURATION_MS = 2600;
 export const INCANTATIONS = [
   {
     word: "BOOM",
+    icon: ICONS.boom,
     hint: "A volley of fireworks rockets",
     // Rockets rise from the bottom and scatter, so the origin is irrelevant.
     // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap — read
@@ -188,11 +190,13 @@ export const INCANTATIONS = [
   },
   {
     word: "STAR",
+    icon: ICONS.star,
     hint: "A firework bursts at the cursor",
     cast: (origin) => burstFireworks(origin.x, origin.y),
   },
   {
     word: "PULSE",
+    icon: ICONS.pulse,
     hint: "Rings ripple outward from the cursor",
     cast: (origin) => {
       // spawnRipple animates unconditionally, so gate it here — its siblings
@@ -209,6 +213,7 @@ export const INCANTATIONS = [
   },
   {
     word: "DEPLOY",
+    icon: ICONS.deploy,
     hint: "Ship it — a blue rocket volley",
     // Ship it. A brand-blue rocket volley; DEPLOOOY launches more.
     chargeChar: "O",
@@ -221,6 +226,7 @@ export const INCANTATIONS = [
   },
   {
     word: "NOVA",
+    icon: ICONS.nova,
     hint: "A shockwave ring around a burst",
     // A shockwave ring rips outward from a central burst; NOOOVA goes bigger.
     chargeChar: "O",
@@ -241,6 +247,7 @@ export const INCANTATIONS = [
   },
   {
     word: "CONFETTI",
+    icon: ICONS.confetti,
     hint: "Confetti rains down the page",
     // Rains across the top of the page; extra T's (CONFETTTTI) drop more.
     chargeChar: "T",
@@ -254,6 +261,7 @@ export const INCANTATIONS = [
   },
   {
     word: "PARTY",
+    icon: ICONS.party,
     hint: "Confetti and a rocket volley",
     // Confetti from the cursor plus a small rocket volley.
     cast: (origin) => {
@@ -263,6 +271,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SNOW",
+    icon: ICONS.snow,
     hint: "A gentle snow flurry",
     // A gentle white flurry from the top; SNOOOW comes down heavier.
     chargeChar: "O",
@@ -280,6 +289,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SUDO",
+    icon: ICONS.sudo,
     hint: "A bright white flash",
     // Superuser surge — a quick bright flash over the page.
     cast: () =>
@@ -291,6 +301,7 @@ export const INCANTATIONS = [
   },
   {
     word: "GLOW",
+    icon: ICONS.glow,
     hint: "A soft bloom of light",
     // A soft bloom of light over the page; GLOOOW burns brighter.
     chargeChar: "O",
@@ -306,6 +317,7 @@ export const INCANTATIONS = [
   },
   {
     word: "QUAKE",
+    icon: ICONS.quake,
     hint: "The whole page shakes",
     // The whole page shudders; QUAAAKE shakes harder.
     chargeChar: "A",
@@ -320,6 +332,7 @@ export const INCANTATIONS = [
   },
   {
     word: "ORBIT",
+    icon: ICONS.orbit,
     hint: "Motes circle the cursor",
     // A ring of motes circles the cursor a couple of times, then fades.
     cast: (origin) =>
@@ -334,6 +347,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SUN",
+    icon: ICONS.sun,
     hint: "A warm golden glow",
     // A warm golden glow washes over the page, like sun breaking through.
     cast: () =>
@@ -346,6 +360,7 @@ export const INCANTATIONS = [
   },
   {
     word: "DISCO",
+    icon: ICONS.disco,
     hint: "The page spins through colour to a disco beat",
     // The whole page spins through the colour wheel to a two-bar disco groove.
     cast: () =>
@@ -358,18 +373,21 @@ export const INCANTATIONS = [
   },
   {
     word: "RAINBOW",
+    icon: ICONS.rainbow,
     hint: "A smooth sweep through the spectrum",
     // One smooth pass of the whole page through the spectrum.
     cast: () => hueSweep({ durationMs: RAINBOW_DURATION_MS, sound: "rainbow" }),
   },
   {
     word: "BOLT",
+    icon: ICONS.bolt,
     hint: "A lightning strike at the cursor",
     // A lightning bolt cracks down to the cursor, with a flash.
     cast: (origin) => lightningStrike(origin.x, origin.y),
   },
   {
     word: "STORM",
+    icon: ICONS.storm,
     hint: "Bolts, a flash, and a shake",
     // Several staggered bolts, a flash, and a rolling shake; STOOORM rages.
     chargeChar: "O",
@@ -395,6 +413,7 @@ export const INCANTATIONS = [
   },
   {
     word: "COMET",
+    icon: ICONS.comet,
     hint: "A bright streak arcs past",
     // A single bright streak arcs past the cursor.
     cast: (origin) =>
@@ -409,6 +428,7 @@ export const INCANTATIONS = [
   },
   {
     word: "WARP",
+    icon: ICONS.warp,
     hint: "Lightspeed streaks from centre",
     // Streaks rip outward from centre like a jump to lightspeed; WAAARP launches
     // more.
@@ -428,6 +448,7 @@ export const INCANTATIONS = [
   },
   {
     word: "GUST",
+    icon: ICONS.gust,
     hint: "A wind of streaks blows across",
     // A wind of streaks blows across the page from scattered points; GUUUST
     // blows harder. Origin is ignored — the gust fills the viewport.
@@ -445,6 +466,7 @@ export const INCANTATIONS = [
   },
   {
     word: "WISH",
+    icon: ICONS.wish,
     hint: "A shooting star — make a wish",
     // A warm shooting star arcs up from the cursor — make a wish.
     cast: (origin) =>
@@ -460,6 +482,7 @@ export const INCANTATIONS = [
   },
   {
     word: "METEOR",
+    icon: ICONS.meteor,
     hint: "A fiery meteor streaks down and burns up",
     // A steep, fast streak with a warm tail; the meteor voice carries the
     // descent, impact, and trailing debris.
@@ -476,6 +499,7 @@ export const INCANTATIONS = [
   },
   {
     word: "SUPERNOVA",
+    icon: ICONS.supernova,
     hint: "A colossal burst with a shock ring; SUPERNOOOVA goes bigger",
     // A central detonation plus an expanding shock ring; extra O's widen it.
     chargeChar: "O",
@@ -497,6 +521,7 @@ export const INCANTATIONS = [
   },
   {
     word: "ECHO",
+    icon: ICONS.echo,
     hint: "Rings echo outward like sonar",
     // Several staggered rings rippling out, with the sonar echo voice.
     cast: (origin) => {
@@ -513,6 +538,7 @@ export const INCANTATIONS = [
   },
   {
     word: "BLOOM",
+    icon: ICONS.bloom,
     hint: "Petals blossom from the cursor",
     // Soft round petals drifting out from the cursor over a warm chord.
     cast: (origin) =>

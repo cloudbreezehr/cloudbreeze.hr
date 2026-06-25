@@ -368,6 +368,12 @@ function buildActions() {
     });
     actions.set(id, (origin, charge) => {
       inc.cast(origin, charge);
+      // Light up the weapon slot with this incantation's own icon.
+      window.dispatchEvent(
+        new CustomEvent("weapon-select", {
+          detail: { icon: inc.icon, label: inc.word },
+        }),
+      );
       const max =
         typeof inc.chargeMax === "function" ? inc.chargeMax() : inc.chargeMax;
       const maxed = max > 0 && charge >= max;

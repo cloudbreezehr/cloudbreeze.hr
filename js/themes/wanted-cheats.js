@@ -16,6 +16,7 @@ import { confettiBurst } from "../effects/confetti.js";
 import { screenFlash } from "../effects/flash.js";
 import { screenShake } from "../effects/screen-shake.js";
 import { lightningStrike } from "../effects/lightning.js";
+import { ICONS } from "../effects/effect-icons.js";
 import { playSfx } from "../audio/sfx.js";
 import { prefersReducedMotion } from "../motion.js";
 import { defineConstants } from "../dev/registry.js";
@@ -145,6 +146,7 @@ export const CHEATS = [
   {
     code: "HESOYAM",
     label: "FULL POCKETS",
+    icon: ICONS.money,
     run(deps) {
       deps.addCash(C.CASH);
       confettiBurst({
@@ -157,6 +159,7 @@ export const CHEATS = [
   {
     code: "BRINGITON",
     label: "MAX HEAT",
+    icon: ICONS.siren,
     run(deps) {
       deps.bustStars();
       screenFlash({
@@ -170,6 +173,7 @@ export const CHEATS = [
   {
     code: "ROCKETMAN",
     label: "TAKE OFF",
+    icon: ICONS.jetpack,
     run() {
       launchRocketFireworks({ count: C.ROCKETS });
     },
@@ -177,6 +181,7 @@ export const CHEATS = [
   {
     code: "TIMETOKICKASS",
     label: "ROLL OUT",
+    icon: ICONS.tank,
     run() {
       screenShake({ amplitude: C.TANK_SHAKE, sound: "quake" });
     },
@@ -184,6 +189,7 @@ export const CHEATS = [
   {
     code: "STATEOFEMERGENCY",
     label: "RIOT",
+    icon: ICONS.riot,
     run() {
       confettiBurst({
         origin: center(),
@@ -205,6 +211,7 @@ export const CHEATS = [
   {
     code: "PINKISTHENEWCOOL",
     label: "PINK SLIP",
+    icon: ICONS.car,
     run() {
       screenFlash({
         color: PINK_COLOR,
@@ -216,6 +223,7 @@ export const CHEATS = [
   {
     code: "SCOTTISHSUMMER",
     label: "STORM ROLLS IN",
+    icon: ICONS.downpour,
     run() {
       if (prefersReducedMotion()) return;
       const c = center();
@@ -226,6 +234,7 @@ export const CHEATS = [
   {
     code: "BUBBLECARS",
     label: "LOW GRAVITY",
+    icon: ICONS.float,
     run(deps) {
       if (prefersReducedMotion()) return;
       deps.floatDots();
@@ -319,8 +328,15 @@ export function initWantedCheats(deps) {
 
     const code = matcher.feed(letter);
     if (!code) return;
-    byCode.get(code).run(deps);
-    showToast(byCode.get(code).label);
+    const cheat = byCode.get(code);
+    cheat.run(deps);
+    showToast(cheat.label);
+    // Light up the weapon slot with this cheat's own icon.
+    window.dispatchEvent(
+      new CustomEvent("weapon-select", {
+        detail: { icon: cheat.icon, label: cheat.label },
+      }),
+    );
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: { type: "wanted-cheat", code },

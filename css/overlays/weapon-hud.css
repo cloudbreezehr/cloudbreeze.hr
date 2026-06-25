@@ -1,0 +1,73 @@
+/* ═══════════════════════════════════════════════
+   Weapon HUD — GTA-style weapon slot
+   ═══════════════════════════════════════════════ */
+
+/* A dark, slightly glossy slot in the top-right, below the nav and (in the
+   Wanted theme) the wanted-level HUD. Shown transiently whenever a cheat or
+   incantation is cast; the icon is tinted via currentColor. */
+.weapon-hud {
+  position: fixed;
+  top: 150px;
+  right: 22px;
+  z-index: var(--z-weapon-hud);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  width: 84px;
+  padding: 11px 10px 8px;
+  background: linear-gradient(
+    157deg,
+    rgba(34, 38, 46, 0.94),
+    rgba(12, 14, 18, 0.94)
+  );
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 11px;
+  box-shadow:
+    0 8px 22px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  pointer-events: none;
+  opacity: 0;
+  transform: translateX(14px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s ease;
+}
+.weapon-hud.show {
+  opacity: 1;
+  transform: none;
+}
+
+.weapon-hud-icon {
+  width: 46px;
+  height: 46px;
+  color: #f2efe6;
+  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.6));
+}
+.weapon-hud-icon svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.weapon-hud-name {
+  max-width: 100%;
+  font-family: "DM Mono", monospace;
+  font-size: 0.5rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(242, 239, 230, 0.78);
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Reduced motion: fade only, no slide (the pop is already JS-gated). */
+@media (prefers-reduced-motion: reduce) {
+  .weapon-hud {
+    transform: none;
+    transition: opacity 0.28s ease;
+  }
+}
