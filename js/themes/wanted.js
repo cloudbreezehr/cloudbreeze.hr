@@ -161,20 +161,23 @@ export function initWanted() {
       completionHoldMs: WF.HOLD_MS,
     }),
     indicators: [
-      // Wanted-level buildup — stars light 1→5 with the typed force, and the
-      // strip flashes red/blue once the heat is nearly maxed.
+      // Wanted-level meter. Activation raises the heat — stars light 1→5 as the
+      // code lands; deactivation sheds it — LAYLOW empties 5→0. Both run the
+      // force 0→1, so the displayed level is inverted while the theme is active.
+      // The strip flashes red/blue whenever the level is near the top.
       {
         threshold: WF.SHOW_AT,
-        apply(force) {
+        apply(force, ctx) {
           if (force < WF.SHOW_AT) {
             buildup.style.opacity = "0";
             buildup.classList.remove("hot");
             buildupPips.forEach((p) => p.classList.remove("lit"));
             return;
           }
+          const level = ctx.isActive ? 1 - force : force;
           buildup.style.opacity = "1";
-          buildup.classList.toggle("hot", force >= WF.HOT_AT);
-          const lit = Math.round(force * WF.STAR_COUNT);
+          buildup.classList.toggle("hot", level >= WF.HOT_AT);
+          const lit = Math.round(level * WF.STAR_COUNT);
           buildupPips.forEach((p, i) => p.classList.toggle("lit", i < lit));
         },
         clear() {
