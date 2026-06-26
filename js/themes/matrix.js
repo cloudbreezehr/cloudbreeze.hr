@@ -80,6 +80,7 @@ export function initMatrix() {
     ],
     wipe: {
       className: "matrix-wipe",
+      reverseModifier: "reverse", // exit sweeps with the brighter reverse gradient
       coverMs: MF.WIPE_COVER_MS,
       revealMs: MF.WIPE_REVEAL_MS,
     },
