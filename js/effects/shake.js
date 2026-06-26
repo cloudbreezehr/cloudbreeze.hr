@@ -10,6 +10,7 @@
 import { screenShake } from "./screen-shake.js";
 import { confettiBurst } from "./confetti.js";
 import { defineConstants } from "../dev/registry.js";
+import { onSoundChange, isSoundEnabled } from "../audio/engine.js";
 
 const SHAKE = defineConstants("effects.shake", {
   THRESHOLD: {
@@ -79,35 +80,53 @@ function shakeEffect() {
 
 /**
  * Wire the shake gesture. No-op where there's no motion sensor. On iOS 13+,
- * where motion is permission-gated, the prompt must follow a user gesture, so
- * it's requested once on the first tap.
+ * where motion is permission-gated, the request must run inside a user gesture
+ * — so it's tied to *enabling sound*: a deliberate "full experience" opt-in
+ * (and shake's quake needs sound on anyway), rather than nagging on the first
+ * incidental tap. A returning visitor who already granted it gets re-armed on
+ * their first gesture, since iOS replays the remembered grant with no prompt.
  */
 export function initShake() {
   const DM = window.DeviceMotionEvent;
   if (!DM) return;
 
   const detector = createShakeDetector();
+  let listening = false;
   function onMotion(e) {
     const a = e.accelerationIncludingGravity;
     if (!a) return;
     if (detector.feed(a.x, a.y, a.z, performance.now())) shakeEffect();
   }
   function listen() {
+    if (listening) return;
+    listening = true;
     window.addEventListener("devicemotion", onMotion);
   }
 
   if (typeof DM.requestPermission !== "function") {
-    listen(); // no permission needed (Android, older iOS)
+    listen(); // no permission gate (Android, older iOS)
     return;
   }
-  // iOS 13+: ask once, on the first tap (a gesture is required).
-  function requestOnce() {
-    window.removeEventListener("pointerdown", requestOnce);
+
+  let requested = false;
+  function request() {
+    if (requested) return;
+    requested = true;
     DM.requestPermission()
       .then((state) => {
         if (state === "granted") listen();
       })
       .catch(() => {});
   }
-  window.addEventListener("pointerdown", requestOnce, { once: true });
+
+  // Enabling sound is the deliberate trigger.
+  onSoundChange((on) => {
+    if (on) request();
+  });
+  // Already on from a past visit: ask on the first gesture, where the prior
+  // grant replays silently (only a never-decided device would see a prompt,
+  // and enabling sound here would have prompted then).
+  if (isSoundEnabled()) {
+    window.addEventListener("pointerdown", request, { once: true });
+  }
 }
