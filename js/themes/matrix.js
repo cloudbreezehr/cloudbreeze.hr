@@ -22,7 +22,14 @@ const MF = defineConstants(
 );
 
 export function initMatrix() {
-  const matrix = createMatrix();
+  // A resolved hidden word in the rain is a discovery — award it.
+  const matrix = createMatrix({
+    onDecode: () => {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "matrix-decode" } }),
+      );
+    },
+  });
 
   // Buildup overlay — a green wash that deepens as REDPILL is typed. Lives in
   // the DOM (opacity 0 at rest) like the other themes' indicator overlays.
@@ -37,8 +44,11 @@ export function initMatrix() {
   registerCanvasHooks("matrix", {
     suppressSky: true,
     suppressAtmosphere: true,
-    drawAmbient() {
-      matrix.draw();
+    drawAmbient(frame) {
+      matrix.draw(frame);
+    },
+    onClick(p) {
+      matrix.click(p.x, p.y);
     },
   });
 
@@ -89,6 +99,7 @@ export function initMatrix() {
     },
     onDeactivate() {
       matrix.canvas.remove();
+      matrix.clear();
     },
   });
 }

@@ -46,4 +46,19 @@ describe("Column — matrix code-rain", () => {
     col.update(CELL, HEIGHT);
     expect(col.head > head0 || col.acc > 0).toBe(true);
   });
+
+  it("falls further in a frame when the speed multiplier is raised", async () => {
+    mqlMatches = false;
+    const { Column } = await import("../../../js/particles/matrix.js");
+    const slow = new Column(HEIGHT / CELL);
+    const fast = new Column(HEIGHT / CELL);
+    // Pin identical state so only the multiplier differs.
+    slow.head = fast.head = 0;
+    slow.speed = fast.speed = 2;
+    slow.acc = fast.acc = 0;
+    slow.update(CELL, HEIGHT, 1);
+    fast.update(CELL, HEIGHT, 4);
+    const progress = (col) => col.head * CELL + col.acc;
+    expect(progress(fast)).toBeGreaterThan(progress(slow));
+  });
 });

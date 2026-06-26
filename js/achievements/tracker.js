@@ -467,6 +467,10 @@ export function createTracker(onUnlock, onRelock) {
       tryProgressItem("wanted-cheats-entered", data.code);
     },
 
+    "matrix-decode"() {
+      tryUnlock("follow-the-white-rabbit");
+    },
+
     "upside-down-warning"() {
       tryUnlock("boundary-break");
     },

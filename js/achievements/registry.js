@@ -1117,6 +1117,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "follow-the-white-rabbit",
+    title: "Follow the White Rabbit",
+    description: "A message, hidden in the code.",
+    hint: "Spot a word resolve in the matrix rain",
+    set: "matrix",
+    points: RARE,
+    hidden: true,
+  },
+  {
     id: "the-one",
     title: "The One",
     description: "You bent the code to your will.",

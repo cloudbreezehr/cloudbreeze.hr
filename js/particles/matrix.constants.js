@@ -10,6 +10,15 @@ export const MATRIX_GLYPHS =
 export const MATRIX_BG = "#020c05"; // dark backdrop the trail fades toward
 export const MATRIX_HEAD = "#d8ffe4"; // bright leading glyph
 export const MATRIX_TRAIL = "#33d96a"; // green trail / still-field glyphs
+export const MATRIX_BRIGHT = "#ffffff"; // pointer/surge/decode highlight
+
+// Hidden phrases a column occasionally resolves into, then scrambles back.
+export const MATRIX_MESSAGES = [
+  "WAKE UP",
+  "KNOCK KNOCK",
+  "THE ONE",
+  "CLOUDBREEZE",
+];
 
 export const MATRIX = defineConstants("particles.matrix", {
   GLYPH_SIZE: {
@@ -62,5 +71,95 @@ export const MATRIX = defineConstants("particles.matrix", {
     max: 1,
     step: 0.05,
     description: "Reduced-motion still-field density",
+  },
+
+  // ── Pointer reactivity ──
+  REACT_RADIUS: {
+    value: 120,
+    min: 0,
+    max: 400,
+    step: 10,
+    description: "Radius around the pointer the rain reacts within (px)",
+  },
+  REACT_SPEED_BASE: {
+    value: 1.5,
+    min: 0,
+    max: 6,
+    step: 0.5,
+    description: "Immediate fall-speed boost at the pointer on press (atop 1×)",
+  },
+  REACT_SPEED_BOOST: {
+    value: 1.5,
+    min: 0,
+    max: 6,
+    step: 0.5,
+    description: "Extra fall-speed boost ramped in by holding",
+  },
+  REACT_GLOW: {
+    value: 14,
+    min: 0,
+    max: 40,
+    step: 1,
+    description: "Glow blur on heads lit by the pointer or a surge (px)",
+  },
+
+  // ── Click surge ──
+  SURGE_SPEED: {
+    value: 0.6,
+    min: 0.1,
+    max: 2,
+    step: 0.05,
+    description: "Surge-ring expansion speed (px/ms)",
+  },
+  SURGE_BAND: {
+    value: 70,
+    min: 10,
+    max: 200,
+    step: 5,
+    description: "Thickness of the surge ring that lights heads (px)",
+  },
+  SURGE_MAX: {
+    value: 360,
+    min: 60,
+    max: 1000,
+    step: 20,
+    description: "Surge-ring radius at which it expires (px)",
+  },
+  SURGE_POOL: {
+    value: 6,
+    min: 1,
+    max: 24,
+    step: 1,
+    description: "Max concurrent click surges",
+  },
+
+  // ── Decode ──
+  DECODE_REVEAL_MS: {
+    value: 550,
+    min: 0,
+    max: 2000,
+    step: 50,
+    description: "Time for a hidden word's letters to resolve in",
+  },
+  DECODE_HOLD_MS: {
+    value: 1700,
+    min: 200,
+    max: 6000,
+    step: 100,
+    description: "How long a decoded word stays readable",
+  },
+  DECODE_DISSOLVE_MS: {
+    value: 650,
+    min: 0,
+    max: 2000,
+    step: 50,
+    description: "Time for a decoded word to scramble back",
+  },
+  DECODE_CLICK_CHANCE: {
+    value: 0.01,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Chance a click in the rain triggers a decode",
   },
 });
