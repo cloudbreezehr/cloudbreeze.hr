@@ -498,6 +498,22 @@ const overrides = {
       gustColor: [100, 140, 220],
     },
   },
+  // Wanted suppresses the sky and atmosphere and paints its own pop-art
+  // backdrop, so only the click/drag interaction visuals (which draw on top)
+  // are pal-driven — recolour those to the pop-art inks instead of the base
+  // blue. Identical for both appearances; the theme reads the same either way.
+  wanted: {
+    dark: {
+      clickColor: [244, 234, 211], // cream
+      orbitColor: [255, 210, 63], // gold
+      trailColor: [255, 106, 0], // orange
+    },
+    light: {
+      clickColor: [244, 234, 211],
+      orbitColor: [255, 210, 63],
+      trailColor: [255, 106, 0],
+    },
+  },
 };
 
 export function resolvePalette(appearance, theme) {
