@@ -126,18 +126,23 @@ export function createMatrix({ onDecode } = {}) {
     ctx.textBaseline = "top";
   }
 
-  // Begin resolving a hidden word in the clicked column. Notifies the theme so
-  // the discovery can be rewarded.
-  function startDecode(col) {
+  // Begin resolving a hidden word, centred on the clicked cell so it forms out
+  // of the rain right where the user clicked. Notifies the theme so the
+  // discovery can be rewarded.
+  function startDecode(col, clickRow) {
     const word = MATRIX_MESSAGES[(Math.random() * MATRIX_MESSAGES.length) | 0];
     col = Math.max(0, Math.min(cols - 1, col));
-    const row0 = Math.floor(Math.random() * Math.max(1, rows - word.length));
+    const maxRow = Math.max(0, rows - word.length);
+    const row0 = Math.max(0, Math.min(maxRow, clickRow - (word.length >> 1)));
     decodeState = { col, row0, word, born: performance.now() };
     if (onDecode) onDecode(word);
   }
 
-  // Draw the resolving word and retire it once finished. Reduced motion skips
-  // the reveal/dissolve and just holds the readable word.
+  // Draw the locked letters of the resolving word (bright, over the column's
+  // own falling rain) and retire it once finished. Letters lock in top-to-
+  // bottom out of the rain during reveal and release the same way on dissolve;
+  // unlocked cells aren't drawn, so the rain shows through and the word appears
+  // to form from the code. Reduced motion skips reveal/dissolve and just holds.
   function renderDecode(now, cell, reduced) {
     const d = decodeState;
     const elapsed = now - d.born;
@@ -149,24 +154,24 @@ export function createMatrix({ onDecode } = {}) {
       decodeState = null;
       return;
     }
+    // The locked span [from, to): grows from the top during reveal, full during
+    // hold, and recedes from the top during dissolve.
+    let from = 0;
+    let to = len;
+    if (elapsed < reveal) {
+      to = Math.floor((elapsed / reveal) * len);
+    } else if (elapsed >= reveal + MATRIX.DECODE_HOLD_MS) {
+      from = Math.floor(
+        ((elapsed - reveal - MATRIX.DECODE_HOLD_MS) / dissolve) * len,
+      );
+    }
     ctx.fillStyle = MATRIX_BRIGHT;
     ctx.shadowColor = MATRIX_BRIGHT;
     ctx.shadowBlur = MATRIX.REACT_GLOW;
-    for (let i = 0; i < len; i++) {
+    for (let i = from; i < to; i++) {
       const ch = d.word[i];
       if (ch === " ") continue;
-      let glyph = ch;
-      if (elapsed < reveal) {
-        // Letters lock in top-to-bottom; the rest still scramble.
-        if (i >= Math.floor((elapsed / reveal) * len)) glyph = randGlyph();
-      } else if (elapsed >= reveal + MATRIX.DECODE_HOLD_MS) {
-        // Scramble back top-to-bottom.
-        const gone = Math.floor(
-          ((elapsed - reveal - MATRIX.DECODE_HOLD_MS) / dissolve) * len,
-        );
-        if (i < gone) glyph = randGlyph();
-      }
-      ctx.fillText(glyph, d.col * cell, (d.row0 + i) * cell);
+      ctx.fillText(ch, d.col * cell, (d.row0 + i) * cell);
     }
   }
 
@@ -248,8 +253,8 @@ export function createMatrix({ onDecode } = {}) {
     // Advance every column and draw the heads that stepped. Normal heads paint
     // inline in the green pass; the few the pointer or a surge has lit are held
     // back for a second white pass — grouping the two avoids switching the
-    // expensive shadow state per glyph. The decode column draws on its own.
-    const decodeCol = decodeState ? decodeState.col : -1;
+    // expensive shadow state per glyph. The decode column keeps raining too;
+    // its resolved letters draw over it afterward.
     const lit = [];
     ctx.fillStyle = MATRIX_HEAD;
     ctx.shadowColor = MATRIX_HEAD;
@@ -268,7 +273,7 @@ export function createMatrix({ onDecode } = {}) {
         }
       }
       col.update(cell, canvas.height, speedMul);
-      if (c === decodeCol || !col.stepped) continue;
+      if (!col.stepped) continue;
       const hy = col.head * cell;
       let hot = false;
       if (px !== null) {
@@ -301,11 +306,11 @@ export function createMatrix({ onDecode } = {}) {
   // the secret stays reachable.
   function click(x, y) {
     if (!ctx) return;
+    const cell = MATRIX.GLYPH_SIZE;
     if (!prefersReducedMotion()) {
       const now = performance.now();
       surges.push({ x, y, born: now });
       if (surges.length > MATRIX.SURGE_POOL) surges.shift();
-      const cell = MATRIX.GLYPH_SIZE;
       const cx = Math.floor(x / cell) * cell;
       setFont();
       ctx.fillStyle = MATRIX_BRIGHT;
@@ -317,7 +322,7 @@ export function createMatrix({ onDecode } = {}) {
       ctx.shadowBlur = 0;
     }
     if (!decodeState && Math.random() < MATRIX.DECODE_CLICK_CHANCE) {
-      startDecode(Math.floor(x / MATRIX.GLYPH_SIZE));
+      startDecode(Math.floor(x / cell), Math.floor(y / cell));
     }
   }
 
