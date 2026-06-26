@@ -38,12 +38,18 @@ export function initMatrix() {
   chargeGlow.setAttribute("aria-hidden", "true");
   document.body.appendChild(chargeGlow);
 
-  // The code rain owns its own full-screen canvas; the theme mounts it while
-  // active and ticks its draw once per frame from the canvas hook. The sky and
-  // atmosphere are suppressed — the rain replaces the backdrop entirely.
+  // The code rain owns its own full-screen overlay canvas; the theme mounts it
+  // while active and ticks its draw once per frame from the canvas hook. The
+  // base sky and atmosphere are suppressed only while Matrix is the *winning*
+  // theme (it owns the backdrop then); when another theme leads, they render
+  // and the transparent rain layers over the combined scene.
   registerCanvasHooks("matrix", {
-    suppressSky: true,
-    suppressAtmosphere: true,
+    get suppressSky() {
+      return document.body.dataset.activeTheme === "matrix";
+    },
+    get suppressAtmosphere() {
+      return document.body.dataset.activeTheme === "matrix";
+    },
     drawAmbient(frame) {
       matrix.draw(frame);
     },

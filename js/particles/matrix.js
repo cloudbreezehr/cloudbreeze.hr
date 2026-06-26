@@ -1,11 +1,14 @@
 // ── Matrix code-rain ──
-// Columns of glyphs streaming down a dedicated full-screen canvas, using the
-// classic fade-trail technique: each frame paints a translucent dark wash over
-// the whole canvas (dimming older glyphs into a trail) and draws only each
-// column's new head glyph — far cheaper than redrawing every glyph every frame.
-// The canvas is owned here; the theme mounts/unmounts it and ticks draw() once
-// per frame from its canvas hook. Reduced motion paints a still field instead
-// (no fall, no fade) so the theme still reads as Matrix without animation.
+// Columns of glyphs streaming down a dedicated full-screen overlay canvas,
+// using the classic fade-trail technique: each frame fades the whole canvas a
+// little toward transparent and draws only each column's new head glyph — far
+// cheaper than redrawing every glyph every frame. The fade *erases* (rather
+// than painting a dark wash), so the overlay never builds an opaque backdrop:
+// other active themes drawing on the shared canvas below — and the dark
+// --theme-bg — show through the gaps, so Matrix layers with other themes
+// instead of hiding them. The canvas is owned here; the theme mounts/unmounts
+// it and ticks draw() once per frame from its canvas hook. Reduced motion
+// paints a still field instead (no fall, no fade).
 //
 // The rain is interactive:
 //   • Pointer reactivity — pressing/holding speeds up the columns near the
@@ -21,7 +24,6 @@ import {
   MATRIX,
   MATRIX_GLYPHS,
   MATRIX_MESSAGES,
-  MATRIX_BG,
   MATRIX_HEAD,
   MATRIX_TRAIL,
   MATRIX_BRIGHT,
@@ -211,11 +213,15 @@ export function createMatrix({ onDecode } = {}) {
     // Toggling motion back on must re-arm the still field for a later RM switch.
     stillPainted = false;
 
-    // Fade the trail toward the dark backdrop.
+    // Fade the trail by erasing toward transparent (destination-out) rather
+    // than painting a dark wash — so the overlay stays clear in the gaps and
+    // whatever's behind it shows through.
+    ctx.globalCompositeOperation = "destination-out";
     ctx.globalAlpha = MATRIX.FADE_ALPHA;
-    ctx.fillStyle = MATRIX_BG;
+    ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.globalAlpha = 1;
+    ctx.globalCompositeOperation = "source-over";
 
     // The rain reacts only while the pointer is pressed/held (a click or a
     // press-and-hold, drag or not) — never on plain hover. Pressing speeds up

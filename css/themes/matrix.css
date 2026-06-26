@@ -5,17 +5,15 @@
 /* ── Code-rain backdrop ── */
 
 /* The rain owns its own full-screen canvas, mounted while the theme is active.
-   It sits behind the page content (its own backdrop layer) and never eats
-   pointer events. The dark fill is the colour the glyph trail fades toward, so
-   the canvas reads solid even on the first frame before any fade has built up. */
+   It sits behind the page content and never eats pointer events. No background:
+   the canvas stays transparent in the gaps so the dark --theme-bg and any
+   co-active theme show through, letting Matrix layer with other themes rather
+   than hiding them. */
 .matrix-rain {
   position: fixed;
   inset: 0;
   z-index: var(--z-matrix-rain);
   pointer-events: none;
-  /* Must match MATRIX_BG in matrix.constants.js — the colour the trail fades
-     toward; this paints it on the first frame before any fade has built up. */
-  background: #020c05;
 }
 
 /* ── Progressive indicator overlays ── */
