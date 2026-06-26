@@ -81,4 +81,23 @@ describe("audio/sfx", () => {
     sfx.playSfx("definitely-not-a-voice");
     expect(created.oscillators + created.sources).toBe(0);
   });
+
+  it("stays silent when remembered on but no gesture has unlocked audio", async () => {
+    // A persisted "on" preference makes sound enabled at load, but the browser
+    // forbids audio until a gesture — so playback must build nothing (and thus
+    // never trip the autoplay warning) until then.
+    localStorage.setItem("sound", "on");
+    vi.resetModules();
+    const created2 = { oscillators: 0, sources: 0 };
+    window.AudioContext = stubAudioContext(created2);
+    const engine2 = await import("../../../js/audio/engine.js");
+    const sfx2 = await import("../../../js/audio/sfx.js");
+
+    expect(engine2.isSoundEnabled()).toBe(true);
+    expect(engine2.isAudioUnlocked()).toBe(false);
+    sfx2.playSfx("burst");
+    expect(created2.oscillators + created2.sources).toBe(0);
+
+    engine2._resetForTests();
+  });
 });

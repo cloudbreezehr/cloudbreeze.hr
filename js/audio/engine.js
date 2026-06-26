@@ -46,6 +46,7 @@ let ctx = null;
 let master = null; // master gain node; the public output bus
 let enabled = readPreference() === "on";
 let armed = false; // global gesture/visibility listeners attached
+let audioUnlocked = false; // a user gesture has authorized audio playback
 const callbacks = [];
 
 function readPreference() {
@@ -94,6 +95,14 @@ export function isSoundEnabled() {
   return enabled;
 }
 
+// True once a user gesture has resumed the context. The browser's autoplay
+// policy only warns about audio started *before* a gesture, so callers skip
+// playback until this flips — otherwise sounds attempted on load (a remembered
+// "on" preference) each log an AudioContext warning.
+export function isAudioUnlocked() {
+  return audioUnlocked;
+}
+
 // Subscribe to enable/disable changes. Returns an unsubscribe function.
 export function onSoundChange(cb) {
   callbacks.push(cb);
@@ -115,6 +124,7 @@ export function setSoundEnabled(on) {
   if (next) {
     const c = audioContext();
     if (c && c.state === "suspended") c.resume();
+    audioUnlocked = true; // enabling is a deliberate gesture
     // First-ever enable is the discovery moment; tryUnlock dedupes repeats.
     if (!was) {
       window.dispatchEvent(
@@ -146,6 +156,7 @@ export function initEngine() {
     if (!enabled) return;
     const c = audioContext();
     if (c && c.state === "suspended") c.resume();
+    audioUnlocked = true;
   };
   for (const ev of ["pointerdown", "keydown", "touchstart"]) {
     window.addEventListener(ev, resumeOnGesture, { passive: true });
@@ -165,6 +176,7 @@ export function _resetForTests() {
   ctx = null;
   master = null;
   armed = false;
+  audioUnlocked = false;
   callbacks.length = 0;
   enabled = readPreference() === "on";
 }

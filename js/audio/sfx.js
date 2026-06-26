@@ -6,7 +6,12 @@
 // playSfx() is a no-op when sound is off or unavailable, so callers never guard.
 
 import { defineConstants } from "../dev/registry.js";
-import { audioContext, masterBus, isSoundEnabled } from "./engine.js";
+import {
+  audioContext,
+  masterBus,
+  isSoundEnabled,
+  isAudioUnlocked,
+} from "./engine.js";
 import { effectsBus } from "./bus.js";
 import { whiteNoise } from "./noise.js";
 
@@ -1484,6 +1489,10 @@ const VOICES = {
 // tick's `progress`). No-op when sound is off, unavailable, or name unknown.
 export function playSfx(name, { ui = false, ...opts } = {}) {
   if (!isSoundEnabled()) return;
+  // Skip until a gesture has unlocked audio — otherwise sounds attempted on
+  // load create + play a still-suspended context, and the browser logs an
+  // autoplay warning for each one.
+  if (!isAudioUnlocked()) return;
   const voice = VOICES[name];
   if (!voice) return;
   const ctx = audioContext();
