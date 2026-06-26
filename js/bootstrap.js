@@ -145,6 +145,7 @@ const MODULES = [
   { path: "./effects/keyboard-help.js", init: (m) => m.initKeyboardHelp() },
   { path: "./effects/cheatsheet.js", init: (m) => m.initCheatsheet() },
   { path: "./effects/weapon-hud.js", init: (m) => m.initWeaponHud() },
+  { path: "./effects/shake.js", init: (m) => m.initShake() },
   {
     path: "./effects/first-paint-mote.js",
     init: (m) => m.initFirstPaintMote(),
