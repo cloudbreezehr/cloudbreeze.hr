@@ -177,6 +177,16 @@ export function getTheme(id) {
 }
 
 /**
+ * The winning theme's accent color (its registry `color`), or null when no
+ * theme is active. Effects read this to tint themselves to the active theme so
+ * a spell cast inside a theme picks up its palette.
+ */
+export function activeThemeColor() {
+  const id = document.body.dataset.activeTheme;
+  return id ? (getTheme(id)?.color ?? null) : null;
+}
+
+/**
  * Toggle a theme by id.  No-op if the toggle hasn't been bound yet.
  *
  * @param {string} id

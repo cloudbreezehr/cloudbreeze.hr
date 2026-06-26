@@ -6,6 +6,7 @@
 
 import { prefersReducedMotion } from "../motion.js";
 import { playSfx } from "../audio/sfx.js";
+import { activeThemeColor } from "../themes/registry.js";
 
 const DEFAULT_COUNT = 36;
 // Hard cap so a charge-scaled caller can't flood the DOM.
@@ -27,7 +28,7 @@ function rand(range) {
 export function confettiBurst({
   count = DEFAULT_COUNT,
   origin = null,
-  colors = DEFAULT_COLORS,
+  colors,
   durationMs = DEFAULT_DURATION_MS,
   round = false, // circles (snow) instead of rects (confetti)
   sway = DRIFT_PX,
@@ -36,6 +37,10 @@ export function confettiBurst({
 } = {}) {
   if (prefersReducedMotion()) return;
   playSfx(sound);
+  // Explicit colors win; otherwise tint to the active theme, else the default
+  // festive mix.
+  const tint = activeThemeColor();
+  const palette = colors || (tint ? [tint] : DEFAULT_COLORS);
   const w = window.innerWidth;
   const h = window.innerHeight;
   const n = Math.min(count, MAX_PIECES);
@@ -46,7 +51,7 @@ export function confettiBurst({
     const size = PIECE_MIN_PX + Math.random() * (PIECE_MAX_PX - PIECE_MIN_PX);
     el.style.width = `${size}px`;
     el.style.height = `${round ? size : size * PIECE_ASPECT}px`;
-    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    el.style.background = palette[Math.floor(Math.random() * palette.length)];
     if (round) el.style.borderRadius = "50%";
     const startX = origin ? origin.x : Math.random() * w;
     const startY = origin ? origin.y : -PIECE_MAX_PX;

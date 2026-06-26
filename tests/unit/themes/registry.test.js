@@ -7,6 +7,7 @@ import {
   toggleTheme,
   isThemeRegistered,
   hasActiveThemeExcept,
+  activeThemeColor,
 } from "../../../js/themes/registry.js";
 
 describe("themes/registry — metadata", () => {
@@ -35,6 +36,16 @@ describe("themes/registry — metadata", () => {
     expect(new Set(darkOnly)).toEqual(
       new Set(["deep-sea", "upside-down", "constellation", "matrix", "wanted"]),
     );
+  });
+
+  it("activeThemeColor reflects the winning theme, or null when none", () => {
+    expect(activeThemeColor()).toBeNull();
+    document.body.dataset.activeTheme = "matrix";
+    expect(activeThemeColor()).toBe(getTheme("matrix").color);
+    document.body.dataset.activeTheme = "wanted";
+    expect(activeThemeColor()).toBe(getTheme("wanted").color);
+    delete document.body.dataset.activeTheme;
+    expect(activeThemeColor()).toBeNull();
   });
 
   it("returns a defensive copy from getThemes()", () => {

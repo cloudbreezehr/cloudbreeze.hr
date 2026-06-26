@@ -15,6 +15,16 @@ import { defineConstants } from "../dev/registry.js";
 import { mirrorYWhenInverted } from "../viewport.js";
 import { playSfx } from "../audio/sfx.js";
 import { prefersReducedMotion } from "../motion.js";
+import { activeThemeColor } from "../themes/registry.js";
+
+// Resolve a burst's base color: an explicit color wins, else the active theme's
+// tint (so spells/cheats cast inside a theme pick up its palette), else null
+// (the caller falls back to its own default).
+function resolveBurstRgb(optColor) {
+  const src = optColor ?? activeThemeColor();
+  if (!src) return null;
+  return typeof src === "string" ? parseHexToRgb(src) : src;
+}
 
 // ── Constants ──
 
@@ -542,12 +552,7 @@ function createRendererCore() {
     if (activeBursts >= FW.MAX_BURSTS) return false;
     activeBursts++;
 
-    const baseRgb = opts.color
-      ? typeof opts.color === "string"
-        ? parseHexToRgb(opts.color)
-        : opts.color
-      : null;
-    const rgb = baseRgb || FALLBACK_RGB;
+    const rgb = resolveBurstRgb(opts.color) || FALLBACK_RGB;
     spawnBurst(x, y, rgb);
     return true;
   }
@@ -558,12 +563,7 @@ function createRendererCore() {
   // so they don't launch as a perfect line.
   function launchRockets(viewportWidth, viewportHeight, opts = {}) {
     const count = Math.max(1, opts.count || 1);
-    const baseRgb = opts.color
-      ? typeof opts.color === "string"
-        ? parseHexToRgb(opts.color)
-        : opts.color
-      : null;
-    const rgb = baseRgb || FALLBACK_RGB;
+    const rgb = resolveBurstRgb(opts.color) || FALLBACK_RGB;
 
     let launched = 0;
     for (let i = 0; i < count; i++) {
