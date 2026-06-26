@@ -39,7 +39,7 @@ describe("effects/cheatsheet", () => {
     expect(mod.isCheatsheetOpen()).toBe(false);
   });
 
-  it("lists themes and incantations with their hints", () => {
+  it("lists themes and incantations with incantation hints", () => {
     mod.openCheatsheet();
     const text = getOverlay().textContent;
     expect(text).toContain("Frozen"); // a theme label

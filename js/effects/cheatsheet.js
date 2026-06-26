@@ -86,7 +86,7 @@ function buildOverlay() {
   body.appendChild(
     buildSection(
       "Themes",
-      getThemes().map((t) => [t.label, "Spell the name to toggle", t.icon]),
+      getThemes().map((t) => [t.label, "", t.icon]),
     ),
   );
   body.appendChild(
