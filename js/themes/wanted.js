@@ -160,7 +160,7 @@ export function initWanted() {
       // BRINGITON and HESOYAM each also double as an in-theme cheat, firing only
       // once the theme is active.
       activationWords: ["HESOYAM", "BRINGITON"],
-      deactivationWords: ["TURNDOWNTHEHEAT"],
+      deactivationWords: ["TURNDOWNTHEHEAT", "AEZAKMI"],
       completionHoldMs: WF.HOLD_MS,
     }),
     indicators: [
