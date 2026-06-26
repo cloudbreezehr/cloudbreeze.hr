@@ -371,3 +371,44 @@ body.light-appearance .konami-confirm-prompt {
   color: rgba(var(--ink-rgb), 0.85);
   border-color: rgba(0, 0, 0, 0.15);
 }
+
+/* ── Completionist finale ── */
+/* The big "100%" banner shown when the last achievement unlocks — centered,
+   golden, above every other layer. Its appear/exit is animated from JS (Web
+   Animations) so it can adapt to reduced motion; this is just the look. */
+.cloudlog-finale {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: var(--z-toast);
+  pointer-events: none;
+  text-align: center;
+  font-family: "Syne", sans-serif;
+}
+.cloudlog-finale-big {
+  font-size: clamp(4rem, 14vw, 11rem);
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  background: linear-gradient(
+    135deg,
+    #fff7d6 0%,
+    #ffd23f 40%,
+    #f0a500 70%,
+    #fff7d6 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 4px 24px rgba(255, 200, 60, 0.5));
+}
+.cloudlog-finale-sub {
+  margin-top: 0.6rem;
+  font-family: "DM Mono", monospace;
+  font-size: clamp(0.7rem, 2vw, 1rem);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ffe9a8;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
+}

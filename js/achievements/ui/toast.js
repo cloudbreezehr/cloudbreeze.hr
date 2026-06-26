@@ -13,9 +13,12 @@ import {
   launchRocketFireworks,
   rocketCountForTier,
 } from "../../effects/fireworks.js";
+import { confettiBurst } from "../../effects/confetti.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG } from "./icons.js";
 import { bindClickable } from "../../clickable.js";
+import { playSfx } from "../../audio/sfx.js";
+import { prefersReducedMotion } from "../../motion.js";
 
 // ── Toast Constants ──
 export const TOAST_SLIDE_IN_MS = 400;
@@ -482,6 +485,80 @@ const FIRST_UNLOCK_ROCKETS = 3;
 
 export function celebrateFirstUnlock() {
   launchRocketFireworks({ count: FIRST_UNLOCK_ROCKETS });
+}
+
+// ── Completionist finale ──
+// The capstone: unlocking the last achievement earns a sustained multicolor
+// rocket barrage, confetti, a fanfare, and a big "100%" banner. Explicit
+// festive colors are passed so it stays celebratory inside any theme. The
+// fireworks/confetti self-skip under reduced motion; the banner and fanfare
+// still play, since completing the Cloudlog is a consequence, not decoration.
+const FINALE_VOLLEYS = 6;
+const FINALE_VOLLEY_GAP_MS = 420;
+const FINALE_ROCKETS = 5;
+const FINALE_CONFETTI = 90;
+const FINALE_BANNER_MS = 4200;
+const FINALE_COLORS = [
+  "#ff5e5e",
+  "#ffd23f",
+  "#5b9bf0",
+  "#2fbf4e",
+  "#ff7ea8",
+  "#ffffff",
+];
+
+export function celebrateCompletion() {
+  playSfx("party"); // brassy fanfare
+  for (let i = 0; i < FINALE_VOLLEYS; i++) {
+    const color = FINALE_COLORS[i % FINALE_COLORS.length];
+    setTimeout(
+      () => launchRocketFireworks({ count: FINALE_ROCKETS, color }),
+      i * FINALE_VOLLEY_GAP_MS,
+    );
+  }
+  confettiBurst({ count: FINALE_CONFETTI, colors: FINALE_COLORS });
+  showFinaleBanner();
+}
+
+function showFinaleBanner() {
+  const banner = document.createElement("div");
+  banner.className = "cloudlog-finale";
+  banner.setAttribute("role", "status");
+  const big = document.createElement("div");
+  big.className = "cloudlog-finale-big";
+  big.textContent = "100%";
+  const sub = document.createElement("div");
+  sub.className = "cloudlog-finale-sub";
+  sub.textContent = "Cloudlog complete — every secret found";
+  banner.append(big, sub);
+  document.body.appendChild(banner);
+
+  // Reduced motion: a plain cross-fade (no scale pop).
+  const frames = prefersReducedMotion()
+    ? [
+        { opacity: 0 },
+        { opacity: 1, offset: 0.1 },
+        { opacity: 1, offset: 0.85 },
+        { opacity: 0 },
+      ]
+    : [
+        { opacity: 0, transform: "translate(-50%, -50%) scale(0.6)" },
+        {
+          opacity: 1,
+          transform: "translate(-50%, -50%) scale(1.06)",
+          offset: 0.15,
+        },
+        {
+          opacity: 1,
+          transform: "translate(-50%, -50%) scale(1)",
+          offset: 0.85,
+        },
+        { opacity: 0, transform: "translate(-50%, -50%) scale(1)" },
+      ];
+  banner.animate(frames, {
+    duration: FINALE_BANNER_MS,
+    easing: "ease-out",
+  }).onfinish = () => banner.remove();
 }
 
 // ── Undo Toast ──

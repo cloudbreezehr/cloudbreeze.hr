@@ -22,6 +22,7 @@ import {
   scrollToCard,
   onAchievementUnlocked,
   onAchievementRelocked,
+  celebrateCompletion,
 } from "./ui.js";
 import { onKey } from "../keyboard.js";
 import { maybeShowWelcomeBack, markGreeted } from "./welcome-back.js";
@@ -37,6 +38,8 @@ export const TRIPLE_CLICK_COUNT = 3;
 // Wait for the panel slide-in before scrolling a deep-linked card into
 // view, so the scroll lands against a laid-out container.
 const PANEL_SETTLE_MS = 350;
+// Delay before the `?finale` demo preview fires, so the page has painted.
+const FINALE_PREVIEW_DELAY_MS = 800;
 
 /**
  * Watch an event target for triple-clicks within TRIPLE_CLICK_MAX_MS.
@@ -170,6 +173,13 @@ export function initAchievements() {
       );
     });
   });
+
+  // Demo preview: `?finale` fires the completionist celebration once so it can
+  // be judged without clearing the whole Cloudlog. Harmless in production —
+  // nobody navigates here — and mirrors the `?theme=` demo shortcut.
+  if (new URLSearchParams(window.location.search).has("finale")) {
+    setTimeout(celebrateCompletion, FINALE_PREVIEW_DELAY_MS);
+  }
 
   // Keyboard shortcut — L opens/closes Cloudlog
   onKey("L", () => {

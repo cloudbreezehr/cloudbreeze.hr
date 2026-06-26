@@ -28,6 +28,7 @@ import {
   showActivationToast,
   showActivationPulse,
   celebrateFirstUnlock,
+  celebrateCompletion,
   destroyToastContainer,
 } from "./ui/toast.js";
 import { refreshCard, destroySeenObserver, scrollToCard } from "./ui/cards.js";
@@ -61,6 +62,7 @@ export {
   showRelockToast,
   showActivationToast,
   showActivationPulse,
+  celebrateCompletion,
 };
 
 export { refreshCard, scrollToCard };
@@ -80,6 +82,9 @@ export function onAchievementUnlocked(achievement) {
     storage.setPref("firstUnlockCelebrated", true);
     celebrateFirstUnlock();
   }
+  // The capstone: clearing the Cloudlog (the completionist unlock) earns the
+  // full finale.
+  if (achievement.id === "completionist") celebrateCompletion();
   updateBadge();
   pulseBadge();
   refreshCard(achievement.id);
