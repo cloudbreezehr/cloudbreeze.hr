@@ -52,6 +52,17 @@ nav {
   -webkit-backdrop-filter: blur(12px);
   will-change: translate;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  /* Only box-shadow transitions — the background is rewritten inline per scroll
+     frame (light mode) and must track instantly, not lag behind an animation. */
+  transition: box-shadow 0.3s ease;
+}
+/* Elevation once scrolled off the top — a soft drop shadow lifts the sticky
+   nav above the content sliding under it. `scrolled` is toggled in nav.js. */
+nav.scrolled {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+}
+nav.nav-light.scrolled {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
 .nav-logo {
