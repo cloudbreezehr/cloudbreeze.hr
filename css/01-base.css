@@ -49,6 +49,13 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+  /* A focus indicator must never depend on animation: stop the pulse
+     keyframe and pin the ring to its bright resting color rather than
+     leaving its visibility to how a near-zero-duration animation settles. */
+  :focus-visible {
+    animation: none !important;
+    outline-color: rgb(var(--theme-glow));
+  }
 }
 
 /* ── Skip Link ── */
