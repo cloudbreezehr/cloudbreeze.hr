@@ -1192,6 +1192,38 @@ const VOICES = {
       delay: 0.42,
     });
   },
+  // A click in the upside-down — a queasy wobble: two near-detuned tones bending
+  // downward and beating against each other, riding the theme's thin highpass
+  // tint so the world seems to lurch underfoot.
+  wobble(ctx, bus) {
+    const d = jitterCents();
+    tone(ctx, bus, {
+      freq: 860,
+      slideTo: 540,
+      type: "triangle",
+      attack: 0.004,
+      hold: 0.02,
+      release: 0.2,
+      gain: 0.16,
+      detune: d,
+    });
+    tone(ctx, bus, {
+      freq: 864,
+      slideTo: 537,
+      type: "sine",
+      attack: 0.004,
+      release: 0.18,
+      gain: 0.1,
+      detune: d,
+    });
+    breath(ctx, bus, {
+      dur: 0.08,
+      type: "bandpass",
+      freq: 1500,
+      q: 1.2,
+      gain: 0.05,
+    });
+  },
   // A click striking the matrix rain — a short rising digital blip. Fires per
   // click, so it jitters pitch and rides the theme's bandpass tint to read as
   // a data surge down the struck column.

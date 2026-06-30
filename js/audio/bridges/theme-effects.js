@@ -23,4 +23,5 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "constellation-wrong-hit": "dud",
   "matrix-click": "glyph",
   "matrix-decode": "decode",
+  "upside-down-click": "wobble",
 });

@@ -47,6 +47,11 @@ describe("audio/bridges/theme-effects", () => {
     expect(calls).toEqual(["glyph", "decode"]);
   });
 
+  it("maps the upside-down click lurch", () => {
+    fire("upside-down-click");
+    expect(calls).toEqual(["wobble"]);
+  });
+
   it("leaves passive background animations silent", () => {
     fire("jellyfish-pulse"); // a periodic animation, not a triggered effect
     fire("scroll");

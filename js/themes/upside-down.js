@@ -217,6 +217,13 @@ export function initUpsideDown() {
       // A brief viewport shudder reinforces "the world is unstable".
       // One-shot class on .page; strip-then-add restarts on rapid clicks.
       shudderViewport();
+      // Sound the lurch in step with the shudder (past the RM guard, so a
+      // reduced-motion click stays silent because nothing shuddered).
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "upside-down-click" },
+        }),
+      );
     },
   });
 
