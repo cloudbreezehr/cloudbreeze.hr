@@ -113,6 +113,22 @@ export const DUST = defineConstants(
       step: 0.005,
       description: "Per-frame velocity damping (applied to vx/vy from forces)",
     },
+    SCROLL_THRESHOLD: {
+      value: 0.5,
+      min: 0,
+      max: 5,
+      step: 0.05,
+      description:
+        "Min |scrollVelocity| before the dust catches the scroll wind",
+    },
+    SCROLL_VY_MUL: {
+      value: -0.05,
+      min: -1,
+      max: 1,
+      step: 0.01,
+      description:
+        "Per-frame vy nudge per unit scrollVelocity (debris wind sign, gentler)",
+    },
     RADIUS_MIN: {
       value: 0.8,
       min: 0.3,
@@ -730,6 +746,10 @@ export function createUpsideDown(canvasEl, ctxEl) {
         const slot = dust.find((d) => !d.active);
         if (slot) slot.spawn();
       }
+      const dustWind =
+        Math.abs(scrollVelocity) > DUST.SCROLL_THRESHOLD
+          ? scrollVelocity * DUST.SCROLL_VY_MUL
+          : 0;
       for (const d of dust) {
         d.update();
         applyRepulsion(forces, d, DUST.REPEL_RADIUS, DUST.REPEL_DAMPEN);
@@ -741,6 +761,9 @@ export function createUpsideDown(canvasEl, ctxEl) {
           DUST.ATTRACT_TANGENT,
         );
         applyWellForce(forces, d);
+        // The same scroll wind the debris rides, so the whole field gusts
+        // together instead of the dust drifting obliviously through it.
+        if (dustWind) d.vy += dustWind;
         d.draw();
       }
 

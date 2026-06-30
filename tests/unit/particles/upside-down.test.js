@@ -150,6 +150,16 @@ describe("Dust — anti-gravity mote", () => {
     // No assertion beyond "didn't throw" — the factory's contract is
     // ambient spawn + render with no exceptions.
   });
+
+  it("factory.draw applies the dust scroll wind without throwing", async () => {
+    mqlMatches = false;
+    const { createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    const ud = createUpsideDown(makeFakeCanvas(), makeFakeCtx());
+    const forces = makeForces();
+    // A strong scroll exercises the dust wind branch (and debris spawn).
+    for (let i = 0; i < 60; i++) ud.draw(forces, 6);
+  });
 });
 
 describe("Debris — scroll-driven scrap", () => {
