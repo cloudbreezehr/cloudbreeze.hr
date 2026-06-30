@@ -24,6 +24,13 @@ const DEFAULT_COLORS = ["#5b9bf0", "#8fd3ff", "#ffd36a", "#ff7ea8", "#9affc4"];
 // each piece around it with a hue rotation + brightness jitter for depth.
 const THEME_TINT_HUE_SPREAD_DEG = 28;
 const THEME_TINT_BRIGHT_SPREAD = 0.4; // ± fraction around full brightness
+// ── Point-burst trajectory ──
+// A burst from a point throws its pieces outward in every direction (including
+// up), then gravity drags them down as they fade.
+const BURST_DISTANCE_MIN = 80; // px each piece flies out from the origin
+const BURST_DISTANCE_RANGE = 180;
+const BURST_FALL_PX = 220; // gravity settle added after the outward throw
+const BURST_PEAK_OFFSET = 0.32; // keyframe time the outward throw peaks at
 
 function rand(range) {
   return (Math.random() - 0.5) * 2 * range; // centred in [-range, range]
@@ -71,25 +78,53 @@ export function confettiBurst({
     el.style.top = `${startY}px`;
     document.body.appendChild(el);
 
-    const dx = rand(sway);
-    const dy = (origin ? h - origin.y : h) + PIECE_MAX_PX * 2;
     const rot = rand(spin);
     const dur =
       durationMs *
       (DURATION_JITTER_MIN + Math.random() * DURATION_JITTER_RANGE);
-    el.animate(
-      [
+    let frames;
+    if (origin) {
+      // Throw outward along a random heading, then let gravity pull the piece
+      // down as it settles — an explosion, not a downward leak.
+      const ang = Math.random() * Math.PI * 2;
+      const dist = BURST_DISTANCE_MIN + Math.random() * BURST_DISTANCE_RANGE;
+      const peakX = Math.cos(ang) * dist;
+      const peakY = Math.sin(ang) * dist;
+      frames = [
+        {
+          transform: "translate(0, 0) rotate(0deg)",
+          opacity: 1,
+          offset: 0,
+          easing: "cubic-bezier(0.15, 0.7, 0.35, 1)",
+        },
+        {
+          transform: `translate(${peakX}px, ${peakY}px) rotate(${rot * 0.5}deg)`,
+          opacity: 1,
+          offset: BURST_PEAK_OFFSET,
+          easing: "cubic-bezier(0.5, 0, 0.75, 0.5)",
+        },
+        {
+          transform: `translate(${peakX + rand(sway)}px, ${peakY + BURST_FALL_PX}px) rotate(${rot}deg)`,
+          opacity: 0,
+          offset: 1,
+        },
+      ];
+    } else {
+      // Rain — fall straight down the viewport with a little horizontal sway.
+      const dx = rand(sway);
+      const dy = h + PIECE_MAX_PX * 2;
+      frames = [
         { transform: "translate(0, 0) rotate(0deg)", opacity: 1 },
         {
           transform: `translate(${dx}px, ${dy}px) rotate(${rot}deg)`,
           opacity: 0,
         },
-      ],
-      {
-        duration: dur,
-        easing: "cubic-bezier(0.3, 0.6, 0.6, 1)",
-        fill: "forwards",
-      },
-    ).onfinish = () => el.remove();
+      ];
+    }
+    el.animate(frames, {
+      duration: dur,
+      easing: "cubic-bezier(0.3, 0.6, 0.6, 1)",
+      fill: "forwards",
+    }).onfinish = () => el.remove();
   }
 }
