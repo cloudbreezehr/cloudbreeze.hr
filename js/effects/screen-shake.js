@@ -16,6 +16,11 @@ const BASE_AMPLITUDE_PX = 8;
 const DEFAULT_DURATION_MS = 500;
 const SHAKE_STEPS = 8; // back-and-forth keyframes before settling
 const VERTICAL_RATIO = 0.5; // vertical jolt relative to horizontal
+// A real impact snaps to its peak and decays fast rather than fading linearly:
+// an exponential amplitude falloff plus an overshooting opening jolt reads as a
+// hit, not a wobble.
+const DECAY_EXPONENT = 1.8;
+const LEAD_OVERSHOOT = 1.3; // first jolt punches past the base amplitude
 // Layers that shake: page content and the sky behind it. Both can carry a
 // theme flip as `transform`, which the animated `translate` composes with.
 const SHAKE_SELECTOR = ".page, #bg-canvas";
@@ -29,14 +34,18 @@ export function screenShake({
   playSfx(sound);
   const frames = [];
   for (let i = 0; i <= SHAKE_STEPS; i++) {
-    const decay = 1 - i / SHAKE_STEPS; // amplitude fades toward zero
+    const decay = Math.pow(1 - i / SHAKE_STEPS, DECAY_EXPONENT);
     const dir = i % 2 === 0 ? 1 : -1;
-    const x = dir * amplitude * decay;
-    const y = -dir * amplitude * VERTICAL_RATIO * decay;
+    // The opening jolt overshoots the base amplitude for extra kick.
+    const kick = (i === 0 ? LEAD_OVERSHOOT : 1) * amplitude * decay;
+    const x = dir * kick;
+    const y = -dir * kick * VERTICAL_RATIO;
     frames.push({ translate: `${x}px ${y}px` });
   }
   frames.push({ translate: "0 0" });
   for (const el of document.querySelectorAll(SHAKE_SELECTOR)) {
-    el.animate(frames, { duration: durationMs, easing: "ease-out" });
+    // Linear between keyframes keeps each reversal sharp — the decay shapes the
+    // envelope, the easing shouldn't round it back into a wobble.
+    el.animate(frames, { duration: durationMs, easing: "linear" });
   }
 }
