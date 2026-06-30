@@ -1,6 +1,11 @@
 import { Z_PAPER_INK } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { reducedDuration, scaled, prefersReducedMotion } from "../motion.js";
+import {
+  applyRepulsion,
+  applyAttraction,
+  applyWellForce,
+} from "../interactions.js";
 
 // ── Ink SVG filter id — shared by splats and strokes ──
 const INK_FILTER_ID = "paper-ink-wobble";
@@ -106,6 +111,66 @@ const SKETCH = defineConstants(
       max: 1,
       step: 0.05,
       description: "Horizon stroke opacity",
+    },
+  },
+  { theme: "paper" },
+);
+
+// ── Ink-dot interaction forces ──
+// The sketch dots rest on the page but smudge away from clicks/drags and a
+// gravity well via the shared forces, then a spring reels each back home —
+// gentler than the bold pop-art halftone so the graphite just nudges.
+const INK = defineConstants(
+  "particles.paperInk",
+  {
+    REPEL_RADIUS: {
+      value: 120,
+      min: 30,
+      max: 400,
+      step: 10,
+      description: "Click smudge radius (px)",
+    },
+    REPEL_DAMPEN: {
+      value: 0.7,
+      min: 0,
+      max: 3,
+      step: 0.1,
+      description: "Click smudge strength",
+    },
+    ATTRACT_RADIUS: {
+      value: 130,
+      min: 30,
+      max: 400,
+      step: 10,
+      description: "Drag attraction radius (px)",
+    },
+    ATTRACT_STRENGTH: {
+      value: 0.08,
+      min: 0,
+      max: 0.5,
+      step: 0.01,
+      description: "Drag attraction force",
+    },
+    ATTRACT_TANGENT: {
+      value: 0.5,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "Tangential orbit factor under drag",
+    },
+    SPRING: {
+      value: 0.08,
+      min: 0.01,
+      max: 0.4,
+      step: 0.01,
+      description: "Pull back toward the dot's resting spot",
+    },
+    FRICTION: {
+      value: 0.86,
+      min: 0.5,
+      max: 0.99,
+      step: 0.01,
+      description: "Per-frame velocity damping",
     },
   },
   { theme: "paper" },
@@ -467,6 +532,46 @@ function ensureInkFilter() {
   document.body.appendChild(svg);
 }
 
+// ── Ink-dot particle ──
+// A resting sketch dot (or asterisk) that springs away from the pointer and
+// settles back home. Drawn batched by the factory, so it has no draw() of its
+// own — only home/position/velocity and the per-frame force integration.
+export class InkDot {
+  constructor(x, y, r, asterisk) {
+    this.hx = x;
+    this.hy = y;
+    this.x = x;
+    this.y = y;
+    this.vx = 0;
+    this.vy = 0;
+    this.r = r;
+    this.asterisk = asterisk;
+  }
+
+  update(forces) {
+    if (!forces) return;
+    applyRepulsion(forces, this, INK.REPEL_RADIUS, INK.REPEL_DAMPEN);
+    applyAttraction(
+      forces,
+      this,
+      INK.ATTRACT_RADIUS,
+      INK.ATTRACT_STRENGTH,
+      INK.ATTRACT_TANGENT,
+    );
+    applyWellForce(forces, this);
+    // Spring back toward home — this plus the scatter above is the whole motion
+    // budget, so both go through scaled() for reduced motion.
+    this.vx += (this.hx - this.x) * INK.SPRING;
+    this.vy += (this.hy - this.y) * INK.SPRING;
+    this.x += scaled(this.vx);
+    this.y += scaled(this.vy);
+    // Friction is damping, not motion — it stays outside scaled() so coasting
+    // velocity bleeds off even when the budget is zero.
+    this.vx *= INK.FRICTION;
+    this.vy *= INK.FRICTION;
+  }
+}
+
 // ── Pencil-flick particle ──
 class Flick {
   constructor() {
@@ -592,12 +697,14 @@ export function createPaper(canvasEl, ctxEl) {
     const h = canvasEl.height;
     dots = [];
     for (let i = 0; i < SKETCH.DOT_COUNT; i++) {
-      dots.push({
-        x: Math.random() * w,
-        y: Math.random() * h * SKETCH.DOT_SKY_FRACTION,
-        r: SKETCH.DOT_RADIUS_MIN + Math.random() * SKETCH.DOT_RADIUS_RANGE,
-        asterisk: Math.random() < SKETCH.ASTERISK_CHANCE,
-      });
+      dots.push(
+        new InkDot(
+          Math.random() * w,
+          Math.random() * h * SKETCH.DOT_SKY_FRACTION,
+          SKETCH.DOT_RADIUS_MIN + Math.random() * SKETCH.DOT_RADIUS_RANGE,
+          Math.random() < SKETCH.ASTERISK_CHANCE,
+        ),
+      );
     }
     horizon = [];
     const baseY = h * SKETCH.HORIZON_Y_FRAC;
@@ -730,10 +837,13 @@ export function createPaper(canvasEl, ctxEl) {
   }
 
   return {
-    draw(pal, reducedMotion = false) {
-      // Regenerate static geometry if canvas resized
+    draw(pal, forces, reducedMotion = false) {
+      // Regenerate resting geometry if canvas resized
       if (canvasEl.width !== lastW || canvasEl.height !== lastH) regenerate();
       const rgb = rgbFromPal(pal);
+      // Smudge the dots away from the pointer; each springs back home. The
+      // scaled() inside update() freezes them under reduced motion.
+      for (const d of dots) d.update(forces);
       ctxEl.save();
       drawDots(ctxEl, rgb);
       drawHorizon(ctxEl, rgb);

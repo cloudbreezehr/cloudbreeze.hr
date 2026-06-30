@@ -267,8 +267,8 @@ export function initPaper() {
     suppressAtmosphere: true,
     suppressDefaultClickBurst: true,
 
-    drawAmbient({ palFor, reducedMotion }) {
-      paper.draw(palFor("paper"), reducedMotion);
+    drawAmbient({ palFor, forces, reducedMotion }) {
+      paper.draw(palFor("paper"), forces, reducedMotion);
     },
 
     onClick({ x, y }) {

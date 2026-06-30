@@ -99,3 +99,73 @@ describe("Shaving — reduced motion invariant", () => {
     expect(fill).toBe("rgb(42,84,168)");
   });
 });
+
+describe("InkDot — paper sketch smudge", () => {
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: () => {},
+      removeEventListener: () => {},
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  // A click landing right next to the dot, strong enough to push it.
+  function clickForces() {
+    return {
+      clickImpulse: { x: 60, y: 60, strength: 6 },
+      isDragging: false,
+      dragPos: { x: 0, y: 0 },
+      holdStrength: 0,
+      wellStrength: 0,
+    };
+  }
+
+  function idleForces() {
+    return {
+      clickImpulse: { x: 0, y: 0, strength: 0 },
+      isDragging: false,
+      dragPos: { x: 0, y: 0 },
+      holdStrength: 0,
+      wellStrength: 0,
+    };
+  }
+
+  it("does not move when motion is reduced", async () => {
+    mqlMatches = true;
+    const { InkDot } = await import("../../../js/particles/paper.js");
+    const d = new InkDot(100, 100, 1, false);
+    d.update(clickForces());
+    d.update(clickForces());
+    expect(d.x).toBe(100);
+    expect(d.y).toBe(100);
+  });
+
+  it("smudges away from a click under full motion", async () => {
+    mqlMatches = false;
+    const { InkDot } = await import("../../../js/particles/paper.js");
+    const d = new InkDot(100, 100, 1, false);
+    d.update(clickForces());
+    expect(d.x !== 100 || d.y !== 100).toBe(true);
+  });
+
+  it("settles back toward home after being pushed", async () => {
+    mqlMatches = false;
+    const { InkDot } = await import("../../../js/particles/paper.js");
+    const d = new InkDot(100, 100, 1, false);
+    d.update(clickForces());
+    const pushed = Math.hypot(d.x - 100, d.y - 100);
+    for (let i = 0; i < 200; i++) d.update(idleForces());
+    const settled = Math.hypot(d.x - 100, d.y - 100);
+    expect(settled).toBeLessThan(pushed);
+  });
+});
