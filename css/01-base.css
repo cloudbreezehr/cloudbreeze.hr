@@ -125,6 +125,18 @@ body.light-appearance :focus-visible {
   }
 }
 
+/* Text selection follows the active theme's glow instead of the browser
+   default, so highlighting (an email, a heading) stays on-palette. The tint is
+   translucent, so text keeps its own colour and stays legible in both
+   appearances. (::selection and ::-moz-selection can't be grouped — an invalid
+   selector would drop the whole rule — so they're declared separately.) */
+::selection {
+  background: rgba(var(--theme-glow), 0.35);
+}
+::-moz-selection {
+  background: rgba(var(--theme-glow), 0.35);
+}
+
 html {
   scroll-behavior: smooth;
 }
