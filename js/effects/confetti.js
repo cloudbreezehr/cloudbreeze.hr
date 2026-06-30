@@ -20,6 +20,10 @@ const SPIN_DEG = 540; // max rotation across the fall
 const DURATION_JITTER_MIN = 0.7; // per-piece duration, as a fraction of base
 const DURATION_JITTER_RANGE = 0.6;
 const DEFAULT_COLORS = ["#5b9bf0", "#8fd3ff", "#ffd36a", "#ff7ea8", "#9affc4"];
+// A burst tinted to a single theme color would read as one flat shade; spread
+// each piece around it with a hue rotation + brightness jitter for depth.
+const THEME_TINT_HUE_SPREAD_DEG = 28;
+const THEME_TINT_BRIGHT_SPREAD = 0.4; // ± fraction around full brightness
 
 function rand(range) {
   return (Math.random() - 0.5) * 2 * range; // centred in [-range, range]
@@ -41,6 +45,9 @@ export function confettiBurst({
   // festive mix.
   const tint = activeThemeColor();
   const palette = colors || (tint ? [tint] : DEFAULT_COLORS);
+  // Explicit palettes and the default mix already carry variety; only a lone
+  // theme tint needs the per-piece spread to avoid a monochrome burst.
+  const spreadTint = !colors && !!tint;
   const w = window.innerWidth;
   const h = window.innerHeight;
   const n = Math.min(count, MAX_PIECES);
@@ -52,6 +59,11 @@ export function confettiBurst({
     el.style.width = `${size}px`;
     el.style.height = `${round ? size : size * PIECE_ASPECT}px`;
     el.style.background = palette[Math.floor(Math.random() * palette.length)];
+    if (spreadTint) {
+      const hue = rand(THEME_TINT_HUE_SPREAD_DEG);
+      const bright = 1 + rand(THEME_TINT_BRIGHT_SPREAD);
+      el.style.filter = `hue-rotate(${hue}deg) brightness(${bright})`;
+    }
     if (round) el.style.borderRadius = "50%";
     const startX = origin ? origin.x : Math.random() * w;
     const startY = origin ? origin.y : -PIECE_MAX_PX;
