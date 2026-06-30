@@ -35,7 +35,7 @@
   font-size: 0.72rem;
   font-weight: 300;
   line-height: 1.9;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.55);
 }
 
 .footer-link {
@@ -44,7 +44,7 @@
   font-size: 0.72rem;
   font-weight: 300;
   line-height: 1.9;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
   transition: color 0.3s;
 }
@@ -97,7 +97,7 @@ footer.footer-hinting::after {
   font-family: "DM Mono", monospace;
   font-size: 0.65rem;
   letter-spacing: 0.1em;
-  color: rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .footer-badge {
