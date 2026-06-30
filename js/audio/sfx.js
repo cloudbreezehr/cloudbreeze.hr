@@ -28,6 +28,12 @@ const SFX = defineConstants("audio.sfx", {
 // ── Synthesis constants ──
 const FLOOR = 0.0001; // exponential ramps can't reach 0
 const TAIL_S = 0.03; // slack before a node is stopped/freed
+// Voices that fire in rapid succession (a click, a banked coin, a traced star)
+// shift pitch a hair each time so repeats don't machine-gun an identical tone.
+const REPEAT_DETUNE_CENTS = 35;
+function jitterCents() {
+  return (Math.random() - 0.5) * 2 * REPEAT_DETUNE_CENTS;
+}
 const BURST_CRACKLE_POPS = 11; // sharp noise cracks scattered after a firework boom
 const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confetti
 const SHATTER_FRAGMENTS = 5; // pitched chips tumbling away when a block breaks
@@ -60,10 +66,21 @@ function freeOnEnd(node, ...nodes) {
 function tone(
   ctx,
   bus,
-  { freq, type = "sine", attack, hold, release, gain, slideTo, delay = 0 },
+  {
+    freq,
+    type = "sine",
+    attack,
+    hold,
+    release,
+    gain,
+    slideTo,
+    delay = 0,
+    detune = 0,
+  },
 ) {
   const osc = ctx.createOscillator();
   osc.type = type;
+  if (detune) osc.detune.value = detune;
   const t = ctx.currentTime + delay;
   osc.frequency.setValueAtTime(freq, t);
   if (slideTo) {
@@ -167,6 +184,7 @@ const VOICES = {
   // drops a hair in pitch for a rounded "tok". Kept subtle and warm rather than
   // bright: it fires on every click, so it can't grate.
   click(ctx, bus) {
+    const d = jitterCents();
     breath(ctx, bus, {
       dur: 0.04,
       type: "bandpass",
@@ -181,6 +199,7 @@ const VOICES = {
       attack: 0.002,
       release: 0.07,
       gain: 0.12,
+      detune: d,
     });
   },
   // A two-tone police wail — a hi/lo sawtooth alternation. The theme's entry
@@ -204,6 +223,7 @@ const VOICES = {
   // A cash-register "cha-ching" — a short noise "cha" then a bright bell ding
   // with its octave shimmer. Fires once per click that banks score.
   cash(ctx, bus) {
+    const d = jitterCents();
     breath(ctx, bus, {
       dur: 0.05,
       type: "highpass",
@@ -218,6 +238,7 @@ const VOICES = {
       release: 0.18,
       gain: 0.16,
       delay: 0.05,
+      detune: d,
     });
     tone(ctx, bus, {
       freq: 1976,
@@ -226,6 +247,7 @@ const VOICES = {
       release: 0.16,
       gain: 0.1,
       delay: 0.06,
+      detune: d,
     });
   },
   // A firework rocket leaving the ground — a soft rising whistle. Fires once
@@ -1060,6 +1082,7 @@ const VOICES = {
   // A deep-sea bubble — a round underwater "bloop" with a smaller bubble rising
   // behind it and a soft surface tick.
   bloop(ctx, bus) {
+    const d = jitterCents();
     tone(ctx, bus, {
       freq: 520,
       slideTo: 170,
@@ -1068,6 +1091,7 @@ const VOICES = {
       hold: 0.02,
       release: 0.2,
       gain: 0.22,
+      detune: d,
     });
     tone(ctx, bus, {
       freq: 360,
@@ -1077,6 +1101,7 @@ const VOICES = {
       release: 0.12,
       gain: 0.1,
       delay: 0.08,
+      detune: d,
     });
     breath(ctx, bus, {
       dur: 0.05,
@@ -1162,12 +1187,14 @@ const VOICES = {
   twinkle(ctx, bus) {
     // Tapping a star — a tiny bright chime with shimmering overtones entering a
     // hair apart, like a struck bell of light.
+    const d = jitterCents();
     tone(ctx, bus, {
       freq: 1760,
       type: "sine",
       attack: 0.002,
       release: 0.25,
       gain: 0.15,
+      detune: d,
     });
     tone(ctx, bus, {
       freq: 2637.02,
@@ -1176,6 +1203,7 @@ const VOICES = {
       release: 0.3,
       gain: 0.07,
       delay: 0.02,
+      detune: d,
     });
     tone(ctx, bus, {
       freq: 3520,
@@ -1184,6 +1212,7 @@ const VOICES = {
       release: 0.2,
       gain: 0.04,
       delay: 0.04,
+      detune: d,
     });
   },
   // Catching a shooting star — a descending whoosh with a sparkle.
