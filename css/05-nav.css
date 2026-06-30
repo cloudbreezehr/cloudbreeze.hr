@@ -61,14 +61,26 @@ nav {
   text-decoration: none;
 }
 
-/* Logo hover sparkle particles */
+/* Logo hover sparkle particles — actual four-point stars, so the brand moment
+   has its own character instead of reusing the generic glowing dot. */
 .logo-sparkle {
   position: fixed;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: rgba(var(--cursor-glow, 180, 200, 255), 0.85);
-  box-shadow: 0 0 6px 2px rgba(var(--cursor-glow, 180, 200, 255), 0.5);
+  width: 10px;
+  height: 10px;
+  background: rgba(var(--cursor-glow, 180, 200, 255), 0.9);
+  clip-path: polygon(
+    50% 0%,
+    58% 42%,
+    100% 50%,
+    58% 58%,
+    50% 100%,
+    42% 58%,
+    0% 50%,
+    42% 42%
+  );
+  /* drop-shadow (not box-shadow) follows the clipped star so the glow keeps
+     the sparkle's shape rather than haloing a square box. */
+  filter: drop-shadow(0 0 3px rgba(var(--cursor-glow, 180, 200, 255), 0.6));
   pointer-events: none;
   z-index: var(--z-cursor-ring);
 }
