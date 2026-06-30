@@ -40,6 +40,10 @@ const PV = defineConstants(
     DESAT_CONTRAST_BOOST: 0.15,
     DESAT_SEPIA_MAX: 0.35,
     OVERLAY_MAX_OPACITY: 0.9,
+    // The ink vignette's inner (transparent) radius, as a %, eased from wide to
+    // tight across the stroke-seep stage so the page closes in toward the wipe.
+    VIGNETTE_INNER_MAX: 55,
+    VIGNETTE_INNER_MIN: 32,
     LOGO_SAT_DROP: 0.9,
     LOGO_BRI_DROP: 0.6,
     LOGO_CONTRAST_BOOST: 0.4,
@@ -357,6 +361,7 @@ export function initPaper() {
         apply(progress) {
           if (progress < PF.STROKE_SEEP_AT) {
             overlay.style.opacity = "0";
+            overlay.style.removeProperty("--paper-vignette-inner");
             return;
           }
           const t = Math.min(
@@ -364,9 +369,19 @@ export function initPaper() {
             (progress - PF.STROKE_SEEP_AT) / (1 - PF.STROKE_SEEP_AT),
           );
           overlay.style.opacity = (t * PV.OVERLAY_MAX_OPACITY).toFixed(2);
+          // Tighten the vignette inward as the trigger nears — the ink closes
+          // in on the page before the wipe sweeps it to paper.
+          const inner =
+            PV.VIGNETTE_INNER_MAX -
+            t * (PV.VIGNETTE_INNER_MAX - PV.VIGNETTE_INNER_MIN);
+          overlay.style.setProperty(
+            "--paper-vignette-inner",
+            inner.toFixed(1) + "%",
+          );
         },
         clear() {
           overlay.style.opacity = "0";
+          overlay.style.removeProperty("--paper-vignette-inner");
         },
       },
       // ── 4. Ink flood — logo filter at high force ──

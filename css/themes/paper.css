@@ -31,7 +31,10 @@
   background-size: 250% 100%;
 }
 
-/* Progressive overlay — edge ink-seep, vignette */
+/* Progressive overlay — edge ink-seep + a vignette that tightens inward toward
+   the trigger. Shown during buildup (before the theme is active), so the ink
+   colour falls back to graphite — the active-theme --ink-color-rgb isn't set
+   yet — and the vignette's inner radius is driven from the buildup force. */
 .paper-overlay {
   position: fixed;
   inset: 0;
@@ -42,15 +45,15 @@
   background:
     radial-gradient(
       ellipse at center,
-      transparent 55%,
-      rgba(var(--ink-color-rgb), 0.18) 100%
+      transparent var(--paper-vignette-inner, 55%),
+      rgba(var(--ink-color-rgb, 26, 21, 18), 0.18) 100%
     ),
     linear-gradient(
       to right,
-      rgba(var(--ink-color-rgb), 0.08) 0%,
+      rgba(var(--ink-color-rgb, 26, 21, 18), 0.08) 0%,
       transparent 8%,
       transparent 92%,
-      rgba(var(--ink-color-rgb), 0.08) 100%
+      rgba(var(--ink-color-rgb, 26, 21, 18), 0.08) 100%
     );
 }
 
