@@ -198,13 +198,33 @@ body.spell-kick #cursor-ring::after {
   z-index: var(--z-fireworks);
   filter: drop-shadow(0 0 6px rgba(220, 232, 255, 0.85));
 }
-/* Light streaks (COMET / WARP / GUST / WISH). Geometry + gradient set inline. */
+/* Light streaks (COMET / WARP / GUST / WISH). Geometry set inline; the trailing
+   gradient + glowing head both read the inline --streak-color. */
 .streak {
   position: fixed;
   pointer-events: none;
   z-index: var(--z-fireworks);
   border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    var(--streak-color, #dce8ff)
+  );
   will-change: transform, opacity;
+}
+/* A hot glowing head at the leading (right) end, so a streak reads as a comet
+   with a spark rather than a flat capsule end. Sized off the bar's thickness. */
+.streak::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 50%;
+  height: 220%;
+  aspect-ratio: 1;
+  transform: translate(50%, -50%);
+  border-radius: 50%;
+  background: var(--streak-color, #dce8ff);
+  box-shadow: 0 0 8px 2px var(--streak-color, #dce8ff);
 }
 /* Orbiting motes (ORBIT). Size, colour and motion set inline. */
 .orbit-mote {

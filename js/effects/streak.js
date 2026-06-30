@@ -59,7 +59,8 @@ export function streak({
     // Anchor the head (right end) at the start point; the tail trails behind.
     el.style.left = `${ox - length}px`;
     el.style.top = `${oy - thickness / 2}px`;
-    el.style.background = `linear-gradient(to right, transparent, ${color})`;
+    // The CSS trailing gradient and the glowing head both read this.
+    el.style.setProperty("--streak-color", color);
     el.style.transformOrigin = "100% 50%";
     document.body.appendChild(el);
 
