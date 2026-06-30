@@ -2,6 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { prefersReducedMotion, scaled } from "../motion.js";
+import { playSfx } from "../audio/sfx.js";
 import { createPaper } from "../particles/paper.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { createTheme } from "./factory.js";
@@ -273,6 +274,9 @@ export function initPaper() {
 
     onClick({ x, y }) {
       paper.clickBurst(x, y);
+      // The ink splat renders even under reduced motion (it just fades faster),
+      // so it sounds unconditionally — the default click tap is suppressed here.
+      playSfx("inkSplat");
     },
     onDragStart({ x, y }) {
       paper.startStroke(x, y);

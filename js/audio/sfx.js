@@ -1003,6 +1003,28 @@ const VOICES = {
       delay: 0.01,
     });
   },
+  // A click dabbing ink onto the paper — a soft muffled pat with a faint low
+  // body, jittered per click. Distinct from the pencil stroke's dry scratch.
+  inkSplat(ctx, bus) {
+    const d = jitterCents();
+    breath(ctx, bus, {
+      dur: 0.07,
+      type: "lowpass",
+      freq: 1100,
+      q: 0.8,
+      gain: 0.12,
+    });
+    tone(ctx, bus, {
+      freq: 190,
+      slideTo: 120,
+      type: "sine",
+      attack: 0.003,
+      hold: 0.01,
+      release: 0.08,
+      gain: 0.07,
+      detune: d,
+    });
+  },
   // A snow-globe shake — a brief shaken rustle.
   // Shaking a snow globe — a soft watery slosh (the liquid swirling one way then
   // back) under a delicate flurry of glittery snow swirling and settling. Soft
