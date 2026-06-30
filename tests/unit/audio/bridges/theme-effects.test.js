@@ -41,6 +41,12 @@ describe("audio/bridges/theme-effects", () => {
     expect(calls).toEqual(["twinkle", "starWhoosh", "chord", "dud"]);
   });
 
+  it("maps the matrix click surge and decode", () => {
+    fire("matrix-click");
+    fire("matrix-decode");
+    expect(calls).toEqual(["glyph", "decode"]);
+  });
+
   it("leaves passive background animations silent", () => {
     fire("jellyfish-pulse"); // a periodic animation, not a triggered effect
     fire("scroll");

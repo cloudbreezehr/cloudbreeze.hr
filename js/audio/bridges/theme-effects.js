@@ -21,4 +21,6 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "shooting-star-clicked": "starWhoosh",
   "constellation-formed": "chord",
   "constellation-wrong-hit": "dud",
+  "matrix-click": "glyph",
+  "matrix-decode": "decode",
 });

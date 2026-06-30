@@ -1192,6 +1192,43 @@ const VOICES = {
       delay: 0.42,
     });
   },
+  // A click striking the matrix rain — a short rising digital blip. Fires per
+  // click, so it jitters pitch and rides the theme's bandpass tint to read as
+  // a data surge down the struck column.
+  glyph(ctx, bus) {
+    const d = jitterCents();
+    tone(ctx, bus, {
+      freq: 740,
+      slideTo: 1320,
+      type: "square",
+      attack: 0.001,
+      release: 0.08,
+      gain: 0.06,
+      detune: d,
+    });
+    breath(ctx, bus, {
+      dur: 0.06,
+      type: "bandpass",
+      freq: 1800,
+      q: 1.6,
+      gain: 0.05,
+    });
+  },
+  // A hidden word resolving out of the rain — a short ascending arpeggio
+  // locking into clarity, the payoff for the rare decode.
+  decode(ctx, bus) {
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, i) =>
+      tone(ctx, bus, {
+        freq,
+        type: "triangle",
+        attack: 0.003,
+        release: 0.16,
+        gain: 0.09,
+        delay: i * 0.06,
+      }),
+    );
+  },
   // Clicking a star — a bright little ping.
   twinkle(ctx, bus) {
     // Tapping a star — a tiny bright chime with shimmering overtones entering a

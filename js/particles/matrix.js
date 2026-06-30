@@ -82,8 +82,11 @@ export class Column {
  * @param {object} [opts]
  * @param {(word: string) => void} [opts.onDecode] Called when a hidden word
  *   begins resolving — the theme uses it to award the discovery.
+ * @param {() => void} [opts.onClick] Called when a click's column flash renders
+ *   (i.e. not under reduced motion), so the theme can sound the surge in step
+ *   with the visual.
  */
-export function createMatrix({ onDecode } = {}) {
+export function createMatrix({ onDecode, onClick } = {}) {
   const canvas = document.createElement("canvas");
   canvas.className = "matrix-rain";
   canvas.setAttribute("aria-hidden", "true");
@@ -320,6 +323,9 @@ export function createMatrix({ onDecode } = {}) {
         ctx.fillText(randGlyph(), cx, yy);
       }
       ctx.shadowBlur = 0;
+      // The surge rendered — sound it in step (skipped under reduced motion,
+      // where the block above doesn't run).
+      if (onClick) onClick();
     }
     if (!decodeState && Math.random() < MATRIX.DECODE_CLICK_CHANCE) {
       startDecode(Math.floor(x / cell), Math.floor(y / cell));

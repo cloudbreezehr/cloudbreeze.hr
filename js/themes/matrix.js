@@ -29,6 +29,11 @@ export function initMatrix() {
         new CustomEvent("achievement", { detail: { type: "matrix-decode" } }),
       );
     },
+    onClick: () => {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "matrix-click" } }),
+      );
+    },
   });
 
   // Buildup overlay — a green wash that deepens as REDPILL is typed. Lives in
