@@ -635,6 +635,20 @@ const METEOR = defineConstants("fury.meteors", {
     step: 0.1,
     description: "Trail stroke width in pixels",
   },
+  HEAD_GLOW_RADIUS: {
+    value: 7,
+    min: 0,
+    max: 30,
+    step: 0.5,
+    description: "Hot-head halo radius at the leading point (px)",
+  },
+  HEAD_GLOW_ALPHA: {
+    value: 0.9,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Hot-head halo opacity relative to the trail opacity",
+  },
   FADE_IN_FRAC: {
     value: 0.08,
     min: 0.01,
@@ -986,6 +1000,7 @@ export function createFury() {
           pal.meteorColors,
           op,
           METEOR.LINE_WIDTH,
+          { radius: METEOR.HEAD_GLOW_RADIUS, alpha: METEOR.HEAD_GLOW_ALPHA },
         );
       });
     },

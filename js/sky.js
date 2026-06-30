@@ -388,6 +388,20 @@ const SHOOTING = defineConstants("sky.shooting", {
     step: 0.1,
     description: "Trail stroke width in pixels",
   },
+  HEAD_GLOW_RADIUS: {
+    value: 5,
+    min: 0,
+    max: 24,
+    step: 0.5,
+    description: "Hot-head halo radius at the leading point (px)",
+  },
+  HEAD_GLOW_ALPHA: {
+    value: 0.9,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Hot-head halo opacity relative to the trail opacity",
+  },
 });
 
 // ── Aurora ──
@@ -1009,6 +1023,10 @@ export function createSky(starCount) {
           pal.shootingColors,
           op,
           SHOOTING.LINE_WIDTH,
+          {
+            radius: SHOOTING.HEAD_GLOW_RADIUS,
+            alpha: SHOOTING.HEAD_GLOW_ALPHA,
+          },
         );
       });
     },

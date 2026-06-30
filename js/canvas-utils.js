@@ -41,6 +41,7 @@ export function drawTrail(
   colors,
   opacity,
   lineWidth,
+  headGlow,
 ) {
   const grad = ctx.createLinearGradient(tailX, tailY, headX, headY);
   grad.addColorStop(0, `rgba(${colors[0]},0)`);
@@ -55,6 +56,22 @@ export function drawTrail(
   ctx.lineTo(headX, headY);
   ctx.stroke();
   ctx.restore();
+  // Optional hot head — an additive halo at the leading point so the trail
+  // reads as a comet with a bright spark rather than a tapered line. Opt-in
+  // (`{ radius, alpha }`) since dense per-element trails skip it for cost.
+  if (headGlow) {
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    drawHaloParticle(
+      ctx,
+      headX,
+      headY,
+      headGlow.radius,
+      opacity * headGlow.alpha,
+      colors[2],
+    );
+    ctx.restore();
+  }
 }
 
 // Filled radial-gradient halo at (x, y) with radius `r`, where

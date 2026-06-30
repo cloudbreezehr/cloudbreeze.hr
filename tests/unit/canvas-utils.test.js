@@ -56,10 +56,15 @@ function createCtxStub() {
     moveTo: vi.fn(),
     lineTo: vi.fn(),
     stroke: vi.fn(),
+    arc: vi.fn(),
+    fill: vi.fn(),
     createLinearGradient: vi.fn(() => grad),
+    createRadialGradient: vi.fn(() => grad),
     lineWidth: 0,
     lineCap: "",
     strokeStyle: null,
+    fillStyle: null,
+    globalCompositeOperation: "",
   };
 }
 
@@ -112,6 +117,30 @@ describe("drawTrail", () => {
     drawTrail(ctx, 1, 1, 0, 0, colors, 0.2, 1);
     expect(ctx.save).toHaveBeenCalledOnce();
     expect(ctx.restore).toHaveBeenCalledOnce();
+  });
+
+  it("draws no head halo when headGlow is omitted", () => {
+    const ctx = createCtxStub();
+    drawTrail(ctx, 10, 10, 0, 0, colors, 1, 2);
+    expect(ctx.createRadialGradient).not.toHaveBeenCalled();
+    expect(ctx.arc).not.toHaveBeenCalled();
+  });
+
+  it("draws an additive hot head when headGlow is supplied", () => {
+    const ctx = createCtxStub();
+    // Production passes [r,g,b] arrays; the head halo formats colors[2] via
+    // rgbaStr, which indexes the array.
+    const rgbColors = [
+      [10, 20, 30],
+      [40, 50, 60],
+      [70, 80, 90],
+    ];
+    drawTrail(ctx, 10, 10, 0, 0, rgbColors, 1, 2, { radius: 5, alpha: 0.8 });
+    expect(ctx.createRadialGradient).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalled();
+    expect(ctx.fill).toHaveBeenCalled();
+    // Additive blend so the head reads as a bright spark over the trail.
+    expect(ctx.globalCompositeOperation).toBe("lighter");
   });
 });
 
