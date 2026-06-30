@@ -36,7 +36,15 @@ export const WANTED = defineConstants("particles.wanted", {
     min: 0.1,
     max: 1,
     step: 0.05,
-    description: "Halftone dot opacity (lower = softer on the eyes)",
+    description: "Peak halftone dot opacity (densest corner)",
+  },
+  DOT_ALPHA_FLOOR: {
+    value: 0.5,
+    min: 0.1,
+    max: 1,
+    step: 0.05,
+    description:
+      "Lightest dot opacity as a fraction of peak (tonal depth across the diagonal)",
   },
   TONE_EXP: {
     value: 1.6,

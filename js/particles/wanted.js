@@ -23,11 +23,11 @@ import {
 // One halftone dot. `hx`/`hy` is its home cell centre; `baseR` is its tonal
 // size. Forces nudge vx/vy; a spring restores it toward home each frame.
 export class HalftoneDot {
-  constructor(hx, hy, baseR) {
-    this.reset(hx, hy, baseR);
+  constructor(hx, hy, baseR, alpha = WANTED.DOT_ALPHA) {
+    this.reset(hx, hy, baseR, alpha);
   }
 
-  reset(hx, hy, baseR) {
+  reset(hx, hy, baseR, alpha = WANTED.DOT_ALPHA) {
     this.hx = hx;
     this.hy = hy;
     this.x = hx;
@@ -35,6 +35,7 @@ export class HalftoneDot {
     this.vx = 0;
     this.vy = 0;
     this.baseR = baseR;
+    this.alpha = alpha;
   }
 
   update(forces, scrollVelocity = 0) {
@@ -66,6 +67,7 @@ export class HalftoneDot {
   }
 
   draw(ctx) {
+    ctx.globalAlpha = this.alpha;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.baseR, 0, Math.PI * 2);
     ctx.fill();
@@ -92,7 +94,12 @@ export function createWanted() {
         const t = Math.pow((c + r) / denom, WANTED.TONE_EXP);
         const baseR =
           WANTED.DOT_R_MIN + (WANTED.DOT_R_MAX - WANTED.DOT_R_MIN) * t;
-        dots.push(new HalftoneDot(c * span, r * span, baseR));
+        // Opacity tracks the same diagonal tone as radius, so the field shades
+        // from faint top-left to dense bottom-right like real Ben-Day dots.
+        const alpha =
+          WANTED.DOT_ALPHA *
+          (WANTED.DOT_ALPHA_FLOOR + (1 - WANTED.DOT_ALPHA_FLOOR) * t);
+        dots.push(new HalftoneDot(c * span, r * span, baseR, alpha));
       }
     }
     lastW = w;
@@ -141,12 +148,11 @@ export function createWanted() {
 
     drawPanels(ctx, w, h);
 
-    // Cream dots share one fillStyle/alpha batch — flat fills, no per-dot state
-    // changes, so the whole halftone field is cheap even at full density. The
-    // shared alpha keeps the texture soft rather than a harsh cream-on-ink grid.
+    // Cream dots share one fillStyle batch — only globalAlpha varies per dot
+    // (cheap, no fillStyle re-parse), giving the field tonal depth instead of a
+    // harsh uniform cream-on-ink grid.
     ctx.save();
     ctx.fillStyle = WANTED_CREAM;
-    ctx.globalAlpha = WANTED.DOT_ALPHA;
     for (const d of dots) {
       d.update(forces, scrollVelocity);
       d.draw(ctx);
