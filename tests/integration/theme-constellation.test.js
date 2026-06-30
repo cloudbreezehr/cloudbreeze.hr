@@ -142,6 +142,24 @@ describe("theme-constellation integration", () => {
     }
   });
 
+  it("embers a constellation's remaining stars once a candidate is locked", async () => {
+    const { getSkyStars } = await setupConstellation();
+    const canvas = document.getElementById("bg-canvas");
+    const orion = starsOf("orions-belt", getSkyStars);
+    const cassio = starsOf("cassiopeia", getSkyStars);
+
+    // One correct click locks the candidate at force ~1/3 — below the staged
+    // hint threshold, so this exercises the engagement ember, not the ramp.
+    clickStar(orion[0], canvas);
+
+    const remaining = orion.filter((s) => s !== orion[0]);
+    for (const s of remaining) expect(s.hintPulse).toBeGreaterThan(0);
+    // The clicked star and an un-started constellation stay dark — the ember
+    // guides completion without spoiling the puzzle cold.
+    expect(orion[0].hintPulse).toBe(0);
+    for (const s of cassio) expect(s.hintPulse).toBe(0);
+  });
+
   it("intercepted star clicks dispatch a click event with intercepted: true", async () => {
     const { getSkyStars } = await setupConstellation();
     const target = starsOf("orions-belt", getSkyStars)[0];

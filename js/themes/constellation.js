@@ -29,6 +29,9 @@ const CV = defineConstants(
     NEBULA_MAX_OPACITY: 0.55,
     VIGNETTE_MAX_OPACITY: 0.7,
     HINT_PULSE_STRENGTH: 0.7,
+    // Faint ember shown on a locked constellation's remaining stars before the
+    // staged hint threshold — guidance the moment the user engages.
+    HINT_FLOOR: 0.22,
     HUE_ROTATE: 220,
     SAT_BOOST: 0.3,
     BRI_DROP: 0.45,
@@ -126,18 +129,24 @@ export function initConstellation() {
         },
       },
       // ── 2. Hint-pulse on remaining candidate stars ──
+      // Once a candidate constellation is locked (the user clicked a correct
+      // star), its remaining stars get a faint ember immediately, ramping up
+      // to the full staged hint at the threshold — so guidance starts the
+      // moment they engage instead of after several blind clicks. The ember is
+      // buildup-only; deactivation keeps the original staged-threshold pulse.
       {
         threshold: CF.HINT_PULSE_AT,
-        apply(progress) {
+        apply(progress, ctx) {
+          const floor = ctx.isActive ? 0 : CV.HINT_FLOOR;
           if (progress < CF.HINT_PULSE_AT) {
-            clearAllHints();
+            applyHintPulse(floor);
             return;
           }
           const t = Math.min(
             1,
             (progress - CF.HINT_PULSE_AT) / (1 - CF.HINT_PULSE_AT),
           );
-          applyHintPulse(t * CV.HINT_PULSE_STRENGTH);
+          applyHintPulse(Math.max(floor, t * CV.HINT_PULSE_STRENGTH));
         },
         clear() {
           clearAllHints();
