@@ -188,7 +188,9 @@ nav.nav-light.scrolled {
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
   text-decoration: none;
-  transition: color 0.3s;
+  transition:
+    color 0.3s,
+    text-shadow 0.3s;
   position: relative;
 }
 .nav-links a::after {
@@ -204,6 +206,11 @@ nav.nav-light.scrolled {
 .nav-links a:hover,
 .nav-links a.active {
   color: #fff;
+}
+/* The scroll-active "you are here" link glows so it reads distinctly from a
+   transient hover — both go white, but only the current section is haloed. */
+.nav-links a.active {
+  text-shadow: 0 0 12px rgba(var(--theme-glow), 0.5);
 }
 .nav-links a:hover::after,
 .nav-links a.active::after {
