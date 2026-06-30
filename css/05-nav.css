@@ -205,12 +205,16 @@ nav {
   transition:
     background 0.3s,
     border-color 0.3s,
-    color 0.3s;
+    color 0.3s,
+    transform 0.18s;
 }
 .nav-links a.nav-cta:hover,
 .nav-links a.nav-cta.active {
   background: rgba(var(--theme-glow), 0.15);
   border-color: rgb(var(--theme-glow));
+}
+.nav-links a.nav-cta:active {
+  transform: scale(0.95);
 }
 .nav-links a.nav-cta::after {
   display: none;

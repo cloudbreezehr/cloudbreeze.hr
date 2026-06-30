@@ -101,7 +101,7 @@
   position: relative;
   overflow: hidden;
   transition:
-    transform 0.3s,
+    transform 0.18s,
     box-shadow 0.3s;
   box-shadow: var(--theme-btn-shadow, 0 0 30px rgba(var(--theme-glow), 0.35));
 }
@@ -125,6 +125,11 @@
 }
 .btn-primary:hover::before {
   opacity: 1;
+}
+/* Press feedback — settle back down and contract so the click lands
+   tactilely instead of snapping straight from the hover lift. */
+.btn-primary:active {
+  transform: translateY(0) scale(0.96);
 }
 .btn-primary span {
   position: relative;
@@ -155,13 +160,18 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   padding: 0.9rem 1.5rem;
-  transition: color 0.3s;
+  transition:
+    color 0.3s,
+    transform 0.18s;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 .btn-ghost:hover {
   color: #fff;
+}
+.btn-ghost:active {
+  transform: scale(0.95);
 }
 .btn-ghost svg {
   transition: transform 0.3s;

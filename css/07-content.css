@@ -234,12 +234,19 @@ section {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.03);
   position: relative;
-  transition: all 0.3s;
+  transition:
+    color 0.3s,
+    border-color 0.3s,
+    background 0.3s,
+    transform 0.18s;
 }
 .contact-link:hover {
   color: #fff;
   border-color: rgba(var(--theme-glow), 0.3);
   background: rgba(var(--theme-glow), 0.08);
+}
+.contact-link:active {
+  transform: scale(0.97);
 }
 .contact-link svg {
   flex-shrink: 0;
