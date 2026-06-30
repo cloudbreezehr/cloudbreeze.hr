@@ -84,7 +84,7 @@ describe("audio/continuous", () => {
     }));
     vi.doMock("../../../js/audio/noise.js", () => ({ whiteNoise: () => ({}) }));
     vi.doMock("../../../js/audio/sfx.js", () => ({
-      playSfx: (n) => calls.push(n),
+      playSfx: (n, opts) => calls.push({ name: n, opts }),
     }));
     vi.doMock("../../../js/canvas.js", () => ({ getForces: () => forces }));
     vi.doMock("../../../js/dev/registry.js", () => ({
@@ -181,7 +181,8 @@ describe("audio/continuous", () => {
     };
     step(); // wellStrength 0.5 → 0 : discharge
     step(); // still 0 : no repeat
-    expect(calls).toEqual(["wellRelease"]);
+    // Fires once, carrying the charge it reached so the boom scales with it.
+    expect(calls).toEqual([{ name: "wellRelease", opts: { strength: 0.5 } }]);
   });
 
   it("stops writing drag params once the drag ends, so an idle loop is silent", () => {

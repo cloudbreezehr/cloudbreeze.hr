@@ -39,6 +39,11 @@ const CONFETTI_SPARKLES = 5; // tiny bright sparkles fluttering down with confet
 const SHATTER_FRAGMENTS = 5; // pitched chips tumbling away when a block breaks
 const SNOWGLOBE_SPARKLES = 8; // tiny glints of snow swirling on a globe shake
 const ECHO_PINGS = 4; // sonar pings, each softer and lower, for the ECHO spell
+// The gravity-well release pays off the charge that went in: a level floor so a
+// light well still booms, scaling to full, and a brighter scatter with charge.
+const WELL_RELEASE_LEVEL_MIN = 0.45;
+const WELL_SCATTER_SWEEP_MIN = 3800; // outward-scatter brightness at zero charge (Hz)
+const WELL_SCATTER_SWEEP_RANGE = 2700; // … added at full charge
 
 // Attack→hold→release envelope on a gain node; returns the end time so the
 // voice knows when to stop its source.
@@ -839,7 +844,11 @@ const VOICES = {
   // The well collapsing on release — it pays off the whole hold: energy rushing
   // inward, a deep resonant boom as it implodes, then a bright scatter as the
   // captured motes fling back out.
-  wellRelease(ctx, bus) {
+  wellRelease(ctx, bus, { strength = 1 } = {}) {
+    // Scale the payoff with the charge that went in: a light well still booms
+    // (the level floor), a full hold detonates and scatters brighter.
+    const s = Math.max(0, Math.min(1, strength));
+    const level = WELL_RELEASE_LEVEL_MIN + s * (1 - WELL_RELEASE_LEVEL_MIN);
     // The inward suck — a quick bright-to-low rush feeding the collapse.
     breath(ctx, bus, {
       dur: 0.2,
@@ -847,7 +856,7 @@ const VOICES = {
       freq: 2400,
       sweepTo: 70,
       q: 0.9,
-      gain: 0.4,
+      gain: 0.4 * level,
       attack: 0.005,
     });
     // The deep collapse boom, with a resonant tail.
@@ -858,7 +867,7 @@ const VOICES = {
       attack: 0.004,
       hold: 0.04,
       release: 0.55,
-      gain: 0.42,
+      gain: 0.42 * level,
     });
     // A sub layer for weight.
     tone(ctx, bus, {
@@ -868,7 +877,7 @@ const VOICES = {
       attack: 0.006,
       hold: 0.03,
       release: 0.48,
-      gain: 0.2,
+      gain: 0.2 * level,
     });
     // The outward scatter — a bright noise sweep flung up and out as the motes
     // release, landing just after the boom.
@@ -876,9 +885,9 @@ const VOICES = {
       dur: 0.45,
       type: "bandpass",
       freq: 1400,
-      sweepTo: 6500,
+      sweepTo: WELL_SCATTER_SWEEP_MIN + s * WELL_SCATTER_SWEEP_RANGE,
       q: 0.5,
-      gain: 0.13,
+      gain: 0.13 * level,
       attack: 0.02,
       delay: 0.07,
     });

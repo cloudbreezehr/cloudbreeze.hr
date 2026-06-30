@@ -169,7 +169,9 @@ function tick() {
     well.gain.gain.setTargetAtTime(hold * CONT.WELL_GAIN, t, GLIDE_S);
     wellActive = hold > 0;
   }
-  if (prevWell > 0 && w === 0) playSfx("wellRelease");
+  // On release the well snaps to 0 in one frame, so prevWell holds the charge
+  // it reached — pass it through so the boom pays off how long it was held.
+  if (prevWell > 0 && w === 0) playSfx("wellRelease", { strength: prevWell });
   prevWell = w;
 }
 
