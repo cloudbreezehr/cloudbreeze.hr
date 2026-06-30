@@ -144,8 +144,8 @@ export function initWanted() {
   registerCanvasHooks("wanted", {
     suppressSky: true,
     suppressAtmosphere: true,
-    drawAmbient({ ctx, canvas, forces }) {
-      wanted.draw(ctx, canvas, forces);
+    drawAmbient({ ctx, canvas, forces, scrollVelocity }) {
+      wanted.draw(ctx, canvas, forces, scrollVelocity);
     },
     onClick() {
       addCash(WF.CASH_MIN + Math.floor(Math.random() * WF.CASH_RANGE));

@@ -2,10 +2,9 @@
 // A stylised loading-screen look: flat, hard-edged colour panels behind a
 // field of Ben-Day halftone dots. Dot radius follows a diagonal tonal gradient
 // (small at the top-left, large at the bottom-right). The dots sit on a grid
-// but spring away from clicks and drags via the shared interaction forces, then
-// settle back home — the halftone ripples under the pointer. Reduced motion
-// paints the grid at rest (no spring, no scatter) so it reads as a static
-// comic panel.
+// but spring away from clicks and drags via the shared interaction forces and
+// ripple with scroll, then settle back home. Reduced motion paints the grid at
+// rest (no spring, no scatter, no drift) so it reads as a static comic panel.
 
 import {
   applyRepulsion,
@@ -38,7 +37,7 @@ export class HalftoneDot {
     this.baseR = baseR;
   }
 
-  update(forces) {
+  update(forces, scrollVelocity = 0) {
     applyRepulsion(forces, this, WANTED.REPEL_RADIUS, WANTED.REPEL_DAMPEN);
     applyAttraction(
       forces,
@@ -48,6 +47,12 @@ export class HalftoneDot {
       WANTED.ATTRACT_TANGENT,
     );
     applyWellForce(forces, this);
+    // Scroll drags the whole field vertically (above a dead zone), the same as
+    // the other interaction forces: it feeds velocity, and the scaled() on the
+    // position step below freezes it under reduced motion.
+    if (Math.abs(scrollVelocity) > WANTED.SCROLL_THRESHOLD) {
+      this.vy -= scrollVelocity * WANTED.SCROLL_FACTOR;
+    }
     // Spring back toward the home cell — this plus the scatter above is the
     // whole motion budget, so both go through scaled() for reduced motion.
     this.vx += (this.hx - this.x) * WANTED.SPRING;
@@ -129,7 +134,7 @@ export function createWanted() {
     }
   }
 
-  function draw(ctx, canvas, forces) {
+  function draw(ctx, canvas, forces, scrollVelocity = 0) {
     const w = canvas.width;
     const h = canvas.height;
     if (w !== lastW || h !== lastH) rebuild(w, h);
@@ -143,7 +148,7 @@ export function createWanted() {
     ctx.fillStyle = WANTED_CREAM;
     ctx.globalAlpha = WANTED.DOT_ALPHA;
     for (const d of dots) {
-      d.update(forces);
+      d.update(forces, scrollVelocity);
       d.draw(ctx);
     }
     ctx.restore();

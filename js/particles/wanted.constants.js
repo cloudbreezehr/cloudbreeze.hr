@@ -140,4 +140,20 @@ export const WANTED = defineConstants("particles.wanted", {
     step: 1,
     description: "Sideways scatter on the low-gravity kick",
   },
+  // Scroll drag: the field is nudged vertically with the scroll, above a dead
+  // zone so a still or slow page leaves the halftone grid at rest.
+  SCROLL_THRESHOLD: {
+    value: 3,
+    min: 0,
+    max: 30,
+    step: 0.5,
+    description: "Min |scroll velocity| before the halftone field drifts",
+  },
+  SCROLL_FACTOR: {
+    value: 0.06,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Vertical nudge per unit of scroll velocity",
+  },
 });

@@ -35,6 +35,17 @@ describe("HalftoneDot — wanted pop-art", () => {
     };
   }
 
+  // No pointer interaction — isolates the scroll-drag path.
+  function restForces() {
+    return {
+      clickImpulse: { x: 0, y: 0, strength: 0 },
+      isDragging: false,
+      dragPos: { x: 0, y: 0 },
+      holdStrength: 0,
+      wellStrength: 0,
+    };
+  }
+
   it("does not move when motion is reduced", async () => {
     mqlMatches = true;
     const { HalftoneDot } = await import("../../../js/particles/wanted.js");
@@ -51,5 +62,38 @@ describe("HalftoneDot — wanted pop-art", () => {
     const dot = new HalftoneDot(100, 100, 5);
     dot.update(clickForces());
     expect(dot.x !== 100 || dot.y !== 100).toBe(true);
+  });
+
+  it("drifts when the page is scrolled past the dead zone", async () => {
+    mqlMatches = false;
+    const { HalftoneDot } = await import("../../../js/particles/wanted.js");
+    const { WANTED } =
+      await import("../../../js/particles/wanted.constants.js");
+    const dot = new HalftoneDot(100, 100, 5);
+    dot.update(restForces(), WANTED.SCROLL_THRESHOLD * 5);
+    expect(dot.y).not.toBe(100);
+  });
+
+  it("ignores scroll within the dead zone", async () => {
+    mqlMatches = false;
+    const { HalftoneDot } = await import("../../../js/particles/wanted.js");
+    const { WANTED } =
+      await import("../../../js/particles/wanted.constants.js");
+    const dot = new HalftoneDot(100, 100, 5);
+    dot.update(restForces(), WANTED.SCROLL_THRESHOLD * 0.5);
+    expect(dot.x).toBe(100);
+    expect(dot.y).toBe(100);
+  });
+
+  it("does not drift on scroll when motion is reduced", async () => {
+    mqlMatches = true;
+    const { HalftoneDot } = await import("../../../js/particles/wanted.js");
+    const { WANTED } =
+      await import("../../../js/particles/wanted.constants.js");
+    const dot = new HalftoneDot(100, 100, 5);
+    dot.update(restForces(), WANTED.SCROLL_THRESHOLD * 5);
+    dot.update(restForces(), WANTED.SCROLL_THRESHOLD * 5);
+    expect(dot.x).toBe(100);
+    expect(dot.y).toBe(100);
   });
 });
