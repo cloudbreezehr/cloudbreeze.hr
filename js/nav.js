@@ -91,12 +91,14 @@ export function initNav(navEl, appearance) {
     if (isMenuOpen()) return;
     burger.classList.add("active");
     navLinksEl.classList.add("open");
+    burger.setAttribute("aria-expanded", "true");
   }
 
   function closeMenu() {
     if (!isMenuOpen()) return;
     burger.classList.remove("active");
     navLinksEl.classList.remove("open");
+    burger.setAttribute("aria-expanded", "false");
   }
 
   burger.addEventListener("click", () => {
@@ -106,6 +108,18 @@ export function initNav(navEl, appearance) {
 
   navLinksEl.querySelectorAll("a").forEach((link) => {
     link.addEventListener("click", closeMenu);
+  });
+
+  // Dismiss the open dropdown on Escape or a tap/click outside the nav, so it
+  // can't strand keyboard/AT users or sit over the page after a mis-tap.
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && isMenuOpen()) {
+      closeMenu();
+      burger.focus();
+    }
+  });
+  document.addEventListener("pointerdown", (e) => {
+    if (isMenuOpen() && !navEl.contains(e.target)) closeMenu();
   });
 
   subscribeScroll(closeMenu);
