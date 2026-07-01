@@ -33,6 +33,9 @@ export function initAppearance(toggleEl) {
     document.body.classList.toggle("light-appearance", !isDark);
     toggleEl.setAttribute("data-appearance", pref);
     toggleEl.setAttribute("data-tooltip", tooltips[pref]);
+    // Tri-state control, so aria-pressed doesn't fit — announce the current
+    // mode via the label instead, updated as it cycles.
+    toggleEl.setAttribute("aria-label", tooltips[pref]);
     callbacks.forEach((cb) => cb(isDark));
   }
 
