@@ -173,6 +173,22 @@ const BLOOM_SWAY = 50;
 const BLOOM_SPIN = 200;
 const BLOOM_DURATION_MS = 2600;
 
+// ── DRIP — a fall of blue raindrops ──
+const DRIP_COLORS = ["#5b9bf0", "#8fd3ff", "#bfe0ff"];
+const DRIP_COUNT = 34;
+const DRIP_DURATION_MS = 1600;
+
+// ── AURORA — a soft green curtain of light washes the page ──
+const AURORA_COLOR = "#5affc4";
+const AURORA_PEAK = 0.4;
+const AURORA_DURATION_MS = 2000;
+
+// ── SHATTER — the screen cracks white and jolts ──
+const SHATTER_COLOR = "#ffffff";
+const SHATTER_PEAK = 0.5;
+const SHATTER_DURATION_MS = 260;
+const SHATTER_SHAKE_PX = 10;
+
 export const INCANTATIONS = [
   {
     word: "BOOM",
@@ -552,6 +568,50 @@ export const INCANTATIONS = [
         durationMs: BLOOM_DURATION_MS,
         sound: "bloom",
       }),
+  },
+  {
+    word: "DRIP",
+    icon: ICONS.drip,
+    hint: "A fall of blue raindrops",
+    // Round blue drops falling from the top over the water-drop voice.
+    cast: () =>
+      confettiBurst({
+        round: true,
+        colors: DRIP_COLORS,
+        count: DRIP_COUNT,
+        durationMs: DRIP_DURATION_MS,
+        sound: "drop",
+      }),
+  },
+  {
+    word: "AURORA",
+    icon: ICONS.aurora,
+    hint: "A soft curtain of light washes over",
+    // A slow green wash (screen-blended) over the page with the shimmer-pad
+    // voice; screenFlash self-skips under reduced motion, sound with it.
+    cast: () =>
+      screenFlash({
+        color: AURORA_COLOR,
+        peak: AURORA_PEAK,
+        durationMs: AURORA_DURATION_MS,
+        sound: "aurora",
+      }),
+  },
+  {
+    word: "SHATTER",
+    icon: ICONS.shatter,
+    hint: "The screen cracks and jolts",
+    // A white crack flash + a sharp jolt; the crack carries the sound so the
+    // shake stays silent, and both self-skip under reduced motion.
+    cast: () => {
+      screenFlash({
+        color: SHATTER_COLOR,
+        peak: SHATTER_PEAK,
+        durationMs: SHATTER_DURATION_MS,
+        sound: "shatter",
+      });
+      screenShake({ amplitude: SHATTER_SHAKE_PX, sound: null });
+    },
   },
 ];
 

@@ -10,6 +10,8 @@ describe("effects/incantations", () => {
   let ripple;
   let streaks;
   let confetti;
+  let flashes;
+  let shakes;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -17,6 +19,8 @@ describe("effects/incantations", () => {
     ripple = { rings: [] };
     streaks = [];
     confetti = [];
+    flashes = [];
+    shakes = [];
     vi.doMock("../../../js/effects/fireworks.js", () => ({
       launchRocketFireworks: (opts) => fireworks.rockets.push(opts),
       burstFireworks: (x, y, opts) => fireworks.bursts.push({ x, y, opts }),
@@ -30,6 +34,12 @@ describe("effects/incantations", () => {
     vi.doMock("../../../js/effects/confetti.js", () => ({
       confettiBurst: (opts) => confetti.push(opts),
     }));
+    vi.doMock("../../../js/effects/flash.js", () => ({
+      screenFlash: (opts) => flashes.push(opts),
+    }));
+    vi.doMock("../../../js/effects/screen-shake.js", () => ({
+      screenShake: (opts) => shakes.push(opts),
+    }));
     mod = await import("../../../js/effects/incantations.js");
   });
 
@@ -38,6 +48,8 @@ describe("effects/incantations", () => {
     vi.doUnmock("../../../js/effects/ripple.js");
     vi.doUnmock("../../../js/effects/streak.js");
     vi.doUnmock("../../../js/effects/confetti.js");
+    vi.doUnmock("../../../js/effects/flash.js");
+    vi.doUnmock("../../../js/effects/screen-shake.js");
   });
 
   function cast(word, origin, charge) {
@@ -139,5 +151,25 @@ describe("effects/incantations", () => {
     expect(confetti[0].sound).toBe("bloom");
     expect(confetti[0].round).toBe(true);
     expect(confetti[0].origin).toMatchObject({ x: 9, y: 10 });
+  });
+
+  it("DRIP rains round drops with the drop voice", () => {
+    cast("DRIP");
+    expect(confetti[0].sound).toBe("drop");
+    expect(confetti[0].round).toBe(true);
+    expect(confetti[0].origin).toBeUndefined(); // falls from the top, not a burst
+  });
+
+  it("AURORA washes the page with the shimmer-pad voice", () => {
+    cast("AURORA");
+    expect(flashes[0].sound).toBe("aurora");
+    expect(flashes[0].color).toBe("#5affc4");
+  });
+
+  it("SHATTER cracks (flash carries the sound) and jolts silently", () => {
+    cast("SHATTER");
+    expect(flashes[0].sound).toBe("shatter");
+    expect(shakes).toHaveLength(1);
+    expect(shakes[0].sound).toBeNull();
   });
 });

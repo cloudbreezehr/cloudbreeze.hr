@@ -178,6 +178,25 @@ export const ICONS = {
       `<circle cx="24" cy="36" r="6.2"/><circle cx="12" cy="24" r="6.2"/></g>` +
       `<circle cx="24" cy="24" r="5" fill="${HOLE}"/>`,
   ),
+  // DRIP — a single falling raindrop with a glint.
+  drip: wrap(
+    `<path d="M24 5c7 11 11 18 11 26a11 11 0 0 1-22 0c0-8 4-15 11-26z"/>` +
+      `<circle cx="19" cy="31" r="2.6" fill="${HOLE}"/>`,
+  ),
+  // AURORA — rippling curtains of light.
+  aurora: wrap(
+    `<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">` +
+      `<path d="M6 17q9-9 18 0t18 0"/>` +
+      `<path d="M6 26q9-9 18 0t18 0" opacity=".6"/>` +
+      `<path d="M6 35q9-9 18 0t18 0" opacity=".35"/></g>`,
+  ),
+  // SHATTER — cracks radiating from an impact point.
+  shatter: wrap(
+    `<g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">` +
+      `<path d="M24 24 13 7"/><path d="M24 24 40 11"/><path d="M24 24 42 28"/>` +
+      `<path d="M24 24 29 43"/><path d="M24 24 7 35"/></g>` +
+      `<circle cx="24" cy="24" r="2.4"/>`,
+  ),
 
   // ── Cheats ──
 
