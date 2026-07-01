@@ -85,6 +85,13 @@ body.light-appearance .achievement-search-input {
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.04em;
 }
+/* A finished set lights its count in the set's accent — a quiet "done" mark
+   at a glance without a competing toast (the master achievements + finale
+   already sound the big milestones). */
+.achievement-set.set-complete .achievement-set-count {
+  color: var(--set-color, var(--achievement-default-accent));
+  font-weight: 600;
+}
 
 /* Progress bar */
 .achievement-progress {

@@ -448,9 +448,13 @@ export function renderSections(container) {
     sName.appendChild(labelEl);
 
     const { total, unlocked } = setCountForSet(set.id);
+    const complete = total > 0 && unlocked === total;
+    if (complete) section.classList.add("set-complete");
     const sCount = document.createElement("span");
     sCount.className = "achievement-set-count";
-    sCount.textContent = `${unlocked} / ${total}`;
+    sCount.textContent = complete
+      ? `${unlocked} / ${total} ✓`
+      : `${unlocked} / ${total}`;
 
     sHeader.appendChild(sName);
     sHeader.appendChild(sCount);

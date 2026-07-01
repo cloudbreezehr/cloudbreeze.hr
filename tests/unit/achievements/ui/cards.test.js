@@ -142,6 +142,21 @@ describe("achievements/ui/cards", () => {
       expect(container.querySelector(".achievement-intro-card")).toBeNull();
     });
 
+    it("marks a set complete once all its reachable achievements are unlocked", async () => {
+      const { getReachableAchievements } =
+        await import("../../../../js/achievements/registry.js");
+      getReachableAchievements().forEach((a) => storage.unlock(a.id));
+      mod.renderSections(container);
+      const sections = container.querySelectorAll(".achievement-set");
+      expect(sections.length).toBeGreaterThan(0);
+      for (const s of sections) {
+        expect(s.classList.contains("set-complete")).toBe(true);
+        expect(s.querySelector(".achievement-set-count").textContent).toContain(
+          "✓",
+        );
+      }
+    });
+
     it("locked hidden achievements show ??? title and hidden-ach class when revealHints is off", () => {
       mod.renderSections(container);
       const hidden = container.querySelector(
