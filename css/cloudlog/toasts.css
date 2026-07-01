@@ -412,3 +412,58 @@ body.light-appearance .konami-confirm-prompt {
   color: #ffe9a8;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
 }
+
+/* Completion share card — the persistent "save your keepsake" prompt after the
+   finale, at the bottom so it doesn't clash with the centered banner. */
+.cloudlog-share {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px 10px 18px;
+  background: rgba(var(--ink-rgb), 0.96);
+  border: 1px solid rgba(var(--theme-glow), 0.35);
+  border-radius: 14px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.4);
+  font-family: "DM Mono", monospace;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.85);
+  max-width: calc(100vw - 32px);
+}
+.cloudlog-share-save {
+  font-family: "DM Mono", monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: rgb(var(--theme-glow));
+  background: rgba(var(--theme-glow), 0.12);
+  border: 1px solid rgba(var(--theme-glow), 0.5);
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.15s;
+}
+.cloudlog-share-save:hover {
+  background: rgba(var(--theme-glow), 0.2);
+}
+.cloudlog-share-save:active {
+  transform: scale(0.96);
+}
+.cloudlog-share-close {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  transition: color 0.2s;
+}
+.cloudlog-share-close:hover {
+  color: #fff;
+}

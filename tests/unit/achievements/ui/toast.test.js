@@ -72,6 +72,25 @@ describe("achievements/ui/toast", () => {
     });
   });
 
+  describe("showCompletionShare", () => {
+    it("shows a dismissible completion share card with a save action", () => {
+      mod.showCompletionShare();
+      const card = document.querySelector(".cloudlog-share");
+      expect(card).not.toBeNull();
+      expect(card.querySelector(".cloudlog-share-save")).not.toBeNull();
+      const close = card.querySelector(".cloudlog-share-close");
+      expect(close).not.toBeNull();
+      close.click();
+      expect(document.querySelector(".cloudlog-share")).toBeNull();
+    });
+
+    it("replaces a prior card instead of stacking", () => {
+      mod.showCompletionShare();
+      mod.showCompletionShare();
+      expect(document.querySelectorAll(".cloudlog-share")).toHaveLength(1);
+    });
+  });
+
   describe("buildAchievementToast", () => {
     it("renders title, description, and points into toast structure", () => {
       const toast = mod.buildAchievementToast(

@@ -5,7 +5,12 @@
 // stagger cleanly.  buildAchievementToast is exported as the canonical
 // toast renderer so persisted entries render identically to live ones.
 
-import { POINT_TIERS, SETS } from "../registry.js";
+import {
+  POINT_TIERS,
+  SETS,
+  getReachableAchievements,
+  sumPoints,
+} from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import { announce } from "../announcer.js";
 import {
@@ -518,6 +523,86 @@ export function celebrateCompletion() {
   }
   confettiBurst({ count: FINALE_CONFETTI, colors: FINALE_COLORS });
   showFinaleBanner();
+  showCompletionShare();
+}
+
+// ── Completion share card ──
+// The 100% capstone — a downloadable image summarizing the feat. Rendered on
+// demand (the Save click) so a canvas is only built if the visitor wants it,
+// and kept local: no upload, no social, just a keepsake.
+const CARD_W = 1200;
+const CARD_H = 630;
+
+function renderCompletionCard() {
+  const canvas = document.createElement("canvas");
+  canvas.width = CARD_W;
+  canvas.height = CARD_H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  const reachable = getReachableAchievements();
+  const count = reachable.length;
+  const points = sumPoints(reachable);
+
+  const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
+  bg.addColorStop(0, "#0a1628");
+  bg.addColorStop(1, "#0c2440");
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, CARD_W, CARD_H);
+
+  ctx.textAlign = "center";
+  ctx.fillStyle = "#7dbfe8";
+  ctx.font = "600 32px 'DM Mono', monospace";
+  ctx.fillText("CLOUDBREEZE · CLOUDLOG", CARD_W / 2, 150);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 82px 'Syne', sans-serif";
+  ctx.fillText("Every secret found", CARD_W / 2, 320);
+
+  ctx.fillStyle = "rgba(255,255,255,0.72)";
+  ctx.font = "400 30px 'DM Mono', monospace";
+  ctx.fillText(`${count} achievements · ${points} points`, CARD_W / 2, 400);
+
+  ctx.fillStyle = "rgba(255,255,255,0.4)";
+  ctx.font = "400 22px 'DM Mono', monospace";
+  ctx.fillText(new Date().toLocaleDateString(), CARD_W / 2, 470);
+  return canvas;
+}
+
+function saveCompletionCard() {
+  const canvas = renderCompletionCard();
+  if (!canvas || typeof canvas.toBlob !== "function") return;
+  canvas.toBlob((blob) => {
+    if (!blob) return;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "cloudbreeze-cloudlog.png";
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+}
+
+export function showCompletionShare() {
+  const prior = document.querySelector(".cloudlog-share");
+  if (prior) prior.remove();
+  const el = document.createElement("div");
+  el.className = "cloudlog-share";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-label", "Save your completion card");
+  const label = document.createElement("span");
+  label.className = "cloudlog-share-label";
+  label.textContent = "Cloudlog complete — save your card";
+  const save = document.createElement("button");
+  save.className = "cloudlog-share-save";
+  save.textContent = "Save card";
+  save.addEventListener("click", saveCompletionCard);
+  const close = document.createElement("button");
+  close.className = "cloudlog-share-close";
+  close.setAttribute("aria-label", "Dismiss");
+  close.textContent = "×";
+  close.addEventListener("click", () => el.remove());
+  el.append(label, save, close);
+  document.body.appendChild(el);
 }
 
 function showFinaleBanner() {
