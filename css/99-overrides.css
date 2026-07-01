@@ -163,3 +163,32 @@ body.light-appearance .achievement-badge {
     text-shadow: none !important;
   }
 }
+
+/* ── Higher contrast on request ── */
+/* The workhorse mono copy sits at 0.45–0.6 alpha by design; when the OS asks
+   for more contrast, lift it toward opaque. Dark first, then the light-
+   appearance surfaces that already ink these selectors. */
+@media (prefers-contrast: more) {
+  .hero-sub,
+  .service-desc,
+  .about-body,
+  .contact-sub,
+  .stat-label,
+  .footer-text,
+  .footer-link,
+  .footer-copy {
+    color: rgba(255, 255, 255, 0.92);
+  }
+  body.light-appearance:where(:not(.theme-dark-only))
+    :is(
+      .service-desc,
+      .about-body,
+      .contact-sub,
+      .stat-label,
+      .footer-text,
+      .footer-link,
+      .footer-copy
+    ) {
+    color: rgba(var(--ink-rgb), 0.92);
+  }
+}
