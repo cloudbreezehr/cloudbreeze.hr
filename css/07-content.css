@@ -13,6 +13,10 @@ section {
 
 .section-label {
   font-family: "DM Mono", monospace;
+  /* Pin the weight so the label reads identically whether it's a <p> eyebrow or
+     the Services section's <h2> — a bare h2 would render bold (and faux-bold,
+     since DM Mono ships no 700). */
+  font-weight: 400;
   font-size: 0.65rem;
   letter-spacing: 0.25em;
   text-transform: uppercase;
