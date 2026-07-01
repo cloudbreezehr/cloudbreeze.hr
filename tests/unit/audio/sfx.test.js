@@ -45,6 +45,11 @@ function stubAudioContext(created) {
       created.sources++;
       return node({ buffer: null, start() {}, stop() {}, onended: null });
     };
+    this.createStereoPanner = () => {
+      const p = node({ pan: param() });
+      if (created.panners) created.panners.push(p);
+      return p;
+    };
     this.createBuffer = (_ch, len) => ({
       getChannelData: () => new Float32Array(len),
     });
@@ -57,7 +62,7 @@ describe("audio/sfx", () => {
   beforeEach(async () => {
     vi.resetModules();
     localStorage.clear();
-    created = { oscillators: 0, sources: 0, oscNodes: [] };
+    created = { oscillators: 0, sources: 0, oscNodes: [], panners: [] };
     window.AudioContext = stubAudioContext(created);
     engine = await import("../../../js/audio/engine.js");
     sfx = await import("../../../js/audio/sfx.js");
@@ -83,6 +88,26 @@ describe("audio/sfx", () => {
     engine.setSoundEnabled(true);
     sfx.playSfx("definitely-not-a-voice");
     expect(created.oscillators + created.sources).toBe(0);
+  });
+
+  it("places a voice in the stereo field when given a pan", () => {
+    engine.setSoundEnabled(true);
+    sfx.playSfx("burst", { pan: -0.5 });
+    expect(created.panners).toHaveLength(1);
+    expect(created.panners[0].pan.value).toBe(-0.5);
+  });
+
+  it("skips the panner when no pan is supplied", () => {
+    engine.setSoundEnabled(true);
+    sfx.playSfx("burst");
+    expect(created.panners).toHaveLength(0);
+  });
+
+  it("panForX maps viewport x to a -1..1 pan", () => {
+    const w = window.innerWidth;
+    expect(sfx.panForX(0)).toBe(-1);
+    expect(sfx.panForX(w)).toBe(1);
+    expect(sfx.panForX(w / 2)).toBeCloseTo(0, 5);
   });
 
   it("jitters a repeat voice's pitch coherently so repeats don't machine-gun", () => {

@@ -425,7 +425,7 @@ export function initCanvas(canvasEl, appearance, options) {
     // achievements/analytics, only the default burst's voice is gated.
     window.dispatchEvent(
       new CustomEvent("achievement", {
-        detail: { type: "click-burst", suppressDefault },
+        detail: { type: "click-burst", suppressDefault, x: e.clientX },
       }),
     );
   });

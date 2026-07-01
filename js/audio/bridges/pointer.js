@@ -5,12 +5,13 @@
 // suppressed — a theme that draws its own click visual sounds that instead, so
 // the tap never plays for a burst that didn't render.
 
-import { playSfx } from "../sfx.js";
+import { playSfx, panForX } from "../sfx.js";
 
 export function initPointerAudioBridge() {
   function onAchievement(e) {
     const d = e.detail || {};
-    if (d.type === "click-burst" && !d.suppressDefault) playSfx("click");
+    if (d.type === "click-burst" && !d.suppressDefault)
+      playSfx("click", { pan: d.x != null ? panForX(d.x) : undefined });
   }
   window.addEventListener("achievement", onAchievement);
   return () => window.removeEventListener("achievement", onAchievement);

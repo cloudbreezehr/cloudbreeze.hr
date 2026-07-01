@@ -11,7 +11,8 @@ describe("audio/bridges/pointer", () => {
     vi.resetModules();
     calls = [];
     vi.doMock("../../../../js/audio/sfx.js", () => ({
-      playSfx: (name) => calls.push(name),
+      playSfx: (name, opts) => calls.push({ name, opts }),
+      panForX: (x) => x, // identity stub — just proves the x flows through
     }));
     const mod = await import("../../../../js/audio/bridges/pointer.js");
     stop = mod.initPointerAudioBridge();
@@ -22,11 +23,13 @@ describe("audio/bridges/pointer", () => {
     vi.doUnmock("../../../../js/audio/sfx.js");
   });
 
-  it("taps on a world click that drew the default burst", () => {
+  it("taps on a world click that drew the default burst, panned to its x", () => {
     window.dispatchEvent(
-      new CustomEvent("achievement", { detail: { type: "click-burst" } }),
+      new CustomEvent("achievement", {
+        detail: { type: "click-burst", x: 42 },
+      }),
     );
-    expect(calls).toEqual(["click"]);
+    expect(calls).toEqual([{ name: "click", opts: { pan: 42 } }]);
   });
 
   it("stays silent when a theme suppressed the default burst", () => {

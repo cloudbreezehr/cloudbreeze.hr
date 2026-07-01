@@ -1616,7 +1616,15 @@ const VOICES = {
 // bus; pass `ui: true` for theme-agnostic cues (toggle, unlock) that should
 // play dry. Any other options are forwarded to the voice (e.g. a buildup
 // tick's `progress`). No-op when sound is off, unavailable, or name unknown.
-export function playSfx(name, { ui = false, ...opts } = {}) {
+// Map a viewport x-coordinate to a stereo pan (-1 left … +1 right). Callers
+// that know where an effect happened pass `pan: panForX(x)` to playSfx.
+export function panForX(x) {
+  const w = typeof window !== "undefined" ? window.innerWidth : 0;
+  if (!w) return 0;
+  return Math.max(-1, Math.min(1, (x / w) * 2 - 1));
+}
+
+export function playSfx(name, { ui = false, pan, ...opts } = {}) {
   if (!isSoundEnabled()) return;
   // Skip until a gesture has unlocked audio — otherwise sounds attempted on
   // load create + play a still-suspended context, and the browser logs an
@@ -1630,6 +1638,15 @@ export function playSfx(name, { ui = false, ...opts } = {}) {
   if (!bus) return;
   const sfxGain = ctx.createGain();
   sfxGain.gain.value = SFX.GAIN;
-  sfxGain.connect(bus);
+  // Place the voice in the stereo field when a pan is supplied (feature-detected
+  // so older engines just fall through to a centered connect).
+  if (pan !== undefined && ctx.createStereoPanner) {
+    const panner = ctx.createStereoPanner();
+    panner.pan.value = Math.max(-1, Math.min(1, pan));
+    sfxGain.connect(panner);
+    panner.connect(bus);
+  } else {
+    sfxGain.connect(bus);
+  }
   voice(ctx, sfxGain, opts);
 }
