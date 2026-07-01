@@ -81,6 +81,22 @@ describe("initReveal", () => {
     expect(obs.observed.has(el)).toBe(true);
   });
 
+  it("reveals everything at once when IntersectionObserver is unavailable", () => {
+    delete window.IntersectionObserver;
+    document.body.innerHTML = `
+      <div class="reveal" id="a"></div>
+      <div class="reveal" id="b"></div>
+    `;
+    initReveal();
+    expect(document.getElementById("a").classList.contains("visible")).toBe(
+      true,
+    );
+    expect(document.getElementById("b").classList.contains("visible")).toBe(
+      true,
+    );
+    expect(observerInstances).toHaveLength(0);
+  });
+
   it("accepts a custom selector", () => {
     document.body.innerHTML = `
       <div class="animate" id="a"></div>

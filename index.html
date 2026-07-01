@@ -157,6 +157,20 @@
     <link rel="stylesheet" href="css/99-perf.css" />
 
     <!--
+      Scripting-off fallback: the scroll reveal is driven by
+      IntersectionObserver, so with JS disabled .reveal content would stay at
+      opacity:0 forever. Force it visible. (style-src allows 'unsafe-inline'.)
+    -->
+    <noscript>
+      <style>
+        .reveal {
+          opacity: 1 !important;
+          transform: none !important;
+        }
+      </style>
+    </noscript>
+
+    <!--
       Start fetching the first-paint modules during HTML parse instead
       of waiting until the deferred <script> tags near the end of <body>.
     -->
