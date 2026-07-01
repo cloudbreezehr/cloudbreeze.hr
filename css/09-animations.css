@@ -53,3 +53,20 @@
 .reveal-delay-3 {
   transition-delay: 0.3s;
 }
+
+/* Trigger-zone discovery hint — a gentle glow pulse that draws a lingering
+   first visitor's eye to an interactive element, without revealing the gesture.
+   !important so it wins over an element's own resting filter/animation for the
+   couple of beats it runs; the JS gates it out under reduced motion. */
+@keyframes triggerHintGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 4px rgba(var(--theme-glow), 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(var(--theme-glow), 0.95));
+  }
+}
+.trigger-hinting {
+  animation: triggerHintGlow 1.3s ease-in-out 2 !important;
+}

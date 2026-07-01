@@ -11,6 +11,13 @@ describe("achievements/discovery-hint", () => {
     vi.useFakeTimers();
     vi.resetModules();
     sessionStorage.clear();
+    localStorage.clear();
+    // fire() now consults prefers-reduced-motion for the zone glow.
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
     mod = await import("../../../js/achievements/discovery-hint.js");
     showFn = vi.fn();
   });
@@ -18,6 +25,7 @@ describe("achievements/discovery-hint", () => {
   afterEach(() => {
     mod._resetForTests();
     vi.useRealTimers();
+    delete window.matchMedia;
   });
 
   it("fires the hint after the idle window with no activity", () => {
@@ -54,5 +62,19 @@ describe("achievements/discovery-hint", () => {
     mod.initDiscoveryHint(showFn);
     vi.advanceTimersByTime(120000);
     expect(showFn).not.toHaveBeenCalled();
+  });
+
+  it("glows a rotating trigger zone when the hint fires", () => {
+    // localStorage cleared → the rotation starts at the first zone (.cloud-svg).
+    const logo = document.createElement("div");
+    logo.className = "cloud-svg";
+    document.body.appendChild(logo);
+    mod.initDiscoveryHint(showFn);
+    vi.advanceTimersByTime(91000);
+    expect(logo.classList.contains("trigger-hinting")).toBe(true);
+    // Self-clears after the pulse.
+    vi.advanceTimersByTime(3000);
+    expect(logo.classList.contains("trigger-hinting")).toBe(false);
+    logo.remove();
   });
 });
