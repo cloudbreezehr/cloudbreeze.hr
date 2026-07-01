@@ -66,21 +66,22 @@ describe("achievements/welcome-back", () => {
     expect(showActivationToast).not.toHaveBeenCalled();
   });
 
-  it("fires on init with the secrets-remaining count", async () => {
+  it("points at the nearest in-progress achievement", async () => {
     const { ACHIEVEMENTS } =
       await import("../../../js/achievements/registry.js");
     storage.activate();
+    // One unlock puts the non-hidden "unlock 5 achievements" progressive at
+    // 1/5 — the nearest started-but-unfinished achievement.
     storage.unlock(ACHIEVEMENTS[0].id);
-    const remaining = ACHIEVEMENTS.length - 1;
 
     mod.maybeShowWelcomeBack(showActivationToast);
     vi.advanceTimersByTime(PAST_SETTLE_MS);
 
     expect(showActivationToast).toHaveBeenCalledTimes(1);
-    expect(showActivationToast.mock.calls[0][0]).toContain(`${remaining}`);
-    expect(showActivationToast.mock.calls[0][0].toLowerCase()).toContain(
-      "welcome back",
-    );
+    const msg = showActivationToast.mock.calls[0][0];
+    expect(msg.toLowerCase()).toContain("welcome back");
+    expect(msg).toContain("Closest");
+    expect(msg).toMatch(/\(\d+\/\d+\)/);
   });
 
   it("uses singular 'secret' when only one is left", async () => {

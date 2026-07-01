@@ -12,6 +12,7 @@
 // greeting under the same throttle.
 
 import { getReachableAchievements } from "./registry.js";
+import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 
 // ── Constants ──
@@ -46,6 +47,22 @@ export function markGreeted() {
   } catch {
     // ignore — localStorage may be unavailable
   }
+}
+
+// The reachable, non-hidden, started-but-unfinished achievement closest to
+// done — a more actionable nudge than a raw remaining count. Hidden ones are
+// skipped so the greeting never spoils a "???" secret.
+function nearestProgress() {
+  let best = null;
+  for (const a of getReachableAchievements()) {
+    if (!a.progressKey || a.hidden || storage.isUnlocked(a.id)) continue;
+    const total = resolveProgressTotal(a.progressKey);
+    const current = Math.min(resolveProgressCurrent(a.progressKey), total);
+    if (total <= 0 || current <= 0 || current >= total) continue;
+    const ratio = current / total;
+    if (!best || ratio > best.ratio) best = { ach: a, current, total, ratio };
+  }
+  return best;
 }
 
 export function maybeShowWelcomeBack(showActivationToast) {
@@ -83,8 +100,17 @@ export function maybeShowWelcomeBack(showActivationToast) {
   markGreeted();
 
   setTimeout(() => {
-    const noun = remaining === 1 ? "secret" : "secrets";
-    showActivationToast(`Welcome back. ${remaining} ${noun} still hidden.`);
+    // Prefer pointing at the nearest in-progress achievement; fall back to the
+    // raw remaining count when nothing's mid-flight.
+    const near = nearestProgress();
+    if (near) {
+      showActivationToast(
+        `Welcome back. Closest: ${near.ach.title} (${near.current}/${near.total}).`,
+      );
+    } else {
+      const noun = remaining === 1 ? "secret" : "secrets";
+      showActivationToast(`Welcome back. ${remaining} ${noun} still hidden.`);
+    }
   }, SETTLE_DELAY_MS);
 }
 
