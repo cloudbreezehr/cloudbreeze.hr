@@ -1,4 +1,5 @@
 import { drawHaloParticle, scrollFade } from "./canvas-utils.js";
+import { lerpColor } from "./colors.js";
 import {
   applyAttraction,
   applyHoverDrift,
@@ -25,6 +26,11 @@ let _canvas, _ctx;
 // Phase advances each draw frame; cos/sin of the phase produce the
 // horizontal and vertical drift biases shared by all sky particles.
 let _windPhase = 0;
+
+// ── Horizon sunrise ──
+// The default sky's horizon glow warms toward this as the viewport nears ground
+// level, reading as a descent into sunrise. Themes keep their own horizon.
+const HORIZON_SUNRISE = [255, 150, 80];
 
 // ── Streak scroll parameters ──
 // Bands map scroll progress (0 = top, 1 = bottom) to opacity/speed multipliers
@@ -411,7 +417,13 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           HORIZON.INTENSITY_BASE +
           sp * HORIZON.INTENSITY_SCROLL -
           Math.max(0, sp - HORIZON.Y_BASE) * HORIZON.INTENSITY_FALLOFF;
-        const hc = pal.horizonColor;
+        let hc = pal.horizonColor;
+        // On the default (unthemed) sky, warm the horizon toward sunrise as the
+        // viewport descends to ground level; active themes keep their horizon.
+        if (!document.body.dataset.activeTheme && sp > HORIZON.WARM_START) {
+          const t = (sp - HORIZON.WARM_START) / (1 - HORIZON.WARM_START);
+          hc = lerpColor(hc, HORIZON_SUNRISE, t * HORIZON.WARM_STRENGTH);
+        }
         const hg = _ctx.createRadialGradient(
           _canvas.width / 2,
           glowY,
@@ -420,7 +432,10 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
           glowY,
           _canvas.width * (HORIZON.RADIUS_BASE + sp * HORIZON.RADIUS_SCROLL),
         );
-        hg.addColorStop(0, `rgba(${hc[0]},${hc[1]},${hc[2]},${glowIntensity})`);
+        hg.addColorStop(
+          0,
+          `rgba(${Math.round(hc[0])},${Math.round(hc[1])},${Math.round(hc[2])},${glowIntensity})`,
+        );
         hg.addColorStop(1, "transparent");
         _ctx.fillStyle = hg;
         _ctx.fillRect(0, 0, _canvas.width, _canvas.height);

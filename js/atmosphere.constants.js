@@ -628,6 +628,20 @@ export const HORIZON = defineConstants("atmosphere.horizon", {
     step: 0.05,
     description: "Scroll-driven radius expansion",
   },
+  WARM_START: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Scroll position where the horizon starts warming to sunrise",
+  },
+  WARM_STRENGTH: {
+    value: 0.55,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Max blend toward the sunrise tint at ground level",
+  },
 });
 
 // ── Gusts ──
