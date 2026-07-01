@@ -7,6 +7,7 @@ import {
   HOLD,
 } from "./interactions.js";
 import { scaled } from "./motion.js";
+import { getQualityTier } from "./quality.js";
 import {
   STREAK,
   CLOUD,
@@ -14,6 +15,7 @@ import {
   MOTE,
   HORIZON,
   GUST,
+  DUST,
   MOTE_IMP,
   MOTE_HOVER,
   WIND,
@@ -31,6 +33,9 @@ let _windPhase = 0;
 // The default sky's horizon glow warms toward this as the viewport nears ground
 // level, reading as a descent into sunrise. Themes keep their own horizon.
 const HORIZON_SUNRISE = [255, 150, 80];
+
+// Dim blue-white for the parallax depth-dust layer.
+const DUST_COLOR = [200, 220, 255];
 
 // ── Streak scroll parameters ──
 // Bands map scroll progress (0 = top, 1 = bottom) to opacity/speed multipliers
@@ -292,6 +297,34 @@ class ScrollMote {
   }
 }
 
+// A faint mid-depth mote that parallax-shifts with scroll and drifts slowly
+// sideways. Flat dot (no gradient) — cheap enough to run a whole extra layer.
+class DepthDust {
+  constructor() {
+    this.x = Math.random() * _canvas.width;
+    this.baseY = Math.random() * _canvas.height;
+    this.depth = DUST.DEPTH_MIN + Math.random() * DUST.DEPTH_RANGE;
+    this.r = DUST.RADIUS_MIN + Math.random() * DUST.RADIUS_RANGE;
+    this.opacity = DUST.OPACITY_MIN + Math.random() * DUST.OPACITY_RANGE;
+    this.drift = (Math.random() - 0.5) * 2 * DUST.DRIFT;
+  }
+  update() {
+    this.x += scaled(this.drift);
+    const w = _canvas.width;
+    if (this.x < 0) this.x += w;
+    else if (this.x > w) this.x -= w;
+  }
+  draw(sp, vis) {
+    const h = _canvas.height;
+    const shift = this.depth * sp * h * DUST.PARALLAX;
+    const y = (((this.baseY - shift) % h) + h) % h;
+    _ctx.globalAlpha = this.opacity * vis;
+    _ctx.beginPath();
+    _ctx.arc(this.x, y, this.r, 0, Math.PI * 2);
+    _ctx.fill();
+  }
+}
+
 // ── Factory ──
 
 export function createAtmosphere(canvasEl, ctxEl, opts) {
@@ -326,6 +359,12 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         width: 0,
       }))
     : [];
+  // High tier only — the depth-dust layer is the richness ceiling, not shed
+  // work, so lower tiers simply never build it.
+  const dust =
+    getQualityTier() === "high"
+      ? Array.from({ length: DUST.COUNT }, () => new DepthDust())
+      : [];
 
   return {
     draw(sp, scrollVelocity, pal, forces, blocky) {
@@ -335,6 +374,28 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
       const windX = Math.cos(_windPhase) * WIND.CLOUD_AMP;
       const wispWindX = Math.cos(_windPhase) * WIND.WISP_SPEED_MOD;
       const wispWindY = Math.sin(_windPhase) * WIND.WISP_Y_AMP;
+
+      // Depth dust — a faint parallax layer that fades in across the
+      // near-space→atmosphere transition. Drawn first so it sits behind the
+      // clouds. Skipped entirely outside its scroll band (and on low tiers).
+      if (dust.length) {
+        const dustVis = scrollFade(
+          sp,
+          DUST.FADE_IN_START,
+          DUST.FADE_IN_END,
+          DUST.FADE_OUT_START,
+          DUST.FADE_OUT_END,
+        );
+        if (dustVis > 0) {
+          _ctx.save();
+          _ctx.fillStyle = `rgb(${DUST_COLOR[0]},${DUST_COLOR[1]},${DUST_COLOR[2]})`;
+          for (const d of dust) {
+            d.update();
+            d.draw(sp, dustVis);
+          }
+          _ctx.restore();
+        }
+      }
 
       // Streaks — evolve with scroll
       if (opts.streaks) {

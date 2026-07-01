@@ -644,6 +644,104 @@ export const HORIZON = defineConstants("atmosphere.horizon", {
   },
 });
 
+// ── Depth dust ──
+// A sparse mid-depth mote layer, faded in across the near-space→atmosphere
+// transition, adding parallax depth. High quality tier only — premium hardware
+// gets an extra layer rather than just more of the existing particles.
+export const DUST = defineConstants("atmosphere.dust", {
+  COUNT: {
+    value: 26,
+    min: 0,
+    max: 80,
+    step: 1,
+    description: "Depth-dust mote count (high tier only)",
+  },
+  RADIUS_MIN: {
+    value: 0.4,
+    min: 0.1,
+    max: 3,
+    step: 0.1,
+    description: "Min dust radius (px)",
+  },
+  RADIUS_RANGE: {
+    value: 0.9,
+    min: 0,
+    max: 3,
+    step: 0.1,
+    description: "Dust radius variation",
+  },
+  OPACITY_MIN: {
+    value: 0.06,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Min dust opacity",
+  },
+  OPACITY_RANGE: {
+    value: 0.12,
+    min: 0,
+    max: 0.5,
+    step: 0.01,
+    description: "Dust opacity variation",
+  },
+  DEPTH_MIN: {
+    value: 0.2,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Min parallax depth",
+  },
+  DEPTH_RANGE: {
+    value: 0.5,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Parallax depth variation",
+  },
+  PARALLAX: {
+    value: 0.3,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Scroll parallax displacement multiplier",
+  },
+  DRIFT: {
+    value: 0.15,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Max horizontal drift (px/frame)",
+  },
+  FADE_IN_START: {
+    value: 0.22,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll where dust begins fading in",
+  },
+  FADE_IN_END: {
+    value: 0.36,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll where dust reaches full opacity",
+  },
+  FADE_OUT_START: {
+    value: 0.55,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll where dust begins fading out",
+  },
+  FADE_OUT_END: {
+    value: 0.72,
+    min: 0,
+    max: 1,
+    step: 0.01,
+    description: "Scroll where dust fully disappears",
+  },
+});
+
 // ── Gusts ──
 export const GUST = defineConstants("atmosphere.gusts", {
   SCROLL_THRESHOLD: {
