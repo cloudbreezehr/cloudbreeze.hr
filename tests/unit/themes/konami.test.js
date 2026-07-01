@@ -8,6 +8,7 @@ describe("themes/konami", () => {
   let mod;
   let registryMock;
   let stopFn;
+  let finale;
 
   beforeEach(async () => {
     document.body.innerHTML = "";
@@ -24,6 +25,17 @@ describe("themes/konami", () => {
       getThemeIds: () => registryMock.ids.slice(),
       toggleTheme: (id) => registryMock.toggled.push(id),
     }));
+    // Capture the finale effects instead of running real canvas/DOM work.
+    finale = { rockets: 0, sweeps: 0, shakes: 0 };
+    vi.doMock("../../../js/effects/fireworks.js", () => ({
+      launchRocketFireworks: () => finale.rockets++,
+    }));
+    vi.doMock("../../../js/effects/hue-sweep.js", () => ({
+      hueSweep: () => finale.sweeps++,
+    }));
+    vi.doMock("../../../js/effects/screen-shake.js", () => ({
+      screenShake: () => finale.shakes++,
+    }));
 
     mod = await import("../../../js/themes/konami.js");
     stopFn = mod.initKonami().stop;
@@ -33,6 +45,9 @@ describe("themes/konami", () => {
     if (stopFn) stopFn();
     vi.useRealTimers();
     vi.doUnmock("../../../js/themes/registry.js");
+    vi.doUnmock("../../../js/effects/fireworks.js");
+    vi.doUnmock("../../../js/effects/hue-sweep.js");
+    vi.doUnmock("../../../js/effects/screen-shake.js");
   });
 
   function press(key) {
@@ -79,11 +94,20 @@ describe("themes/konami", () => {
     expect(registryMock.toggled).toEqual(["theme-a", "theme-c"]);
   });
 
-  it("clears every theme when they are all already active", () => {
+  it("fires the finale when chaos is turned on", () => {
+    pressSequence(mod._KONAMI_SEQUENCE);
+    press("Enter");
+    expect(finale.rockets).toBe(1);
+    expect(finale.sweeps).toBe(1);
+    expect(finale.shakes).toBe(1);
+  });
+
+  it("clears every theme when they are all already active, with no finale", () => {
     registryMock.ids.forEach((id) => document.body.classList.add(id));
     pressSequence(mod._KONAMI_SEQUENCE);
     press("Enter");
     expect(registryMock.toggled).toEqual(registryMock.ids);
+    expect(finale.rockets).toBe(0);
   });
 
   it("resets the prompt when a non-Enter key is pressed during the confirm window", () => {

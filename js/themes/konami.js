@@ -6,6 +6,19 @@
 // sequence so a mistype doesn't leave the prompt dangling.
 
 import { getThemeIds, toggleTheme } from "./registry.js";
+import { launchRocketFireworks } from "../effects/fireworks.js";
+import { hueSweep } from "../effects/hue-sweep.js";
+import { screenShake } from "../effects/screen-shake.js";
+import { prefersReducedMotion } from "../motion.js";
+
+// ── Chaos finale ──
+// When every theme snaps on at once, reward it with a spectacle. Uses the
+// screenShake/hueSweep defaults on purpose, which sound their otherwise-unplayed
+// rumble/sweep voices.
+const FINALE_ROCKETS = 8;
+const FINALE_HUE_TURNS = 1;
+const FINALE_HUE_MS = 1400;
+const FINALE_SHAKE_PX = 14;
 
 const SEQUENCE = Object.freeze([
   "ArrowUp",
@@ -70,6 +83,15 @@ export function initKonami() {
       if (allActive) toggleTheme(id, { silent: true });
       else if (!document.body.classList.contains(id)) toggleTheme(id);
     }
+    // Reward turning chaos ON with a finale; the clear path stays quiet.
+    if (!allActive) chaosFinale();
+  }
+
+  function chaosFinale() {
+    if (prefersReducedMotion()) return;
+    launchRocketFireworks({ count: FINALE_ROCKETS });
+    hueSweep({ turns: FINALE_HUE_TURNS, durationMs: FINALE_HUE_MS });
+    screenShake({ amplitude: FINALE_SHAKE_PX });
   }
 
   function onKeydown(e) {
