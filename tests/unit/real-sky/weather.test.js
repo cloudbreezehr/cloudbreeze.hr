@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   weatherLabel,
   isRaining,
-  fetchHomeWeather,
+  fetchWeather,
 } from "../../../js/real-sky/weather.js";
 
 describe("real-sky/weather — WMO interpretation", () => {
@@ -43,7 +43,7 @@ describe("real-sky/weather — fetch", () => {
         }),
       })),
     );
-    expect(await fetchHomeWeather()).toEqual({
+    expect(await fetchWeather()).toEqual({
       tempC: 17.4,
       code: 61,
       label: "rain",
@@ -51,18 +51,30 @@ describe("real-sky/weather — fetch", () => {
     });
   });
 
+  it("targets the coordinates of the location it's given", async () => {
+    const spy = vi.fn(async () => ({
+      ok: true,
+      json: async () => ({ current: { temperature_2m: 20, weather_code: 0 } }),
+    }));
+    vi.stubGlobal("fetch", spy);
+    await fetchWeather({ latDeg: 35.68, lonDeg: 139.69, label: "Tokyo" });
+    const url = spy.mock.calls[0][0];
+    expect(url).toContain("latitude=35.68");
+    expect(url).toContain("longitude=139.69");
+  });
+
   it("resolves null on HTTP failure, malformed payloads, and network errors", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: false })),
     );
-    expect(await fetchHomeWeather()).toBeNull();
+    expect(await fetchWeather()).toBeNull();
 
     vi.stubGlobal(
       "fetch",
       vi.fn(async () => ({ ok: true, json: async () => ({}) })),
     );
-    expect(await fetchHomeWeather()).toBeNull();
+    expect(await fetchWeather()).toBeNull();
 
     vi.stubGlobal(
       "fetch",
@@ -70,6 +82,6 @@ describe("real-sky/weather — fetch", () => {
         throw new Error("offline");
       }),
     );
-    expect(await fetchHomeWeather()).toBeNull();
+    expect(await fetchWeather()).toBeNull();
   });
 });

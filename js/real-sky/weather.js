@@ -1,10 +1,10 @@
 // ── Live Weather (Open-Meteo) ──
-// One keyless request for the current conditions over the company's home
-// town. Pure fetch + WMO-code interpretation; the caller decides what to do
-// with the result. Failures resolve to null — the site never depends on the
-// network being kind.
+// One keyless request for the current conditions at a location — the company's
+// home town by default, or wherever the caller points it. Pure fetch + WMO-code
+// interpretation; the caller decides what to do with the result. Failures
+// resolve to null — the site never depends on the network being kind.
 
-import { HOME_LAT_DEG, HOME_LON_DEG } from "./local.js";
+import { HOME_LOCATION } from "./local.js";
 
 const ENDPOINT = "https://api.open-meteo.com/v1/forecast";
 const FETCH_TIMEOUT_MS = 8000;
@@ -40,15 +40,16 @@ export function isRaining(code) {
 }
 
 /**
- * Current conditions at home: { tempC, code, label, raining }, or null on
- * any failure (offline, blocked, slow, malformed).
+ * Current conditions at `location` (default: the home town):
+ * { tempC, code, label, raining }, or null on any failure (offline, blocked,
+ * slow, malformed).
  */
-export async function fetchHomeWeather() {
+export async function fetchWeather(location = HOME_LOCATION) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
     const url =
-      `${ENDPOINT}?latitude=${HOME_LAT_DEG}&longitude=${HOME_LON_DEG}` +
+      `${ENDPOINT}?latitude=${location.latDeg}&longitude=${location.lonDeg}` +
       "&current=temperature_2m,weather_code";
     const res = await fetch(url, { signal: controller.signal });
     if (!res.ok) return null;

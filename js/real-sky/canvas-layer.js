@@ -5,7 +5,7 @@
 // so it leaves the viewport with them.
 
 import { moonPhase } from "./astro.js";
-import { localDayPhase } from "./local.js";
+import { localDayPhase, HOME_LOCATION } from "./local.js";
 import { getStarsFadeOpacity, getStarsParallaxScale } from "../sky.js";
 import { defineConstants } from "../dev/registry.js";
 
@@ -80,7 +80,7 @@ const MIN_VISIBLE_ILLUMINATION = 0.04;
 // Astronomy changes on the scale of minutes; recompute on a coarse clock.
 const ASTRO_REFRESH_MS = 60000;
 
-export function createRealSkyLayer() {
+export function createRealSkyLayer(location = HOME_LOCATION) {
   let cachedAt = -Infinity;
   let phase = "day";
   let moon = null;
@@ -89,7 +89,7 @@ export function createRealSkyLayer() {
     if (now - cachedAt < ASTRO_REFRESH_MS) return;
     cachedAt = now;
     const date = new Date(now);
-    phase = localDayPhase(date);
+    phase = localDayPhase(date, location);
     moon = moonPhase(date);
   }
 
