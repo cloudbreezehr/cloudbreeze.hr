@@ -1304,6 +1304,27 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "non-meta-half",
   },
+  // Milestones on purpose: any-percent requires every non-milestone
+  // unlock, so placing these outside the meta set would deadlock the
+  // completionist check against itself.
+  {
+    id: "on-the-clock",
+    title: "On the Clock",
+    description: "The run is live.",
+    hint: "Spell SPEEDRUN to arm the timer",
+    set: "meta",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "any-percent",
+    title: "Any%",
+    description: "Every secret, against the clock.",
+    hint: "Reach 100% with the speedrun timer armed",
+    set: "meta",
+    points: EPIC,
+    hidden: true,
+  },
   {
     id: "cheat-code",
     title: "Cheat Code",

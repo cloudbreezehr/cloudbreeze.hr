@@ -1,0 +1,59 @@
+/* ── Speedrun HUD ── */
+
+/* A run clock pinned under the nav on the left; splits stack beneath it.
+   Purely informational — no pointer interaction, no motion beyond the
+   digits changing. */
+.speedrun-hud {
+  position: fixed;
+  top: 5.2rem;
+  left: 1.2rem;
+  z-index: var(--z-speedrun-hud);
+  pointer-events: none;
+  font-family: "DM Mono", monospace;
+  color: #cfe4f5;
+  background: rgba(10, 22, 40, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(125, 191, 232, 0.28);
+  border-radius: 10px;
+  padding: 0.55rem 0.8rem;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.speedrun-hud.visible {
+  opacity: 1;
+}
+.speedrun-hud.finished {
+  border-color: rgba(255, 211, 106, 0.7);
+}
+.speedrun-title {
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(207, 228, 245, 0.55);
+}
+.speedrun-clock {
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+}
+.speedrun-hud.finished .speedrun-clock {
+  color: #ffd36a;
+}
+.speedrun-splits {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  font-size: 0.68rem;
+  color: rgba(207, 228, 245, 0.75);
+}
+.speedrun-best {
+  margin-top: 0.3rem;
+  font-size: 0.68rem;
+  color: rgba(255, 211, 106, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speedrun-hud {
+    transition: none;
+  }
+}

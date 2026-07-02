@@ -1724,3 +1724,25 @@ describe("tracker — passport handlers", () => {
     expect(storage.isUnlocked("full-spectrum")).toBe(true);
   });
 });
+
+describe("tracker — speedrun handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks the milestones for arming and finishing a run", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("speedrun-armed");
+    expect(storage.isUnlocked("on-the-clock")).toBe(true);
+    dispatchAchievement("speedrun-finished", { ms: 754321 });
+    expect(storage.isUnlocked("any-percent")).toBe(true);
+  });
+});

@@ -66,6 +66,9 @@ const LAYERS = Object.freeze({
   // Pop-art HUD chrome — deliberately shares the theme-effect tier; sits over
   // content, under wipes and panels.
   Z_WANTED_HUD: 100,
+  // Run clock — deliberately shares the theme-effect tier; a corner HUD over
+  // content, under wipes and panels.
+  Z_SPEEDRUN_HUD: 100,
 
   // ── Transition wipes (200–299) ──
   Z_THEME_WIPE: 200,

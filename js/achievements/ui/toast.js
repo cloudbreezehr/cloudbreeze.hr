@@ -12,6 +12,8 @@ import {
   sumPoints,
 } from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
+import { getPref } from "../storage.js";
+import { formatRunTime, BEST_RUN_PREF } from "../../effects/speedrun.js";
 import { announce } from "../announcer.js";
 import {
   burstFireworks,
@@ -565,6 +567,14 @@ function renderCompletionCard() {
   ctx.fillStyle = "rgba(255,255,255,0.4)";
   ctx.font = "400 22px 'DM Mono', monospace";
   ctx.fillText(new Date().toLocaleDateString(), CARD_W / 2, 470);
+
+  // A timed run's personal best earns a line on the card.
+  const bestMs = getPref(BEST_RUN_PREF);
+  if (typeof bestMs === "number") {
+    ctx.fillStyle = "rgba(255,211,106,0.85)";
+    ctx.font = "400 26px 'DM Mono', monospace";
+    ctx.fillText(`fastest run ${formatRunTime(bestMs)}`, CARD_W / 2, 530);
+  }
   return canvas;
 }
 

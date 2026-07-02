@@ -670,6 +670,14 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("passport-issued");
     },
 
+    "speedrun-armed"() {
+      tryUnlock("on-the-clock");
+    },
+
+    "speedrun-finished"() {
+      tryUnlock("any-percent");
+    },
+
     "passport-import"() {
       tryUnlock("passport-stamped");
       // Imported unlocks can complete collections and sets — re-evaluate

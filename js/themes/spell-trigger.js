@@ -32,6 +32,8 @@ const SOUND_WORD = "SOUND";
 const SHELL_WORD = "SHELL";
 // Clears the page away for a sky portrait — also a reveal word.
 const PHOTO_WORD = "PHOTO";
+// Arms the run clock — also a reveal word.
+const SPEEDRUN_WORD = "SPEEDRUN";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
@@ -418,6 +420,14 @@ function buildActions() {
     import("../effects/photo-mode.js")
       .then((m) => m.enterPhotoMode())
       .catch((err) => console.warn("[spell] photo mode failed to load:", err));
+  });
+
+  const speedrunId = `incantation:${SPEEDRUN_WORD}`;
+  targets.push({ id: speedrunId, name: SPEEDRUN_WORD });
+  actions.set(speedrunId, () => {
+    import("../effects/speedrun.js")
+      .then((m) => m.toggleSpeedrun())
+      .catch((err) => console.warn("[spell] speedrun failed to load:", err));
   });
 
   return { targets, actions };
