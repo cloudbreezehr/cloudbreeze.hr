@@ -13,14 +13,24 @@ js/
   interactions.js, pointer.js, cursor.js  Pointer forces (repel/attract/well) and cursor effects
   motion.js                      Reduced-motion policy: `scaled()`, `chance()`, `prefersReducedMotion()`
   quality.js                     FPS-adaptive quality tier
-  colors.js                      `resolvePalette()` — per-appearance, per-theme color overrides
+  colors.js                      `resolvePalette()` — per-appearance, per-theme (and per-combo) color overrides
   layers.js                      z-index registry exposed as CSS custom properties
+  narration.js                   Screen-reader flavor prose for theme changes, combos, spells
+  pwa.js, sw.js (root)           Service-worker registration; offline cache + installability
   particles/                     Per-theme canvas particle classes (one file per theme)
   themes/                        Easter-egg themes: registry, factory, trigger strategies, one module per theme
+                                 + alchemy.js — curated stacked-pair hybrid combos
   effects/                       Standalone self-cleaning DOM effects (ripples, fireworks, HUD, hints, sparkles)
+                                 + photo-mode.js (sky portrait export), speedrun.js (run clock + splits)
   achievements/                  Cloudlog: tracker, registry, storage, progress, UI
+                                 + passport.js — portable progress codes for cross-device transfer
   analytics/                     Event taxonomy, consent, adapters + bridges
   audio/                         Opt-in Web Audio: engine, procedural SFX voices, per-theme bus tint, event bridges
+  daily/                         Sky-of-the-day: date-seeded arrangement stream, word of the day, #sky= links
+  real-sky/                      The actual sky: solar/lunar math, day-phase tint, meteor-shower calendar,
+                                 live Open-Meteo weather for the footer badge
+  terminal/                      Hidden Quake-style console (spell SHELL / backquote): command catalogue
+                                 mapped onto themes, spells, kubectl theatre, the passport, and the daily sky
   dev/                           Dev console + tunable-constant registry
 ```
 
