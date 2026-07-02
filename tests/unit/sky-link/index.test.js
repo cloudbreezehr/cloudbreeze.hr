@@ -27,6 +27,7 @@ describe("sky-link/index", () => {
   let seam;
   let SKY_LINK;
   let selfRect;
+  let seed;
 
   beforeEach(async () => {
     vi.useFakeTimers();
@@ -36,6 +37,8 @@ describe("sky-link/index", () => {
     document.body.className = "";
     vi.resetModules();
     seam = await import("../../../js/sky-link/seam.js");
+    const daily = await import("../../../js/daily/random.js");
+    seed = daily.skySeedKey();
     const mod = await import("../../../js/sky-link/index.js");
     SKY_LINK = mod.SKY_LINK;
     cleanup = mod.initSkyLink();
@@ -63,7 +66,7 @@ describe("sky-link/index", () => {
   }
 
   function injectPeer(id = "peer-1", rect = peerRectRight()) {
-    channel().onmessage({ data: { kind: "rect", id, rect } });
+    channel().onmessage({ data: { kind: "rect", id, seed, rect } });
   }
 
   function achievementSpy() {
@@ -72,10 +75,24 @@ describe("sky-link/index", () => {
     return events;
   }
 
-  it("announces its own rect on init", () => {
+  it("announces its own rect and sky seed on init", () => {
     const rects = channel().sent.filter((m) => m.kind === "rect");
     expect(rects.length).toBe(1);
     expect(rects[0].rect).toEqual(selfRect);
+    expect(rects[0].seed).toBe(seed);
+  });
+
+  it("never links with a window on a different sky", () => {
+    channel().onmessage({
+      data: {
+        kind: "rect",
+        id: "time-traveler",
+        seed: "1999-12-31",
+        rect: peerRectRight(),
+      },
+    });
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(seam.peerWorldRects()).toEqual([]);
   });
 
   it("links up when a peer announces: body class, glow, achievement event", () => {

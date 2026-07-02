@@ -22,6 +22,7 @@ import { viewportDesktopRect } from "../world/space.js";
 import { setPeerRectsSource } from "./seam.js";
 import { HOLD } from "../interactions.js";
 import { hasCapability } from "../device.js";
+import { skySeedKey } from "../daily/random.js";
 import { defineConstants } from "../dev/registry.js";
 
 const CHANNEL_NAME = "cloudbreeze-sky-link";
@@ -149,13 +150,22 @@ export function initSkyLink() {
       return;
     lastSentJson = json;
     lastSentAt = now;
-    channel.postMessage({ kind: "rect", id, rect: selfRect });
+    channel.postMessage({
+      kind: "rect",
+      id,
+      seed: skySeedKey(),
+      rect: selfRect,
+    });
   }
 
   channel.onmessage = (e) => {
     const msg = e.data;
     if (!msg || msg.id === id) return;
     if (msg.kind === "rect") {
+      // One world needs one arrangement: a window on a different sky —
+      // time-traveling via #sky=, or left open past midnight — never
+      // links, it just coexists.
+      if (msg.seed !== skySeedKey()) return;
       registry.upsert(msg.id, msg.rect, Date.now());
       refreshLinkState();
     } else if (msg.kind === "bye") {
