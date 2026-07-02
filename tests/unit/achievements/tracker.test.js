@@ -1662,3 +1662,31 @@ describe("tracker — daily-sky handlers", () => {
     expect(storage.isUnlocked("time-traveler")).toBe(true);
   });
 });
+
+describe("tracker — theme-combo handler", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks alchemist on the first hybrid and grand-alchemist on all", async () => {
+    const { COMBO_IDS } = await import("../../../js/themes/alchemy.js");
+    const { storage } = await startTracker();
+
+    dispatchAchievement("theme-combo", { combo: COMBO_IDS[0] });
+    expect(storage.isUnlocked("alchemist")).toBe(true);
+    expect(storage.isUnlocked("grand-alchemist")).toBe(false);
+
+    for (const id of COMBO_IDS) {
+      dispatchAchievement("theme-combo", { combo: id });
+    }
+    expect(storage.isUnlocked("grand-alchemist")).toBe(true);
+  });
+});

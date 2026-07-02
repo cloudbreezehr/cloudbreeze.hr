@@ -650,6 +650,12 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("time-traveler");
     },
 
+    "theme-combo"(data) {
+      if (!data || !data.combo) return;
+      tryUnlock("alchemist");
+      tryProgressItem("combos-discovered", data.combo);
+    },
+
     "themes-scribbled"() {
       tryUnlock("clean-slate");
     },

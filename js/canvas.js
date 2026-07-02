@@ -12,6 +12,7 @@ import { createInteractions, HOLD } from "./interactions.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds, getTheme } from "./themes/registry.js";
+import { activeCombo, comboPaletteKey } from "./themes/alchemy.js";
 import { getQualityTier, PARTICLE_SCALE, observeFps } from "./quality.js";
 
 // ── Scroll Velocity ──
@@ -229,7 +230,27 @@ export function initCanvas(canvasEl, appearance, options) {
         !!(theme && getTheme(theme)?.darkOnly),
       );
     }
-    const pal = resolvePalette(isDark ? "dark" : "light", theme);
+    // A curated stacked pair takes over the shared look from the single
+    // winner (the winner still drives theme-specific renderers and CSS).
+    const combo = activeCombo(activeThemes);
+    const prevCombo = document.body.dataset.activeCombo || null;
+    const comboId = combo ? combo.id : null;
+    if (comboId !== prevCombo) {
+      if (comboId) {
+        document.body.dataset.activeCombo = comboId;
+        window.dispatchEvent(
+          new CustomEvent("achievement", {
+            detail: { type: "theme-combo", combo: comboId },
+          }),
+        );
+      } else {
+        delete document.body.dataset.activeCombo;
+      }
+    }
+    const pal = resolvePalette(
+      isDark ? "dark" : "light",
+      comboId ? comboPaletteKey(comboId) : theme,
+    );
     currentPal = pal;
     // Themes stack: body classes can coexist, but only one wins the shared
     // palette (sky, fury, atmosphere, interactions).  Theme-specific

@@ -1378,6 +1378,26 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "themes-heard",
   },
+  // ── Mastery: Alchemy ──
+  {
+    id: "alchemist",
+    title: "Alchemist",
+    description: "Two skies fused into something new.",
+    hint: "Stack the right pair of themes at once",
+    set: "mastery",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "grand-alchemist",
+    title: "Grand Alchemist",
+    description: "Every hybrid sky, transmuted.",
+    hint: "Discover every theme combination",
+    set: "mastery",
+    points: EPIC,
+    hidden: true,
+    progressKey: "combos-discovered",
+  },
   // ── Exploration: Daily Sky ──
   {
     id: "in-season",
