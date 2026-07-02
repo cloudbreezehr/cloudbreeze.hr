@@ -577,6 +577,14 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("cloudlog-activated");
     },
 
+    "photo-mode"() {
+      tryUnlock("sky-photographer");
+    },
+
+    "photo-saved"() {
+      tryUnlock("wallpaper-material");
+    },
+
     "real-sky"(data) {
       if (!data) return;
       if (data.moonFull) tryUnlock("moonstruck");

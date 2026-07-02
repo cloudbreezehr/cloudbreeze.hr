@@ -1606,3 +1606,26 @@ describe("tracker — real-sky handlers", () => {
     expect(storage.isUnlocked("rain-check")).toBe(true);
   });
 });
+
+describe("tracker — photo-mode handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks the photographer on entry and the keepsake on save", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("photo-mode");
+    expect(storage.isUnlocked("sky-photographer")).toBe(true);
+    expect(storage.isUnlocked("wallpaper-material")).toBe(false);
+    dispatchAchievement("photo-saved");
+    expect(storage.isUnlocked("wallpaper-material")).toBe(true);
+  });
+});

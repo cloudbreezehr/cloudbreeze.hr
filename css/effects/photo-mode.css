@@ -1,0 +1,63 @@
+/* ── Photo Mode ── */
+
+/* The page steps aside so only the sky remains. Content is faded, not
+   display:none'd, so leaving photo mode restores scroll position and
+   reveal states untouched. */
+body.photo-mode .page,
+body.photo-mode #scroll-progress {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+
+.photo-mode-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 2rem;
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 1rem;
+  background: rgba(10, 22, 40, 0.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.78rem;
+  color: #cfe4f5;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.photo-mode-bar.visible {
+  opacity: 1;
+}
+.photo-mode-hint {
+  color: rgba(207, 228, 245, 0.6);
+}
+.photo-mode-bar button {
+  font: inherit;
+  color: inherit;
+  background: rgba(125, 191, 232, 0.14);
+  border: 1px solid rgba(125, 191, 232, 0.35);
+  border-radius: 999px;
+  padding: 0.3rem 0.85rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.photo-mode-bar button:hover {
+  background: rgba(125, 191, 232, 0.3);
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.photo-mode .page,
+  body.photo-mode #scroll-progress,
+  .photo-mode-bar {
+    transition: none;
+  }
+}

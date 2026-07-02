@@ -30,6 +30,8 @@ const CHEATSHEET_WORD = "CHEATSHEET";
 const SOUND_WORD = "SOUND";
 // Drops the hidden terminal — a reveal word, not a collectible spell.
 const SHELL_WORD = "SHELL";
+// Clears the page away for a sky portrait — also a reveal word.
+const PHOTO_WORD = "PHOTO";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
@@ -408,6 +410,14 @@ function buildActions() {
     import("../terminal/index.js")
       .then((m) => m.openTerminal())
       .catch((err) => console.warn("[spell] terminal failed to load:", err));
+  });
+
+  const photoId = `incantation:${PHOTO_WORD}`;
+  targets.push({ id: photoId, name: PHOTO_WORD });
+  actions.set(photoId, () => {
+    import("../effects/photo-mode.js")
+      .then((m) => m.enterPhotoMode())
+      .catch((err) => console.warn("[spell] photo mode failed to load:", err));
   });
 
   return { targets, actions };

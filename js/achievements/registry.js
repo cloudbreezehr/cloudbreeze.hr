@@ -1378,6 +1378,25 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "themes-heard",
   },
+  // ── Exploration: Photo Mode ──
+  {
+    id: "sky-photographer",
+    title: "Sky Photographer",
+    description: "The page stepped aside for the sky.",
+    hint: "Spell PHOTO",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "wallpaper-material",
+    title: "Wallpaper Material",
+    description: "This sky hangs on a screen somewhere now.",
+    hint: "Save a sky portrait from photo mode",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+  },
   // ── Exploration: Real Sky ──
   {
     id: "moonstruck",
