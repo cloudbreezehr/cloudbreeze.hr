@@ -1528,7 +1528,7 @@ export const ACHIEVEMENTS = [
     id: "rain-check",
     title: "Rain Check",
     description: "It was really raining over Pula.",
-    hint: "Visit while rain falls on the home town",
+    hint: "Check on the systems while rain falls on the home town",
     set: "exploration",
     points: RARE,
     hidden: true,

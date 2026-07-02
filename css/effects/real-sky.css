@@ -1,5 +1,10 @@
 /* ── Real-Sky Phase Tint ── */
 
+/* The systems badge answers a click with the live weather. */
+.footer-badge {
+  cursor: pointer;
+}
+
 /* A gentle cast over the canvas matching the visitor's actual sky —
    golden-hour warmth, twilight violet, night depth. Only while no theme
    owns the canvas filter: an active theme's look always wins. */

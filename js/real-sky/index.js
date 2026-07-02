@@ -1,13 +1,16 @@
 // ── Real Sky ──
 // Makes the canvas agree with the actual sky: the page carries the
 // visitor's real day phase (dawn warmth, night depth), the moon module
-// draws the real moon, meteor-shower season raises the shooting-star rate,
-// and the footer badge reports the live weather over Pula. Deterministic
-// parts work offline; the one network call degrades to silence.
+// draws the real moon, and meteor-shower season raises the shooting-star
+// rate. The live weather over Pula stays behind a click on the footer's
+// "Systems online" badge — an agency front page shouldn't open with a
+// forecast, but the curious get answered. Deterministic parts work
+// offline; the one network call degrades to silence.
 
 import { moonPhase, activeMeteorShower, seasonalMoment } from "./astro.js";
 import { localDayPhase } from "./local.js";
 import { fetchHomeWeather } from "./weather.js";
+import { bindClickable } from "../clickable.js";
 
 // Sky phases move on the scale of minutes.
 const PHASE_REFRESH_MS = 60000;
@@ -24,16 +27,32 @@ function applyPhase() {
   document.body.dataset.skyPhase = localDayPhase();
 }
 
-async function applyWeather() {
-  const weather = await fetchHomeWeather();
-  if (!weather) return;
+// The badge toggles between its plain text and the live conditions;
+// the network is asked once, on the first peek.
+function initWeatherBadge() {
   const badge = document.querySelector(".footer-badge");
-  if (badge) {
-    badge.textContent = `Systems online · ${Math.round(weather.tempC)}°C ${
-      weather.label
-    } over Pula`;
-  }
-  emit("real-weather", { code: weather.code, raining: weather.raining });
+  if (!badge) return;
+  const baseText = badge.textContent;
+  let weatherLine = null;
+  let shown = false;
+  let fetching = false;
+
+  bindClickable(badge, async () => {
+    if (weatherLine === null) {
+      if (fetching) return;
+      fetching = true;
+      const weather = await fetchHomeWeather();
+      fetching = false;
+      // Offline or blocked: the badge simply stays what it was.
+      if (!weather) return;
+      weatherLine = `${baseText} · ${Math.round(weather.tempC)}°C ${
+        weather.label
+      } over Pula`;
+      emit("real-weather", { code: weather.code, raining: weather.raining });
+    }
+    shown = !shown;
+    badge.textContent = shown ? weatherLine : baseText;
+  });
 }
 
 export function initRealSky() {
@@ -52,7 +71,7 @@ export function initRealSky() {
     moment: seasonalMoment(now),
   });
 
-  applyWeather();
+  initWeatherBadge();
 
   return function cleanup() {
     clearInterval(phaseTimer);

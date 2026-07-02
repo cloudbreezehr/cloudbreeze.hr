@@ -53,20 +53,51 @@ describe("real-sky/index", () => {
     expect(snapshot).toHaveProperty("moment");
   });
 
-  it("writes the live weather into the footer badge and reports rain", async () => {
+  it("keeps the badge plain until asked, then answers with the weather", async () => {
     stubWeather({ current: { temperature_2m: 16.6, weather_code: 63 } });
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
     const events = [];
     window.addEventListener("achievement", (e) => events.push(e.detail));
     cleanup = realSky.initRealSky();
+
+    const badge = document.querySelector(".footer-badge");
+    // No forecast on an agency front page — until the visitor asks.
+    expect(badge.textContent).toBe("Systems online");
+    expect(events.some((d) => d.type === "real-weather")).toBe(false);
+
+    badge.click();
     await vi.waitFor(() => {
-      expect(document.querySelector(".footer-badge").textContent).toBe(
-        "Systems online · 17°C rain over Pula",
-      );
+      expect(badge.textContent).toBe("Systems online · 17°C rain over Pula");
     });
     expect(events).toContainEqual(
       expect.objectContaining({ type: "real-weather", raining: true }),
     );
+  });
+
+  it("a second click folds the badge back to its plain text", async () => {
+    stubWeather({ current: { temperature_2m: 16.6, weather_code: 0 } });
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+    badge.click();
+    await vi.waitFor(() => {
+      expect(badge.textContent).toContain("17°C clear over Pula");
+    });
+    badge.click();
+    await vi.waitFor(() => {
+      expect(badge.textContent).toBe("Systems online");
+    });
+    // The network was asked exactly once.
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("is keyboard-operable through the clickable contract", () => {
+    stubWeather({});
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+    expect(badge.getAttribute("role")).toBe("button");
+    expect(badge.tabIndex).toBe(0);
   });
 
   it("leaves the badge untouched when the network fails", async () => {
@@ -78,6 +109,7 @@ describe("real-sky/index", () => {
     );
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
     cleanup = realSky.initRealSky();
+    document.querySelector(".footer-badge").click();
     await vi.advanceTimersByTimeAsync(0);
     expect(document.querySelector(".footer-badge").textContent).toBe(
       "Systems online",
