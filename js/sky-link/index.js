@@ -13,13 +13,13 @@
 
 import {
   createPeerRegistry,
-  viewportDesktopRect,
   toDesktop,
   toLocal,
   sideToward,
   edgeGap,
   rayTargetPeer,
 } from "./peers.js";
+import { viewportDesktopRect } from "../world/space.js";
 import { setOfferHandler, spawnHandoff, setLinkProbe } from "./handoff.js";
 import { HOLD } from "../interactions.js";
 import { hasCapability } from "../device.js";

@@ -1,6 +1,5 @@
 import { describe, it, expect } from "vitest";
 import {
-  viewportDesktopRect,
   toDesktop,
   toLocal,
   sideToward,
@@ -17,24 +16,6 @@ function rect(x, y, w = 800, h = 600) {
 }
 
 describe("sky-link/peers — viewport geometry", () => {
-  it("derives the viewport rect from window chrome metrics", () => {
-    // Chrome splits evenly into side borders; the rest stacks on top.
-    const win = {
-      screenX: 100,
-      screenY: 50,
-      outerWidth: 1040,
-      innerWidth: 1000,
-      outerHeight: 900,
-      innerHeight: 800,
-    };
-    expect(viewportDesktopRect(win)).toEqual({
-      x: 120,
-      y: 130,
-      w: 1000,
-      h: 800,
-    });
-  });
-
   it("round-trips a point through desktop and local coordinates", () => {
     const r = rect(300, 200);
     const desktop = toDesktop({ x: 40, y: 70 }, r);

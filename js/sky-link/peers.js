@@ -6,24 +6,6 @@
 // reason about each other's viewports without sharing any DOM. No channel,
 // no timers, no side effects: the transport layer feeds this module.
 
-/**
- * Best-effort desktop-space rect of a window's *viewport* (not the OS
- * window). Browsers don't expose the viewport's screen position directly;
- * this assumes the window chrome splits its horizontal extent evenly into
- * side borders and stacks the rest (tab strip, toolbars) on top. Exact
- * enough for cross-window effects, which tolerate a few px of drift.
- */
-export function viewportDesktopRect(win = window) {
-  const sideChrome = (win.outerWidth - win.innerWidth) / 2;
-  const topChrome = win.outerHeight - win.innerHeight - sideChrome;
-  return {
-    x: win.screenX + sideChrome,
-    y: win.screenY + topChrome,
-    w: win.innerWidth,
-    h: win.innerHeight,
-  };
-}
-
 /** Local viewport point → desktop point, given the viewport's desktop rect. */
 export function toDesktop(pt, rect) {
   return { x: rect.x + pt.x, y: rect.y + pt.y };

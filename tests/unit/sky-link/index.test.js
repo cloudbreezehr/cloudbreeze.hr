@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { viewportDesktopRect } from "../../../js/sky-link/peers.js";
+import { viewportDesktopRect } from "../../../js/world/space.js";
 
 // Exercises the transport through a fake BroadcastChannel: tests inject peer
 // messages via the captured instance's onmessage and read outbound traffic
