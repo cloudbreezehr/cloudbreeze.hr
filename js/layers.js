@@ -46,6 +46,9 @@ const LAYERS = Object.freeze({
   Z_MATRIX_RAIN: 1,
   Z_PAGE_CONTENT: 2,
   Z_RAIN_GLASS: 6,
+  // Linked-window edge glow — deliberately shares the rain-glass tier: a
+  // soft full-height wash over content but under the nav and every overlay.
+  Z_SKY_LINK_GLOW: 6,
   Z_NAV: 10,
   Z_PAGE_OVERLAY: 10,
   Z_PAPER_INK: 40,

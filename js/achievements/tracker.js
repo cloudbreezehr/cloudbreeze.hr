@@ -52,6 +52,8 @@ export const AFTERSHOCK_WINDOW_MS = 2000;
 const CHAIN_LIGHTNING_COUNT = 5;
 const VOID_CALLER_COUNT = 3;
 const THEME_HOPPER_COUNT = 3;
+// Linked windows (this one included) needed for the triptych achievement.
+const TRIPTYCH_WINDOWS = 3;
 // Score banked via clicks in a single wanted-theme run to earn high-roller.
 const HIGH_ROLLER_CASH = 10000;
 // Channel Surfer — distinct click-glitches in a single VHS session.
@@ -616,6 +618,17 @@ export function createTracker(onUnlock, onRelock) {
 
     "terminal-kubectl"() {
       tryUnlock("cloud-native");
+    },
+
+    "sky-link"(data) {
+      tryUnlock("parallel-skies");
+      if (data && data.windows >= TRIPTYCH_WINDOWS) tryUnlock("triptych");
+    },
+
+    "sky-link-handoff"() {
+      // Both roles witness the crossing — the sender saw it leave, the
+      // receiver saw it arrive — so either unlocks the courier.
+      tryUnlock("star-courier");
     },
 
     "timestamp-toggle"() {

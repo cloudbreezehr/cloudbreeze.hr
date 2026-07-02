@@ -155,6 +155,9 @@ const MODULES = [
     init: (m) => m.initThemeHistoryHud(),
   },
 
+  // Multi-window shared sky
+  { path: "./sky-link/index.js", init: (m) => m.initSkyLink() },
+
   // Hidden terminal
   { path: "./terminal/index.js", init: (m) => m.initTerminal() },
 

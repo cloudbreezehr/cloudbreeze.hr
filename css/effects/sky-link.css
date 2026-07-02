@@ -1,0 +1,56 @@
+/* ── Sky-Link Edge Glow ── */
+
+/* One element per viewport edge; JS sets `--sky-link-glow` (0..1, scaled by
+   how near the peer window is) and toggles `.on`. The glow says "the sky
+   continues past this edge" — information, so it stays visible under
+   reduced motion; only the breathing animation is motion. */
+.sky-link-glow {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-sky-link-glow);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.sky-link-glow.on {
+  opacity: calc(var(--sky-link-glow, 0) * 0.5);
+  animation: sky-link-breathe 4s ease-in-out infinite;
+}
+.sky-link-glow[data-side="left"] {
+  inset: 0 auto 0 0;
+  width: 72px;
+  background: linear-gradient(90deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="right"] {
+  inset: 0 0 0 auto;
+  width: 72px;
+  background: linear-gradient(270deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="top"] {
+  inset: 0 0 auto 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="bottom"] {
+  inset: auto 0 0 0;
+  height: 72px;
+  background: linear-gradient(0deg, rgba(125, 191, 232, 0.35), transparent);
+}
+body.light-appearance .sky-link-glow {
+  filter: saturate(1.3) brightness(0.85);
+}
+
+@keyframes sky-link-breathe {
+  0%,
+  100% {
+    opacity: calc(var(--sky-link-glow, 0) * 0.5);
+  }
+  50% {
+    opacity: calc(var(--sky-link-glow, 0) * 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-link-glow.on {
+    animation: none;
+  }
+}

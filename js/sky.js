@@ -11,6 +11,7 @@ import {
 } from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
+import { offerHandoff, setSpawner, isLinkActive } from "./sky-link/handoff.js";
 import { shootingStarBoost } from "./real-sky/boost.js";
 import { arrangementRandom } from "./daily/random.js";
 
@@ -404,7 +405,30 @@ const SHOOTING = defineConstants("sky.shooting", {
     step: 0.05,
     description: "Hot-head halo opacity relative to the trail opacity",
   },
+  LINK_EXIT_SLACK: {
+    value: 12,
+    min: 0,
+    max: 60,
+    step: 1,
+    description: "Extra frames of life granted past a linked-sky exit",
+  },
 });
+
+// Frames until a particle at (x, y) heading `angle` at `speed` px/frame is
+// fully off a w×h canvas, tail included — the first bound crossed along its
+// heading. Linked skies extend an arc's life to at least this so it exits
+// alive instead of dying mid-flight, and an arriving arc gets enough life
+// to finish crossing.
+export function framesToExit(x, y, angle, speed, len, w, h) {
+  const dx = Math.cos(angle) * speed;
+  const dy = Math.sin(angle) * speed;
+  let frames = Infinity;
+  if (dx > 0) frames = Math.min(frames, (w + len - x) / dx);
+  else if (dx < 0) frames = Math.min(frames, (x + len) / -dx);
+  if (dy > 0) frames = Math.min(frames, (h + len - y) / dy);
+  else if (dy < 0) frames = Math.min(frames, (y + len) / -dy);
+  return Number.isFinite(frames) ? Math.ceil(Math.max(0, frames)) : 0;
+}
 
 // ── Aurora ──
 const AURORA = defineConstants("sky.aurora", {
@@ -705,8 +729,46 @@ export function createSky(starCount) {
   let dwellPulseFired = false;
   let _auroraPhase = 0;
 
+  // Latest canvas dimensions, captured per draw — the arrival spawner below
+  // runs outside the draw call and needs them for its life extension.
+  let lastCanvasW = 0;
+  let lastCanvasH = 0;
+
+  // Arcs arriving from a linked window continue in this sky: fill a free
+  // pool slot with the sender's kinematics, extending the lifetime so the
+  // arc can finish crossing (and possibly hand off yet again).
+  setSpawner((star) => {
+    if (lastCanvasW === 0) return;
+    const ss = shootingStars.find((s) => !s.active);
+    if (!ss) return;
+    ss.x = star.x;
+    ss.y = star.y;
+    ss.angle = star.angle;
+    ss.speed = star.speed;
+    ss.len = star.len;
+    ss.opacity = star.opacity;
+    ss.life = star.life;
+    ss.maxLife = Math.max(
+      star.maxLife,
+      star.life +
+        framesToExit(
+          star.x,
+          star.y,
+          star.angle,
+          star.speed,
+          star.len,
+          lastCanvasW,
+          lastCanvasH,
+        ) +
+        SHOOTING.LINK_EXIT_SLACK,
+    );
+    ss.active = true;
+  });
+
   return {
     draw(ctx, canvas, sp, pal, forces, scrollVelocity = 0) {
+      lastCanvasW = canvas.width;
+      lastCanvasH = canvas.height;
       const starVis = scrollFade(
         sp,
         0,
@@ -1003,6 +1065,22 @@ export function createSky(starCount) {
             SHOOTING.OPACITY_MIN + Math.random() * SHOOTING.OPACITY_RANGE;
           ss.life = 0;
           ss.maxLife = SHOOTING.LIFE_MIN + Math.random() * SHOOTING.LIFE_RANGE;
+          // Under a linked sky the arc must reach the edge alive so it can
+          // continue in the window beyond it.
+          if (isLinkActive()) {
+            ss.maxLife = Math.max(
+              ss.maxLife,
+              framesToExit(
+                ss.x,
+                ss.y,
+                ss.angle,
+                ss.speed,
+                ss.len,
+                canvas.width,
+                canvas.height,
+              ) + SHOOTING.LINK_EXIT_SLACK,
+            );
+          }
           ss.active = true;
         }
       }
@@ -1020,6 +1098,28 @@ export function createSky(starCount) {
         // above; this branch only runs for already-spawned arcs.
         ss.x += Math.cos(ss.angle) * ss.speed;
         ss.y += Math.sin(ss.angle) * ss.speed;
+        // Fully off-screen (tail included) the arc is invisible here for
+        // the rest of its life — offer it to a linked window heading its
+        // way and free the slot either way.
+        if (
+          ss.x < -ss.len ||
+          ss.x > canvas.width + ss.len ||
+          ss.y < -ss.len ||
+          ss.y > canvas.height + ss.len
+        ) {
+          offerHandoff({
+            x: ss.x,
+            y: ss.y,
+            angle: ss.angle,
+            speed: ss.speed,
+            len: ss.len,
+            opacity: ss.opacity,
+            life: ss.life,
+            maxLife: ss.maxLife,
+          });
+          ss.active = false;
+          return;
+        }
         // Fade in quickly, fade out slowly
         const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
         const op = ss.opacity * fade * starVis;

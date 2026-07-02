@@ -173,3 +173,49 @@ describe("sky.js dwell-pulse detector", () => {
     expect(untagged.every((s) => s.idleFlash === 0)).toBe(true);
   });
 });
+
+describe("framesToExit — linked-sky life extension", () => {
+  let framesToExit;
+
+  beforeEach(async () => {
+    // sky.js pulls in motion.js, whose module scope reads matchMedia.
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+    ({ framesToExit } = await import("../../js/sky.js"));
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  const W = 1000;
+  const H = 800;
+  const LEN = 50;
+
+  it("counts frames to the first bound along the heading, tail included", () => {
+    // Heading straight right from x=900 at 10 px/frame: must clear
+    // x = W + LEN, i.e. 150 px → 15 frames.
+    expect(framesToExit(900, 400, 0, 10, LEN, W, H)).toBe(15);
+  });
+
+  it("uses the nearer bound when the heading crosses two", () => {
+    // Down-right at 45° from near the bottom edge — the bottom bound is
+    // closer than the right one.
+    const angle = Math.PI / 4;
+    const speed = 10;
+    const framesToBottom = Math.ceil(
+      (H + LEN - 700) / (Math.sin(angle) * speed),
+    );
+    expect(framesToExit(100, 700, angle, speed, LEN, W, H)).toBe(
+      framesToBottom,
+    );
+  });
+
+  it("is zero for a particle already past the bound moving away", () => {
+    expect(framesToExit(W + LEN, 400, 0, 10, LEN, W, H)).toBe(0);
+  });
+});

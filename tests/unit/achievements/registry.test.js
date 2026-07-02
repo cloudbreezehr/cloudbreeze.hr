@@ -205,14 +205,16 @@ describe("device reachability", () => {
     "cheat-sheet",
   ];
   const HOVER_ONLY = ["idle-hands", "idle-watcher", "phosphor-burn"];
+  // Multi-window play needs a desktop-style window manager.
+  const MULTIWINDOW_ONLY = ["parallel-skies", "star-courier", "triptych"];
+  const GATED = [...KEYBOARD_ONLY, ...HOVER_ONLY, ...MULTIWINDOW_ONLY];
 
-  it("tags exactly the keyboard/hover-gated achievements with a requires", () => {
+  it("tags exactly the capability-gated achievements with a requires", () => {
     const required = ACHIEVEMENTS.filter((a) => a.requires).map((a) => a.id);
-    expect(new Set(required)).toEqual(
-      new Set([...KEYBOARD_ONLY, ...HOVER_ONLY]),
-    );
+    expect(new Set(required)).toEqual(new Set(GATED));
     for (const a of ACHIEVEMENTS) {
-      if (a.requires) expect(["keyboard", "hover"]).toContain(a.requires);
+      if (a.requires)
+        expect(["keyboard", "hover", "multiwindow"]).toContain(a.requires);
     }
   });
 
@@ -222,14 +224,14 @@ describe("device reachability", () => {
     for (const a of ACHIEVEMENTS) expect(isReachable(a)).toBe(true);
   });
 
-  it("drops keyboard- and hover-gated achievements on a touch-only device", () => {
+  it("drops capability-gated achievements on a touch-only device", () => {
     setTouchOnly(true);
     const reachableIds = new Set(getReachableAchievements().map((a) => a.id));
-    for (const id of [...KEYBOARD_ONLY, ...HOVER_ONLY]) {
+    for (const id of GATED) {
       expect(reachableIds.has(id), id).toBe(false);
     }
     expect(getReachableAchievements()).toHaveLength(
-      ACHIEVEMENTS.length - KEYBOARD_ONLY.length - HOVER_ONLY.length,
+      ACHIEVEMENTS.length - GATED.length,
     );
   });
 

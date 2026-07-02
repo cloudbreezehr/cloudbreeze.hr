@@ -573,5 +573,16 @@ export function initCanvas(canvasEl, appearance, options) {
   window.addEventListener("dock-snap", (e) => handleDockEvent(e, "snap"));
   window.addEventListener("dock-release", (e) => handleDockEvent(e, "release"));
 
+  // A click in a linked window pushes this sky's particles too (each event
+  // has exactly one publisher in the codebase). Forces only — no burst, no
+  // fury, no achievement: the visible click happened in the other window,
+  // and its origin here usually sits outside the viewport.
+  window.addEventListener("sky-link-impulse", (e) => {
+    const { x, y, strength } = e.detail;
+    forces.clickImpulse.x = x;
+    forces.clickImpulse.y = canvasY(y);
+    forces.clickImpulse.strength = strength;
+  });
+
   render();
 }
