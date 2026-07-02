@@ -45,6 +45,8 @@ export function createCommands(deps) {
     qualityTier, // () => string
     openCheatsheet, // () => void
     daily, // () => { seedKey, todayKey, traveling, word, link }
+    passport, // { issue: () => code, stamp: (code) => { added, total } | null }
+    copy, // (text) => void — best-effort clipboard write
     emit, // (type, data?) => void — achievement event stream
   } = deps;
 
@@ -265,6 +267,41 @@ export function createCommands(deps) {
       run() {
         castWord("DEPLOY");
         return { lines: ["Deploying to production… done.", "Ship it. 🚀"] };
+      },
+    },
+    {
+      name: "passport",
+      summary: "carry your progress to another device",
+      run(argv) {
+        if (argv[0]) {
+          const result = passport.stamp(argv[0]);
+          if (!result) {
+            return {
+              lines: [
+                "passport: that code didn't validate — paste the whole thing",
+              ],
+            };
+          }
+          emit("passport-import");
+          return {
+            lines: [
+              `Stamped. ${result.added} new unlock${
+                result.added === 1 ? "" : "s"
+              } carried over (${result.total} on the passport).`,
+              "Reload the page to let the sky catch up.",
+            ],
+          };
+        }
+        const code = passport.issue();
+        copy(code);
+        emit("passport-export");
+        return {
+          lines: [
+            "Your passport (copied to clipboard):",
+            code,
+            "On the other device: open the terminal, `passport <code>`.",
+          ],
+        };
       },
     },
     {

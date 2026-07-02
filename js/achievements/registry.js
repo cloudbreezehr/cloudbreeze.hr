@@ -1398,6 +1398,25 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "combos-discovered",
   },
+  // ── Exploration: Passport ──
+  {
+    id: "passport-issued",
+    title: "Passport Issued",
+    description: "Progress, packed for travel.",
+    hint: "Ask the terminal for a passport",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
+    id: "passport-stamped",
+    title: "Passport Stamped",
+    description: "The same sky, a different machine.",
+    hint: "Import a passport from another device",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+  },
   // ── Exploration: Daily Sky ──
   {
     id: "in-season",

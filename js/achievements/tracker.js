@@ -656,6 +656,17 @@ export function createTracker(onUnlock, onRelock) {
       tryProgressItem("combos-discovered", data.combo);
     },
 
+    "passport-export"() {
+      tryUnlock("passport-issued");
+    },
+
+    "passport-import"() {
+      tryUnlock("passport-stamped");
+      // Imported unlocks can complete collections and sets — re-evaluate
+      // everything progressive against the merged state.
+      checkProgressiveState();
+    },
+
     "themes-scribbled"() {
       tryUnlock("clean-slate");
     },

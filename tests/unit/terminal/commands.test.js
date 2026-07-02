@@ -48,6 +48,13 @@ describe("terminal/commands", () => {
         word: "METEOR",
         link: "https://cloudbreeze.hr/#sky=2026-07-02",
       }),
+      passport: {
+        issue: vi.fn(() => "CBP1.fake.code"),
+        stamp: vi.fn((code) =>
+          code === "CBP1.fake.code" ? { added: 3, total: 5 } : null,
+        ),
+      },
+      copy: vi.fn(),
       emit: vi.fn(),
     };
     commands = createCommands(deps);
@@ -150,6 +157,28 @@ describe("terminal/commands", () => {
   it("deploy ships via the DEPLOY spell", () => {
     run("deploy");
     expect(deps.castWord).toHaveBeenCalledWith("DEPLOY");
+  });
+
+  it("passport with no args issues a code and copies it", () => {
+    const { lines } = run("passport");
+    expect(deps.passport.issue).toHaveBeenCalled();
+    expect(deps.copy).toHaveBeenCalledWith("CBP1.fake.code");
+    expect(lines).toContain("CBP1.fake.code");
+    expect(deps.emit).toHaveBeenCalledWith("passport-export");
+  });
+
+  it("passport with a code stamps it in and reports the merge", () => {
+    const { lines } = run("passport CBP1.fake.code");
+    expect(lines[0]).toContain(
+      "3 new unlocks carried over (5 on the passport)",
+    );
+    expect(deps.emit).toHaveBeenCalledWith("passport-import");
+  });
+
+  it("passport rejects an invalid code without emitting", () => {
+    const { lines } = run("passport garbage");
+    expect(lines[0]).toContain("didn't validate");
+    expect(deps.emit).not.toHaveBeenCalledWith("passport-import");
   });
 
   it("today reports the sky of the day, its link, and its word", () => {

@@ -14,6 +14,7 @@ import {
   sumPoints,
 } from "../achievements/registry.js";
 import * as storage from "../achievements/storage.js";
+import { exportPassport, importPassport } from "../achievements/passport.js";
 import { getQualityTier } from "../quality.js";
 import { skySeedKey, isTimeTraveling } from "../daily/random.js";
 import { dayKey } from "../daily/seed.js";
@@ -122,6 +123,10 @@ function buildDeps() {
         "#sky=" +
         encodeURIComponent(skySeedKey()),
     }),
+    passport: { issue: exportPassport, stamp: importPassport },
+    copy: (text) => {
+      navigator.clipboard?.writeText(text).catch(() => {});
+    },
     emit,
   };
 }

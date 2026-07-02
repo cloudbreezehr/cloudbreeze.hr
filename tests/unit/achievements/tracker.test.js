@@ -1690,3 +1690,35 @@ describe("tracker — theme-combo handler", () => {
     expect(storage.isUnlocked("grand-alchemist")).toBe(true);
   });
 });
+
+describe("tracker — passport handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks the issue and stamp discoveries", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("passport-export");
+    expect(storage.isUnlocked("passport-issued")).toBe(true);
+    dispatchAchievement("passport-import");
+    expect(storage.isUnlocked("passport-stamped")).toBe(true);
+  });
+
+  it("re-evaluates progressive achievements after an import", async () => {
+    const { storage } = await startTracker();
+    // Simulate a passport that carried a completed collection.
+    for (const appearance of ["dark", "light", "auto"]) {
+      storage.addProgressItem("appearances-used", appearance);
+    }
+    dispatchAchievement("passport-import");
+    expect(storage.isUnlocked("full-spectrum")).toBe(true);
+  });
+});
