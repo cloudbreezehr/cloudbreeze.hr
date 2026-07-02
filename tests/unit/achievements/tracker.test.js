@@ -856,7 +856,8 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("triple-stack")).toBe(true);
   });
 
-  it("announces a non-silent theme activation to the live region", async () => {
+  it("announces a non-silent theme activation with its narration line", async () => {
+    const { themeEnterLine } = await import("../../../js/narration.js");
     await startTracker();
     dispatchAchievement("theme-activate", { theme: "frozen" });
     vi.advanceTimersByTime(100);
@@ -864,11 +865,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     // the DOM, so assert that *some* live region carries the message.
     const announced = [
       ...document.querySelectorAll('[aria-live="polite"]'),
-    ].some((el) => el.textContent.toLowerCase().includes("activated"));
+    ].some((el) => el.textContent === themeEnterLine("frozen"));
     expect(announced).toBe(true);
   });
 
   it("does not announce a silent theme activation", async () => {
+    const { themeEnterLine } = await import("../../../js/narration.js");
     await startTracker();
     // Clear any text left in live regions by earlier tests so this
     // assertion only sees what the silent dispatch produces (nothing).
@@ -879,7 +881,7 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     vi.advanceTimersByTime(100);
     const announced = [
       ...document.querySelectorAll('[aria-live="polite"]'),
-    ].some((el) => el.textContent.toLowerCase().includes("frozen"));
+    ].some((el) => el.textContent === themeEnterLine("frozen"));
     expect(announced).toBe(false);
   });
 

@@ -12,8 +12,14 @@ import {
 } from "./progress.js";
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
-import { getTheme, getThemeIds } from "../themes/registry.js";
+import { getThemeIds } from "../themes/registry.js";
 import { wordOfTheDay } from "../daily/word.js";
+import {
+  themeEnterLine,
+  themeExitLine,
+  comboLine,
+  incantationLine,
+} from "../narration.js";
 
 // Themes that count toward "all themes active" stacking achievements.
 const STACKABLE_THEME_COUNT = getThemeIds().length;
@@ -390,8 +396,7 @@ export function createTracker(onUnlock, onRelock) {
       // and overlays are aria-hidden, so without this a theme swap is
       // silent to SR users.  Skip programmatic (silent) activations.
       if (!data.silent) {
-        const theme = getTheme(data.theme);
-        announce(`${theme?.label || data.theme} theme activated`);
+        announce(themeEnterLine(data.theme));
       }
       session.themesActivated.add(data.theme);
       storage.incrementCounter("totalThemeActivations");
@@ -442,8 +447,7 @@ export function createTracker(onUnlock, onRelock) {
       // achievement is reserved for users who discover the original
       // exit gesture.
       if (data.silent) return;
-      const theme = getTheme(data.theme);
-      announce(`${theme?.label || data.theme} theme deactivated`);
+      announce(themeExitLine(data.theme));
       const deactivateMap = {
         "deep-sea": "resurface",
         frozen: "thaw",
@@ -641,7 +645,12 @@ export function createTracker(onUnlock, onRelock) {
 
     incantation(data) {
       tryUnlock("abracadabra");
-      if (data && data.word) tryProgressItem("incantations-cast", data.word);
+      if (data && data.word) {
+        tryProgressItem("incantations-cast", data.word);
+        // Spells are pure visual flourish — narrate them or screen-reader
+        // users never know a cast happened.
+        announce(incantationLine(data.word));
+      }
       if (data && data.maxed) tryUnlock("overkill");
       if (data && data.word === wordOfTheDay()) tryUnlock("in-season");
     },
@@ -654,6 +663,7 @@ export function createTracker(onUnlock, onRelock) {
       if (!data || !data.combo) return;
       tryUnlock("alchemist");
       tryProgressItem("combos-discovered", data.combo);
+      announce(comboLine(data.combo));
     },
 
     "passport-export"() {
