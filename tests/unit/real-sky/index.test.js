@@ -11,6 +11,7 @@ describe("real-sky/index", () => {
     vi.useFakeTimers();
     document.body.innerHTML = '<p class="footer-badge">Systems online</p>';
     delete document.body.dataset.skyPhase;
+    document.body.classList.remove("sky-revealed");
     vi.resetModules();
     realSky = await import("../../../js/real-sky/index.js");
   });
@@ -131,12 +132,47 @@ describe("real-sky/index", () => {
     );
   });
 
-  it("cleanup stops the refresh loop and clears the phase attribute", () => {
-    stubWeather({});
-    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+  it("reveals and hides the real sky as the badge is toggled", () => {
+    stubWeather({ current: { temperature_2m: 16, weather_code: 0 } });
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 30));
     cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+
+    // The render loop reads this class to decide whether the moon hangs.
+    expect(document.body.classList.contains("sky-revealed")).toBe(false);
+    badge.click();
+    expect(document.body.classList.contains("sky-revealed")).toBe(true);
+    badge.click();
+    expect(document.body.classList.contains("sky-revealed")).toBe(false);
+  });
+
+  it("still reveals the sky when the weather fetch fails — the moon is offline-proof", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        throw new Error("offline");
+      }),
+    );
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 30));
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+    badge.click();
+    // The toggle is synchronous; a failed fetch never undoes the reveal.
+    expect(document.body.classList.contains("sky-revealed")).toBe(true);
+    await vi.advanceTimersByTimeAsync(0);
+    expect(document.body.classList.contains("sky-revealed")).toBe(true);
+    expect(badge.textContent).toBe("Systems online");
+  });
+
+  it("cleanup stops the refresh loop, clears the phase, and hides the sky", () => {
+    stubWeather({});
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 30));
+    cleanup = realSky.initRealSky();
+    document.querySelector(".footer-badge").click();
+    expect(document.body.classList.contains("sky-revealed")).toBe(true);
     cleanup();
     cleanup = null;
     expect(document.body.dataset.skyPhase).toBeUndefined();
+    expect(document.body.classList.contains("sky-revealed")).toBe(false);
   });
 });

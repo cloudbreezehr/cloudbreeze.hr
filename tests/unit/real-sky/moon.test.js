@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// The layer's contract: the moon renders during the visitor's night and
-// stays out of the daytime sky. The canvas is a recording stub — fill calls
-// are the observable.
+// The renderer's contract: the moon renders during the visitor's night,
+// stays out of the daytime sky, and fades out with the stars on scroll. The
+// canvas is a recording stub — fill calls are the observable. (Whether the
+// moon is revealed at all is the caller's business, not this module's.)
 
 function makeRecordingCtx() {
   const calls = [];
@@ -30,7 +31,7 @@ function makeRecordingCtx() {
   };
 }
 
-describe("real-sky/canvas-layer", () => {
+describe("real-sky/moon", () => {
   let layer;
 
   beforeEach(async () => {
@@ -41,8 +42,8 @@ describe("real-sky/canvas-layer", () => {
       removeEventListener() {},
     }));
     vi.resetModules();
-    const mod = await import("../../../js/real-sky/canvas-layer.js");
-    layer = mod.createRealSkyLayer();
+    const mod = await import("../../../js/real-sky/moon.js");
+    layer = mod.createMoon();
   });
 
   afterEach(() => {

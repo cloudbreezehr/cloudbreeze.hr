@@ -1,5 +1,5 @@
-// ── Real-Sky Canvas Layer ──
-// The actual moon, drawn with its actual phase, but only during the
+// ── Real Moon ──
+// The actual moon, drawn with tonight's actual phase, but only during the
 // visitor's actual night or twilight — the point is that the canvas agrees
 // with the sky outside the window. Rides the same scroll fade as the stars
 // so it leaves the viewport with them.
@@ -81,7 +81,7 @@ const MIN_VISIBLE_ILLUMINATION = 0.04;
 // Astronomy changes on the scale of minutes; recompute on a coarse clock.
 const ASTRO_REFRESH_MS = 60000;
 
-export function createRealSkyLayer(getLocation = currentLocation) {
+export function createMoon(getLocation = currentLocation) {
   let cachedAt = -Infinity;
   let phase = "day";
   let moon = null;
