@@ -28,6 +28,8 @@ const CHEATSHEET_WORD = "CHEATSHEET";
 // reveal word, not a collectible spell. SOUNDON works too — it completes SOUND
 // at the fifth letter.
 const SOUND_WORD = "SOUND";
+// Drops the hidden terminal — a reveal word, not a collectible spell.
+const SHELL_WORD = "SHELL";
 
 const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
@@ -397,6 +399,16 @@ function buildActions() {
   const soundId = `incantation:${SOUND_WORD}`;
   targets.push({ id: soundId, name: SOUND_WORD });
   actions.set(soundId, () => revealSoundToggle());
+
+  const shellId = `incantation:${SHELL_WORD}`;
+  targets.push({ id: shellId, name: SHELL_WORD });
+  // Loaded on demand: the console is heavy relative to the speller and only
+  // needed once someone actually summons it.
+  actions.set(shellId, () => {
+    import("../terminal/index.js")
+      .then((m) => m.openTerminal())
+      .catch((err) => console.warn("[spell] terminal failed to load:", err));
+  });
 
   return { targets, actions };
 }

@@ -155,6 +155,9 @@ const MODULES = [
     init: (m) => m.initThemeHistoryHud(),
   },
 
+  // Hidden terminal
+  { path: "./terminal/index.js", init: (m) => m.initTerminal() },
+
   // Themes
   { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
   { path: "./themes/frozen.js", init: (m) => m.initFrozen() },

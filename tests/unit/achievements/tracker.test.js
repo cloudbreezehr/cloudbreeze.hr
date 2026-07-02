@@ -1529,3 +1529,34 @@ describe("tracker — vhs handlers", () => {
     expect(storage.isUnlocked("channel-surfer")).toBe(true);
   });
 });
+
+
+describe("tracker — terminal handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks shell-access on terminal open", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("terminal-open");
+    expect(storage.isUnlocked("shell-access")).toBe(true);
+  });
+
+  it("unlocks the sudo, rm -rf, and kubectl discoveries", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("terminal-sudo-denied");
+    dispatchAchievement("terminal-rm-rf");
+    dispatchAchievement("terminal-kubectl");
+    expect(storage.isUnlocked("not-in-sudoers")).toBe(true);
+    expect(storage.isUnlocked("scorched-earth")).toBe(true);
+    expect(storage.isUnlocked("cloud-native")).toBe(true);
+  });
+});

@@ -577,6 +577,24 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("cloudlog-activated");
     },
 
+    "terminal-open"() {
+      tryUnlock("shell-access");
+    },
+
+    "terminal-sudo-denied"() {
+      tryUnlock("not-in-sudoers");
+    },
+
+    "terminal-rm-rf"() {
+      tryUnlock("scorched-earth");
+    },
+
+    "terminal-kubectl"() {
+      tryUnlock("cloud-native");
+    },
+
+
+
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },
