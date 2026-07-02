@@ -62,9 +62,3 @@
   caret-color: #7dbfe8;
   padding: 0;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .terminal-overlay {
-    transition: none;
-  }
-}
