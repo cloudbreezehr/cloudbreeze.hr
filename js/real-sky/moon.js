@@ -118,7 +118,10 @@ export function createMoon(getLocation = currentLocation) {
   }
 
   return {
-    draw(ctx, canvas, sp, pal) {
+    // `reveal` (0..1) is the caller's fade-in amount for showing/hiding the
+    // moon; it scales the whole disc's opacity.
+    draw(ctx, canvas, sp, pal, reveal = 1) {
+      if (reveal <= 0) return;
       refresh(Date.now());
       if (phase === "day" || phase === "golden") return;
       if (!moon || moon.illumination < MIN_VISIBLE_ILLUMINATION) return;
@@ -126,7 +129,7 @@ export function createMoon(getLocation = currentLocation) {
       const starVis = getStarsFadeOpacity(sp);
       if (starVis <= 0) return;
       const phaseAlpha = phase === "night" ? 1 : MOON.TWILIGHT_ALPHA_FACTOR;
-      const alpha = MOON.ALPHA * phaseAlpha * starVis;
+      const alpha = MOON.ALPHA * phaseAlpha * starVis * reveal;
 
       const r = MOON.RADIUS;
       const shift =

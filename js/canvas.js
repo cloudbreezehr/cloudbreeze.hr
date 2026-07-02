@@ -200,6 +200,14 @@ export function initCanvas(canvasEl, appearance, options) {
   let cachedSkyBot = null;
   let cachedSkyHeight = 0;
   let cachedSkyBucket = -1;
+
+  // ── Real-moon reveal fade ──
+  // Eases the moon in/out when the visitor toggles the real sky, so it doesn't
+  // pop against the subsystem's other fades (the day-phase tint, the scroll
+  // fade). Snaps under reduced motion — it's a one-shot transition, not motion.
+  const MOON_REVEAL_FADE_SECONDS = 0.6;
+  let moonReveal = 0;
+
   function drawFrame() {
     const now = performance.now();
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
@@ -299,14 +307,24 @@ export function initCanvas(canvasEl, appearance, options) {
     // directly.
     const reducedMotion = prefersReducedMotion();
 
+    // The moon hangs only once the visitor reveals the real sky (the systems
+    // badge); ease toward that target so it fades rather than pops.
+    const moonTarget = document.body.classList.contains("sky-revealed") ? 1 : 0;
+    if (reducedMotion) {
+      moonReveal = moonTarget;
+    } else if (moonReveal !== moonTarget) {
+      const step = dt / MOON_REVEAL_FADE_SECONDS;
+      moonReveal =
+        moonTarget > moonReveal
+          ? Math.min(moonTarget, moonReveal + step)
+          : Math.max(moonTarget, moonReveal - step);
+    }
+
     if (sky && !suppressSky) {
       sky.draw(ctx, canvas, sp, pal, forces, scrollVelocity);
-      // The real moon shares the stars' layer and their scroll fade, but hangs
-      // there only once the visitor reveals the real sky (the systems badge);
-      // the renderer itself keeps it to the actual night.
-      if (document.body.classList.contains("sky-revealed")) {
-        moon.draw(ctx, canvas, sp, pal);
-      }
+      // Shares the stars' layer and their scroll fade; the renderer itself
+      // keeps it to the actual night.
+      if (moonReveal > 0) moon.draw(ctx, canvas, sp, pal, moonReveal);
     }
 
     // Click fury — lightning, aurora, meteors.

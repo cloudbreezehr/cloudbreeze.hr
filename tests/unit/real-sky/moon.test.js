@@ -81,4 +81,11 @@ describe("real-sky/moon", () => {
     layer.draw(ctx, canvas, 1, pal);
     expect(calls.length).toBe(0);
   });
+
+  it("draws nothing while the reveal amount is zero", () => {
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 30));
+    const { ctx, calls } = makeRecordingCtx();
+    layer.draw(ctx, canvas, 0, pal, 0);
+    expect(calls.length).toBe(0);
+  });
 });
