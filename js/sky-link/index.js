@@ -21,6 +21,7 @@ import {
 } from "./peers.js";
 import { viewportDesktopRect } from "../world/space.js";
 import { setOfferHandler, spawnHandoff, setLinkProbe } from "./handoff.js";
+import { setPeerRectsSource } from "./seam.js";
 import { HOLD } from "../interactions.js";
 import { hasCapability } from "../device.js";
 import { prefersReducedMotion } from "../motion.js";
@@ -266,6 +267,7 @@ export function initSkyLink() {
   }
 
   setLinkProbe(() => registry.count() > 0);
+  setPeerRectsSource(() => registry.all().map((peer) => peer.rect));
 
   const pollTimer = setInterval(() => {
     announce(Date.now());
@@ -287,6 +289,7 @@ export function initSkyLink() {
     channel.close();
     setOfferHandler(null);
     setLinkProbe(null);
+    setPeerRectsSource(null);
     for (const el of glows.values()) el.remove();
     document.body.classList.remove("sky-linked");
   };
