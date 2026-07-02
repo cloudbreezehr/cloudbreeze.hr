@@ -74,14 +74,14 @@ describe("real-sky/index", () => {
     );
   });
 
-  it("labels the weather with whatever location it's given", async () => {
+  it("labels the weather with whatever location the getter returns", async () => {
     stubWeather({ current: { temperature_2m: 16.6, weather_code: 63 } });
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
-    cleanup = realSky.initRealSky({
+    cleanup = realSky.initRealSky(() => ({
       latDeg: 35.68,
       lonDeg: 139.69,
       label: "Tokyo",
-    });
+    }));
     const badge = document.querySelector(".footer-badge");
     badge.click();
     await vi.waitFor(() => {

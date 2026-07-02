@@ -158,6 +158,9 @@ const MODULES = [
   // Hidden terminal
   { path: "./terminal/index.js", init: (m) => m.initTerminal() },
 
+  // Visitor location — a coarse, keyless IP lookup the sky features upgrade to
+  { path: "./real-sky/geolocate.js", init: (m) => m.locateVisitor() },
+
   // Real sky — day phase, live weather badge
   { path: "./real-sky/index.js", init: (m) => m.initRealSky() },
 
