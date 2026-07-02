@@ -157,7 +157,7 @@ describe("achievements/ui/cards", () => {
       }
     });
 
-    it("locked hidden achievements show ??? title and hidden-ach class when revealHints is off", () => {
+    it("locked hidden achievements show ??? title and hidden-ach class at the default help level", () => {
       mod.renderSections(container);
       const hidden = container.querySelector(
         '.achievement-card.hidden-ach[data-id="time-warp"]',
@@ -260,9 +260,9 @@ describe("achievements/ui/cards", () => {
     });
 
     it("tags cards whose hover will surface a hint with data-has-hint", () => {
-      // first-light is non-hidden and has a hint — when locked, the
-      // hint is gated behind reveal-hints (so data-has-hint stays
-      // off); when unlocked the hint is freely shown.
+      // first-light is non-hidden and has a hint — when locked, the hint is
+      // gated behind the help level (so at the default "off" data-has-hint
+      // stays off); when unlocked the hint is freely shown.
       storage.unlock("first-light");
       mod.renderSections(container);
       const card = container.querySelector(
@@ -276,15 +276,15 @@ describe("achievements/ui/cards", () => {
       const card = container.querySelector(
         '.achievement-card[data-id="first-light"]',
       );
-      // Locked + non-hidden + reveal-hints off → resolveHintText
+      // Locked + non-hidden + help level "off" → resolveHintText
       // returns null; no affordance should be advertised.
       expect(card.dataset.hasHint).toBeUndefined();
     });
 
-    it("omits data-has-hint on hidden-locked cards while reveal-hints is off", () => {
-      // Hidden cards only surface the placeholder hint when reveal-
-      // hints is on; with the default off, hover would show nothing,
-      // so no affordance should advertise otherwise.
+    it("omits data-has-hint on hidden-locked cards at the default help level", () => {
+      // Hidden cards only surface a hint (placeholder or real) at "clues"
+      // or "hints"; with the default "off", hover would show nothing, so no
+      // affordance should advertise otherwise.
       mod.renderSections(container);
       const card = container.querySelector(
         '.achievement-card.hidden-ach[data-id="time-warp"]',
@@ -401,10 +401,10 @@ describe("achievements/ui/cards", () => {
       expect(deepSea.classList.contains("dimmed")).toBe(false);
     });
 
-    it("turning on revealHints re-renders hidden cards with real titles", () => {
+    it("raising the help level to clues re-renders hidden cards with real titles", () => {
       mod.renderSections(container);
-      mod.setRevealHints(true);
-      // setRevealHints triggers a refresh through the stub; simulate by
+      mod.setHelpLevel("clues");
+      // setHelpLevel triggers a refresh through the stub; simulate by
       // re-rendering into a fresh container.
       container.replaceChildren();
       mod.renderSections(container);
@@ -829,15 +829,53 @@ describe("achievements/ui/cards", () => {
     });
   });
 
-  describe("revealHints", () => {
-    it("getRevealHints defaults to false", () => {
-      expect(mod.getRevealHints()).toBe(false);
+  describe("help level", () => {
+    it("getHelpLevel defaults to off", () => {
+      expect(mod.getHelpLevel()).toBe("off");
     });
 
-    it("setRevealHints flips the flag and triggers a panel refresh", () => {
-      mod.setRevealHints(true);
-      expect(mod.getRevealHints()).toBe(true);
+    it("setHelpLevel changes the level and triggers a panel refresh", () => {
+      mod.setHelpLevel("hints");
+      expect(mod.getHelpLevel()).toBe("hints");
       expect(refreshPanelStub).toHaveBeenCalled();
+    });
+
+    it("setHelpLevel ignores an unknown level", () => {
+      mod.setHelpLevel("bogus");
+      expect(mod.getHelpLevel()).toBe("off");
+    });
+
+    // time-warp is hidden with description "Time stands still when you look
+    // closely." and hint "Click a relative timestamp to see absolute time".
+    function hoverHiddenTooltip() {
+      const card = container.querySelector(
+        '.achievement-card[data-id="time-warp"]',
+      );
+      card.dispatchEvent(new MouseEvent("mouseenter"));
+      return document.querySelector(".achievement-tooltip");
+    }
+
+    it("'clues' reveals a hidden achievement's flavor but withholds the how-to", () => {
+      mod.setHelpLevel("clues");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="time-warp"]',
+      );
+      expect(card.querySelector(".achievement-card-desc").textContent).toEqual(
+        "Time stands still when you look closely.",
+      );
+      // Hovering surfaces only the placeholder, never the instruction.
+      expect(hoverHiddenTooltip().textContent).toEqual(
+        "Hidden — unlock to reveal the hint",
+      );
+    });
+
+    it("'hints' surfaces the how-to hint on a hidden achievement", () => {
+      mod.setHelpLevel("hints");
+      mod.renderSections(container);
+      expect(hoverHiddenTooltip().textContent).toEqual(
+        "Click a relative timestamp to see absolute time",
+      );
     });
   });
 });

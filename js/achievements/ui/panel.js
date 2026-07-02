@@ -23,8 +23,8 @@ import { setActive as setNavActive, updateBadge } from "./nav-button.js";
 import { configureToasts, showActivationToast } from "./toast.js";
 import {
   configureCards,
-  getRevealHints,
-  setRevealHints,
+  getHelpLevel,
+  setHelpLevel,
   renderSections,
   scrollToCard,
   createSeenObserver,
@@ -475,19 +475,31 @@ function buildPanel(onHide) {
   header.appendChild(progressStrip);
   header.appendChild(lastUnlocked);
 
-  // Hint toggle — reveals descriptions on hidden achievements + tooltip clues on all locked
+  // Help level — Off keeps hidden achievements anonymous; Clues reveals their
+  // flavor (and surfaces hints on non-hidden ones); Hints also reveals how to
+  // earn the hidden ones.
   const hintToggle = document.createElement("label");
   hintToggle.className = "achievement-hint-toggle";
   hintToggle.title =
-    "Show hint text on locked achievements (hidden ones stay anonymous)";
-  const cb = document.createElement("input");
-  cb.type = "checkbox";
-  cb.checked = getRevealHints();
-  cb.addEventListener("change", () => {
-    setRevealHints(cb.checked);
+    "How much help to show on locked achievements — Off: hidden ones stay anonymous; Clues: reveal their flavor; Hints: reveal how to earn them";
+  hintToggle.appendChild(document.createTextNode("Help "));
+  const helpSelect = document.createElement("select");
+  helpSelect.className = "achievement-help-level";
+  for (const [value, label] of [
+    ["off", "Off"],
+    ["clues", "Clues"],
+    ["hints", "Hints"],
+  ]) {
+    const opt = document.createElement("option");
+    opt.value = value;
+    opt.textContent = label;
+    helpSelect.appendChild(opt);
+  }
+  helpSelect.value = getHelpLevel();
+  helpSelect.addEventListener("change", () => {
+    setHelpLevel(helpSelect.value);
   });
-  hintToggle.appendChild(cb);
-  hintToggle.appendChild(document.createTextNode(" Reveal hints"));
+  hintToggle.appendChild(helpSelect);
 
   const headerControls = document.createElement("div");
   headerControls.className = "achievement-header-controls";

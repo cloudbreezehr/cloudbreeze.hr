@@ -4,7 +4,7 @@
 // unseen-observer dwell tracking, and "mark all read" behavior.
 //
 // The tooltip module handles positioning; this module decides when a
-// hint should actually show (resolveHintText encodes the Reveal-hints
+// hint should actually show (resolveHintText encodes the help-level
 // and dev-active rules).  The panel owns the chrome (header, tabs)
 // and hands this module a container to paint into via renderSections.
 
@@ -52,11 +52,25 @@ const SEGMENTED_PROGRESS_MAX = 10;
 export const INTRO_CARD_THRESHOLD = 10;
 
 // ── State ──
-const REVEAL_HINTS_PREF = "revealHints";
-// Seed from the persisted preference so an explicit opt-in survives
-// reloads.  Defaults off — the discovery layer stays intact for new
-// visitors.
-let revealHints = storage.getPref(REVEAL_HINTS_PREF, false);
+// How much help the panel surfaces on locked achievements, low → high:
+//   "off"   — hidden achievements stay anonymous (???); no hints surface
+//   "clues" — hidden achievements show their flavor (title + description),
+//             and non-hidden locked achievements surface their hint
+//   "hints" — additionally reveals the how-to hint on hidden achievements
+// Default "off" keeps the discovery layer intact for new visitors; an
+// explicit choice is persisted so it survives reloads.
+const HELP_LEVELS = ["off", "clues", "hints"];
+const HELP_LEVEL_PREF = "helpLevel";
+const REVEAL_HINTS_PREF = "revealHints"; // legacy boolean, migrated below
+
+let helpLevel = readInitialHelpLevel();
+
+function readInitialHelpLevel() {
+  const stored = storage.getPref(HELP_LEVEL_PREF, null);
+  if (HELP_LEVELS.includes(stored)) return stored;
+  // Migrate the old boolean toggle: its "on" revealed hidden flavor = "clues".
+  return storage.getPref(REVEAL_HINTS_PREF, false) ? "clues" : "off";
+}
 let _seenObserver = null;
 let _seenTimers = new Map();
 // Last-rendered progress per key.  A subsequent render with a higher
@@ -92,33 +106,39 @@ export function configureCards({
 }
 
 // ── Reveal hints toggle ──
-// The panel header owns the checkbox; cards owns the underlying flag
-// and the rendering decisions it gates.  setRevealHints also triggers
-// a refresh so the caller doesn't have to remember to do it.
+// The panel header owns the control; cards owns the underlying level and
+// the rendering decisions it gates.  setHelpLevel also triggers a refresh
+// so the caller doesn't have to remember to do it.
 
-export function getRevealHints() {
-  return revealHints;
+export function getHelpLevel() {
+  return helpLevel;
 }
 
-export function setRevealHints(value) {
-  revealHints = !!value;
-  storage.setPref(REVEAL_HINTS_PREF, revealHints);
+export function setHelpLevel(level) {
+  if (!HELP_LEVELS.includes(level)) return;
+  helpLevel = level;
+  storage.setPref(HELP_LEVEL_PREF, helpLevel);
   _refreshPanel();
 }
 
+// "clues" (or deeper) reveals hidden achievements' flavor and non-hidden
+// hints; "hints" (deepest) additionally reveals the how-to on hidden ones.
+const showsClues = () => helpLevel !== "off";
+const showsHints = () => helpLevel === "hints";
+
 // ── Hint resolution ──
-// Returns the tooltip string to show on hover, or null to suppress.
-// Hidden achievements never leak their real hint via Reveal hints —
-// that toggle only affects their title/description. A non-revealing
-// placeholder is shown instead so the UI stays consistent. The real
-// hint is only exposed while dev tools are active (`body.dev-active`).
+// Returns the tooltip string to show on hover, or null to suppress. A
+// hidden achievement's how-to hint stays behind the "hints" level (or an
+// unlock, or dev tools); at "clues" a non-revealing placeholder stands in
+// so its card still signals there's something to earn.
 function resolveHintText(ach, isUnlocked, isRelocked) {
   if (isUnlocked || isRelocked) return ach.hint;
   if (ach.hidden) {
     if (document.body.classList.contains("dev-active")) return ach.hint;
-    return revealHints ? HIDDEN_HINT_PLACEHOLDER : null;
+    if (showsHints()) return ach.hint;
+    return showsClues() ? HIDDEN_HINT_PLACEHOLDER : null;
   }
-  return revealHints ? ach.hint : null;
+  return showsClues() ? ach.hint : null;
 }
 
 // ── Section helpers ──
@@ -513,7 +533,7 @@ export function renderSections(container) {
       } else if (isRelocked) {
         icon.innerHTML = CLOUD_LOCK_SVG;
         if (set.color) icon.style.color = set.color;
-      } else if (ach.hidden && !revealHints) {
+      } else if (ach.hidden && !showsClues()) {
         icon.innerHTML = CLOUD_HIDDEN_SVG;
       } else {
         icon.innerHTML = CLOUD_LOCK_SVG;
@@ -537,8 +557,8 @@ export function renderSections(container) {
         cardTitle.textContent = ach.title;
         cardDesc.textContent = ach.description;
       } else if (ach.hidden) {
-        cardTitle.textContent = revealHints ? ach.title : "???";
-        cardDesc.textContent = revealHints
+        cardTitle.textContent = showsClues() ? ach.title : "???";
+        cardDesc.textContent = showsClues()
           ? ach.description
           : "Hidden achievement";
       } else {
@@ -593,8 +613,8 @@ export function renderSections(container) {
       // and the Reveal hints / dev-active flags — see `resolveHintText`.
       if (ach.hint) {
         // Tag cards whose hover *will* surface text so CSS can show a
-        // resting affordance.  Cards whose hint resolves to null (locked
-        // non-hidden with reveal-hints off) carry no mark.
+        // resting affordance.  Cards whose hint resolves to null (a locked
+        // card at a help level below what would surface it) carry no mark.
         if (resolveHintText(ach, isUnlocked, isRelocked)) {
           card.dataset.hasHint = "1";
         }
@@ -772,7 +792,7 @@ export function refreshCard(achievementId) {
 // Test hook — drop all card state including injected callbacks.
 export function _resetForTests() {
   destroySeenObserver();
-  revealHints = false;
+  helpLevel = "off";
   _getPanelEl = () => null;
   _isPanelOpen = () => false;
   _refreshPanel = () => {};

@@ -292,14 +292,14 @@ describe("achievements/ui/panel", () => {
     });
   });
 
-  describe("hint toggle", () => {
-    it("wires the checkbox to cards.setRevealHints", () => {
+  describe("help level control", () => {
+    it("wires the select to cards.setHelpLevel", () => {
       mod.openPanel();
-      const cb = document.querySelector(".achievement-hint-toggle input");
-      expect(cb.checked).toBe(false);
-      cb.checked = true;
-      cb.dispatchEvent(new Event("change", { bubbles: true }));
-      expect(cards.getRevealHints()).toBe(true);
+      const select = document.querySelector(".achievement-help-level");
+      expect(select.value).toBe("off");
+      select.value = "clues";
+      select.dispatchEvent(new Event("change", { bubbles: true }));
+      expect(cards.getHelpLevel()).toBe("clues");
     });
   });
 
