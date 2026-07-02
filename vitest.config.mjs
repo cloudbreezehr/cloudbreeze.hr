@@ -13,6 +13,9 @@ export default defineConfig({
   test: {
     environment: "happy-dom",
     include: ["tests/**/*.test.js"],
+    // Repairs Web Storage on Node ≥25, where an inert built-in global
+    // shadows happy-dom's Storage (see the shim's header).
+    setupFiles: ["tests/setup/webstorage.js"],
     globals: false,
     clearMocks: true,
     restoreMocks: true,
