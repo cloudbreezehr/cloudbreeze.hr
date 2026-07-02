@@ -62,17 +62,57 @@ that needs no leader).
 
 ## Phases
 
-1. Fixed-timestep + shared-epoch refactor for the shared layers (stars,
-   shooting stars, motes); windows render desktop-space slices. The sky
+1. ✅ Fixed-timestep + shared-epoch refactor for the shared layers (stars,
+   shooting stars); windows render desktop-space slices. The sky
    becomes visibly continuous — stars align across the gap.
 2. Input bus: remote pointers as force sources + cursor ghosts. Wells,
-   orbits, drags all cross the border.
+   orbits, drags all cross the border. Motes join the shared layers here —
+   they're pointer/scroll-driven, so world-anchoring them is meaningless
+   until inputs are shared.
 3. Effect mirroring at the three seams (casts, fury/clicks, theme toggles).
 4. Viewport mode for secondary windows (chrome fades; pure sky).
 5. Toast routing, leader hardening (pagehide, TTL churn), scroll-parallax
    policy while linked (freeze shared-layer parallax or follow the leader).
+   Depth dust joins the world here — it's only visible mid-scroll, so its
+   alignment is moot until the scroll policy exists.
 6. Stretch: dev-console border crossing, elongated-nav illusion.
 
 Keep from v1: peers.js geometry (all of it), the seam module pattern
 (handoff.js generalizes into the input bus), achievements, capability
 gating, hidden-window quieting, tests.
+
+## Phase-1 decisions (as built)
+
+- **Epoch = the wall clock itself.** `js/world/clock.js` derives the tick
+  from Unix-epoch milliseconds, so every window on the machine agrees by
+  construction — no epoch broadcast, no leader, no re-sync on join/resume.
+  The plan's "epoch broadcast at link time" turned out to be unnecessary.
+- **Dual projection regime, not world-always.** Solo windows keep the old
+  fold-the-tile-onto-the-viewport modulo: the constellation puzzle needs
+  every planted star reachable at any window size (device-reachability
+  rule), and world slicing would thin the field on small windows. Linked
+  windows render desktop-anchored world slices; link/unlink crossfades
+  between layouts (`sky.world.LINK_BLEND_MS`).
+- **Shooting stars are world events while linked.** A seeded per-tile,
+  per-tick roll (`js/world/schedule.js`, seeded from the daily key)
+  schedules every arc; flights are pure functions of their spawn slot, so
+  windows never message about them and a window opening mid-flight finds
+  the arc already in the air. The v1 star handoff (handoff.js, `star`
+  messages, life extension) is deleted. `star-courier` now fires when a
+  window witnesses an arc's head visit both its own slice and a peer's.
+- **The seam narrowed to peer rects.** `js/sky-link/seam.js` exposes live
+  peer world-rects to the renderer (empty = solo); phase 2 extends this
+  same seam into the input bus.
+- **Same-seed handshake.** Rect announcements carry the sky seed; windows
+  on different days (or #sky= time travelers) never link.
+- **Meteor-shower boost quantized** to a shared 5-minute wall-clock grid so
+  it can feed the schedule deterministically.
+- **New achievement:** `fixed-stars` — move a linked window ~400px and
+  watch the sky hold still.
+
+Known phase-1 gaps, owned by later phases: parallax aligns across the gap
+only at equal scroll progress (phase 5 policy); upside-down's CSS flip
+mirrors a linked slice (accepted quirk); per-window dev-console retunes of
+schedule inputs (spawn chance, speeds, lifetimes) split the schedule
+between windows — dev-only, and the clock and tile size are deliberately
+not tunable for exactly this reason.
