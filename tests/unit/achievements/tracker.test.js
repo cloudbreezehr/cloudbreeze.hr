@@ -1629,3 +1629,36 @@ describe("tracker — photo-mode handlers", () => {
     expect(storage.isUnlocked("wallpaper-material")).toBe(true);
   });
 });
+
+describe("tracker — daily-sky handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks in-season only for the word of the day", async () => {
+    const { wordOfTheDay } = await import("../../../js/daily/word.js");
+    const todays = wordOfTheDay();
+    const other = INCANTATION_WORDS.find((w) => w !== todays);
+    const { storage } = await startTracker();
+
+    dispatchAchievement("incantation", { word: other, maxed: false });
+    expect(storage.isUnlocked("in-season")).toBe(false);
+
+    dispatchAchievement("incantation", { word: todays, maxed: false });
+    expect(storage.isUnlocked("in-season")).toBe(true);
+  });
+
+  it("unlocks time-traveler on a time-travel visit", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("time-travel", { seed: "2025-12-24" });
+    expect(storage.isUnlocked("time-traveler")).toBe(true);
+  });
+});

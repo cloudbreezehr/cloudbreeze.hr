@@ -44,6 +44,7 @@ export function createCommands(deps) {
     stats, // () => { points, unlocked, total }
     qualityTier, // () => string
     openCheatsheet, // () => void
+    daily, // () => { seedKey, todayKey, traveling, word, link }
     emit, // (type, data?) => void — achievement event stream
   } = deps;
 
@@ -264,6 +265,30 @@ export function createCommands(deps) {
       run() {
         castWord("DEPLOY");
         return { lines: ["Deploying to production… done.", "Ship it. 🚀"] };
+      },
+    },
+    {
+      name: "today",
+      summary: "the sky of the day and its word",
+      run() {
+        const d = daily();
+        const lines = [];
+        if (d.traveling) {
+          lines.push(
+            `You're standing under a past sky: ${d.seedKey}`,
+            `Today's is ${d.todayKey} — drop the #sky link to come home.`,
+          );
+        } else {
+          lines.push(
+            `Sky of the day: ${d.seedKey}`,
+            "Every visitor shares this arrangement; at midnight it's gone.",
+            `Keep it: ${d.link}`,
+          );
+        }
+        lines.push(
+          `Word of the day: ${d.word} — cast it while it's in season.`,
+        );
+        return { lines };
       },
     },
     {

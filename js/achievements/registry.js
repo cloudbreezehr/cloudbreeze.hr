@@ -1378,6 +1378,25 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "themes-heard",
   },
+  // ── Exploration: Daily Sky ──
+  {
+    id: "in-season",
+    title: "In Season",
+    description: "Today's word, spoken today.",
+    hint: "Cast the word of the day — the terminal knows it",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+  },
+  {
+    id: "time-traveler",
+    title: "Time Traveler",
+    description: "You stood under a sky that already set.",
+    hint: "Open a shared sky link from another day",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+  },
   // ── Exploration: Photo Mode ──
   {
     id: "sky-photographer",

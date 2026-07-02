@@ -12,6 +12,7 @@ import {
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
 import { shootingStarBoost } from "./real-sky/boost.js";
+import { arrangementRandom } from "./daily/random.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -593,23 +594,27 @@ const CONSTELLATION_ANCHORS = [
   { x: 1520, y: 700 },
 ];
 
+// The arrangement (positions, sizes, depths) draws from the seeded daily
+// stream so every visitor shares one sky per day; per-frame randomness
+// (flashes, spawns) stays on Math.random.
 function jitter() {
-  return (Math.random() - 0.5) * 2 * PLANTED_JITTER;
+  return (arrangementRandom() - 0.5) * 2 * PLANTED_JITTER;
 }
 
 function makeStar(x, y, sharedDepth) {
-  const r = STARS.RADIUS_MIN + Math.random() * STARS.RADIUS_RANGE;
+  const r = STARS.RADIUS_MIN + arrangementRandom() * STARS.RADIUS_RANGE;
   return {
     x,
     y,
     r,
-    opacity: STARS.OPACITY_MIN + Math.random() * STARS.OPACITY_RANGE,
-    twinkle: Math.random() * Math.PI * 2,
+    opacity: STARS.OPACITY_MIN + arrangementRandom() * STARS.OPACITY_RANGE,
+    twinkle: arrangementRandom() * Math.PI * 2,
     twinkleSpeed:
-      STARS.TWINKLE_SPEED_MIN + Math.random() * STARS.TWINKLE_SPEED_RANGE,
+      STARS.TWINKLE_SPEED_MIN + arrangementRandom() * STARS.TWINKLE_SPEED_RANGE,
     flash: 0,
-    depth: sharedDepth ?? STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE,
-    glarePhase: Math.random() * Math.PI,
+    depth:
+      sharedDepth ?? STARS.DEPTH_MIN + arrangementRandom() * STARS.DEPTH_RANGE,
+    glarePhase: arrangementRandom() * Math.PI,
     constellationId: null,
     constellationIndex: -1,
     hintPulse: 0,
@@ -619,16 +624,18 @@ function makeStar(x, y, sharedDepth) {
 
 function plantConstellations(stars, capacity) {
   // Shuffle anchor → constellation assignment so a constellation isn't tied
-  // to a fixed quadrant across sessions.
+  // to a fixed quadrant forever — seeded, so it hides in the same quadrant
+  // for every visitor on a given day.
   const anchorOrder = CONSTELLATION_ANCHORS.slice().sort(
-    () => Math.random() - 0.5,
+    () => arrangementRandom() - 0.5,
   );
   const planted = [];
   for (let i = 0; i < CONSTELLATIONS.length; i++) {
     const c = CONSTELLATIONS[i];
     const anchor = anchorOrder[i % anchorOrder.length];
     if (planted.length + c.points.length > capacity) break;
-    const sharedDepth = STARS.DEPTH_MIN + Math.random() * STARS.DEPTH_RANGE;
+    const sharedDepth =
+      STARS.DEPTH_MIN + arrangementRandom() * STARS.DEPTH_RANGE;
     for (let k = 0; k < c.points.length; k++) {
       const [dx, dy] = c.points[k];
       const x = anchor.x + dx * PLANTED_SCALE + jitter();
@@ -673,7 +680,9 @@ export function createSky(starCount) {
   const stars = [];
   plantConstellations(stars, starCount);
   while (stars.length < starCount) {
-    stars.push(makeStar(Math.random() * 1920, Math.random() * 1080));
+    stars.push(
+      makeStar(arrangementRandom() * 1920, arrangementRandom() * 1080),
+    );
   }
   _latestStars = stars;
 

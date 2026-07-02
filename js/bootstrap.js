@@ -161,6 +161,9 @@ const MODULES = [
   // Real sky — day phase, live weather badge
   { path: "./real-sky/index.js", init: (m) => m.initRealSky() },
 
+  // Daily sky — time-travel detection for shared sky links
+  { path: "./daily/index.js", init: (m) => m.initDailySky() },
+
   // Themes
   { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
   { path: "./themes/frozen.js", init: (m) => m.initFrozen() },

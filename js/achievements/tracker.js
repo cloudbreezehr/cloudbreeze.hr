@@ -13,6 +13,7 @@ import {
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { getTheme, getThemeIds } from "../themes/registry.js";
+import { wordOfTheDay } from "../daily/word.js";
 
 // Themes that count toward "all themes active" stacking achievements.
 const STACKABLE_THEME_COUNT = getThemeIds().length;
@@ -642,6 +643,11 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("abracadabra");
       if (data && data.word) tryProgressItem("incantations-cast", data.word);
       if (data && data.maxed) tryUnlock("overkill");
+      if (data && data.word === wordOfTheDay()) tryUnlock("in-season");
+    },
+
+    "time-travel"() {
+      tryUnlock("time-traveler");
     },
 
     "themes-scribbled"() {

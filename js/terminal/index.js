@@ -15,6 +15,9 @@ import {
 } from "../achievements/registry.js";
 import * as storage from "../achievements/storage.js";
 import { getQualityTier } from "../quality.js";
+import { skySeedKey, isTimeTraveling } from "../daily/random.js";
+import { dayKey } from "../daily/seed.js";
+import { wordOfTheDay } from "../daily/word.js";
 import { trapFocus } from "../achievements/focus-trap.js";
 import { playSfx } from "../audio/sfx.js";
 import { onKey } from "../keyboard.js";
@@ -108,6 +111,17 @@ function buildDeps() {
     },
     qualityTier: getQualityTier,
     openCheatsheet,
+    daily: () => ({
+      seedKey: skySeedKey(),
+      todayKey: dayKey(),
+      traveling: isTimeTraveling(),
+      word: wordOfTheDay(),
+      link:
+        location.origin +
+        location.pathname +
+        "#sky=" +
+        encodeURIComponent(skySeedKey()),
+    }),
     emit,
   };
 }

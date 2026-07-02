@@ -41,6 +41,13 @@ describe("terminal/commands", () => {
       stats: () => ({ points: 120, unlocked: 7, total: 40 }),
       qualityTier: () => "high",
       openCheatsheet: vi.fn(),
+      daily: () => ({
+        seedKey: "2026-07-02",
+        todayKey: "2026-07-02",
+        traveling: false,
+        word: "METEOR",
+        link: "https://cloudbreeze.hr/#sky=2026-07-02",
+      }),
       emit: vi.fn(),
     };
     commands = createCommands(deps);
@@ -143,6 +150,27 @@ describe("terminal/commands", () => {
   it("deploy ships via the DEPLOY spell", () => {
     run("deploy");
     expect(deps.castWord).toHaveBeenCalledWith("DEPLOY");
+  });
+
+  it("today reports the sky of the day, its link, and its word", () => {
+    const { lines } = run("today");
+    expect(lines[0]).toBe("Sky of the day: 2026-07-02");
+    expect(lines.join(" ")).toContain("#sky=2026-07-02");
+    expect(lines.join(" ")).toContain("Word of the day: METEOR");
+  });
+
+  it("today points a time traveler back home", () => {
+    deps.daily = () => ({
+      seedKey: "2025-12-24",
+      todayKey: "2026-07-02",
+      traveling: true,
+      word: "METEOR",
+      link: "https://cloudbreeze.hr/#sky=2025-12-24",
+    });
+    commands = createCommands(deps);
+    const { lines } = run("today");
+    expect(lines[0]).toContain("past sky: 2025-12-24");
+    expect(lines[1]).toContain("2026-07-02");
   });
 
   it("history echoes the session's numbered commands", () => {
