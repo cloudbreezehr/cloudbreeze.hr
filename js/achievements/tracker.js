@@ -618,8 +618,6 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("cloud-native");
     },
 
-
-
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },
@@ -676,10 +674,6 @@ export function createTracker(onUnlock, onRelock) {
 
     "speedrun-finished"() {
       tryUnlock("any-percent");
-    },
-
-    "pwa-installed"() {
-      tryUnlock("homesteader");
     },
 
     "passport-import"() {

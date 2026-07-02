@@ -164,9 +164,6 @@ const MODULES = [
   // Daily sky — time-travel detection for shared sky links
   { path: "./daily/index.js", init: (m) => m.initDailySky() },
 
-  // PWA — service worker + install detection
-  { path: "./pwa.js", init: (m) => m.initPwa() },
-
   // Speedrun — resume an in-progress run left by a reload
   { path: "./effects/speedrun.js", init: (m) => m.initSpeedrun() },
 

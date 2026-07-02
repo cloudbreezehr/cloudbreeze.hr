@@ -1532,7 +1532,6 @@ describe("tracker — vhs handlers", () => {
   });
 });
 
-
 describe("tracker — terminal handlers", () => {
   beforeEach(() => {
     document.body.className = "";
@@ -1744,25 +1743,5 @@ describe("tracker — speedrun handlers", () => {
     expect(storage.isUnlocked("on-the-clock")).toBe(true);
     dispatchAchievement("speedrun-finished", { ms: 754321 });
     expect(storage.isUnlocked("any-percent")).toBe(true);
-  });
-});
-
-describe("tracker — pwa handler", () => {
-  beforeEach(() => {
-    document.body.className = "";
-    delete document.body.dataset.activeTheme;
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
-  });
-
-  afterEach(() => {
-    stopAllTrackers();
-    vi.useRealTimers();
-  });
-
-  it("unlocks homesteader when the app is installed", async () => {
-    const { storage } = await startTracker();
-    dispatchAchievement("pwa-installed");
-    expect(storage.isUnlocked("homesteader")).toBe(true);
   });
 });

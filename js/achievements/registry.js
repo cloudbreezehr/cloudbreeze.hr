@@ -1325,17 +1325,6 @@ export const ACHIEVEMENTS = [
     points: EPIC,
     hidden: true,
   },
-  // Milestone on purpose: install support varies by browser, so this must
-  // never gate the completionist.
-  {
-    id: "homesteader",
-    title: "Homesteader",
-    description: "The sky lives on your desktop now.",
-    hint: "Install the site as an app",
-    set: "meta",
-    points: RARE,
-    hidden: true,
-  },
   {
     id: "cheat-code",
     title: "Cheat Code",
