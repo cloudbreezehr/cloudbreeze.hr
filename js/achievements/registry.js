@@ -27,6 +27,12 @@ const META_ICON =
   '<path d="M3 14V3"/>' +
   '<path d="M3 3h8l-1.5 2.5L11 8H3" fill="currentColor"/>' +
   "</svg>";
+// Crescent moon and a star — the real sky's own calendar.
+const ALMANAC_ICON =
+  '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+  '<path d="M13.6 9A5.5 5.5 0 1 1 7 2.4 4.3 4.3 0 0 0 13.6 9z"/>' +
+  '<circle cx="12" cy="3.6" r="1"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -51,6 +57,7 @@ export const SETS = [
     icon: EXPLORATION_ICON,
   },
   { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
+  { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
   {
     id: "deep-sea",
     label: "Deep Sea",
@@ -368,7 +375,7 @@ export const ACHIEVEMENTS = [
     title: "Moonlit",
     description: "The sky is different at night.",
     hint: "Visit the site between midnight and 5 AM",
-    set: "exploration",
+    set: "almanac",
     points: UNCOMMON,
     hidden: true,
   },
@@ -559,7 +566,7 @@ export const ACHIEVEMENTS = [
     title: "Persistent Explorer",
     description: "You keep coming back.",
     hint: "Visit the site on 3 different days",
-    set: "mastery",
+    set: "almanac",
     points: RARE,
     hidden: true,
     progressKey: "days-3",
@@ -1289,7 +1296,7 @@ export const ACHIEVEMENTS = [
     title: "Tenacious",
     description: "Seven days, still drawn to the sky.",
     hint: "Visit the site on 7 different days",
-    set: "meta",
+    set: "almanac",
     points: EPIC,
     hidden: true,
     progressKey: "days-7",
@@ -1340,7 +1347,7 @@ export const ACHIEVEMENTS = [
     title: "Regular",
     description: "Seven days running.",
     hint: "Visit on seven consecutive days",
-    set: "mastery",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },
@@ -1482,7 +1489,7 @@ export const ACHIEVEMENTS = [
     title: "Moonstruck",
     description: "You came on a full-moon night.",
     hint: "Visit during a full moon",
-    set: "exploration",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },
@@ -1491,7 +1498,7 @@ export const ACHIEVEMENTS = [
     title: "Star Shower",
     description: "You came while the sky was falling.",
     hint: "Visit near a real meteor shower's peak night",
-    set: "exploration",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },
@@ -1500,7 +1507,7 @@ export const ACHIEVEMENTS = [
     title: "Sun Stands Still",
     description: "The longest light, or the deepest dark.",
     hint: "Visit on a solstice",
-    set: "exploration",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },
@@ -1509,7 +1516,7 @@ export const ACHIEVEMENTS = [
     title: "Equal Night",
     description: "Day and night in perfect balance.",
     hint: "Visit on an equinox",
-    set: "exploration",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },
@@ -1518,7 +1525,7 @@ export const ACHIEVEMENTS = [
     title: "Rain Check",
     description: "It was really raining over me.",
     hint: "Check on the systems while rain falls on your location",
-    set: "exploration",
+    set: "almanac",
     points: RARE,
     hidden: true,
   },

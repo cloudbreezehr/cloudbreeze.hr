@@ -50,6 +50,36 @@ describe("achievements/registry — data shape", () => {
   });
 });
 
+describe("Almanac set", () => {
+  it("is a defined, core (non-theme) set", () => {
+    const almanac = SETS.find((s) => s.id === "almanac");
+    expect(almanac).toBeTruthy();
+    expect(almanac.label).toBe("Almanac");
+    // Core-like: always visible, no set-mastery capstone (that's theme-set only).
+    expect(isThemeSet("almanac")).toBe(false);
+    expect(SET_MASTERY_MAP.almanac).toBeUndefined();
+  });
+
+  it("groups exactly the time-based achievements", () => {
+    const ids = ACHIEVEMENTS.filter((a) => a.set === "almanac")
+      .map((a) => a.id)
+      .sort();
+    expect(ids).toEqual(
+      [
+        "equal-night",
+        "moonlit",
+        "moonstruck",
+        "persistent-explorer",
+        "rain-check",
+        "regular",
+        "star-shower",
+        "sun-stands-still",
+        "tenacious",
+      ].sort(),
+    );
+  });
+});
+
 describe("THEME_SETS", () => {
   it("matches the themes registry one-for-one", () => {
     expect([...THEME_SETS].sort()).toEqual([...getThemeIds()].sort());
