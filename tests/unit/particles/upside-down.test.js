@@ -100,6 +100,22 @@ describe("Dust — anti-gravity mote", () => {
     expect(d.swayPhase).toBe(phase0);
   });
 
+  it("stays put under reduced motion even with the scroll wind added to vy", async () => {
+    mqlMatches = true;
+    const { Dust } = await import("../../../js/particles/upside-down.js");
+    const d = new Dust(makeFakeCanvas(), {});
+    d.spawn();
+    const x0 = d.x;
+    const y0 = d.y;
+    // Mirrors what the factory's draw() does when scroll exceeds the dead
+    // zone — vy picks up the wind before update() steps position, so this
+    // isolates that the scaled() position step still freezes it.
+    d.vy += 10;
+    d.update();
+    expect(d.x).toBe(x0);
+    expect(d.y).toBe(y0);
+  });
+
   it("position drifts toward larger y under full motion (visually upward in flipped view)", async () => {
     mqlMatches = false;
     const { Dust } = await import("../../../js/particles/upside-down.js");
@@ -158,6 +174,15 @@ describe("Dust — anti-gravity mote", () => {
     const ud = createUpsideDown(makeFakeCanvas(), makeFakeCtx());
     const forces = makeForces();
     // A strong scroll exercises the dust wind branch (and debris spawn).
+    for (let i = 0; i < 60; i++) ud.draw(forces, 6);
+  });
+
+  it("factory.draw applies the dust scroll wind without throwing under reduced motion", async () => {
+    mqlMatches = true;
+    const { createUpsideDown } =
+      await import("../../../js/particles/upside-down.js");
+    const ud = createUpsideDown(makeFakeCanvas(), makeFakeCtx());
+    const forces = makeForces();
     for (let i = 0; i < 60; i++) ud.draw(forces, 6);
   });
 });
