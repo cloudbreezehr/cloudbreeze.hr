@@ -1480,7 +1480,7 @@ export const ACHIEVEMENTS = [
   {
     id: "moonstruck",
     title: "Moonstruck",
-    description: "The real moon hung in this sky.",
+    description: "You came on a full-moon night.",
     hint: "Visit during a full moon",
     set: "exploration",
     points: RARE,
