@@ -174,6 +174,114 @@ describe("sky.js dwell-pulse detector", () => {
   });
 });
 
+describe("sky.js star projection — solo vs world-anchored", () => {
+  let mod;
+  let seam;
+
+  beforeEach(async () => {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+    seam = await import("../../js/sky-link/seam.js");
+    mod = await import("../../js/sky.js");
+  });
+
+  afterEach(() => {
+    seam.setPeerRectsSource(null);
+    delete window.matchMedia;
+  });
+
+  const peerRect = { x: 2000, y: 0, w: 800, h: 600 };
+
+  function linkUp() {
+    seam.setPeerRectsSource(() => [peerRect]);
+  }
+
+  it("folds the sky tile onto the viewport while solo", () => {
+    const star = { x: 1500, y: 900, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    const instances = mod.starScreenInstances(star, 0, canvas);
+    expect(instances).toEqual([{ x: 1500 % 800, y: 900 % 600 }]);
+  });
+
+  it("slices the desktop-anchored world while linked", () => {
+    linkUp();
+    const star = { x: 300, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    // Window at world origin: the star sits at its world position.
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 0, y: 0 })).toEqual([
+      { x: 300, y: 200 },
+    ]);
+    // Window 250px to the right: the same world position, shifted.
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 250, y: 0 })).toEqual([
+      { x: 50, y: 200 },
+    ]);
+  });
+
+  it("agrees across two adjacent windows — one continuous field", () => {
+    linkUp();
+    mod.createSky(120);
+    const left = makeFakeCanvas(960, 1080);
+    const right = makeFakeCanvas(960, 1080);
+    const leftOrigin = { x: 0, y: 0 };
+    const rightOrigin = { x: 960, y: 0 };
+    for (const star of mod.getSkyStars()) {
+      const a = mod.starScreenInstances(star, 0, left, leftOrigin);
+      const b = mod.starScreenInstances(star, 0, right, rightOrigin);
+      // Every instance, mapped back to world coordinates, must land on
+      // the same tile-relative spot regardless of which window projected
+      // it — the world repeats per sky tile, so agreement is modulo the
+      // tile width.
+      const worldXs = new Set(
+        [
+          ...a.map((p) => p.x + leftOrigin.x),
+          ...b.map((p) => p.x + rightOrigin.x),
+        ].map((x) => Math.round((((x % 1920) + 1920) % 1920) * 1000) / 1000),
+      );
+      expect(worldXs.size).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("drops stars that fall outside this window's world slice", () => {
+    linkUp();
+    const star = { x: 1800, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 0, y: 0 })).toEqual(
+      [],
+    );
+  });
+
+  it("repeats the sky tile for a viewport wider than the tile", () => {
+    linkUp();
+    const star = { x: 100, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(2200, 600);
+    const xs = mod
+      .starScreenInstances(star, 0, canvas, { x: 0, y: 0 })
+      .map((p) => p.x);
+    expect(xs).toEqual([100, 100 + 1920]);
+  });
+
+  it("measures linked parallax in sky-tile units, solo in canvas units", () => {
+    const depth = 1;
+    const sp = 0.5;
+    const canvasH = 600;
+    const solo = mod.starsParallaxShift(depth, sp, canvasH);
+    linkUp();
+    const linked = mod.starsParallaxShift(depth, sp, canvasH);
+    // Same tunables, different length scale — 1080-tall tile vs canvas.
+    expect(linked / solo).toBeCloseTo(1080 / canvasH, 6);
+  });
+
+  it("reports the anchoring regime off the live link state", () => {
+    expect(mod.isWorldAnchored()).toBe(false);
+    linkUp();
+    expect(mod.isWorldAnchored()).toBe(true);
+  });
+});
+
 describe("framesToExit — linked-sky life extension", () => {
   let framesToExit;
 

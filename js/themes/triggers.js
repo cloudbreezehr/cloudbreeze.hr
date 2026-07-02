@@ -16,7 +16,7 @@ import { bindPointer } from "../pointer.js";
 import { getConstellation } from "../constellations.js";
 import { mirrorYWhenInverted, getViewportHeight } from "../viewport.js";
 import { getScrollY } from "../scroll-bus.js";
-import { getStarsParallaxScale } from "../sky.js";
+import { starScreenInstances } from "../sky.js";
 import { UI_OVERLAY_SELECTOR } from "../selectors.js";
 
 // ── Shared decay primitive ──
@@ -532,22 +532,21 @@ export function createConstellationTrigger({
     const canvas = getCanvas();
     if (!stars || !canvas) return null;
     const sp = readScrollProgress();
-    const parallaxScale = getStarsParallaxScale();
     let best = null;
     let bestDistSq = hitRadius * hitRadius;
     for (let i = 0; i < stars.length; i++) {
       const s = stars[i];
       if (!s.constellationId) continue;
-      const shift = s.depth * sp * canvas.height * parallaxScale;
-      const sx = s.x % canvas.width;
-      const py =
-        (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
-      const dx = cx - sx;
-      const dy = cy - py;
-      const distSq = dx * dx + dy * dy;
-      if (distSq < bestDistSq) {
-        bestDistSq = distSq;
-        best = { star: s, index: i };
+      // Every on-screen instance is clickable — in the linked sky a star
+      // can appear more than once, or not at all, on this window's slice.
+      for (const inst of starScreenInstances(s, sp, canvas)) {
+        const dx = cx - inst.x;
+        const dy = cy - inst.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq < bestDistSq) {
+          bestDistSq = distSq;
+          best = { star: s, index: i };
+        }
       }
     }
     return best;

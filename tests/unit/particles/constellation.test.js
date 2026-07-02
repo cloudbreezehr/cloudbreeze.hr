@@ -187,7 +187,7 @@ describe("createConstellation — chain rendering gating", () => {
     // The connecting segment would span the viewport — guard skips it.
     const { createConstellation } =
       await import("../../../js/particles/constellation.js");
-    const { createSky, getSkyStars, getStarsParallaxScale } =
+    const { createSky, getSkyStars, starsParallaxShift } =
       await import("../../../js/sky.js");
     createSky(30);
     const stars = getSkyStars();
@@ -199,7 +199,7 @@ describe("createConstellation — chain rendering gating", () => {
     // Sanity: the symbolic relationship that puts the test past the
     // wrap threshold.  Tuning STARS.PARALLAX_SCALE retunes the test
     // automatically because both sides read it.
-    expect(1 * 0.3 * 600 * getStarsParallaxScale()).toBeGreaterThan(stars[0].y);
+    expect(starsParallaxShift(1, 0.3, 600)).toBeGreaterThan(stars[0].y);
 
     const canvas = makeStubCanvas();
     const particles = createConstellation(canvas);
