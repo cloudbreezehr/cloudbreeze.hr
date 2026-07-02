@@ -158,6 +158,14 @@ export function initAchievements() {
     maybeShowWelcomeBack(showActivationToast);
   }
 
+  // A bulk storage rewrite (speedrun reset/restore) skips the per-unlock
+  // callbacks that normally keep the UI in step, so repaint on demand: the
+  // nav badge always, the panel only while it's open.
+  window.addEventListener("cloudlog-bulk-change", () => {
+    updateBadge();
+    if (isPanelOpen()) refreshPanel();
+  });
+
   // Contact link click events — dispatch achievement events for page-level links
   document.querySelectorAll('a[href^="mailto:"]').forEach((el) => {
     el.addEventListener("click", () => {

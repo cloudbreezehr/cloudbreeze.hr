@@ -426,7 +426,7 @@ function buildActions() {
   targets.push({ id: speedrunId, name: SPEEDRUN_WORD });
   actions.set(speedrunId, () => {
     import("../effects/speedrun.js")
-      .then((m) => m.toggleSpeedrun())
+      .then((m) => m.requestSpeedrun())
       .catch((err) => console.warn("[spell] speedrun failed to load:", err));
   });
 

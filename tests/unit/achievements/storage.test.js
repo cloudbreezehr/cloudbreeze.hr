@@ -292,6 +292,35 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("resetProgress", () => {
+    it("wipes earned progress but preserves active, hidden, and prefs", () => {
+      storage.activate();
+      storage.setHidden(true);
+      storage.unlock("a");
+      storage.setCounter("totalClicks", 99);
+      storage.addProgressItem("appearances-used", "dark");
+      storage.setPref("keepMe", "backup-code");
+
+      storage.resetProgress();
+
+      // Earned progress gone.
+      expect(storage.isUnlocked("a")).toBe(false);
+      expect(storage.getCounter("totalClicks")).toBe(0);
+      expect(storage.getProgressItems("appearances-used")).toEqual([]);
+      // Identity + the prefs bag (where a backup would live) survive.
+      expect(storage.isActive()).toBe(true);
+      expect(storage.isHidden()).toBe(true);
+      expect(storage.getPref("keepMe")).toBe("backup-code");
+    });
+
+    it("persists immediately", () => {
+      storage.unlock("a");
+      storage.resetProgress();
+      const raw = JSON.parse(localStorage.getItem("achievements"));
+      expect(raw.unlocked).toEqual([]);
+    });
+  });
+
   describe("write failure", () => {
     it("flags lastWriteFailed and emits once on the rising edge", () => {
       const fired = vi.fn();

@@ -167,6 +167,9 @@ const MODULES = [
   // PWA — service worker + install detection
   { path: "./pwa.js", init: (m) => m.initPwa() },
 
+  // Speedrun — resume an in-progress run left by a reload
+  { path: "./effects/speedrun.js", init: (m) => m.initSpeedrun() },
+
   // Themes
   { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
   { path: "./themes/frozen.js", init: (m) => m.initFrozen() },

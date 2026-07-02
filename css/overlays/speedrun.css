@@ -51,9 +51,111 @@
   font-size: 0.68rem;
   color: rgba(255, 211, 106, 0.85);
 }
+/* The clock and splits are read-only; only the end button takes input, so
+   it opts back into pointer events the container turned off. */
+.speedrun-end {
+  margin-top: 0.45rem;
+  pointer-events: auto;
+  font: inherit;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(207, 228, 245, 0.7);
+  background: rgba(125, 191, 232, 0.12);
+  border: 1px solid rgba(125, 191, 232, 0.3);
+  border-radius: 999px;
+  padding: 0.22rem 0.7rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+.speedrun-end:hover {
+  background: rgba(125, 191, 232, 0.26);
+  color: #fff;
+}
+
+/* ── Start / End confirmation dialog ── */
+.speedrun-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  opacity: 0;
+  transition: opacity 0.2s ease-out;
+}
+.speedrun-dialog-overlay.visible {
+  opacity: 1;
+}
+.speedrun-dialog {
+  max-width: 400px;
+  width: calc(100vw - 3rem);
+  padding: 1.5rem 1.6rem 1.3rem;
+  background: rgba(10, 22, 40, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(125, 191, 232, 0.3);
+  border-radius: 12px;
+  color: #eaf3fb;
+}
+.speedrun-dialog-title {
+  font-family: "Syne", sans-serif;
+  font-size: 1.1rem;
+  margin: 0 0 0.8rem;
+}
+.speedrun-dialog-body {
+  font-family: "DM Mono", monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: rgba(234, 243, 251, 0.82);
+  margin: 0 0 1.3rem;
+}
+.speedrun-dialog-body strong {
+  color: #7dbfe8;
+  font-weight: 400;
+}
+.speedrun-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+.speedrun-dialog-actions button {
+  font-family: "DM Mono", monospace;
+  font-size: 0.76rem;
+  border-radius: 999px;
+  padding: 0.4rem 1rem;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+.speedrun-dialog-cancel {
+  color: rgba(234, 243, 251, 0.6);
+  background: none;
+  border: 1px solid rgba(234, 243, 251, 0.18);
+}
+.speedrun-dialog-cancel:hover {
+  color: #fff;
+  border-color: rgba(234, 243, 251, 0.4);
+}
+.speedrun-dialog-confirm {
+  color: #06121a;
+  background: #7dbfe8;
+  border: 1px solid #7dbfe8;
+  font-weight: 500;
+}
+.speedrun-dialog-confirm:hover {
+  background: #9ed0f2;
+  border-color: #9ed0f2;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .speedrun-hud {
+  .speedrun-hud,
+  .speedrun-dialog-overlay {
     transition: none;
   }
 }

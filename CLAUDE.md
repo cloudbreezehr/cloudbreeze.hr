@@ -21,7 +21,8 @@ js/
   themes/                        Easter-egg themes: registry, factory, trigger strategies, one module per theme
                                  + alchemy.js — curated stacked-pair hybrid combos
   effects/                       Standalone self-cleaning DOM effects (ripples, fireworks, HUD, hints, sparkles)
-                                 + photo-mode.js (sky portrait export), speedrun.js (run clock + splits)
+                                 + photo-mode.js (sky portrait export), speedrun.js (backup → reset →
+                                 timed run from zero → restore; clock, set splits, personal best)
   achievements/                  Cloudlog: tracker, registry, storage, progress, UI
                                  + passport.js — portable progress codes for cross-device transfer
   analytics/                     Event taxonomy, consent, adapters + bridges

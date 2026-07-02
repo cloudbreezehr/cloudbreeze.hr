@@ -200,6 +200,26 @@ export function setHidden(hidden) {
   saveNow();
 }
 
+/**
+ * Wipe earned progress back to a fresh slate — unlocks, seen flags,
+ * progressive collections, relocks, and the achievement-gating counters —
+ * while preserving the Cloudlog's activated/hidden state, the schema
+ * version, and the free-form `prefs` bag (so a caller can stash a backup
+ * in prefs *before* calling this and have it survive). Used to start a
+ * speedrun from zero; the caller is responsible for holding a restorable
+ * backup, since this is not itself reversible.
+ */
+export function resetProgress() {
+  const state = getState();
+  const fresh = defaultState();
+  state.unlocked = fresh.unlocked;
+  state.seen = fresh.seen;
+  state.counters = fresh.counters;
+  state.progress = fresh.progress;
+  state.relocked = fresh.relocked;
+  saveNow();
+}
+
 export function isUnlocked(id) {
   return getState().unlocked.some((u) => u.id === id);
 }
