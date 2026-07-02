@@ -158,6 +158,9 @@ const MODULES = [
   // Hidden terminal
   { path: "./terminal/index.js", init: (m) => m.initTerminal() },
 
+  // Real sky — day phase, live weather badge
+  { path: "./real-sky/index.js", init: (m) => m.initRealSky() },
+
   // Themes
   { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
   { path: "./themes/frozen.js", init: (m) => m.initFrozen() },

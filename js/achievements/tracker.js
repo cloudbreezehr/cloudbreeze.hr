@@ -577,6 +577,18 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("cloudlog-activated");
     },
 
+    "real-sky"(data) {
+      if (!data) return;
+      if (data.moonFull) tryUnlock("moonstruck");
+      if (data.shower) tryUnlock("star-shower");
+      if (data.moment === "solstice") tryUnlock("sun-stands-still");
+      if (data.moment === "equinox") tryUnlock("equal-night");
+    },
+
+    "real-weather"(data) {
+      if (data && data.raining) tryUnlock("rain-check");
+    },
+
     "terminal-open"() {
       tryUnlock("shell-access");
     },

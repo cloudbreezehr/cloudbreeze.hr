@@ -11,6 +11,7 @@ import {
 } from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
+import { shootingStarBoost } from "./real-sky/boost.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -976,7 +977,8 @@ export function createSky(starCount) {
       // Shooting stars — rare fast arcs across the sky.  Spawn rate
       // dampens with motion budget, so under reduced motion no new arcs
       // appear (in-flight ones still complete and fade out cleanly).
-      if (chance(SHOOTING.SPAWN_CHANCE)) {
+      // During a real meteor shower the sky actually falls more often.
+      if (chance(SHOOTING.SPAWN_CHANCE * shootingStarBoost())) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =

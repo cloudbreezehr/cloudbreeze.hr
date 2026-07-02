@@ -2,6 +2,7 @@ import { lerpColor, multiLerp, toRgba, resolvePalette } from "./colors.js";
 import { bindPointer } from "./pointer.js";
 import { UI_OVERLAY_SELECTOR } from "./selectors.js";
 import { createSky } from "./sky.js";
+import { createRealSkyLayer } from "./real-sky/canvas-layer.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
@@ -179,6 +180,7 @@ export function initCanvas(canvasEl, appearance, options) {
   const interactions = createInteractions();
 
   const sky = opts.stars ? createSky(opts.starCount) : null;
+  const realSky = createRealSkyLayer();
   const fury = createFury();
   let currentPal = resolvePalette(isDark ? "dark" : "light", null);
 
@@ -276,8 +278,11 @@ export function initCanvas(canvasEl, appearance, options) {
     // directly.
     const reducedMotion = prefersReducedMotion();
 
-    if (sky && !suppressSky)
+    if (sky && !suppressSky) {
       sky.draw(ctx, canvas, sp, pal, forces, scrollVelocity);
+      // The real moon shares the stars' layer and their scroll fade.
+      realSky.draw(ctx, canvas, sp, pal);
+    }
 
     // Click fury — lightning, aurora, meteors.
     if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);

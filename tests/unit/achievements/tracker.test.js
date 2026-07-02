@@ -1560,3 +1560,49 @@ describe("tracker — terminal handlers", () => {
     expect(storage.isUnlocked("cloud-native")).toBe(true);
   });
 });
+
+describe("tracker — real-sky handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks the celestial visits from the snapshot event", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("real-sky", {
+      moonFull: true,
+      shower: "perseids",
+      moment: "solstice",
+    });
+    expect(storage.isUnlocked("moonstruck")).toBe(true);
+    expect(storage.isUnlocked("star-shower")).toBe(true);
+    expect(storage.isUnlocked("sun-stands-still")).toBe(true);
+    expect(storage.isUnlocked("equal-night")).toBe(false);
+  });
+
+  it("unlocks equal-night on an equinox snapshot", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("real-sky", {
+      moonFull: false,
+      shower: null,
+      moment: "equinox",
+    });
+    expect(storage.isUnlocked("equal-night")).toBe(true);
+    expect(storage.isUnlocked("moonstruck")).toBe(false);
+  });
+
+  it("unlocks rain-check only when it is actually raining", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("real-weather", { code: 2, raining: false });
+    expect(storage.isUnlocked("rain-check")).toBe(false);
+    dispatchAchievement("real-weather", { code: 63, raining: true });
+    expect(storage.isUnlocked("rain-check")).toBe(true);
+  });
+});
