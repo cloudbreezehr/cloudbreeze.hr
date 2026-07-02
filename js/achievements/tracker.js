@@ -626,8 +626,9 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "sky-link-handoff"() {
-      // Both roles witness the crossing — the sender saw it leave, the
-      // receiver saw it arrive — so either unlocks the courier.
+      // Every linked window witnesses a crossing from the shared world
+      // schedule and fires its own event — whichever side the user is
+      // watching unlocks the courier.
       tryUnlock("star-courier");
     },
 

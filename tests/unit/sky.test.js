@@ -282,8 +282,8 @@ describe("sky.js star projection — solo vs world-anchored", () => {
   });
 });
 
-describe("framesToExit — linked-sky life extension", () => {
-  let framesToExit;
+describe("activeWorldArcs — schedule-driven shooting stars", () => {
+  let activeWorldArcs;
 
   beforeEach(async () => {
     // sky.js pulls in motion.js, whose module scope reads matchMedia.
@@ -293,37 +293,81 @@ describe("framesToExit — linked-sky life extension", () => {
       removeEventListener() {},
     }));
     vi.resetModules();
-    ({ framesToExit } = await import("../../js/sky.js"));
+    ({ activeWorldArcs } = await import("../../js/sky.js"));
   });
 
   afterEach(() => {
     delete window.matchMedia;
   });
 
-  const W = 1000;
-  const H = 800;
-  const LEN = 50;
+  const SEED = 0xc10d;
+  const TILE = { x: 0, y: 0, w: 1920, h: 1080 };
 
-  it("counts frames to the first bound along the heading, tail included", () => {
-    // Heading straight right from x=900 at 10 px/frame: must clear
-    // x = W + LEN, i.e. 150 px → 15 frames.
-    expect(framesToExit(900, 400, 0, 10, LEN, W, H)).toBe(15);
+  // Sample the schedule at maxLife-sized strides until an arc shows up —
+  // strictly deterministic, so the found tick is stable across runs.
+  function findTickWithArc() {
+    for (let tickTime = 0; tickTime < 200000; tickTime += 40) {
+      const arcs = activeWorldArcs(tickTime, TILE, SEED);
+      if (arcs.length > 0) return { tickTime, arcs };
+    }
+    throw new Error("schedule produced no arcs in the probed range");
+  }
+
+  it("replays identically — same seed, same instant, same arcs", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    expect(activeWorldArcs(tickTime, TILE, SEED)).toEqual(arcs);
   });
 
-  it("uses the nearer bound when the heading crosses two", () => {
-    // Down-right at 45° from near the bottom edge — the bottom bound is
-    // closer than the right one.
-    const angle = Math.PI / 4;
-    const speed = 10;
-    const framesToBottom = Math.ceil(
-      (H + LEN - 700) / (Math.sin(angle) * speed),
+  it("agrees between overlapping queries — one world, many windows", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const wide = activeWorldArcs(
+      tickTime,
+      { x: -1920, y: -1080, w: 3 * 1920, h: 3 * 1080 },
+      SEED,
     );
-    expect(framesToExit(100, 700, angle, speed, LEN, W, H)).toBe(
-      framesToBottom,
-    );
+    for (const arc of arcs) {
+      const twin = wide.find((a) => a.key === arc.key);
+      expect(twin).toBeDefined();
+      expect(twin.headX).toBe(arc.headX);
+      expect(twin.headY).toBe(arc.headY);
+    }
   });
 
-  it("is zero for a particle already past the bound moving away", () => {
-    expect(framesToExit(W + LEN, 400, 0, 10, LEN, W, H)).toBe(0);
+  it("flies each arc along a straight world line as time advances", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const arc = arcs[0];
+    const later = activeWorldArcs(tickTime + 1, TILE, SEED).find(
+      (a) => a.key === arc.key,
+    );
+    if (later) {
+      expect(later.headX - arc.headX).toBeCloseTo(
+        Math.cos(arc.angle) * arc.speed,
+        6,
+      );
+      expect(later.headY - arc.headY).toBeCloseTo(
+        Math.sin(arc.angle) * arc.speed,
+        6,
+      );
+    }
+    // Well past its lifetime the arc is gone everywhere.
+    const gone = activeWorldArcs(tickTime + arc.maxLife + 41, TILE, SEED).find(
+      (a) => a.key === arc.key,
+    );
+    expect(gone).toBeUndefined();
+  });
+
+  it("uses a different schedule for a different seed", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const other = activeWorldArcs(tickTime, TILE, SEED + 1);
+    expect(other.map((a) => a.key)).not.toEqual(arcs.map((a) => a.key));
+  });
+
+  it("never returns an arc older than its own lifetime", () => {
+    for (let tickTime = 0; tickTime < 20000; tickTime += 17) {
+      for (const arc of activeWorldArcs(tickTime, TILE, SEED)) {
+        expect(arc.life).toBeGreaterThanOrEqual(0);
+        expect(arc.life).toBeLessThanOrEqual(arc.maxLife);
+      }
+    }
   });
 });

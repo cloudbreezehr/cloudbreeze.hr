@@ -1772,9 +1772,9 @@ describe("tracker — sky-link handlers", () => {
     expect(storage.isUnlocked("triptych")).toBe(true);
   });
 
-  it("unlocks star-courier for either handoff role", async () => {
+  it("unlocks star-courier when an arc is seen crossing between windows", async () => {
     const { storage } = await startTracker();
-    dispatchAchievement("sky-link-handoff", { role: "sent" });
+    dispatchAchievement("sky-link-handoff", {});
     expect(storage.isUnlocked("star-courier")).toBe(true);
   });
 });

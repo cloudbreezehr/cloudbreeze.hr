@@ -11,12 +11,13 @@ import {
 } from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
-import { offerHandoff, setSpawner, isLinkActive } from "./sky-link/handoff.js";
 import { peerWorldRects } from "./sky-link/seam.js";
-import { worldTickTime } from "./world/clock.js";
+import { worldTickTime, tickToMs } from "./world/clock.js";
 import { WORLD_W, WORLD_H, floorMod, worldOrigin } from "./world/space.js";
+import { tickRoll, tickStream } from "./world/schedule.js";
 import { shootingStarBoost } from "./real-sky/boost.js";
-import { arrangementRandom } from "./daily/random.js";
+import { arrangementRandom, skySeedKey } from "./daily/random.js";
+import { hashString } from "./daily/seed.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -315,7 +316,8 @@ const SHOOTING = defineConstants("sky.shooting", {
     min: 0,
     max: 0.05,
     step: 0.001,
-    description: "Per-frame spawn probability",
+    description:
+      "Spawn probability — per frame solo, per sky tile per tick linked",
   },
   Y_MAX: {
     value: 0.4,
@@ -408,29 +410,99 @@ const SHOOTING = defineConstants("sky.shooting", {
     step: 0.05,
     description: "Hot-head halo opacity relative to the trail opacity",
   },
-  LINK_EXIT_SLACK: {
-    value: 12,
-    min: 0,
-    max: 60,
-    step: 1,
-    description: "Extra frames of life granted past a linked-sky exit",
-  },
 });
 
-// Frames until a particle at (x, y) heading `angle` at `speed` px/frame is
-// fully off a w×h canvas, tail included — the first bound crossed along its
-// heading. Linked skies extend an arc's life to at least this so it exits
-// alive instead of dying mid-flight, and an arriving arc gets enough life
-// to finish crossing.
-export function framesToExit(x, y, angle, speed, len, w, h) {
-  const dx = Math.cos(angle) * speed;
-  const dy = Math.sin(angle) * speed;
-  let frames = Infinity;
-  if (dx > 0) frames = Math.min(frames, (w + len - x) / dx);
-  else if (dx < 0) frames = Math.min(frames, (x + len) / -dx);
-  if (dy > 0) frames = Math.min(frames, (h + len - y) / dy);
-  else if (dy < 0) frames = Math.min(frames, (y + len) / -dy);
-  return Number.isFinite(frames) ? Math.ceil(Math.max(0, frames)) : 0;
+// ── World Arcs ──
+// While linked, shooting stars are world events: a seeded roll per sky
+// tile per world tick decides every spawn, and an arc's whole flight is a
+// pure function of its spawn slot. Every window replays the same schedule
+// from the same daily seed, so an arc crossing the gap between windows is
+// the same arc on both sides — no handoff, no messaging, no leader. A
+// window opening mid-flight recomputes the recent schedule and finds the
+// arc already in the air.
+
+// The daily seed, hashed once for the schedule.
+let _worldSeedHash = null;
+function worldSeedHash() {
+  if (_worldSeedHash === null) _worldSeedHash = hashString(skySeedKey());
+  return _worldSeedHash;
+}
+
+function arcMaxLifeTicks() {
+  return SHOOTING.LIFE_MIN + SHOOTING.LIFE_RANGE;
+}
+
+// Materialize the arc spawned at slot (i, j, spawnTick), or null when the
+// schedule rolls no spawn there.
+function arcAt(seedHash, i, j, spawnTick) {
+  const boost = shootingStarBoost(tickToMs(spawnTick));
+  if (tickRoll(seedHash, i, j, spawnTick) >= SHOOTING.SPAWN_CHANCE * boost) {
+    return null;
+  }
+  const r = tickStream(seedHash, i, j, spawnTick);
+  return {
+    key: `${i}:${j}:${spawnTick}`,
+    spawnTick,
+    x:
+      i * WORLD_W + (r() * SKY_SHARED.X_SPREAD + SKY_SHARED.X_OFFSET) * WORLD_W,
+    y: j * WORLD_H + r() * SHOOTING.Y_MAX * WORLD_H,
+    angle:
+      Math.PI * SKY_SHARED.ANGLE_MIN + r() * Math.PI * SHOOTING.ANGLE_RANGE,
+    speed: SHOOTING.SPEED_MIN + r() * SHOOTING.SPEED_RANGE,
+    len: SHOOTING.LEN_MIN + r() * SHOOTING.LEN_RANGE,
+    opacity: SHOOTING.OPACITY_MIN + r() * SHOOTING.OPACITY_RANGE,
+    maxLife: SHOOTING.LIFE_MIN + r() * SHOOTING.LIFE_RANGE,
+  };
+}
+
+/**
+ * Every scheduled arc alive at `tickTime` whose flight currently touches
+ * `rect` (world coordinates), oldest spawn first. Pure: two windows asking
+ * about overlapping rects at the same instant get the same arcs at the
+ * same world positions. Each arc carries its head position (`headX`,
+ * `headY`) and fractional `life` in ticks.
+ */
+export function activeWorldArcs(tickTime, rect, seedHash = worldSeedHash()) {
+  const maxLife = arcMaxLifeTicks();
+  // Farthest a flight can reach from its spawn tile, tail included — tiles
+  // beyond this can't produce an arc visible in `rect`.
+  const reach =
+    (SHOOTING.SPEED_MIN + SHOOTING.SPEED_RANGE) * maxLife +
+    (SHOOTING.LEN_MIN + SHOOTING.LEN_RANGE);
+  const tick = Math.floor(tickTime);
+  const i0 = Math.floor((rect.x - reach) / WORLD_W);
+  const i1 = Math.floor((rect.x + rect.w + reach) / WORLD_W);
+  const j0 = Math.floor((rect.y - reach) / WORLD_H);
+  const j1 = Math.floor((rect.y + rect.h + reach) / WORLD_H);
+  const arcs = [];
+  for (let i = i0; i <= i1; i++) {
+    for (let j = j0; j <= j1; j++) {
+      for (let s = tick - maxLife; s <= tick; s++) {
+        const arc = arcAt(seedHash, i, j, s);
+        if (!arc) continue;
+        const life = tickTime - arc.spawnTick;
+        if (life > arc.maxLife) continue;
+        const headX = arc.x + Math.cos(arc.angle) * arc.speed * life;
+        const headY = arc.y + Math.sin(arc.angle) * arc.speed * life;
+        // The tail trails the head by at most `len` — a head within that
+        // slack of the rect is the loosest flight that can still touch it.
+        if (
+          headX < rect.x - arc.len ||
+          headX > rect.x + rect.w + arc.len ||
+          headY < rect.y - arc.len ||
+          headY > rect.y + rect.h + arc.len
+        ) {
+          continue;
+        }
+        arc.life = life;
+        arc.headX = headX;
+        arc.headY = headY;
+        arcs.push(arc);
+      }
+    }
+  }
+  arcs.sort((a, b) => a.spawnTick - b.spawnTick || a.x - b.x);
+  return arcs;
 }
 
 // ── Aurora ──
@@ -818,51 +890,25 @@ export function createSky(starCount) {
   let anchoredPrev = false;
   let regimeFlipAt = -Infinity;
 
-  // Latest canvas dimensions, captured per draw — the arrival spawner below
-  // runs outside the draw call and needs them for its life extension.
-  let lastCanvasW = 0;
-  let lastCanvasH = 0;
+  // Arc heads drawn this frame, in canvas coordinates — the click
+  // hit-test's view of what the user can currently see.
+  const drawnArcs = [];
 
-  // Arcs arriving from a linked window continue in this sky: fill a free
-  // pool slot with the sender's kinematics, extending the lifetime so the
-  // arc can finish crossing (and possibly hand off yet again).
-  setSpawner((star) => {
-    if (lastCanvasW === 0) return;
-    const ss = shootingStars.find((s) => !s.active);
-    if (!ss) return;
-    ss.x = star.x;
-    ss.y = star.y;
-    ss.angle = star.angle;
-    ss.speed = star.speed;
-    ss.len = star.len;
-    ss.opacity = star.opacity;
-    ss.life = star.life;
-    ss.maxLife = Math.max(
-      star.maxLife,
-      star.life +
-        framesToExit(
-          star.x,
-          star.y,
-          star.angle,
-          star.speed,
-          star.len,
-          lastCanvasW,
-          lastCanvasH,
-        ) +
-        SHOOTING.LINK_EXIT_SLACK,
-    );
-    ss.active = true;
-  });
+  // Border-crossing witness state, keyed by world-arc slot: an arc whose
+  // head has visited both this window's slice and a linked peer's counts
+  // as a crossing. Every window detects it from world truth alone and
+  // fires its own achievement event — no messaging.
+  const arcCrossings = new Map();
 
   return {
     draw(ctx, canvas, sp, pal, forces, scrollVelocity = 0) {
-      lastCanvasW = canvas.width;
-      lastCanvasH = canvas.height;
       // Elapsed world ticks since the last frame — clamped at zero because
       // the wall clock can step backwards under NTP adjustment.
       const tickTime = worldTickTime();
       const dTicks = Math.max(0, tickTime - lastTickTime);
       lastTickTime = tickTime;
+      // Nothing is visible (or clickable) until this frame draws it.
+      drawnArcs.length = 0;
       const starVis = scrollFade(
         sp,
         0,
@@ -1188,11 +1234,36 @@ export function createSky(starCount) {
         dwellNearestStar.idleFlash = STARS.IDLE_FLASH_STRENGTH;
       }
 
-      // Shooting stars — rare fast arcs across the sky.  Spawn rate
+      // Draw one arc trail and record its head for the click hit-test.
+      const drawArcTrail = (hx, hy, angle, len, opacity, p) => {
+        // Fade in quickly, fade out slowly
+        const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
+        const op = opacity * fade * starVis;
+        const tailX = hx - Math.cos(angle) * len * Math.min(1, p * 3);
+        const tailY = hy - Math.sin(angle) * len * Math.min(1, p * 3);
+        drawTrail(
+          ctx,
+          hx,
+          hy,
+          tailX,
+          tailY,
+          pal.shootingColors,
+          op,
+          SHOOTING.LINE_WIDTH,
+          {
+            radius: SHOOTING.HEAD_GLOW_RADIUS,
+            alpha: SHOOTING.HEAD_GLOW_ALPHA,
+          },
+        );
+        drawnArcs.push({ x: hx, y: hy });
+      };
+
+      // Shooting stars — rare fast arcs across the sky.  Solo, this window
+      // rolls its own in local coordinates, exactly as ever: spawn rate
       // dampens with motion budget, so under reduced motion no new arcs
       // appear (in-flight ones still complete and fade out cleanly).
       // During a real meteor shower the sky actually falls more often.
-      if (chance(SHOOTING.SPAWN_CHANCE * shootingStarBoost())) {
+      if (!anchored && chance(SHOOTING.SPAWN_CHANCE * shootingStarBoost())) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =
@@ -1208,91 +1279,130 @@ export function createSky(starCount) {
             SHOOTING.OPACITY_MIN + Math.random() * SHOOTING.OPACITY_RANGE;
           ss.life = 0;
           ss.maxLife = SHOOTING.LIFE_MIN + Math.random() * SHOOTING.LIFE_RANGE;
-          // Under a linked sky the arc must reach the edge alive so it can
-          // continue in the window beyond it.
-          if (isLinkActive()) {
-            ss.maxLife = Math.max(
-              ss.maxLife,
-              framesToExit(
-                ss.x,
-                ss.y,
-                ss.angle,
-                ss.speed,
-                ss.len,
-                canvas.width,
-                canvas.height,
-              ) + SHOOTING.LINK_EXIT_SLACK,
-            );
-          }
           ss.active = true;
         }
       }
       shootingStars.forEach((ss) => {
         if (!ss.active) return;
-        ss.life++;
+        ss.life += dTicks;
         if (ss.life > ss.maxLife) {
           ss.active = false;
           return;
         }
-        const p = ss.life / ss.maxLife;
-        // Position is intentionally unscaled — once an arc is in flight
-        // it must complete instead of freezing mid-trail if the user
-        // toggles reduced motion mid-flight.  Spawn is gated by chance()
-        // above; this branch only runs for already-spawned arcs.
-        ss.x += Math.cos(ss.angle) * ss.speed;
-        ss.y += Math.sin(ss.angle) * ss.speed;
-        // Fully off-screen (tail included) the arc is invisible here for
-        // the rest of its life — offer it to a linked window heading its
-        // way and free the slot either way.
+        // Position advances by elapsed ticks, intentionally not motion-
+        // scaled — once an arc is in flight it must complete instead of
+        // freezing mid-trail if the user toggles reduced motion
+        // mid-flight.  Spawn is gated by chance() above; this branch only
+        // runs for already-spawned arcs.
+        ss.x += Math.cos(ss.angle) * ss.speed * dTicks;
+        ss.y += Math.sin(ss.angle) * ss.speed * dTicks;
+        // Fully off-screen (tail included) the arc is invisible for the
+        // rest of its life — free the slot.
         if (
           ss.x < -ss.len ||
           ss.x > canvas.width + ss.len ||
           ss.y < -ss.len ||
           ss.y > canvas.height + ss.len
         ) {
-          offerHandoff({
-            x: ss.x,
-            y: ss.y,
-            angle: ss.angle,
-            speed: ss.speed,
-            len: ss.len,
-            opacity: ss.opacity,
-            life: ss.life,
-            maxLife: ss.maxLife,
-          });
           ss.active = false;
           return;
         }
-        // Fade in quickly, fade out slowly
-        const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
-        const op = ss.opacity * fade * starVis;
-        const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
-        const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        drawTrail(
-          ctx,
+        drawArcTrail(
           ss.x,
           ss.y,
-          tailX,
-          tailY,
-          pal.shootingColors,
-          op,
-          SHOOTING.LINE_WIDTH,
-          {
-            radius: SHOOTING.HEAD_GLOW_RADIUS,
-            alpha: SHOOTING.HEAD_GLOW_ALPHA,
-          },
+          ss.angle,
+          ss.len,
+          ss.opacity,
+          ss.life / ss.maxLife,
         );
       });
+
+      // Linked, arcs come from the shared world schedule instead: every
+      // window shows the same flights at the same desktop positions, so a
+      // flight crosses the gap between windows as one continuous arc.
+      // Local leftovers above still finish after a link forms; the
+      // schedule owns every new spawn.  Skipped entirely under reduced
+      // motion — the world truth continues, this window just doesn't show
+      // it (mid-flight arcs vanish if the preference flips mid-flight).
+      if (anchored && !prefersReducedMotion()) {
+        const selfRect = {
+          x: origin.x,
+          y: origin.y,
+          w: canvas.width,
+          h: canvas.height,
+        };
+        const worldArcs = activeWorldArcs(tickTime, selfRect);
+        const drawCount = Math.min(worldArcs.length, SHOOTING.POOL_SIZE);
+        for (let k = 0; k < drawCount; k++) {
+          const arc = worldArcs[k];
+          drawArcTrail(
+            arc.headX - origin.x,
+            arc.headY - origin.y,
+            arc.angle,
+            arc.len,
+            arc.opacity,
+            arc.life / arc.maxLife,
+          );
+        }
+
+        // Border-crossing witness — mark which slices each live arc's
+        // head has visited, and celebrate the first arc seen on both
+        // sides.  Runs only while this window can actually witness it
+        // (visible star layer, motion allowed).
+        const peers = peerWorldRects();
+        const noteVisit = (arc, rect, field) => {
+          if (
+            arc.headX < rect.x ||
+            arc.headX > rect.x + rect.w ||
+            arc.headY < rect.y ||
+            arc.headY > rect.y + rect.h
+          ) {
+            return;
+          }
+          let entry = arcCrossings.get(arc.key);
+          if (!entry) {
+            entry = {
+              spawnTick: arc.spawnTick,
+              mine: false,
+              peer: false,
+              fired: false,
+            };
+            arcCrossings.set(arc.key, entry);
+          }
+          entry[field] = true;
+          if (!entry.fired && entry.mine && entry.peer) {
+            entry.fired = true;
+            window.dispatchEvent(
+              new CustomEvent("achievement", {
+                detail: { type: "sky-link-handoff" },
+              }),
+            );
+          }
+        };
+        for (const arc of worldArcs) noteVisit(arc, selfRect, "mine");
+        for (const peerRect of peers) {
+          for (const arc of activeWorldArcs(tickTime, peerRect)) {
+            noteVisit(arc, peerRect, "peer");
+          }
+        }
+        for (const [key, entry] of arcCrossings) {
+          if (tickTime - entry.spawnTick > arcMaxLifeTicks() + 1) {
+            arcCrossings.delete(key);
+          }
+        }
+      } else if (arcCrossings.size > 0) {
+        arcCrossings.clear();
+      }
     },
 
     // Hit-test a click (canvas-pixel coords) against the head of any
-    // in-flight shooting star.  Generous radius since the arcs move
-    // fast.  Returns true on a hit so the caller can reward the catch.
+    // shooting star drawn this frame.  Generous radius since the arcs
+    // move fast.  Returns true on a hit so the caller can reward the
+    // catch.
     clickShootingStar(cx, cy) {
-      for (const ss of shootingStars) {
-        if (!ss.active) continue;
-        const dx = ss.x - cx;
-        const dy = ss.y - cy;
+      for (const arc of drawnArcs) {
+        const dx = arc.x - cx;
+        const dy = arc.y - cy;
         if (dx * dx + dy * dy <= SHOOTING.HIT_RADIUS * SHOOTING.HIT_RADIUS) {
           return true;
         }

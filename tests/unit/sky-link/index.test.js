@@ -35,7 +35,7 @@ describe("sky-link/index", () => {
     document.body.innerHTML = "";
     document.body.className = "";
     vi.resetModules();
-    seam = await import("../../../js/sky-link/handoff.js");
+    seam = await import("../../../js/sky-link/seam.js");
     const mod = await import("../../../js/sky-link/index.js");
     SKY_LINK = mod.SKY_LINK;
     cleanup = mod.initSkyLink();
@@ -114,69 +114,13 @@ describe("sky-link/index", () => {
     expect(document.body.classList.contains("sky-linked")).toBe(false);
   });
 
-  it("hands off a star exiting toward a peer and reports the sent role", () => {
-    const events = achievementSpy();
-    injectPeer();
-    const accepted = seam.offerHandoff({
-      x: selfRect.w + 10,
-      y: selfRect.h / 2,
-      angle: 0,
-      speed: 8,
-      len: 50,
-      opacity: 0.5,
-      life: 10,
-      maxLife: 60,
-    });
-    expect(accepted).toBe(true);
-    const star = channel().sent.find((m) => m.kind === "star");
-    expect(star.star).toMatchObject({ angle: 0, speed: 8, life: 10 });
-    expect(events).toContainEqual({ type: "sky-link-handoff", role: "sent" });
-  });
-
-  it("refuses a handoff with no peer along the heading", () => {
-    injectPeer();
-    // Heading straight up — nothing is above.
-    const accepted = seam.offerHandoff({
-      x: selfRect.w / 2,
-      y: -10,
-      angle: -Math.PI / 2,
-      speed: 8,
-      len: 50,
-      opacity: 0.5,
-      life: 10,
-      maxLife: 60,
-    });
-    expect(accepted).toBe(false);
-    expect(channel().sent.find((m) => m.kind === "star")).toBeUndefined();
-  });
-
-  it("spawns an arriving star in local coordinates and reports the received role", () => {
-    const events = achievementSpy();
-    const spawn = vi.fn();
-    seam.setSpawner(spawn);
-    channel().onmessage({
-      data: {
-        kind: "star",
-        id: "peer-1",
-        star: {
-          dx: selfRect.x - 40,
-          dy: selfRect.y + 100,
-          angle: 0,
-          speed: 8,
-          len: 50,
-          opacity: 0.5,
-          life: 10,
-          maxLife: 60,
-        },
-      },
-    });
-    expect(spawn).toHaveBeenCalledWith(
-      expect.objectContaining({ x: -40, y: 100, angle: 0 }),
-    );
-    expect(events).toContainEqual({
-      type: "sky-link-handoff",
-      role: "received",
-    });
+  it("exposes live peer rects to the renderer through the seam", () => {
+    expect(seam.peerWorldRects()).toEqual([]);
+    const rect = peerRectRight();
+    injectPeer("peer-1", rect);
+    expect(seam.peerWorldRects()).toEqual([rect]);
+    channel().onmessage({ data: { kind: "bye", id: "peer-1" } });
+    expect(seam.peerWorldRects()).toEqual([]);
   });
 
   it("forwards local canvas clicks to peers as desktop-space impulses", () => {
@@ -240,6 +184,7 @@ describe("sky-link/index", () => {
     expect(channel().closed).toBe(true);
     expect(document.querySelector(".sky-link-glow")).toBeNull();
     expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(seam.peerWorldRects()).toEqual([]);
     cleanup = null;
   });
 });

@@ -2,9 +2,9 @@
 // Links every open window of the site on the same machine into one
 // continuous sky. Windows announce their desktop-space viewport rects over a
 // BroadcastChannel; while at least one peer is fresh, the body carries
-// `sky-linked`, the edges facing peer windows glow, shooting stars that fly
-// off-screen continue their arc in the window they were heading toward, and
-// click impulses ripple across into neighbouring viewports.
+// `sky-linked`, the edges facing peer windows glow, the renderer sees the
+// live peer rects through the seam and anchors the shared sky to the
+// desktop, and click impulses ripple across into neighbouring viewports.
 //
 // Everything is desktop-coordinate math from peers.js; this module owns the
 // transport (channel, heartbeats, expiry) and the DOM touchpoints (body
@@ -17,14 +17,11 @@ import {
   toLocal,
   sideToward,
   edgeGap,
-  rayTargetPeer,
 } from "./peers.js";
 import { viewportDesktopRect } from "../world/space.js";
-import { setOfferHandler, spawnHandoff, setLinkProbe } from "./handoff.js";
 import { setPeerRectsSource } from "./seam.js";
 import { HOLD } from "../interactions.js";
 import { hasCapability } from "../device.js";
-import { prefersReducedMotion } from "../motion.js";
 import { defineConstants } from "../dev/registry.js";
 
 const CHANNEL_NAME = "cloudbreeze-sky-link";
@@ -50,13 +47,6 @@ export const SKY_LINK = defineConstants("skyLink", {
     max: 15000,
     step: 100,
     description: "Peer expiry — silence longer than this drops the link (ms)",
-  },
-  HANDOFF_MAX_GAP_PX: {
-    value: 1400,
-    min: 0,
-    max: 5000,
-    step: 50,
-    description: "Farthest a particle travels off-screen to reach a peer (px)",
   },
   IMPULSE_REACH_PX: {
     value: 600,
@@ -170,63 +160,10 @@ export function initSkyLink() {
       refreshLinkState();
     } else if (msg.kind === "bye") {
       if (registry.remove(msg.id)) refreshLinkState();
-    } else if (msg.kind === "star") {
-      receiveStar(msg.star);
     } else if (msg.kind === "impulse") {
       receiveImpulse(msg.point);
     }
   };
-
-  // ── Shooting-star handoff ──
-  // Outbound: the sky offers a particle that flew off-screen; accept it when
-  // its heading reaches a peer viewport within the gap budget.
-  setOfferHandler((exit) => {
-    if (registry.count() === 0) return false;
-    const origin = toDesktop(exit, selfRect);
-    const target = rayTargetPeer(
-      origin,
-      exit.angle,
-      registry.all(),
-      SKY_LINK.HANDOFF_MAX_GAP_PX,
-    );
-    if (!target) return false;
-    channel.postMessage({
-      kind: "star",
-      id,
-      star: {
-        dx: origin.x,
-        dy: origin.y,
-        angle: exit.angle,
-        speed: exit.speed,
-        len: exit.len,
-        opacity: exit.opacity,
-        life: exit.life,
-        maxLife: exit.maxLife,
-      },
-    });
-    window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "sky-link-handoff", role: "sent" },
-      }),
-    );
-    return true;
-  });
-
-  // Inbound: continue the arc from the exact desktop point it left the
-  // sender — the hop across the physical gap between windows is invisible,
-  // which is what sells the effect. No new arcs under reduced motion (the
-  // same policy that gates local spawns), and none into hidden windows,
-  // where the paused render loop would hold the star until the tab returns.
-  function receiveStar(star) {
-    if (prefersReducedMotion() || document.hidden) return;
-    const local = toLocal({ x: star.dx, y: star.dy }, selfRect);
-    spawnHandoff({ ...star, x: local.x, y: local.y });
-    window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "sky-link-handoff", role: "received" },
-      }),
-    );
-  }
 
   // ── Cross-window click impulses ──
   // Local canvas clicks already announce themselves on the achievement
@@ -266,7 +203,6 @@ export function initSkyLink() {
     );
   }
 
-  setLinkProbe(() => registry.count() > 0);
   setPeerRectsSource(() => registry.all().map((peer) => peer.rect));
 
   const pollTimer = setInterval(() => {
@@ -287,8 +223,6 @@ export function initSkyLink() {
     window.removeEventListener("pagehide", onPageHide);
     channel.postMessage({ kind: "bye", id });
     channel.close();
-    setOfferHandler(null);
-    setLinkProbe(null);
     setPeerRectsSource(null);
     for (const el of glows.values()) el.remove();
     document.body.classList.remove("sky-linked");
