@@ -632,6 +632,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("star-courier");
     },
 
+    "sky-scrub"() {
+      tryUnlock("fixed-stars");
+    },
+
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },

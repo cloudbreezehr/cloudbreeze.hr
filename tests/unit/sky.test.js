@@ -280,6 +280,40 @@ describe("sky.js star projection — solo vs world-anchored", () => {
     linkUp();
     expect(mod.isWorldAnchored()).toBe(true);
   });
+
+  it("dispatches the sky-scrub discovery after enough window travel while linked", () => {
+    // The renderer reads its world origin from window metrics each frame;
+    // sliding screenX between draws simulates the user dragging the
+    // window across the desktop.
+    let screenX = 0;
+    Object.defineProperty(window, "screenX", {
+      configurable: true,
+      get: () => screenX,
+    });
+    const events = [];
+    const onAchievement = (e) => events.push(e.detail);
+    window.addEventListener("achievement", onAchievement);
+    try {
+      linkUp();
+      const sky = mod.createSky(30);
+      const canvas = makeFakeCanvas(800, 600);
+      const ctx = makeFakeCtx();
+      const pal = makeFakePalette();
+      const forces = makeForces(null, null);
+      const scrubbed = () => events.some((d) => d.type === "sky-scrub");
+      sky.draw(ctx, canvas, 0, pal, forces);
+      // Slide well past the threshold in a handful of steps.
+      const step = mod.WORLD_ANCHOR.SCRUB_TRAVEL_PX / 4;
+      for (let i = 0; i < 8 && !scrubbed(); i++) {
+        screenX += step;
+        sky.draw(ctx, canvas, 0, pal, forces);
+      }
+      expect(scrubbed()).toBe(true);
+    } finally {
+      window.removeEventListener("achievement", onAchievement);
+      delete window.screenX;
+    }
+  });
 });
 
 describe("activeWorldArcs — schedule-driven shooting stars", () => {

@@ -687,7 +687,7 @@ export const SKY_SHARED = defineConstants("sky.shared", {
 // constellation puzzle depends on. Linked, the tile repeats across the
 // desktop plane and each window draws its own world slice, so positions
 // agree across every linked window and the sky reads as one surface.
-const WORLD_ANCHOR = defineConstants("sky.world", {
+export const WORLD_ANCHOR = defineConstants("sky.world", {
   LINK_BLEND_MS: {
     value: 1200,
     min: 0,
@@ -695,6 +695,14 @@ const WORLD_ANCHOR = defineConstants("sky.world", {
     step: 100,
     description:
       "Crossfade between the window-folded and desktop-anchored star layouts (ms)",
+  },
+  SCRUB_TRAVEL_PX: {
+    value: 400,
+    min: 50,
+    max: 2000,
+    step: 25,
+    description:
+      "Cumulative window travel while linked that earns the fixed-stars discovery",
   },
 });
 
@@ -890,6 +898,11 @@ export function createSky(starCount) {
   let anchoredPrev = false;
   let regimeFlipAt = -Infinity;
 
+  // Window travel accumulated while linked, for the fixed-stars discovery.
+  let scrubOrigin = null;
+  let scrubTravel = 0;
+  let scrubFired = false;
+
   // Arc heads drawn this frame, in canvas coordinates — the click
   // hit-test's view of what the user can currently see.
   const drawnArcs = [];
@@ -1029,6 +1042,26 @@ export function createSky(starCount) {
           ? 1
           : sinceFlip / WORLD_ANCHOR.LINK_BLEND_MS;
       const origin = anchored || blend < 1 ? worldOrigin() : null;
+
+      // The payoff of desktop anchoring is discoverable: move the window
+      // and the sky holds still.  Enough cumulative travel while linked
+      // earns the discovery, once per page load.
+      if (anchored) {
+        if (scrubOrigin) {
+          scrubTravel +=
+            Math.abs(origin.x - scrubOrigin.x) +
+            Math.abs(origin.y - scrubOrigin.y);
+          if (!scrubFired && scrubTravel >= WORLD_ANCHOR.SCRUB_TRAVEL_PX) {
+            scrubFired = true;
+            window.dispatchEvent(
+              new CustomEvent("achievement", { detail: { type: "sky-scrub" } }),
+            );
+          }
+        }
+        scrubOrigin = { x: origin.x, y: origin.y };
+      } else {
+        scrubOrigin = null;
+      }
 
       // Comet-streak inputs are star-independent — computed once.
       const absVel = Math.abs(scrollVelocity);

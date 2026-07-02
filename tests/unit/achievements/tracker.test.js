@@ -1777,4 +1777,10 @@ describe("tracker — sky-link handlers", () => {
     dispatchAchievement("sky-link-handoff", {});
     expect(storage.isUnlocked("star-courier")).toBe(true);
   });
+
+  it("unlocks fixed-stars when the sky scrubs beneath a moving window", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-scrub");
+    expect(storage.isUnlocked("fixed-stars")).toBe(true);
+  });
 });

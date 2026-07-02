@@ -1598,6 +1598,16 @@ export const ACHIEVEMENTS = [
     requires: "multiwindow",
   },
   {
+    id: "fixed-stars",
+    title: "Fixed Stars",
+    description: "You moved the window; the sky stayed.",
+    hint: "While linked, drag a window around and watch the stars hold still",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+    requires: "multiwindow",
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",

@@ -206,7 +206,12 @@ describe("device reachability", () => {
   ];
   const HOVER_ONLY = ["idle-hands", "idle-watcher", "phosphor-burn"];
   // Multi-window play needs a desktop-style window manager.
-  const MULTIWINDOW_ONLY = ["parallel-skies", "star-courier", "triptych"];
+  const MULTIWINDOW_ONLY = [
+    "parallel-skies",
+    "star-courier",
+    "triptych",
+    "fixed-stars",
+  ];
   const GATED = [...KEYBOARD_ONLY, ...HOVER_ONLY, ...MULTIWINDOW_ONLY];
 
   it("tags exactly the capability-gated achievements with a requires", () => {
