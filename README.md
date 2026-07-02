@@ -13,7 +13,6 @@ The site started as a marketing page, but grew into something more: a playground
 - **Achievement system** — a "Cloudlog" that tracks exploration, mastery, theme-specific, and meta challenges. Event-based, so every interaction can become an achievement.
 - **Dev console** — a dockable, live-editable panel for the tunable constants behind every effect. Open with `#dev` in the URL or `Ctrl+Shift+Period`.
 - **Accessibility** — respects `prefers-reduced-motion`, narrates theme changes and spells to screen readers, keyboard-focusable controls.
-- **Installable** — a service worker makes the whole site work offline and installable as an app.
 
 ## Stack
 Pure HTML, CSS, and vanilla JavaScript. No frameworks, no build step, no dependencies — just open `index.html` in a browser.

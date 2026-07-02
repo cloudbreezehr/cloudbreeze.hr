@@ -16,7 +16,6 @@ js/
   colors.js                      `resolvePalette()` — per-appearance, per-theme (and per-combo) color overrides
   layers.js                      z-index registry exposed as CSS custom properties
   narration.js                   Screen-reader flavor prose for theme changes, combos, spells
-  pwa.js, sw.js (root)           Service-worker registration; offline cache + installability
   particles/                     Per-theme canvas particle classes (one file per theme)
   themes/                        Easter-egg themes: registry, factory, trigger strategies, one module per theme
                                  + alchemy.js — curated stacked-pair hybrid combos
