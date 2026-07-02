@@ -534,6 +534,17 @@ export function celebrateCompletion() {
 // and kept local: no upload, no social, just a keepsake.
 const CARD_W = 1200;
 const CARD_H = 630;
+// Each row's baseline y-coordinate and font size, top to bottom.
+const TITLE_Y = 150;
+const TITLE_FONT_PX = 32;
+const HEADLINE_Y = 320;
+const HEADLINE_FONT_PX = 82;
+const STATS_Y = 400;
+const STATS_FONT_PX = 30;
+const DATE_Y = 470;
+const DATE_FONT_PX = 22;
+const BEST_RUN_Y = 530;
+const BEST_RUN_FONT_PX = 26;
 
 function renderCompletionCard() {
   const canvas = document.createElement("canvas");
@@ -553,27 +564,31 @@ function renderCompletionCard() {
 
   ctx.textAlign = "center";
   ctx.fillStyle = "#7dbfe8";
-  ctx.font = "600 32px 'DM Mono', monospace";
-  ctx.fillText("CLOUDBREEZE · CLOUDLOG", CARD_W / 2, 150);
+  ctx.font = `600 ${TITLE_FONT_PX}px 'DM Mono', monospace`;
+  ctx.fillText("CLOUDBREEZE · CLOUDLOG", CARD_W / 2, TITLE_Y);
 
   ctx.fillStyle = "#ffffff";
-  ctx.font = "800 82px 'Syne', sans-serif";
-  ctx.fillText("Every secret found", CARD_W / 2, 320);
+  ctx.font = `800 ${HEADLINE_FONT_PX}px 'Syne', sans-serif`;
+  ctx.fillText("Every secret found", CARD_W / 2, HEADLINE_Y);
 
   ctx.fillStyle = "rgba(255,255,255,0.72)";
-  ctx.font = "400 30px 'DM Mono', monospace";
-  ctx.fillText(`${count} achievements · ${points} points`, CARD_W / 2, 400);
+  ctx.font = `400 ${STATS_FONT_PX}px 'DM Mono', monospace`;
+  ctx.fillText(`${count} achievements · ${points} points`, CARD_W / 2, STATS_Y);
 
   ctx.fillStyle = "rgba(255,255,255,0.4)";
-  ctx.font = "400 22px 'DM Mono', monospace";
-  ctx.fillText(new Date().toLocaleDateString(), CARD_W / 2, 470);
+  ctx.font = `400 ${DATE_FONT_PX}px 'DM Mono', monospace`;
+  ctx.fillText(new Date().toLocaleDateString(), CARD_W / 2, DATE_Y);
 
   // A timed run's personal best earns a line on the card.
   const bestMs = getPref(BEST_RUN_PREF);
   if (typeof bestMs === "number") {
     ctx.fillStyle = "rgba(255,211,106,0.85)";
-    ctx.font = "400 26px 'DM Mono', monospace";
-    ctx.fillText(`fastest run ${formatRunTime(bestMs)}`, CARD_W / 2, 530);
+    ctx.font = `400 ${BEST_RUN_FONT_PX}px 'DM Mono', monospace`;
+    ctx.fillText(
+      `fastest run ${formatRunTime(bestMs)}`,
+      CARD_W / 2,
+      BEST_RUN_Y,
+    );
   }
   return canvas;
 }
