@@ -1,0 +1,157 @@
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { createCommands, executeLine } from "../../../js/terminal/commands.js";
+
+// Commands are pure over injected deps; each test builds a small fake world
+// and reads back the printed lines and the calls the command routed out.
+
+describe("terminal/commands", () => {
+  let deps;
+  let commands;
+  let themeState;
+
+  function run(line, ctx = { history: [] }) {
+    return executeLine(line, commands, ctx);
+  }
+
+  beforeEach(() => {
+    themeState = new Map([
+      ["frozen", false],
+      ["matrix", true],
+    ]);
+    deps = {
+      themes: {
+        list: () =>
+          [...themeState].map(([id, active]) => ({
+            id,
+            label: id,
+            active,
+          })),
+        activate: vi.fn((id) => themeState.set(id, true)),
+        deactivate: vi.fn((id) => themeState.set(id, false)),
+        clearAll: vi.fn(() => {
+          const removed = [...themeState]
+            .filter(([, active]) => active)
+            .map(([id]) => id);
+          for (const id of removed) themeState.set(id, false);
+          return removed;
+        }),
+      },
+      spellWords: () => [{ word: "BOOM", hint: "" }],
+      castWord: vi.fn((word) => word === "BOOM" || word === "DEPLOY"),
+      stats: () => ({ points: 120, unlocked: 7, total: 40 }),
+      qualityTier: () => "high",
+      openCheatsheet: vi.fn(),
+      emit: vi.fn(),
+    };
+    commands = createCommands(deps);
+  });
+
+  it("help lists every command exactly once", () => {
+    const { lines } = run("help");
+    for (const c of commands) {
+      expect(lines.filter((l) => l.trim().startsWith(c.name))).toHaveLength(1);
+    }
+  });
+
+  it("unknown commands get the classic scolding", () => {
+    const { lines } = run("frobnicate --hard");
+    expect(lines).toEqual(["sky: command not found: frobnicate"]);
+  });
+
+  it("empty input prints nothing", () => {
+    expect(run("   ")).toEqual({ lines: [] });
+  });
+
+  it("whoami reports secrets and points", () => {
+    const { lines } = run("whoami");
+    expect(lines[0]).toContain("7/40 secrets");
+    expect(lines[0]).toContain("120 points");
+  });
+
+  it("ls secrets/ is denied", () => {
+    const { lines } = run("ls secrets/");
+    expect(lines[0]).toContain("Permission denied");
+  });
+
+  it("ls themes lists the registry ids", () => {
+    const { lines } = run("ls themes");
+    expect(lines[0]).toContain("frozen");
+    expect(lines[0]).toContain("matrix");
+  });
+
+  it("man opens the book of secrets", () => {
+    run("man cloudbreeze");
+    expect(deps.openCheatsheet).toHaveBeenCalled();
+  });
+
+  it("plain sudo is denied and reported", () => {
+    const { lines } = run("sudo make me a sandwich");
+    expect(lines.join(" ")).toContain("not in the sudoers file");
+    expect(deps.emit).toHaveBeenCalledWith("terminal-sudo-denied");
+  });
+
+  it("sudo rm -rf / clears every active theme", () => {
+    const { lines } = run("sudo rm -rf /");
+    expect(deps.themes.clearAll).toHaveBeenCalled();
+    expect(deps.emit).toHaveBeenCalledWith("terminal-rm-rf");
+    expect(lines).toContain("removed '/sky/themes/matrix'");
+    expect(lines.join(" ")).toContain("Operation not permitted");
+  });
+
+  it("sudo rm with split flags still counts as the classic", () => {
+    run("sudo rm -r -f /");
+    expect(deps.emit).toHaveBeenCalledWith("terminal-rm-rf");
+  });
+
+  it("sudo rm on a non-root path stays a sudoers scolding", () => {
+    const { lines } = run("sudo rm -rf /tmp");
+    expect(lines.join(" ")).toContain("not in the sudoers file");
+  });
+
+  it("kubectl get themes prints a status table", () => {
+    const { lines } = run("kubectl get themes");
+    expect(lines[0]).toMatch(/NAME\s+READY\s+STATUS/);
+    expect(lines.find((l) => l.startsWith("matrix"))).toContain("Running");
+    expect(lines.find((l) => l.startsWith("frozen"))).toContain("Dormant");
+    expect(deps.emit).toHaveBeenCalledWith("terminal-kubectl");
+  });
+
+  it("kubectl apply activates a dormant theme", () => {
+    const { lines } = run("kubectl apply -f frozen");
+    expect(deps.themes.activate).toHaveBeenCalledWith("frozen");
+    expect(lines[0]).toBe("theme.cloudbreeze.hr/frozen configured");
+  });
+
+  it("kubectl apply on a running theme reports unchanged", () => {
+    const { lines } = run("kubectl apply -f matrix");
+    expect(deps.themes.activate).not.toHaveBeenCalled();
+    expect(lines[0]).toContain("unchanged");
+  });
+
+  it("kubectl delete deactivates a running theme", () => {
+    const { lines } = run("kubectl delete theme matrix");
+    expect(deps.themes.deactivate).toHaveBeenCalledWith("matrix");
+    expect(lines[0]).toBe('theme "matrix" deleted');
+  });
+
+  it("cast releases a known spell and rejects an unknown one", () => {
+    expect(run("cast boom").lines[0]).toBe("BOOM released.");
+    expect(deps.castWord).toHaveBeenCalledWith("BOOM");
+    expect(run("cast xyzzy").lines[0]).toContain("unknown spell 'XYZZY'");
+  });
+
+  it("deploy ships via the DEPLOY spell", () => {
+    run("deploy");
+    expect(deps.castWord).toHaveBeenCalledWith("DEPLOY");
+  });
+
+  it("history echoes the session's numbered commands", () => {
+    const { lines } = run("history", { history: ["ls", "help"] });
+    expect(lines).toEqual(["  1  ls", "  2  help"]);
+  });
+
+  it("clear and exit flag the overlay actions", () => {
+    expect(run("clear").clear).toBe(true);
+    expect(run("exit").close).toBe(true);
+  });
+});
