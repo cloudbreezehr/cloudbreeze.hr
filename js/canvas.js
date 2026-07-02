@@ -313,7 +313,7 @@ export function initCanvas(canvasEl, appearance, options) {
     const drawVelocity = scaled(scrollVelocity);
     interactions.updateHold(forces, now);
     if (!suppressAtmosphere) {
-      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky);
+      atmosphere.draw(sp, drawVelocity, pal, forces, isBlocky, !!theme);
     }
 
     // Theme-owned ambient particles. Each registered theme decides what

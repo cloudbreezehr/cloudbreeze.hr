@@ -367,7 +367,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
       : [];
 
   return {
-    draw(sp, scrollVelocity, pal, forces, blocky) {
+    draw(sp, scrollVelocity, pal, forces, blocky, hasTheme) {
       // Advance wind phase and derive per-frame drift biases.  Wrapped to
       // [0, 2π] to avoid unbounded float growth.
       _windPhase = (_windPhase + scaled(WIND.PHASE_SPEED)) % (Math.PI * 2);
@@ -481,7 +481,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         let hc = pal.horizonColor;
         // On the default (unthemed) sky, warm the horizon toward sunrise as the
         // viewport descends to ground level; active themes keep their horizon.
-        if (!document.body.dataset.activeTheme && sp > HORIZON.WARM_START) {
+        if (!hasTheme && sp > HORIZON.WARM_START) {
           const t = (sp - HORIZON.WARM_START) / (1 - HORIZON.WARM_START);
           hc = lerpColor(hc, HORIZON_SUNRISE, t * HORIZON.WARM_STRENGTH);
         }
