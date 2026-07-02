@@ -54,6 +54,10 @@ import {
 // ── Panel Constants ──
 const PANEL_SLIDE_MS = 300;
 const COMPACT_PREF = "compactCards";
+// The help dial is progressive disclosure, like the sound toggle: a first-ever
+// visitor gets the pure discovery experience, and it appears once they've come
+// back on a later day.
+const HELP_CONTROL_MIN_VISIT_DAYS = 2;
 
 // ── State ──
 let panelEl = null;
@@ -475,35 +479,37 @@ function buildPanel(onHide) {
   header.appendChild(progressStrip);
   header.appendChild(lastUnlocked);
 
-  // Help level — Off keeps hidden achievements anonymous; Clues reveals their
-  // flavor (and surfaces hints on non-hidden ones); Hints also reveals how to
-  // earn the hidden ones.
-  const hintToggle = document.createElement("label");
-  hintToggle.className = "achievement-hint-toggle";
-  hintToggle.title =
-    "How much help to show on locked achievements — Off: hidden ones stay anonymous; Clues: reveal their flavor; Hints: reveal how to earn them";
-  hintToggle.appendChild(document.createTextNode("Help "));
-  const helpSelect = document.createElement("select");
-  helpSelect.className = "achievement-help-level";
-  for (const [value, label] of [
-    ["off", "Off"],
-    ["clues", "Clues"],
-    ["hints", "Hints"],
-  ]) {
-    const opt = document.createElement("option");
-    opt.value = value;
-    opt.textContent = label;
-    helpSelect.appendChild(opt);
-  }
-  helpSelect.value = getHelpLevel();
-  helpSelect.addEventListener("change", () => {
-    setHelpLevel(helpSelect.value);
-  });
-  hintToggle.appendChild(helpSelect);
-
   const headerControls = document.createElement("div");
   headerControls.className = "achievement-header-controls";
-  headerControls.appendChild(hintToggle);
+
+  // Help level — Off keeps hidden achievements anonymous; Clues reveals their
+  // flavor (and surfaces hints on non-hidden ones); Hints also reveals how to
+  // earn the hidden ones. Withheld until a return visit (see the constant).
+  if (storage.visitedDayCount() >= HELP_CONTROL_MIN_VISIT_DAYS) {
+    const hintToggle = document.createElement("label");
+    hintToggle.className = "achievement-hint-toggle";
+    hintToggle.title =
+      "How much help to show on locked achievements — Off: hidden ones stay anonymous; Clues: reveal their flavor; Hints: reveal how to earn them";
+    hintToggle.appendChild(document.createTextNode("Help "));
+    const helpSelect = document.createElement("select");
+    helpSelect.className = "achievement-help-level";
+    for (const [value, label] of [
+      ["off", "Off"],
+      ["clues", "Clues"],
+      ["hints", "Hints"],
+    ]) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      helpSelect.appendChild(opt);
+    }
+    helpSelect.value = getHelpLevel();
+    helpSelect.addEventListener("change", () => {
+      setHelpLevel(helpSelect.value);
+    });
+    hintToggle.appendChild(helpSelect);
+    headerControls.appendChild(hintToggle);
+  }
 
   const markReadBtn = document.createElement("button");
   markReadBtn.className = "achievement-mark-read";

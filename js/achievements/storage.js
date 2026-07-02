@@ -305,6 +305,12 @@ export function currentStreak() {
   return streak;
 }
 
+// Distinct UTC days the visitor has been recorded on (the session-day set the
+// tracker maintains). Two or more means they've returned on a later day.
+export function visitedDayCount() {
+  return (getState().counters.sessionDays || []).length;
+}
+
 export function setCounter(key, value) {
   getState().counters[key] = value;
   save();

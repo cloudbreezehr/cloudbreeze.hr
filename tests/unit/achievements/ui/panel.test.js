@@ -293,9 +293,23 @@ describe("achievements/ui/panel", () => {
   });
 
   describe("help level control", () => {
-    it("wires the select to cards.setHelpLevel", () => {
+    // The dial is progressive disclosure — it only appears once the visitor
+    // has returned on a later day (two distinct session days recorded).
+    function markReturningVisitor() {
+      storage.getState().counters.sessionDays = ["2026-05-09", "2026-05-10"];
+    }
+
+    it("is withheld on a first-ever visit", () => {
+      // storage.load() left sessionDays empty — a first-time visitor.
+      mod.openPanel();
+      expect(document.querySelector(".achievement-help-level")).toBeNull();
+    });
+
+    it("appears for a returning visitor and wires the select to cards.setHelpLevel", () => {
+      markReturningVisitor();
       mod.openPanel();
       const select = document.querySelector(".achievement-help-level");
+      expect(select).not.toBeNull();
       expect(select.value).toBe("off");
       select.value = "clues";
       select.dispatchEvent(new Event("change", { bubbles: true }));

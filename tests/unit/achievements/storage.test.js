@@ -213,6 +213,14 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("visitedDayCount", () => {
+    it("is 0 for a first-ever visit and counts distinct recorded days", () => {
+      expect(storage.visitedDayCount()).toBe(0);
+      storage.getState().counters.sessionDays = ["2026-06-02", "2026-06-03"];
+      expect(storage.visitedDayCount()).toBe(2);
+    });
+  });
+
   describe("preferences", () => {
     it("getPref returns the fallback when unset", () => {
       expect(storage.getPref("revealHints", false)).toBe(false);
