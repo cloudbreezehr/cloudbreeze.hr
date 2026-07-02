@@ -139,9 +139,6 @@ body.light-appearance :focus-visible {
 
 html {
   scroll-behavior: smooth;
-  /* Suppress the grey tap-flash on touch — the custom cursor is off on coarse
-     pointers, and :active states carry the press feedback instead. */
-  -webkit-tap-highlight-color: transparent;
 }
 
 body {

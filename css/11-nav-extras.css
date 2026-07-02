@@ -136,15 +136,3 @@ nav.nav-light .sound-toggle::after {
   background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-
-/* Touch: expand the icon-button tap targets to the 44px minimum. They're
-   flex-centered, so the icon stays put and only the hit area grows; the
-   compact desktop (fine-pointer) size is untouched. */
-@media (pointer: coarse) {
-  .appearance-toggle,
-  .sound-toggle,
-  .nav-burger {
-    min-width: 44px;
-    min-height: 44px;
-  }
-}
