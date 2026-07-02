@@ -243,3 +243,81 @@ describe("sky-link/index", () => {
     cleanup = null;
   });
 });
+
+describe("sky-link/index — inert environments", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    delete window.matchMedia;
+    document.body.innerHTML = "";
+  });
+
+  it("stays fully inert on a touch-only device", async () => {
+    vi.useFakeTimers();
+    channels = [];
+    vi.stubGlobal("BroadcastChannel", FakeBroadcastChannel);
+    // (hover: none) matches — the device can't place windows side by side.
+    window.matchMedia = vi.fn((query) => ({
+      matches: query === "(hover: none)",
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    document.body.innerHTML = "";
+    vi.resetModules();
+    const mod = await import("../../../js/sky-link/index.js");
+    const cleanup = mod.initSkyLink();
+    expect(channels).toHaveLength(0);
+    expect(document.querySelector(".sky-link-glow")).toBeNull();
+    cleanup();
+  });
+});
+
+describe("sky-link/index — hidden windows", () => {
+  let cleanup;
+  let hidden;
+
+  beforeEach(async () => {
+    vi.useFakeTimers();
+    channels = [];
+    hidden = false;
+    vi.stubGlobal("BroadcastChannel", FakeBroadcastChannel);
+    // The touch-only test above deletes its stubbed matchMedia, which on
+    // happy-dom removes it for the rest of this file — restore a benign one.
+    window.matchMedia = vi.fn((query) => ({
+      matches: false,
+      media: query,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    Object.defineProperty(document, "hidden", {
+      configurable: true,
+      get: () => hidden,
+    });
+    document.body.innerHTML = "";
+    vi.resetModules();
+    const mod = await import("../../../js/sky-link/index.js");
+    cleanup = mod.initSkyLink();
+  });
+
+  afterEach(() => {
+    cleanup?.();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+    delete document.hidden;
+  });
+
+  it("goes quiet while hidden and resumes announcing when visible", async () => {
+    const { SKY_LINK } = await import("../../../js/sky-link/index.js");
+    const rects = () => channels[0].sent.filter((m) => m.kind === "rect");
+    expect(rects()).toHaveLength(1);
+
+    hidden = true;
+    vi.advanceTimersByTime(SKY_LINK.HEARTBEAT_MS * 3);
+    expect(rects()).toHaveLength(1);
+
+    hidden = false;
+    vi.advanceTimersByTime(SKY_LINK.HEARTBEAT_MS + SKY_LINK.POLL_MS);
+    expect(rects().length).toBeGreaterThan(1);
+  });
+});

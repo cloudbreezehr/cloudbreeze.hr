@@ -22,6 +22,7 @@ import {
 } from "./peers.js";
 import { setOfferHandler, spawnHandoff, setLinkProbe } from "./handoff.js";
 import { HOLD } from "../interactions.js";
+import { hasCapability } from "../device.js";
 import { prefersReducedMotion } from "../motion.js";
 import { defineConstants } from "../dev/registry.js";
 
@@ -89,6 +90,10 @@ function randomId() {
 
 export function initSkyLink() {
   if (typeof BroadcastChannel === "undefined") return () => {};
+  // Touch-only devices can't place windows side by side — two tabs there
+  // would still broadcast and "link", glowing at an edge no other window
+  // can ever occupy.
+  if (!hasCapability("multiwindow")) return () => {};
 
   const id = randomId();
   const channel = new BroadcastChannel(CHANNEL_NAME);
@@ -144,6 +149,9 @@ export function initSkyLink() {
   }
 
   function announce(now) {
+    // A hidden window isn't visibly beside anything — go quiet and let the
+    // peers' TTL drop this side of the link until the window is seen again.
+    if (document.hidden) return;
     selfRect = viewportDesktopRect();
     const json = JSON.stringify(selfRect);
     if (json === lastSentJson && now - lastSentAt < SKY_LINK.HEARTBEAT_MS)
