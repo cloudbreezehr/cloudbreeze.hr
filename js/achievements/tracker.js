@@ -678,6 +678,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("any-percent");
     },
 
+    "pwa-installed"() {
+      tryUnlock("homesteader");
+    },
+
     "passport-import"() {
       tryUnlock("passport-stamped");
       // Imported unlocks can complete collections and sets — re-evaluate

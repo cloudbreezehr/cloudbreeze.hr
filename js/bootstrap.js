@@ -164,6 +164,9 @@ const MODULES = [
   // Daily sky — time-travel detection for shared sky links
   { path: "./daily/index.js", init: (m) => m.initDailySky() },
 
+  // PWA — service worker + install detection
+  { path: "./pwa.js", init: (m) => m.initPwa() },
+
   // Themes
   { path: "./themes/upside-down.js", init: (m) => m.initUpsideDown() },
   { path: "./themes/frozen.js", init: (m) => m.initFrozen() },
