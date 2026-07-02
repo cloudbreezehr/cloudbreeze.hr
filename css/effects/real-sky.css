@@ -1,0 +1,17 @@
+/* ── Real-Sky Phase Tint ── */
+
+/* A gentle cast over the canvas matching the visitor's actual sky —
+   golden-hour warmth, twilight violet, night depth. Only while no theme
+   owns the canvas filter: an active theme's look always wins. */
+body:not([data-active-theme])[data-sky-phase] #bg-canvas {
+  transition: filter 3s ease;
+}
+body:not([data-active-theme])[data-sky-phase="golden"] #bg-canvas {
+  filter: saturate(1.12) sepia(0.1) brightness(1.03);
+}
+body:not([data-active-theme])[data-sky-phase="twilight"] #bg-canvas {
+  filter: saturate(1.1) hue-rotate(-10deg);
+}
+body:not([data-active-theme])[data-sky-phase="night"] #bg-canvas {
+  filter: saturate(1.06) brightness(0.97);
+}
