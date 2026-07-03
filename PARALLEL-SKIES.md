@@ -81,10 +81,12 @@ that needs no leader).
    becomes visibly continuous — stars align across the gap.
 2. ✅ Input bus: remote pointers as force sources + cursor ghosts. Wells,
    orbits, drags all cross the border.
-3. ◐ Effect mirroring at the dispatch seams. ✅ **fury/clicks** — the well
-   aura/orbit/blast and click bursts mirror into every window the effect
-   touches, through one `effect` broadcast seam. _Remaining:_ speller casts,
-   fury bolts/aurora/meteors, `toggleTheme`.
+3. ◐ Effect mirroring at the dispatch seams. ✅ **clicks/wells** (aura/orbit/
+   blast + bursts, via the `effect` seam) and ✅ **speller casts** (a spell
+   blooms across every window, via the `cast` seam). _Deferred:_ fury
+   bolts/aurora/meteors (entangled with the per-window fury accumulator +
+   achievements — and a click's force+burst already crosses) and `toggleTheme`
+   (independent per-window themes have their own charm — revisit as an opt-in).
 4. Viewport mode for secondary windows (chrome fades; pure sky).
 5. ◐ ✅ **scroll-parallax policy** (frozen while linked, tunable) + ✅
    **world-anchored motes** (deterministic dust, present at any scroll depth,
@@ -265,13 +267,31 @@ architecture, is what made the field test underwhelm.
   `effect` → `sky-link-effect` seam (`canvas.js` ↔ `sky-link/index.js`), landing
   in each window as both a force and its visible burst. This replaces the old
   click-only `impulse` path (`IMPULSE_*` → `EFFECT_*`).
-- **The ghost is the cursor continuing.** `js/sky-link/ghosts.js` now draws a
-  core dot + ring + glow in `pal.cursorGhost`, swelling with the stronger of the
-  peer's hold or well charge, so it reads as one cursor gliding across the seam.
+- **Spell casts mirror too.** An incantation dispatches `sky-cast`; the transport
+  broadcasts a `cast` (word + desktop origin + charge), and every window re-casts
+  the word locally at the translated origin. No reach limit — screen-wide spells
+  (SNOW, CONFETTI, flashes) fill every pane. The remote re-cast calls `cast()`
+  directly, so it neither re-broadcasts nor re-fires the caster's achievements.
+- **The ghost is the cursor continuing.** `js/sky-link/ghosts.js` draws a core
+  dot + ring + glow in `pal.cursorGhost`, swelling with the stronger of the
+  peer's hold or well charge. It eases position (smoothing the send cadence into
+  the render's) so it glides, not steps. And when a peer's ghost is inside this
+  viewport — the real mouse is over us but owned by the peer that captured the
+  drag, so our own custom cursor is frozen/stale — `canvas.js` sets
+  `body.peer-pointer-inside` and CSS hides the local cursor, leaving the ghost as
+  the single cursor gliding across the seam.
 - **New achievement:** `distant-well` — a linked window's gravity well blooms in
   yours (dispatched from the interactions draw seam when a remote aura renders
   above a threshold).
 
-Remaining seams for a later pass: speller casts, fury bolts/aurora/meteors, and
-`toggleTheme` (phase 3 leftovers); viewport mode (phase 4); toast routing and
-leader hardening (phase 5).
+Remaining seams for a later pass — deliberately, not for lack of a path:
+- **Fury mirroring** (bolts/aurora/meteors): fury is a per-window _accumulator_
+  (clicks build tiers that unlock lightning → meteors), so mirroring a bolt
+  faithfully means mirroring that state and would inflate the peer's fury
+  achievements; meteors are already world-shared via the schedule; a click
+  already crosses as force + burst. Low marginal payoff, real entanglement.
+- **`toggleTheme` sync**: independent per-window themes read as their own charm;
+  if wanted, do it as an explicit opt-in toggle rather than always-on.
+- **Viewport / chrome-drop mode** (phase 4): a secondary window sheds its chrome
+  to become a pure sky pane — a focused UI pass of its own.
+- **Toast routing + leader hardening** (phase 5): low visible payoff.
