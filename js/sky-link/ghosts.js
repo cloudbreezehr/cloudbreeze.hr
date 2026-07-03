@@ -1,15 +1,19 @@
 // ── Cursor Ghosts ──
-// Soft canvas presence for every linked window's pointer: a faint halo
-// drifting where the neighbour's cursor is, brightening and widening while
-// they charge a hold or a well. Opacity eases per frame, so a pointer that
-// vanishes from the live list (idle, unlinked, gone quiet, pruned) fades
-// out from its last known spot instead of popping. Liveness is the seam's
-// to decide: a pointer present in `remotes` is live, full stop — the same
-// list that drives its force, so the ghost and the force it represents
-// appear and disappear together. This module also witnesses the moment a
-// neighbour's drag reaches inside this viewport — the ghost-hand discovery.
+// Every linked window's pointer, redrawn here as the same cursor continuing
+// across the seam: a bright core dot inside a ring, wrapped in a soft glow —
+// the site's own cursor shape, not a separate blob. The OS hands the real
+// pointer to only one window at a time, so as the mouse leaves the neighbour
+// its ghost here takes over, handing off to this window's own cursor when the
+// mouse arrives. Dot, ring and glow brighten and widen while the neighbour
+// charges a hold or a well. Opacity eases per frame, so a pointer that
+// vanishes from the live list (idle, unlinked, gone quiet, pruned) fades out
+// from its last known spot instead of popping. Liveness is the seam's to
+// decide: a pointer present in `remotes` is live, full stop — the same list
+// that drives its force, so the ghost and the force it represents appear and
+// disappear together. This module also witnesses the moment a neighbour's drag
+// reaches inside this viewport — the ghost-hand discovery.
 
-import { drawHaloParticle } from "../canvas-utils.js";
+import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 
 const GHOST = defineConstants("skyLink.ghost", {
@@ -62,6 +66,42 @@ const GHOST = defineConstants("skyLink.ghost", {
     step: 0.01,
     description: "Gradient midpoint opacity multiplier for the ghost halo",
   },
+  RING_RADIUS: {
+    value: 12,
+    min: 4,
+    max: 40,
+    step: 1,
+    description: "Ghost cursor-ring radius at rest (px)",
+  },
+  RING_WIDTH: {
+    value: 1.5,
+    min: 0.5,
+    max: 4,
+    step: 0.1,
+    description: "Ghost cursor-ring stroke width (px)",
+  },
+  RING_ALPHA: {
+    value: 0.6,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description: "Ghost ring opacity relative to the ghost's eased opacity",
+  },
+  DOT_RADIUS: {
+    value: 3.5,
+    min: 1,
+    max: 12,
+    step: 0.5,
+    description: "Ghost cursor core-dot radius (px)",
+  },
+  DOT_ALPHA: {
+    value: 1.4,
+    min: 0.5,
+    max: 3,
+    step: 0.1,
+    description:
+      "Ghost core-dot opacity relative to the ghost's opacity (capped at 1)",
+  },
 });
 
 // Below this displayed opacity a ghost is invisible: skip the draw and
@@ -69,7 +109,7 @@ const GHOST = defineConstants("skyLink.ghost", {
 const MIN_VISIBLE = 0.01;
 
 export function createCursorGhosts() {
-  // id → { opacity, x, y, hold } — displayed state, eased toward the live
+  // id → { opacity, x, y, charge } — displayed state, eased toward the live
   // pointer each frame and kept after the pointer vanishes so the fade-out
   // has a position to render at.
   const ghosts = new Map();
@@ -85,18 +125,19 @@ export function createCursorGhosts() {
      */
     draw(ctx, pal, remotes, canvas) {
       for (const rp of remotes) {
-        const target =
-          GHOST.OPACITY + rp.holdStrength * GHOST.HOLD_OPACITY_BOOST;
+        // Hold and well both swell the cursor; whichever is stronger drives it.
+        const charge = Math.max(rp.holdStrength, rp.wellStrength);
+        const target = GHOST.OPACITY + charge * GHOST.HOLD_OPACITY_BOOST;
         const g = ghosts.get(rp.id) || {
           opacity: 0,
           x: rp.x,
           y: rp.y,
-          hold: 0,
+          charge: 0,
         };
         g.opacity += (target - g.opacity) * GHOST.EASE;
         g.x = rp.x;
         g.y = rp.y;
-        g.hold = rp.holdStrength;
+        g.charge = charge;
         ghosts.set(rp.id, g);
 
         // A neighbour's captured drag physically inside this viewport is
@@ -128,11 +169,36 @@ export function createCursorGhosts() {
           ghosts.delete(id);
           continue;
         }
-        const radius = GHOST.RADIUS * (1 + g.hold * GHOST.HOLD_RADIUS_BOOST);
-        drawHaloParticle(ctx, g.x, g.y, radius, g.opacity, pal.cursorGhost, {
-          midStop: GHOST.GLOW_MID_STOP,
-          midAlpha: GHOST.GLOW_MID_ALPHA,
-        });
+        const swell = 1 + g.charge * GHOST.HOLD_RADIUS_BOOST;
+        const color = pal.cursorGhost;
+        // Soft outer glow — the cursor's presence, widening with charge.
+        drawHaloParticle(
+          ctx,
+          g.x,
+          g.y,
+          GHOST.RADIUS * swell,
+          g.opacity,
+          color,
+          {
+            midStop: GHOST.GLOW_MID_STOP,
+            midAlpha: GHOST.GLOW_MID_ALPHA,
+          },
+        );
+        // The cursor itself continuing across the seam: a ring around a core.
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, GHOST.RING_RADIUS * swell, 0, Math.PI * 2);
+        ctx.strokeStyle = rgbaStr(color, g.opacity * GHOST.RING_ALPHA);
+        ctx.lineWidth = GHOST.RING_WIDTH;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(g.x, g.y, GHOST.DOT_RADIUS, 0, Math.PI * 2);
+        ctx.fillStyle = rgbaStr(
+          color,
+          Math.min(1, g.opacity * GHOST.DOT_ALPHA),
+        );
+        ctx.fill();
+        ctx.restore();
       }
       return ghosts.size;
     },

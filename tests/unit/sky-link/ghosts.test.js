@@ -5,17 +5,26 @@ import { createCursorGhosts } from "../../../js/sky-link/ghosts.js";
 // can assert what the ghost layer renders without a real canvas.
 function makeRecordingCtx() {
   const halos = [];
+  const arcs = [];
   const grad = { addColorStop() {} };
   return {
     halos,
+    arcs,
     createRadialGradient(x0, y0, r0, x1, y1, r1) {
       halos.push({ x: x1, y: y1, r: r1 });
       return grad;
     },
+    save() {},
+    restore() {},
     beginPath() {},
-    arc() {},
+    arc(x, y, r) {
+      arcs.push({ x, y, r });
+    },
     fill() {},
+    stroke() {},
     set fillStyle(_) {},
+    set strokeStyle(_) {},
+    set lineWidth(_) {},
   };
 }
 
@@ -66,6 +75,32 @@ describe("sky-link/ghosts", () => {
     for (let i = 0; i < 40; i++)
       ghosts2.draw(ctx2, pal, [remote({ holdStrength: 1 })], canvas);
     const charged = ctx2.halos.at(-1).r;
+
+    expect(charged).toBeGreaterThan(rest);
+  });
+
+  it("draws the ghost as a cursor — glow, ring, and core dot", () => {
+    const ghosts = createCursorGhosts();
+    const ctx = makeRecordingCtx();
+    ghosts.draw(ctx, pal, [remote()], canvas);
+    // Three concentric shapes at the pointer — the cursor continuing across
+    // the seam, not a single blob.
+    const atPointer = ctx.arcs.filter((a) => a.x === 100 && a.y === 100);
+    expect(atPointer.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it("swells the ghost cursor while a remote charges a well", () => {
+    const ghosts = createCursorGhosts();
+    const ctx = makeRecordingCtx();
+    for (let i = 0; i < 40; i++)
+      ghosts.draw(ctx, pal, [remote({ wellStrength: 1 })], canvas);
+    const charged = ctx.halos.at(-1).r;
+
+    const ghosts2 = createCursorGhosts();
+    const ctx2 = makeRecordingCtx();
+    for (let i = 0; i < 40; i++)
+      ghosts2.draw(ctx2, pal, [remote({ wellStrength: 0 })], canvas);
+    const rest = ctx2.halos.at(-1).r;
 
     expect(charged).toBeGreaterThan(rest);
   });
