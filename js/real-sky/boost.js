@@ -22,6 +22,10 @@ const BOOST = defineConstants("realSky.shower", {
 
 const REFRESH_MS = 300000;
 
+// Single-entry memo. Callers query near-contiguous instants (a schedule scan
+// spans far less than REFRESH_MS), so successive calls land in one bucket and
+// hit. A caller sweeping times across bucket boundaries would thrash it — still
+// correct (the boost is a pure function of the bucket), just recomputed.
 let _cachedBucket = null;
 let _cachedBoost = 1;
 

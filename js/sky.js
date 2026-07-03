@@ -736,10 +736,11 @@ function worldShift(depth, sp) {
   );
 }
 
-// Single on-screen position of a star in the solo regime.
+// Single on-screen position of a star in the solo regime. X and Y both wrap
+// through floorMod so a star arrangement isn't required to stay positive.
 function soloInstance(star, sp, canvas) {
   return {
-    x: star.x % canvas.width,
+    x: floorMod(star.x, canvas.width),
     y: floorMod(
       star.y - soloShift(star.depth, sp, canvas.height),
       canvas.height,
@@ -1214,7 +1215,7 @@ export function createSky(starCount) {
         } else {
           drawStarInstance(
             s,
-            s.x % canvas.width,
+            floorMod(s.x, canvas.width),
             floorMod(
               s.y - soloShift(s.depth, sp, canvas.height),
               canvas.height,
