@@ -48,6 +48,15 @@ export function initCursor(dotEl, ringEl) {
     }
   });
 
+  // Hide the custom cursor when the pointer leaves the window, so it exits
+  // with the pointer instead of freezing at the last edge it touched. The
+  // next mousemove on re-entry re-shows it and snaps the ring to the entry
+  // point (the block above).
+  function hideCursor() {
+    dotEl.classList.remove("visible");
+    ringEl.classList.remove("visible");
+  }
+
   function animRing() {
     const ease = overNativeCursor ? C.RING_EASING_SNAP : C.RING_EASING;
     rx += (mx - rx) * ease;
@@ -107,6 +116,8 @@ export function initCursor(dotEl, ringEl) {
       overNativeCursor = false;
       dotEl.style.opacity = "";
     }
+    // A null relatedTarget means the pointer left the document entirely.
+    if (!e.relatedTarget) hideCursor();
   });
 
   document.addEventListener("mousedown", () => {
