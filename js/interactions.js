@@ -14,6 +14,47 @@ import {
 } from "./interactions.constants.js";
 
 // ── Force Helpers ──
+// Each helper applies its force for the local pointer, then for every
+// entry in `forces.remotePointers` (pointers of linked windows, in local
+// coordinates; absent or empty solo). A remote pointer carries the same
+// interaction state as the local one, so a neighbour's drag, hold, or
+// well moves this window's particles through exactly the same math —
+// remote pointers are force sources, not events.
+
+function attractToward(p, x, y, hold, radius, force, tangentFactor) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < radius && dist > 5) {
+    const f = force * (1 - dist / radius);
+    const nx = dx / dist;
+    const ny = dy / dist;
+    p.vx += nx * f + -ny * f * hold * tangentFactor;
+    p.vy += ny * f + nx * f * hold * tangentFactor;
+  }
+}
+
+function wellToward(p, x, y, strength) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const f = (strength * WELL.FORCE_MAX) / (1 + dist * WELL.DISTANCE_DECAY);
+  const nx = dx / dist;
+  const ny = dy / dist;
+  p.vx += nx * f + -ny * f * WELL.TANGENT;
+  p.vy += ny * f + nx * f * WELL.TANGENT;
+}
+
+function driftToward(p, x, y, radius, strength) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < radius && dist > 1) {
+    const f = strength * (1 - dist / radius);
+    p.vx += (dx / dist) * f;
+    p.vy += (dy / dist) * f;
+  }
+}
 
 export function applyRepulsion(forces, p, radius, damping) {
   if (forces.clickImpulse.strength > 0.05) {
@@ -30,30 +71,44 @@ export function applyRepulsion(forces, p, radius, damping) {
 
 export function applyAttraction(forces, p, radius, force, tangentFactor) {
   if (forces.isDragging) {
-    const dx = forces.dragPos.x - p.x;
-    const dy = forces.dragPos.y - p.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < radius && dist > 5) {
-      const f = force * (1 - dist / radius);
-      const nx = dx / dist;
-      const ny = dy / dist;
-      p.vx += nx * f + -ny * f * forces.holdStrength * tangentFactor;
-      p.vy += ny * f + nx * f * forces.holdStrength * tangentFactor;
+    attractToward(
+      p,
+      forces.dragPos.x,
+      forces.dragPos.y,
+      forces.holdStrength,
+      radius,
+      force,
+      tangentFactor,
+    );
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.isDragging) {
+        attractToward(
+          p,
+          rp.x,
+          rp.y,
+          rp.holdStrength,
+          radius,
+          force,
+          tangentFactor,
+        );
+      }
     }
   }
 }
 
 export function applyWellForce(forces, p) {
-  if (forces.wellStrength <= 0) return;
-  const dx = forces.dragPos.x - p.x;
-  const dy = forces.dragPos.y - p.y;
-  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const f =
-    (forces.wellStrength * WELL.FORCE_MAX) / (1 + dist * WELL.DISTANCE_DECAY);
-  const nx = dx / dist;
-  const ny = dy / dist;
-  p.vx += nx * f + -ny * f * WELL.TANGENT;
-  p.vy += ny * f + nx * f * WELL.TANGENT;
+  if (forces.wellStrength > 0) {
+    wellToward(p, forces.dragPos.x, forces.dragPos.y, forces.wellStrength);
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.wellStrength > 0) wellToward(p, rp.x, rp.y, rp.wellStrength);
+    }
+  }
 }
 
 /**
@@ -67,14 +122,16 @@ export function applyWellForce(forces, p) {
  * @param {number} strength - Maximum force at cursor center
  */
 export function applyHoverDrift(forces, p, radius, strength) {
-  if (!forces.hover.active || forces.isDragging) return;
-  const dx = forces.hover.x - p.x;
-  const dy = forces.hover.y - p.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < radius && dist > 1) {
-    const f = strength * (1 - dist / radius);
-    p.vx += (dx / dist) * f;
-    p.vy += (dy / dist) * f;
+  if (forces.hover.active && !forces.isDragging) {
+    driftToward(p, forces.hover.x, forces.hover.y, radius, strength);
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.active && !rp.isDragging) {
+        driftToward(p, rp.x, rp.y, radius, strength);
+      }
+    }
   }
 }
 
