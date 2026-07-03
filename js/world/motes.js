@@ -205,7 +205,7 @@ export class WorldMote {
     this.opacity = 0;
   }
 
-  update(canvas, origin, forces, attract) {
+  update(t, canvas, origin, forces, attract) {
     // Static dust under reduced motion: no drift, no spring, no integration, so
     // position is invariant across update(); opacity snaps to its rest floor.
     if (prefersReducedMotion()) {
@@ -213,9 +213,9 @@ export class WorldMote {
       return;
     }
 
-    // Deterministic target — the shared world clock makes every window agree on
-    // where this mote wants to be, so the field aligns across the seam at rest.
-    const t = worldTickTime();
+    // Deterministic target — `t` is the shared world clock (sampled once for the
+    // whole field), so every window agrees on where this mote wants to be and
+    // the field aligns across the seam at rest.
     const tx =
       this.homeX +
       Math.sin(t * WMOTE.DRIFT_SPEED * this.fx + this.px) * WMOTE.DRIFT_AMP;
@@ -298,6 +298,10 @@ export function createWorldMotes(count) {
 
   return {
     draw(ctx, canvas, pal, forces, origin, weight) {
+      // Sample the world clock once so every mote in the field reads the same
+      // tick — the drift target only aligns across windows if the whole field
+      // shares one instant, not a per-mote Date.now() that can straddle a ms.
+      const t = worldTickTime();
       // Attract radius/force ride the local hold charge (as the solo motes do),
       // shared across local and remote drags by the attraction helper.
       const attract = {
@@ -316,7 +320,7 @@ export function createWorldMotes(count) {
         midColor: pal.moteGlow,
       };
       for (const m of motes) {
-        m.update(canvas, origin, forces, attract);
+        m.update(t, canvas, origin, forces, attract);
         m.draw(ctx, canvas, pal, origin, weight, haloOpts);
       }
     },

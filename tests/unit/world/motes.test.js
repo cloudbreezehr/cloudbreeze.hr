@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mulberry32 } from "../../../js/daily/seed.js";
 import { WORLD_W } from "../../../js/world/space.js";
+import { worldTickTime } from "../../../js/world/clock.js";
 
 // The mote field is a deterministic function of the daily seed, the shared
 // world clock, and the folded-in pointer forces — so it's exercised with a
@@ -82,8 +83,10 @@ describe("world/motes", () => {
     const b = new WorldMote(mulberry32(7));
     for (let i = 0; i < 30; i++) {
       vi.advanceTimersByTime(16);
-      a.update(canvas, origin, idleForces(), attract);
-      b.update(canvas, origin, idleForces(), attract);
+      // Both windows read the same tick — the field agrees only under that.
+      const t = worldTickTime();
+      a.update(t, canvas, origin, idleForces(), attract);
+      b.update(t, canvas, origin, idleForces(), attract);
     }
     expect(a.wx).toBe(b.wx);
     expect(a.wy).toBe(b.wy);
@@ -96,7 +99,7 @@ describe("world/motes", () => {
     const before = Math.hypot(m.wx - m.homeX, m.wy - m.homeY);
     for (let i = 0; i < 60; i++) {
       vi.advanceTimersByTime(16);
-      m.update(canvas, origin, idleForces(), attract);
+      m.update(worldTickTime(), canvas, origin, idleForces(), attract);
     }
     const after = Math.hypot(m.wx - m.homeX, m.wy - m.homeY);
     expect(after).toBeLessThan(before);
@@ -112,7 +115,7 @@ describe("world/motes", () => {
     m.wy = m.homeY = 300;
     for (let i = 0; i < 12; i++) {
       vi.advanceTimersByTime(16);
-      m.update(canvas, origin, forces, attract);
+      m.update(worldTickTime(), canvas, origin, forces, attract);
     }
     return m.wx;
   }
@@ -159,8 +162,8 @@ describe("world/motes", () => {
     const x0 = m.wx;
     const y0 = m.wy;
     vi.advanceTimersByTime(400);
-    m.update(canvas, origin, idleForces(), attract);
-    m.update(canvas, origin, idleForces(), attract);
+    m.update(worldTickTime(), canvas, origin, idleForces(), attract);
+    m.update(worldTickTime(), canvas, origin, idleForces(), attract);
     expect(m.wx).toBe(x0);
     expect(m.wy).toBe(y0);
   });
