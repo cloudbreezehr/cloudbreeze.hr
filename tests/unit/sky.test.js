@@ -286,6 +286,7 @@ describe("sky.js star projection — solo vs world-anchored", () => {
     // sliding screenX between draws simulates the user dragging the
     // window across the desktop.
     let screenX = 0;
+    const originalScreenX = Object.getOwnPropertyDescriptor(window, "screenX");
     Object.defineProperty(window, "screenX", {
       configurable: true,
       get: () => screenX,
@@ -311,8 +312,93 @@ describe("sky.js star projection — solo vs world-anchored", () => {
       expect(scrubbed()).toBe(true);
     } finally {
       window.removeEventListener("achievement", onAchievement);
-      delete window.screenX;
+      if (originalScreenX) {
+        Object.defineProperty(window, "screenX", originalScreenX);
+      } else {
+        delete window.screenX;
+      }
     }
+  });
+});
+
+describe("sky.js world-arc courier witness", () => {
+  let mod;
+  let seam;
+  let space;
+
+  beforeEach(async () => {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    vi.resetModules();
+    seam = await import("../../js/sky-link/seam.js");
+    space = await import("../../js/world/space.js");
+    mod = await import("../../js/sky.js");
+  });
+
+  afterEach(() => {
+    seam.setPeerRectsSource(null);
+    vi.useRealTimers();
+    delete window.matchMedia;
+  });
+
+  it("fires sky-link-handoff when an arc crosses into a linked peer", async () => {
+    const { TICK_MS } = await import("../../js/world/clock.js");
+    const daily = await import("../../js/daily/random.js");
+    const { hashString } = await import("../../js/daily/seed.js");
+    const seedHash = hashString(daily.skySeedKey());
+
+    // This window's world rect, exactly as the renderer derives it, with
+    // a same-size peer sitting flush to its right.
+    const myRect = space.viewportDesktopRect(window);
+    const peerRect = {
+      x: myRect.x + myRect.w,
+      y: myRect.y,
+      w: myRect.w,
+      h: myRect.h,
+    };
+    seam.setPeerRectsSource(() => [peerRect]);
+    const sky = mod.createSky(30);
+    const canvas = { width: myRect.w, height: myRect.h };
+
+    // Hunt the deterministic schedule for a flight that starts over this
+    // window and ends over the peer — the seed is fixed by the frozen
+    // clock, so the same arc is found on every run.
+    const inRect = (x, y, r) =>
+      x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    let crossing = null;
+    for (let t = 100; t < 500000 && !crossing; t += 40) {
+      for (const arc of mod.activeWorldArcs(t, myRect, seedHash)) {
+        const endX = arc.x + Math.cos(arc.angle) * arc.speed * arc.maxLife;
+        const endY = arc.y + Math.sin(arc.angle) * arc.speed * arc.maxLife;
+        if (inRect(arc.x, arc.y, myRect) && inRect(endX, endY, peerRect)) {
+          crossing = arc;
+          break;
+        }
+      }
+    }
+    expect(crossing).toBeTruthy();
+
+    // Replay the flight through real draws, one tick at a time.
+    const events = [];
+    const onAchievement = (e) => events.push(e.detail);
+    window.addEventListener("achievement", onAchievement);
+    try {
+      const ctx = makeFakeCtx();
+      const pal = makeFakePalette();
+      const forces = makeForces(null, null);
+      for (let life = 0; life <= crossing.maxLife; life++) {
+        vi.setSystemTime(Math.ceil((crossing.spawnTick + life) * TICK_MS) + 1);
+        sky.draw(ctx, canvas, 0, pal, forces);
+      }
+    } finally {
+      window.removeEventListener("achievement", onAchievement);
+    }
+    expect(events.some((d) => d.type === "sky-link-handoff")).toBe(true);
   });
 });
 
