@@ -1,17 +1,24 @@
-# Parallel Skies — split-screen rework plan
+# Parallel Skies — one continuous sky across windows
 
 Branch-only working notes; delete when the feature lands.
 
+The effect: several browser windows on one machine act as cut-outs over a
+single continuous sky — like one wallpaper spanned across several monitors (a
+_spanned display_, not split-screen). Move a window and it reveals more of the
+same sky; a star near the boundary shows half in each window.
+
 ## Verdict on v1 (what's on this branch)
 
-v1 links windows as *peers exchanging events* (star handoff, impulse
+v1 links windows as _peers exchanging events_ (star handoff, impulse
 forwarding, edge glow). Field-testing showed that's not the idea's promise:
 the promise is **one world, several viewports** — browser windows acting as
-cut-outs over a single continuous sky, like split-screen.
+cut-outs over a single continuous sky, like one wallpaper spanned across
+several monitors.
 
 Known v1 gaps, from testing two windows side by side:
 
-- Cursor exists in both windows; hover gets stuck at the edge it left.
+- Each window's cursor and its forces stayed local — a neighbour's cursor
+  couldn't reach across to act on your sky.
 - Gravity well, orbit, lightning, aurora, incantations don't cross — only a
   weakened click impulse does, so a click reads as ~5% of itself next door.
 - Toasts, nav, dev console, scroll are all per-window.
@@ -28,11 +35,11 @@ its own rect (translate by `-selfRect`).
 simulation from the same seed (the daily arrangement stream already gives
 identical star fields), stepped on a **fixed timestep** anchored to a shared
 epoch broadcast at link time. Same engine, same machine, same float ops —
-tick N computes identically everywhere. Traffic is then *inputs only*:
+tick N computes identically everywhere. Traffic is then _inputs only_:
 
 - `input` messages: pointer move/down/up/hold in desktop coords, ordered by
   `(tick, windowId)` so every window folds them in identically.
-- The `forces` object generalizes to a *list* of pointers — a remote pointer
+- The `forces` object generalizes to a _list_ of pointers — a remote pointer
   is a first-class force source (fixes the well/orbit/cursor-edge issues in
   one stroke), drawn as a soft cursor ghost.
 
@@ -41,11 +48,11 @@ maintenance-burden answer: there are only three seams, and new features that
 use them inherit multi-window behavior for free —
 
 1. the speller's cast action (incantations → broadcast `{word, desktop
-   origin}`, every window casts locally with a translated origin),
+origin}`, every window casts locally with a translated origin),
 2. `fury.click` / canvas click path (bursts and bolts at full strength,
    drawn by every window whose rect the effect touches),
 3. `toggleTheme` (theme state syncs across windows — body classes follow the
-   link so the world *is* one sky).
+   link so the world _is_ one sky).
 
 **Chrome stays per-window; add a "viewport mode".** A DOM nav can't straddle
 OS windows. Instead: when linked, a secondary window can drop its chrome
@@ -62,11 +69,16 @@ that needs no leader).
 
 ## Phases
 
+> **Revised after phase-2 field testing** — see "Phase-2 field test" at the
+> end for the diagnosis and the reordered priority. Short version: the
+> plumbing (1–2) works, but the _felt_ payoff lives in phase 3 + a slice of
+> phase 5, so those come next, ahead of more input polish.
+
 1. ✅ Fixed-timestep + shared-epoch refactor for the shared layers (stars,
    shooting stars); windows render desktop-space slices. The sky
    becomes visibly continuous — stars align across the gap.
 2. ✅ Input bus: remote pointers as force sources + cursor ghosts. Wells,
-   orbits, drags all cross the border. (Motes' *layout* still isn't
+   orbits, drags all cross the border. (Motes' _layout_ still isn't
    world-anchored — that waits on the phase-5 scroll policy — but they now
    answer to a neighbour's cursor like every other force-driven particle.)
 3. Effect mirroring at the three seams (casts, fury/clicks, theme toggles).
@@ -124,12 +136,12 @@ not tunable for exactly this reason.
   `wellStrength`) over the channel; the receiver folds every peer pointer
   into `forces.remotePointers`, and the three force helpers
   (`applyAttraction`, `applyWellForce`, `applyHoverDrift` in
-  `js/interactions.js`) loop over it applying the *identical* math they use
+  `js/interactions.js`) loop over it applying the _identical_ math they use
   for the local pointer. One choke point, so every particle module on the
   site — motes, snow, jellyfish, dust — inherits cross-window wells, orbits,
   and drift for free. This is what fixes the v1 "click reads as ~5% of
   itself next door" and the stuck-hover-at-the-edge complaints in one
-  stroke: the neighbour's cursor simply *is* a force here.
+  stroke: the neighbour's cursor simply _is_ a force here.
 - **The seam grew two channels.** `js/sky-link/seam.js` now also carries
   remote-pointer states (transport → renderer) and the local pointer state
   (renderer → transport). Same pattern as the phase-1 peer-rects channel:
@@ -152,3 +164,78 @@ not tunable for exactly this reason.
 - **New achievement:** `ghost-hand` — drag your cursor from one linked
   window into another; the receiving window witnesses the drag entering its
   viewport bounds.
+
+## Phase-2 field test — findings, and the revised priority
+
+Tested two windows side by side. Expected: (1) cursor toward the seam in A →
+ghost + mote drift in B; (2) hold-drag a well near the seam in A → B's
+particles pulled in, ghost widens, release blasts across; (3) drag across the
+border → `ghost-hand` in B; (4) solo unchanged.
+
+**Finding: the forces already cross correctly — the payoff is just
+invisible.** Traced end to end, a remote well _is_ applied to the neighbour's
+particles:
+
+- local `forces.wellStrength` ramps in `interactions.js` `updateHold`, →
+- reported by `setLocalPointerSource` (`canvas.js`), →
+- streamed in `sky-link/index.js` `announcePointer`, →
+- received → `pointers.upsert` → `seam.remotePointers()` (keeps
+  `wellStrength`), →
+- `canvas.js` copies it into `forces.remotePointers` (spread — keeps every
+  field), →
+- `interactions.js` `applyWellForce` loops `remotePointers` and pulls each
+  mote.
+
+Two things make item 2 look dead, sharing one root cause — **only the stars
+are in the shared world so far:**
+
+1. The **only** particles that answer to the well are the **motes**
+   (`atmosphere.js`), and motes are **scroll-reactive** — sparse/absent near
+   the top, where the field is all **stars, which ignore pointer forces
+   entirely**. Testing at the hero (the natural first test) = nothing to pull.
+   And motes aren't world-anchored yet (the phase-5 deferral), so even where
+   present they don't align across the seam.
+2. The well's **visible payload** — aura glow, orbit swarm, release blast — is
+   gated on the _local_ drag (`interactions.js` `draw` + `releaseDrag`), so
+   the receiving window renders none of it. Even when the force bites, B shows
+   only a faint drift toward an invisible point.
+
+Item 1 is dampened the same way; item 3 (`ghost-hand`) and item 4 (solo) are
+fine.
+
+**On the cursor.** The OS hands the real pointer and its mouse events to only
+one window at a time — whichever the mouse is physically over — so a window
+can't track or draw the _system_ cursor once the mouse is over its neighbour.
+That's the reason for the ghost: it's the neighbour's cursor redrawn from the
+streamed pointer state. The custom cursor already leaves one window and appears
+in the next as the mouse crosses, so the leaving/entering side of the seam
+feels right; what's left is the ghost — it reads as a separate blob rather than
+the same cursor continuing.
+
+Done right they compose into _one_ cursor gliding across the seam: the mouse
+leaves A, and the ghost in B hands off to B's own cursor as it enters. So don't
+drop the ghost — style it to read as the same cursor continuing.
+
+**Revised priority (do these before more input polish):**
+
+1. **World-anchor the motes** — pull a slice of phase 5 forward. The lively,
+   force-responsive layer has to be continuous across the seam _and_ present,
+   not just the inert stars. Needs the scroll policy decided first (freeze
+   shared-layer parallax while linked, or follow the leader).
+2. **Mirror effects at the seam (phase 3)** — above all, draw the well's
+   aura/orbit/blast and the click bursts in _every_ window whose rect the
+   effect touches (translate the origin by the peer rect). This is what makes
+   item 2 read as "it works."
+3. **Style the ghost as one continuous cursor** — so it reads as the same
+   cursor continuing across the seam, handing off to the entering window's own
+   cursor, rather than a separate blob hovering near the edge.
+
+Rationale: phases 1–2 built the plumbing (continuous stars + cross-window
+forces); the _felt_ payoff lives in 3 + a slice of 5. Sequencing, not
+architecture, is what made the field test underwhelm.
+
+Entry points for the next session: `js/atmosphere.js` (motes + their force
+calls), `js/world/space.js` + `js/sky-link/seam.js` (world/desktop projection,
+to anchor motes), `js/interactions.js` (the well/click visible payload to
+mirror), `js/sky-link/index.js` (channel; a likely new `effect`/`cast`
+message for phase 3), `js/canvas.js` (render loop, `forces.remotePointers`).
