@@ -65,10 +65,10 @@ that needs no leader).
 1. ✅ Fixed-timestep + shared-epoch refactor for the shared layers (stars,
    shooting stars); windows render desktop-space slices. The sky
    becomes visibly continuous — stars align across the gap.
-2. Input bus: remote pointers as force sources + cursor ghosts. Wells,
-   orbits, drags all cross the border. Motes join the shared layers here —
-   they're pointer/scroll-driven, so world-anchoring them is meaningless
-   until inputs are shared.
+2. ✅ Input bus: remote pointers as force sources + cursor ghosts. Wells,
+   orbits, drags all cross the border. (Motes' *layout* still isn't
+   world-anchored — that waits on the phase-5 scroll policy — but they now
+   answer to a neighbour's cursor like every other force-driven particle.)
 3. Effect mirroring at the three seams (casts, fury/clicks, theme toggles).
 4. Viewport mode for secondary windows (chrome fades; pure sky).
 5. Toast routing, leader hardening (pagehide, TTL churn), scroll-parallax
@@ -116,3 +116,39 @@ mirrors a linked slice (accepted quirk); per-window dev-console retunes of
 schedule inputs (spawn chance, speeds, lifetimes) split the schedule
 between windows — dev-only, and the clock and tile size are deliberately
 not tunable for exactly this reason.
+
+## Phase-2 decisions (as built)
+
+- **Remote pointers are force sources, not events.** Each linked window
+  streams its pointer state (position + `isDragging`/`holdStrength`/
+  `wellStrength`) over the channel; the receiver folds every peer pointer
+  into `forces.remotePointers`, and the three force helpers
+  (`applyAttraction`, `applyWellForce`, `applyHoverDrift` in
+  `js/interactions.js`) loop over it applying the *identical* math they use
+  for the local pointer. One choke point, so every particle module on the
+  site — motes, snow, jellyfish, dust — inherits cross-window wells, orbits,
+  and drift for free. This is what fixes the v1 "click reads as ~5% of
+  itself next door" and the stuck-hover-at-the-edge complaints in one
+  stroke: the neighbour's cursor simply *is* a force here.
+- **The seam grew two channels.** `js/sky-link/seam.js` now also carries
+  remote-pointer states (transport → renderer) and the local pointer state
+  (renderer → transport). Same pattern as the phase-1 peer-rects channel:
+  bound by whichever side owns the data, no-op when unbound.
+- **Cursor ghosts** (`js/sky-link/ghosts.js`) draw a soft halo where each
+  neighbour's cursor sits, brightening/widening with their hold charge,
+  easing in/out so nothing pops. `pal.cursorGhost` is a new palette key
+  (no render-time branching). They ride the same canvas as the particles
+  they push.
+- **One liveness boundary for force and ghost.** A pointer present in the
+  remote-pointer list is live — that same list drives both its force and
+  its ghost, so they appear and vanish together. A pointer gets its own
+  (tighter) TTL than the rect link (`skyLink.POINTER_TTL_MS` <
+  `skyLink.TTL_MS`), so a lost cursor stops acting promptly while the link
+  itself (glow, world anchoring) persists on the rect TTL.
+- **Coordinate handling.** Pointers travel in desktop space (transport
+  applies `toDesktop`/`toLocal`); the renderer reports true viewport Y
+  (un-mirrored) and re-mirrors incoming Y via `canvasY`, so a flipped
+  (upside-down) window still folds neighbours in at the right spot.
+- **New achievement:** `ghost-hand` — drag your cursor from one linked
+  window into another; the receiving window witnesses the drag entering its
+  viewport bounds.

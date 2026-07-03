@@ -30,7 +30,8 @@ js/
   world/                         The shared world behind the multi-window sky: fixed-timestep clock,
                                  desktop-anchored sky-tile geometry, seeded per-tile event schedule
   sky-link/                      Multi-window link: peer transport + registry, desktop-space peer
-                                 geometry, facing-edge glows, the renderer-facing seam
+                                 geometry, facing-edge glows, the renderer-facing seam, remote-pointer
+                                 input bus + cursor ghosts
   real-sky/                      The actual sky: solar/lunar math, day-phase tint, meteor-shower calendar,
                                  live Open-Meteo weather for the footer badge
   terminal/                      Hidden Quake-style console (spell SHELL / backquote): command catalogue
@@ -38,7 +39,7 @@ js/
   dev/                           Dev console + tunable-constant registry
 ```
 
-**Shared state**: The `forces` object — pointer and interaction state (click impulse, drag, hold/well strength, hover, last-move time; see its definition in `canvas.js`) — is owned by `canvas.js` and passed by reference to modules that need interaction. Frame-varying values (`sp`, `scrollVelocity`, `pal`, `isDark`) are explicit parameters to each module's `draw()`.
+**Shared state**: The `forces` object — pointer and interaction state (click impulse, drag, hold/well strength, hover, last-move time, and `remotePointers` for linked windows; see its definition in `canvas.js`) — is owned by `canvas.js` and passed by reference to modules that need interaction. Frame-varying values (`sp`, `scrollVelocity`, `pal`, `isDark`) are explicit parameters to each module's `draw()`.
 
 **Palette system** (`js/colors.js`): Two-layer color control:
 1. CSS filter on `#bg-canvas` handles global tone shifts per theme
@@ -53,6 +54,7 @@ A new theme's look is additive: a `body[data-active-theme="…"]` block in its o
 - `isDragging` / `dragPos` — attracts nearby particles with tangential orbit, scales with hold duration
 - `scrollVelocity` — pushes scroll-reactive particles
 - `pointercancel` → touch event fallback (`touchmove`/`touchend`) for mobile scroll
+- `remotePointers` — pointers of linked windows (empty solo). The attract/well/hover-drift helpers already loop over these, so a neighbour's drag or cursor acts on this window's particles through the same math; a new particle type gets cross-window forces for free just by using the helpers.
 
 **Any new canvas particle type should interact with these existing forces.** Import and use `applyRepulsion`, `applyAttraction`, `applyWellForce` from `interactions.js`. See `particles/frozen.js` (Snowflake) or `atmosphere.js` (ScrollMote) for reference.
 
