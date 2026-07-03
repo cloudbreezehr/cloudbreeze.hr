@@ -107,6 +107,16 @@ function randomId() {
     : Math.random().toString(36).slice(2);
 }
 
+// Guard against malformed channel traffic from a buggy or older sibling tab: a
+// missing point/rect or a non-numeric field would otherwise wedge the receiver
+// (a throw inside onmessage, or NaN propagating into the geometry).
+function isFinitePoint(p) {
+  return !!p && Number.isFinite(p.x) && Number.isFinite(p.y);
+}
+function isFiniteRect(r) {
+  return isFinitePoint(r) && Number.isFinite(r.w) && Number.isFinite(r.h);
+}
+
 export function initSkyLink() {
   if (typeof BroadcastChannel === "undefined") return () => {};
   // Touch-only devices can't place windows side by side — two tabs there
@@ -227,6 +237,7 @@ export function initSkyLink() {
     // Only pointers of linked windows exert force — the rect handshake
     // (same seed, fresh TTL) is what admits a peer to the registry.
     if (!registry.has(peerId)) return;
+    if (!isFinitePoint(pointer)) return;
     if (!pointer.active) {
       pointers.remove(peerId);
       return;
@@ -241,7 +252,7 @@ export function initSkyLink() {
       // One world needs one arrangement: a window on a different sky —
       // time-traveling via #sky=, or left open past midnight — never
       // links, it just coexists.
-      if (msg.seed !== skySeedKey()) return;
+      if (msg.seed !== skySeedKey() || !isFiniteRect(msg.rect)) return;
       registry.upsert(msg.id, msg.rect, Date.now());
       refreshLinkState();
     } else if (msg.kind === "pointer") {
@@ -294,6 +305,10 @@ export function initSkyLink() {
   window.addEventListener("sky-cast", onLocalCast);
 
   function receiveCast(msg) {
+    // Same-seed handshake: only a registered peer's spell blooms here, so a
+    // different-day #sky= window never renders a linked pair's casts.
+    if (!registry.has(msg.id)) return;
+    if (typeof msg.word !== "string" || !isFinitePoint(msg.point)) return;
     const local = toLocal(msg.point, selfRect);
     window.dispatchEvent(
       new CustomEvent("sky-link-cast", {
@@ -308,6 +323,10 @@ export function initSkyLink() {
   }
 
   function receiveEffect(msg) {
+    // Same-seed handshake: only a registered peer's effect reaches this sky, so
+    // a different-day #sky= window never takes a linked pair's pushes/bursts.
+    if (!registry.has(msg.id)) return;
+    if (!isFinitePoint(msg.point)) return;
     const local = toLocal(msg.point, selfRect);
     const reach = SKY_LINK.EFFECT_REACH_PX;
     if (

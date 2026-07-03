@@ -321,6 +321,7 @@ describe("sky-link/index", () => {
   });
 
   it("applies a nearby mirrored effect and ignores a distant one", () => {
+    injectPeer(); // peer-1 must have handshook first
     const effects = [];
     window.addEventListener("sky-link-effect", (e) => effects.push(e.detail));
     // Just past the right edge — within reach. Force is scaled down, well
@@ -377,6 +378,7 @@ describe("sky-link/index", () => {
   });
 
   it("re-casts a peer's spell at the translated origin, with no reach limit", () => {
+    injectPeer(); // peer-1 must have handshook first
     const casts = [];
     window.addEventListener("sky-link-cast", (e) => casts.push(e.detail));
     // Far from this viewport — a cast still lands (unlike a click/well).
@@ -394,6 +396,45 @@ describe("sky-link/index", () => {
     });
     expect(casts).toHaveLength(1);
     expect(casts[0]).toMatchObject({ word: "CONFETTI", charge: 3 });
+  });
+
+  it("ignores an effect or cast from a window that never handshook", () => {
+    const effects = [];
+    const casts = [];
+    window.addEventListener("sky-link-effect", (e) => effects.push(e.detail));
+    window.addEventListener("sky-link-cast", (e) => casts.push(e.detail));
+    // No injectPeer — a different-day #sky= window is deliberately unlinked.
+    const point = { x: selfRect.x + 10, y: selfRect.y + 10 };
+    channel().onmessage({
+      data: { kind: "effect", id: "stranger", point, strength: 5 },
+    });
+    channel().onmessage({
+      data: { kind: "cast", id: "stranger", word: "SNOW", point },
+    });
+    expect(effects).toEqual([]);
+    expect(casts).toEqual([]);
+  });
+
+  it("drops malformed inbound messages without wedging the receiver", () => {
+    injectPeer(); // a good link stands alongside the bad traffic
+    const run = () => {
+      channel().onmessage({
+        data: { kind: "rect", id: "peer-2", seed, rect: null },
+      });
+      channel().onmessage({
+        data: { kind: "pointer", id: "peer-1", pointer: null },
+      });
+      channel().onmessage({
+        data: { kind: "effect", id: "peer-1", point: { x: NaN, y: 5 } },
+      });
+      channel().onmessage({
+        data: { kind: "cast", id: "peer-1", word: "SNOW", point: null },
+      });
+    };
+    expect(run).not.toThrow();
+    // The bad rect never registered peer-2; the good peer-1 link is intact.
+    expect(seam.peerWorldRects().length).toBe(1);
+    expect(seam.remotePointers()).toEqual([]);
   });
 
   it("cleanup says goodbye, closes the channel, and removes the glows", () => {
