@@ -47,9 +47,18 @@ describe("sky-link/index", () => {
 
   afterEach(() => {
     cleanup?.();
+    seam.setLocalPointerSource(null);
     vi.useRealTimers();
     vi.unstubAllGlobals();
   });
+
+  function bindLocalPointer(state) {
+    seam.setLocalPointerSource(() => state);
+  }
+
+  function pointerMessages() {
+    return channel().sent.filter((m) => m.kind === "pointer");
+  }
 
   function channel() {
     return channels[0];
@@ -129,6 +138,150 @@ describe("sky-link/index", () => {
     injectPeer("peer-1");
     channel().onmessage({ data: { kind: "bye", id: "peer-1" } });
     expect(document.body.classList.contains("sky-linked")).toBe(false);
+  });
+
+  it("broadcasts the local pointer to peers in desktop coordinates", () => {
+    injectPeer();
+    bindLocalPointer({
+      x: 10,
+      y: 20,
+      active: true,
+      isDragging: true,
+      holdStrength: 0.5,
+      wellStrength: 0.25,
+    });
+    vi.advanceTimersByTime(SKY_LINK.POINTER_SEND_MS + 1);
+    const sent = pointerMessages();
+    expect(sent.length).toBe(1);
+    expect(sent[0].pointer).toEqual({
+      x: Math.round(selfRect.x + 10),
+      y: Math.round(selfRect.y + 20),
+      active: true,
+      isDragging: true,
+      holdStrength: 0.5,
+      wellStrength: 0.25,
+    });
+  });
+
+  it("stays silent with no peers and while the pointer idles", () => {
+    // No peers: nothing to say even with an engaged pointer.
+    bindLocalPointer({
+      x: 1,
+      y: 1,
+      active: true,
+      isDragging: false,
+      holdStrength: 0,
+      wellStrength: 0,
+    });
+    vi.advanceTimersByTime(SKY_LINK.POINTER_SEND_MS * 3);
+    expect(pointerMessages()).toEqual([]);
+
+    // Peer linked but pointer never engaged: still silent.
+    injectPeer();
+    bindLocalPointer({
+      x: 1,
+      y: 1,
+      active: false,
+      isDragging: false,
+      holdStrength: 0,
+      wellStrength: 0,
+    });
+    vi.advanceTimersByTime(SKY_LINK.HEARTBEAT_MS * 2);
+    expect(pointerMessages()).toEqual([]);
+  });
+
+  it("announces disengagement once, then goes quiet", () => {
+    injectPeer();
+    const state = {
+      x: 5,
+      y: 5,
+      active: true,
+      isDragging: false,
+      holdStrength: 0,
+      wellStrength: 0,
+    };
+    bindLocalPointer(state);
+    vi.advanceTimersByTime(SKY_LINK.POINTER_SEND_MS + 1);
+    expect(pointerMessages().length).toBe(1);
+
+    state.active = false;
+    vi.advanceTimersByTime(SKY_LINK.HEARTBEAT_MS * 2);
+    const sent = pointerMessages();
+    expect(sent.length).toBe(2);
+    expect(sent[1].pointer.active).toBe(false);
+  });
+
+  it("folds a linked peer's pointer into local coordinates via the seam", () => {
+    injectPeer();
+    channel().onmessage({
+      data: {
+        kind: "pointer",
+        id: "peer-1",
+        pointer: {
+          x: selfRect.x + 300,
+          y: selfRect.y + 120,
+          active: true,
+          isDragging: true,
+          holdStrength: 1,
+          wellStrength: 0.5,
+        },
+      },
+    });
+    expect(seam.remotePointers()).toEqual([
+      {
+        id: "peer-1",
+        x: 300,
+        y: 120,
+        active: true,
+        isDragging: true,
+        holdStrength: 1,
+        wellStrength: 0.5,
+        seenAt: expect.any(Number),
+      },
+    ]);
+  });
+
+  it("ignores pointers from windows that never passed the handshake", () => {
+    channel().onmessage({
+      data: {
+        kind: "pointer",
+        id: "stranger",
+        pointer: { x: 0, y: 0, active: true, isDragging: false },
+      },
+    });
+    expect(seam.remotePointers()).toEqual([]);
+  });
+
+  it("drops a peer's pointer on disengagement, on bye, and on TTL", () => {
+    const pointerMsg = (active) => ({
+      data: {
+        kind: "pointer",
+        id: "peer-1",
+        pointer: {
+          x: selfRect.x,
+          y: selfRect.y,
+          active,
+          isDragging: false,
+          holdStrength: 0,
+          wellStrength: 0,
+        },
+      },
+    });
+    injectPeer();
+    channel().onmessage(pointerMsg(true));
+    expect(seam.remotePointers().length).toBe(1);
+
+    channel().onmessage(pointerMsg(false));
+    expect(seam.remotePointers()).toEqual([]);
+
+    channel().onmessage(pointerMsg(true));
+    channel().onmessage({ data: { kind: "bye", id: "peer-1" } });
+    expect(seam.remotePointers()).toEqual([]);
+
+    injectPeer();
+    channel().onmessage(pointerMsg(true));
+    vi.advanceTimersByTime(SKY_LINK.TTL_MS + SKY_LINK.POLL_MS * 2);
+    expect(seam.remotePointers()).toEqual([]);
   });
 
   it("exposes live peer rects to the renderer through the seam", () => {

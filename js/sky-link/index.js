@@ -4,7 +4,9 @@
 // BroadcastChannel; while at least one peer is fresh, the body carries
 // `sky-linked`, the edges facing peer windows glow, the renderer sees the
 // live peer rects through the seam and anchors the shared sky to the
-// desktop, and click impulses ripple across into neighbouring viewports.
+// desktop, pointer states stream between windows so a neighbour's cursor
+// acts on this sky as a live force source, and click impulses ripple
+// across into neighbouring viewports.
 //
 // Everything is desktop-coordinate math from peers.js; this module owns the
 // transport (channel, heartbeats, expiry) and the DOM touchpoints (body
@@ -19,7 +21,12 @@ import {
   edgeGap,
 } from "./peers.js";
 import { viewportDesktopRect } from "../world/space.js";
-import { setPeerRectsSource } from "./seam.js";
+import { createRemotePointerRegistry } from "./pointers.js";
+import {
+  setPeerRectsSource,
+  setRemotePointersSource,
+  localPointerState,
+} from "./seam.js";
 import { HOLD } from "../interactions.js";
 import { hasCapability } from "../device.js";
 import { skySeedKey } from "../daily/random.js";
@@ -70,7 +77,18 @@ export const SKY_LINK = defineConstants("skyLink", {
     step: 50,
     description: "Peer distance at which the facing-edge glow fades to zero",
   },
+  POINTER_SEND_MS: {
+    value: 50,
+    min: 16,
+    max: 500,
+    step: 2,
+    description: "Interval between pointer-state broadcasts while linked (ms)",
+  },
 });
+
+// Interaction ramps arrive as continuous floats; quantizing them keeps the
+// dedup check from treating every frame's imperceptible drift as news.
+const POINTER_QUANTIZE = 100;
 
 const GLOW_SIDES = ["left", "right", "top", "bottom"];
 
@@ -90,10 +108,14 @@ export function initSkyLink() {
   const id = randomId();
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const registry = createPeerRegistry(SKY_LINK.TTL_MS);
+  const pointers = createRemotePointerRegistry(SKY_LINK.TTL_MS);
 
   let selfRect = viewportDesktopRect();
   let lastSentJson = "";
   let lastSentAt = 0;
+  let lastPointerJson = "";
+  let lastPointerAt = 0;
+  let lastPointerEngaged = false;
   let linkedWindows = 1;
 
   // ── Facing-edge glows ──
@@ -158,6 +180,51 @@ export function initSkyLink() {
     });
   }
 
+  // ── Pointer broadcast ──
+  // The renderer's pointer state, sampled on its own cadence and shipped in
+  // desktop coordinates so peers fold it in as a force source wherever
+  // their viewport sits. A captured drag keeps streaming even when the
+  // cursor is physically over a neighbouring window — that's the moment
+  // the whole feature exists for.
+  function announcePointer(now) {
+    if (document.hidden || registry.count() === 0) return;
+    const state = localPointerState();
+    if (!state) return;
+    const engaged = state.active || state.isDragging;
+    const pt = toDesktop({ x: state.x, y: state.y }, selfRect);
+    const pointer = {
+      x: Math.round(pt.x),
+      y: Math.round(pt.y),
+      active: engaged,
+      isDragging: !!state.isDragging,
+      holdStrength:
+        Math.round(state.holdStrength * POINTER_QUANTIZE) / POINTER_QUANTIZE,
+      wellStrength:
+        Math.round(state.wellStrength * POINTER_QUANTIZE) / POINTER_QUANTIZE,
+    };
+    // An idle pointer needs no heartbeat — one inactive message drops it
+    // from every peer, then this side goes quiet until re-engaged.
+    if (!engaged && !lastPointerEngaged) return;
+    const json = JSON.stringify(pointer);
+    if (json === lastPointerJson && now - lastPointerAt < SKY_LINK.HEARTBEAT_MS)
+      return;
+    lastPointerJson = json;
+    lastPointerAt = now;
+    lastPointerEngaged = engaged;
+    channel.postMessage({ kind: "pointer", id, pointer });
+  }
+
+  function receivePointer(peerId, pointer) {
+    // Only pointers of linked windows exert force — the rect handshake
+    // (same seed, fresh TTL) is what admits a peer to the registry.
+    if (!registry.has(peerId)) return;
+    if (!pointer.active) {
+      pointers.remove(peerId);
+      return;
+    }
+    pointers.upsert(peerId, pointer, Date.now());
+  }
+
   channel.onmessage = (e) => {
     const msg = e.data;
     if (!msg || msg.id === id) return;
@@ -168,7 +235,10 @@ export function initSkyLink() {
       if (msg.seed !== skySeedKey()) return;
       registry.upsert(msg.id, msg.rect, Date.now());
       refreshLinkState();
+    } else if (msg.kind === "pointer") {
+      receivePointer(msg.id, msg.pointer);
     } else if (msg.kind === "bye") {
+      pointers.remove(msg.id);
       if (registry.remove(msg.id)) refreshLinkState();
     } else if (msg.kind === "impulse") {
       receiveImpulse(msg.point);
@@ -214,11 +284,32 @@ export function initSkyLink() {
   }
 
   setPeerRectsSource(() => registry.all().map((peer) => peer.rect));
+  setRemotePointersSource(() =>
+    pointers.all().map((ptr) => {
+      const local = toLocal(ptr, selfRect);
+      return {
+        id: ptr.id,
+        x: local.x,
+        y: local.y,
+        active: ptr.active,
+        isDragging: ptr.isDragging,
+        holdStrength: ptr.holdStrength,
+        wellStrength: ptr.wellStrength,
+        seenAt: ptr.seenAt,
+      };
+    }),
+  );
 
   const pollTimer = setInterval(() => {
     announce(Date.now());
     if (registry.prune(Date.now())) refreshLinkState();
+    pointers.prune(Date.now());
   }, SKY_LINK.POLL_MS);
+
+  const pointerTimer = setInterval(
+    () => announcePointer(Date.now()),
+    SKY_LINK.POINTER_SEND_MS,
+  );
 
   function onPageHide() {
     channel.postMessage({ kind: "bye", id });
@@ -229,11 +320,13 @@ export function initSkyLink() {
 
   return function cleanup() {
     clearInterval(pollTimer);
+    clearInterval(pointerTimer);
     window.removeEventListener("achievement", onLocalAchievement);
     window.removeEventListener("pagehide", onPageHide);
     channel.postMessage({ kind: "bye", id });
     channel.close();
     setPeerRectsSource(null);
+    setRemotePointersSource(null);
     for (const el of glows.values()) el.remove();
     document.body.classList.remove("sky-linked");
   };

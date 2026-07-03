@@ -98,6 +98,9 @@ export function createPeerRegistry(ttlMs) {
     remove(id) {
       return peers.delete(id);
     },
+    has(id) {
+      return peers.has(id);
+    },
     /** Drop expired peers; returns true when anything was removed. */
     prune(now) {
       let changed = false;

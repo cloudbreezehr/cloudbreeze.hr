@@ -24,6 +24,17 @@ describe("sky-link/peers — viewport geometry", () => {
   });
 });
 
+describe("sky-link/peers — registry membership", () => {
+  it("answers membership without touching expiry state", () => {
+    const reg = createPeerRegistry(TTL_MS);
+    expect(reg.has("a")).toBe(false);
+    reg.upsert("a", rect(0, 0), 0);
+    expect(reg.has("a")).toBe(true);
+    reg.remove("a");
+    expect(reg.has("a")).toBe(false);
+  });
+});
+
 describe("sky-link/peers — facing sides and gaps", () => {
   const self = rect(0, 0);
 
