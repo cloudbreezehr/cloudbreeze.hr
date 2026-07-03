@@ -96,12 +96,4 @@ describe("resolvePalette", () => {
     resolvePalette("dark", "blocky");
     expect(palettes.dark).toEqual(before);
   });
-
-  it("supplies a cursor-ghost color in every appearance", () => {
-    // The cursor-ghost layer reads pal.cursorGhost with no branching.
-    for (const appearance of ["dark", "light"]) {
-      const rgb = resolvePalette(appearance, null).cursorGhost;
-      expect(rgb).toHaveLength(3);
-    }
-  });
 });

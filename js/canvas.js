@@ -212,8 +212,8 @@ export function initCanvas(canvasEl, appearance, options) {
   const canvasY = (y) => mirrorYWhenInverted(y, canvas.height);
 
   let lastFrameTime = performance.now();
-  // Nonzero while cursor ghosts are still easing out; keeps the ghost draw
-  // alive for a few frames after the last remote pointer vanishes.
+  // Nonzero while peer cursors are still fading out; keeps their update running
+  // for a few frames after the last remote pointer vanishes.
   let ghostsVisible = 0;
 
   // ── Sky gradient cache ──
@@ -406,16 +406,12 @@ export function initCanvas(canvasEl, appearance, options) {
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
-    // Soft presence for each linked window's cursor, sitting with the
-    // interaction particles it drives. Keep drawing while ghosts are still
-    // easing out, even after the last remote pointer went quiet.
-    if (forces.remotePointers.length || ghostsVisible) {
-      ghostsVisible = cursorGhosts.draw(
-        ctx,
-        pal,
-        forces.remotePointers,
-        canvas,
-      );
+    // Each linked window's cursor, redrawn on the cursor layer as the same
+    // custom cursor continuing across the seam. Fed the raw seam pointers (true
+    // viewport coords — the cursor layer isn't flipped, unlike the canvas). Keep
+    // updating while cursors are still fading out after the pointer went quiet.
+    if (remotes.length || ghostsVisible) {
+      ghostsVisible = cursorGhosts.update(remotes, canvas);
     }
 
     for (const { hooks } of activeHooks) hooks.drawForeground?.(frame);

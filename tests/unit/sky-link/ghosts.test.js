@@ -1,34 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createCursorGhosts } from "../../../js/sky-link/ghosts.js";
 
-// A fake 2D context that records every halo it's asked to draw, so tests
-// can assert what the ghost layer renders without a real canvas.
-function makeRecordingCtx() {
-  const halos = [];
-  const arcs = [];
-  const grad = { addColorStop() {} };
-  return {
-    halos,
-    arcs,
-    createRadialGradient(x0, y0, r0, x1, y1, r1) {
-      halos.push({ x: x1, y: y1, r: r1 });
-      return grad;
-    },
-    save() {},
-    restore() {},
-    beginPath() {},
-    arc(x, y, r) {
-      arcs.push({ x, y, r });
-    },
-    fill() {},
-    stroke() {},
-    set fillStyle(_) {},
-    set strokeStyle(_) {},
-    set lineWidth(_) {},
-  };
-}
+// The peer cursor is a pair of DOM elements on the cursor layer, styled like
+// #cursor. Tests drive update() with seam-style remote pointers and inspect the
+// elements it creates, positions, and removes — no canvas.
 
-const pal = { cursorGhost: [190, 220, 255] };
 const canvas = { width: 800, height: 600 };
 
 function remote(overrides = {}) {
@@ -45,115 +21,80 @@ function remote(overrides = {}) {
   };
 }
 
+const dot = () => document.querySelector(".sky-link-cursor");
+const ring = () => document.querySelector(".sky-link-cursor-ring");
+
 describe("sky-link/ghosts", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.setSystemTime(0);
+    document.body.innerHTML = "";
   });
 
   afterEach(() => {
     vi.useRealTimers();
   });
 
-  it("draws a ghost halo at the remote pointer's position", () => {
+  it("renders a peer cursor — dot + ring — at the streamed position", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    for (let i = 0; i < 10; i++) ghosts.draw(ctx, pal, [remote()], canvas);
-    expect(ctx.halos.at(-1)).toMatchObject({ x: 100, y: 100 });
+    ghosts.update([remote()], canvas);
+    expect(dot()).toBeTruthy();
+    expect(ring()).toBeTruthy();
+    expect(dot().classList.contains("visible")).toBe(true);
+    expect(dot().style.translate).toContain("100px");
   });
 
-  it("widens the halo while a remote pointer charges a hold", () => {
+  it("does not draw a peer pointer that's outside this viewport", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    // Settle both cases to steady state so only hold differs.
-    for (let i = 0; i < 40; i++)
-      ghosts.draw(ctx, pal, [remote({ holdStrength: 0 })], canvas);
-    const rest = ctx.halos.at(-1).r;
-
-    const ghosts2 = createCursorGhosts();
-    const ctx2 = makeRecordingCtx();
-    for (let i = 0; i < 40; i++)
-      ghosts2.draw(ctx2, pal, [remote({ holdStrength: 1 })], canvas);
-    const charged = ctx2.halos.at(-1).r;
-
-    expect(charged).toBeGreaterThan(rest);
+    ghosts.update([remote({ x: -50 })], canvas);
+    expect(dot()).toBeNull();
   });
 
-  it("eases the ghost toward the streamed point instead of snapping", () => {
+  it("shows a well glow scaled by the peer's well charge", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    // Settle the ghost at the start point.
-    for (let i = 0; i < 20; i++)
-      ghosts.draw(ctx, pal, [remote({ x: 100 })], canvas);
-    // Jump the streamed point — the ghost should trail, not teleport.
-    ghosts.draw(ctx, pal, [remote({ x: 500 })], canvas);
-    const midX = ctx.halos.at(-1).x;
-    expect(midX).toBeGreaterThan(100);
-    expect(midX).toBeLessThan(500);
-    // Given enough frames it catches up.
-    for (let i = 0; i < 40; i++)
-      ghosts.draw(ctx, pal, [remote({ x: 500 })], canvas);
-    expect(ctx.halos.at(-1).x).toBeCloseTo(500, 0);
+    ghosts.update([remote({ wellStrength: 0.8 })], canvas);
+    expect(ring().classList.contains("gravity-well")).toBe(true);
+    expect(ring().style.getPropertyValue("--well-strength")).toBe("0.800");
   });
 
-  it("draws the ghost as a cursor — glow, ring, and core dot", () => {
+  it("fades a departed peer cursor out, then removes its elements", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    ghosts.draw(ctx, pal, [remote()], canvas);
-    // Three concentric shapes at the pointer — the cursor continuing across
-    // the seam, not a single blob.
-    const atPointer = ctx.arcs.filter((a) => a.x === 100 && a.y === 100);
-    expect(atPointer.length).toBeGreaterThanOrEqual(3);
+    ghosts.update([remote()], canvas);
+    expect(dot().classList.contains("visible")).toBe(true);
+
+    // Pointer gone: fades first (visible dropped) but stays in the DOM.
+    ghosts.update([], canvas);
+    expect(dot()).toBeTruthy();
+    expect(dot().classList.contains("visible")).toBe(false);
+
+    // Removed after the fade window elapses.
+    vi.advanceTimersByTime(2000);
+    expect(dot()).toBeNull();
   });
 
-  it("swells the ghost cursor while a remote charges a well", () => {
+  it("keeps a re-entering cursor instead of removing it", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    for (let i = 0; i < 40; i++)
-      ghosts.draw(ctx, pal, [remote({ wellStrength: 1 })], canvas);
-    const charged = ctx.halos.at(-1).r;
-
-    const ghosts2 = createCursorGhosts();
-    const ctx2 = makeRecordingCtx();
-    for (let i = 0; i < 40; i++)
-      ghosts2.draw(ctx2, pal, [remote({ wellStrength: 0 })], canvas);
-    const rest = ctx2.halos.at(-1).r;
-
-    expect(charged).toBeGreaterThan(rest);
+    ghosts.update([remote()], canvas);
+    ghosts.update([], canvas); // starts the removal timer
+    ghosts.update([remote()], canvas); // returns before it fires
+    vi.advanceTimersByTime(2000);
+    expect(dot()).toBeTruthy();
+    expect(dot().classList.contains("visible")).toBe(true);
   });
 
-  it("fades a vanished ghost out instead of dropping it instantly", () => {
+  it("fires ghost-hand once when a peer's drag reaches inside the viewport", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
-    for (let i = 0; i < 40; i++) ghosts.draw(ctx, pal, [remote()], canvas);
-    const drawnWhilePresent = ctx.halos.length;
-
-    // Pointer gone: still draws for a while as it eases out.
-    ghosts.draw(ctx, pal, [], canvas);
-    expect(ctx.halos.length).toBeGreaterThan(drawnWhilePresent);
-
-    // Eventually stops drawing entirely.
-    for (let i = 0; i < 100; i++) ghosts.draw(ctx, pal, [], canvas);
-    const settled = ctx.halos.length;
-    ghosts.draw(ctx, pal, [], canvas);
-    expect(ctx.halos.length).toBe(settled);
-  });
-
-  it("fires ghost-hand once when a remote drag reaches inside the viewport", () => {
-    const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
     const events = [];
     const onAch = (e) => events.push(e.detail);
     window.addEventListener("achievement", onAch);
     try {
       // A remote drag outside the viewport doesn't count.
-      ghosts.draw(ctx, pal, [remote({ isDragging: true, x: -50 })], canvas);
+      ghosts.update([remote({ isDragging: true, x: -50 })], canvas);
       expect(
         events.filter((d) => d.type === "sky-link-ghost-hand"),
       ).toHaveLength(0);
       // Inside: fires exactly once, even across many frames.
       for (let i = 0; i < 5; i++)
-        ghosts.draw(ctx, pal, [remote({ isDragging: true, x: 400 })], canvas);
+        ghosts.update([remote({ isDragging: true, x: 400 })], canvas);
       expect(
         events.filter((d) => d.type === "sky-link-ghost-hand"),
       ).toHaveLength(1);
@@ -162,15 +103,14 @@ describe("sky-link/ghosts", () => {
     }
   });
 
-  it("does not fire ghost-hand for a hovering (non-dragging) remote pointer", () => {
+  it("does not fire ghost-hand for a hovering (non-dragging) peer", () => {
     const ghosts = createCursorGhosts();
-    const ctx = makeRecordingCtx();
     const events = [];
     const onAch = (e) => events.push(e.detail);
     window.addEventListener("achievement", onAch);
     try {
       for (let i = 0; i < 5; i++)
-        ghosts.draw(ctx, pal, [remote({ isDragging: false, x: 400 })], canvas);
+        ghosts.update([remote({ isDragging: false, x: 400 })], canvas);
       expect(
         events.filter((d) => d.type === "sky-link-ghost-hand"),
       ).toHaveLength(0);
