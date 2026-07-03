@@ -270,8 +270,9 @@ export function initSkyLink() {
   // ── Cross-window effect mirroring ──
   // A local click or gravity-well release dispatches `sky-effect` in true
   // viewport coordinates; forward it to peers in desktop space so the effect
-  // lands in every window whose viewport it reaches — carried as both the push
-  // and its visible burst, not just a weakened nudge.
+  // lands in every window whose viewport it reaches — carried as both a push
+  // (scaled by EFFECT_FORCE_FACTOR) and its visible burst, where before only a
+  // fixed, visual-less nudge crossed.
   function onLocalEffect(e) {
     const d = e.detail || {};
     if (d.x == null || d.y == null) return;

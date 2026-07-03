@@ -2,17 +2,17 @@
 // A linked window's pointer, redrawn here as the site's own custom cursor
 // continuing across the seam. The OS routes the mouse to whichever window
 // captured the drag, so this window never sees the neighbour's pointer from its
-// own events — it arrives over the channel. Rather than paint a lookalike on the
-// background canvas (behind the page, in ghost colours), each peer cursor is a
-// pair of DOM elements on the cursor layer, styled exactly like #cursor /
-// #cursor-ring: same size, same theme colour, on top of the page. So as the
-// mouse leaves the neighbour and its cursor exits that window's edge, an
-// identical cursor enters this one — one cursor crossing, not a blob. Position
-// is set inline from the streamed pointer and smoothed by a short CSS transition
-// (the stream is coarser than the render). A peer cursor is only drawn while its
-// pointer is actually within this viewport — a pointer still in its own window
-// is drawn there, not here. This module also witnesses the moment a neighbour's
-// drag reaches inside this viewport — the ghost-hand discovery.
+// own events — it arrives over the channel. Each peer cursor is a pair of DOM
+// elements on the cursor layer, styled exactly like #cursor / #cursor-ring
+// (same size, same theme colour) and, living on the cursor layer, drawn on top
+// of the page rather than occluded by content. So as the mouse leaves the
+// neighbour and its cursor exits that window's edge, an identical cursor enters
+// this one — one cursor crossing, not a blob. Position is set inline from the
+// streamed pointer and smoothed by a short CSS transition (the stream is coarser
+// than the render). A peer cursor is only drawn while its pointer is actually
+// within this viewport — a pointer still in its own window is drawn there, not
+// here. This module also witnesses the moment a neighbour's drag reaches inside
+// this viewport — the ghost-hand discovery.
 
 import { defineConstants } from "../dev/registry.js";
 
