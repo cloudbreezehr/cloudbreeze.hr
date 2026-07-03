@@ -4,8 +4,6 @@ import {
   toLocal,
   sideToward,
   edgeGap,
-  rayRectEntry,
-  rayTargetPeer,
   createPeerRegistry,
 } from "../../../js/sky-link/peers.js";
 
@@ -53,33 +51,6 @@ describe("sky-link/peers — facing sides and gaps", () => {
     expect(edgeGap(self, rect(1000, 0))).toBe(200);
     expect(edgeGap(self, rect(400, 300))).toBe(0);
     expect(edgeGap(self, rect(1000, 700))).toBe(Math.hypot(200, 100));
-  });
-});
-
-describe("sky-link/peers — ray targeting", () => {
-  it("returns the distance to a rect the ray enters", () => {
-    // Straight right from (0, 0) into a rect starting at x=100.
-    expect(rayRectEntry({ x: 0, y: 0 }, 0, rect(100, -50, 200, 100))).toBe(100);
-  });
-
-  it("returns 0 for a ray starting inside the rect", () => {
-    expect(rayRectEntry({ x: 150, y: 0 }, 0, rect(100, -50, 200, 100))).toBe(0);
-  });
-
-  it("misses rects off the ray's path or behind it", () => {
-    expect(
-      rayRectEntry({ x: 0, y: 0 }, 0, rect(100, 200, 100, 100)),
-    ).toBeNull();
-    expect(
-      rayRectEntry({ x: 0, y: 0 }, Math.PI, rect(100, -50, 100, 100)),
-    ).toBeNull();
-  });
-
-  it("targets the nearest peer within the distance budget", () => {
-    const near = { id: "near", rect: rect(100, -50, 100, 100) };
-    const far = { id: "far", rect: rect(500, -50, 100, 100) };
-    expect(rayTargetPeer({ x: 0, y: 0 }, 0, [far, near], 1000)).toBe(near);
-    expect(rayTargetPeer({ x: 0, y: 0 }, 0, [far], 300)).toBeNull();
   });
 });
 

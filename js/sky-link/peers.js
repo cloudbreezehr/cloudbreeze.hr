@@ -39,52 +39,6 @@ export function edgeGap(a, b) {
 }
 
 /**
- * Distance along a ray (desktop origin + angle) to its entry into `rect`,
- * or null when the ray misses. Standard slab intersection; a ray starting
- * inside the rect enters at distance 0.
- */
-export function rayRectEntry(origin, angle, rect) {
-  const dirX = Math.cos(angle);
-  const dirY = Math.sin(angle);
-  let tEnter = -Infinity;
-  let tExit = Infinity;
-
-  for (const [pos, dir, lo, hi] of [
-    [origin.x, dirX, rect.x, rect.x + rect.w],
-    [origin.y, dirY, rect.y, rect.y + rect.h],
-  ]) {
-    if (dir === 0) {
-      if (pos < lo || pos > hi) return null;
-      continue;
-    }
-    const t1 = (lo - pos) / dir;
-    const t2 = (hi - pos) / dir;
-    tEnter = Math.max(tEnter, Math.min(t1, t2));
-    tExit = Math.min(tExit, Math.max(t1, t2));
-  }
-  if (tEnter > tExit || tExit < 0) return null;
-  return Math.max(0, tEnter);
-}
-
-/**
- * The nearest peer whose viewport the ray reaches within `maxDistance` px,
- * or null. `peers` is a list of { rect } entries; extra fields ride along
- * untouched so the caller gets its own peer object back.
- */
-export function rayTargetPeer(origin, angle, peers, maxDistance) {
-  let best = null;
-  let bestT = Infinity;
-  for (const peer of peers) {
-    const t = rayRectEntry(origin, angle, peer.rect);
-    if (t !== null && t <= maxDistance && t < bestT) {
-      bestT = t;
-      best = peer;
-    }
-  }
-  return best;
-}
-
-/**
  * Live registry of peer windows, expiring entries not re-announced within
  * `ttlMs`. Time is an explicit parameter everywhere — the caller owns the
  * clock.
