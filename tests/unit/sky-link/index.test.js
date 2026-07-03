@@ -278,10 +278,14 @@ describe("sky-link/index", () => {
     channel().onmessage({ data: { kind: "bye", id: "peer-1" } });
     expect(seam.remotePointers()).toEqual([]);
 
+    // A silent pointer expires on its own (tighter) TTL, before the rect
+    // TTL would drop the whole link.
     injectPeer();
     channel().onmessage(pointerMsg(true));
-    vi.advanceTimersByTime(SKY_LINK.TTL_MS + SKY_LINK.POLL_MS * 2);
+    expect(SKY_LINK.POINTER_TTL_MS).toBeLessThan(SKY_LINK.TTL_MS);
+    vi.advanceTimersByTime(SKY_LINK.POINTER_TTL_MS + SKY_LINK.POLL_MS * 2);
     expect(seam.remotePointers()).toEqual([]);
+    expect(seam.peerWorldRects().length).toBe(1);
   });
 
   it("exposes live peer rects to the renderer through the seam", () => {

@@ -187,19 +187,17 @@ export function initCanvas(canvasEl, appearance, options) {
   const cursorGhosts = createCursorGhosts();
 
   // Publish this window's pointer for linked peers to fold in as a force
-  // source. A drag reports the drag point (canvas coords are already
-  // desktop-orientation-neutral once un-mirrored); otherwise the hover
-  // point when the cursor is present. Coordinates are viewport-local; the
-  // transport shifts them to desktop space.
+  // source: the drag point while dragging, else the hover point when the
+  // cursor is present. Reports true viewport coordinates (Y un-mirrored, so
+  // a flipped window still agrees on where the cursor is); the transport
+  // shifts them to desktop space.
   setLocalPointerSource(() => {
     const dragging = forces.isDragging;
-    const active = dragging || forces.hover.active;
     const y = dragging ? forces.dragPos.y : forces.hover.y;
     return {
       x: dragging ? forces.dragPos.x : forces.hover.x,
-      // Un-mirror so a flipped window still reports true viewport coords.
       y: mirrorYWhenInverted(y, canvas.height),
-      active,
+      active: dragging || forces.hover.active,
       isDragging: dragging,
       holdStrength: forces.holdStrength,
       wellStrength: forces.wellStrength,

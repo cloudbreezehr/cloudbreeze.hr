@@ -2,9 +2,12 @@
 // Soft canvas presence for every linked window's pointer: a faint halo
 // drifting where the neighbour's cursor is, brightening and widening while
 // they charge a hold or a well. Opacity eases per frame, so a pointer that
-// vanishes (idle, unlinked, gone quiet) fades out from its last known spot
-// instead of popping. This module also witnesses the moment a neighbour's
-// drag reaches inside this viewport — the ghost-hand discovery.
+// vanishes from the live list (idle, unlinked, gone quiet, pruned) fades
+// out from its last known spot instead of popping. Liveness is the seam's
+// to decide: a pointer present in `remotes` is live, full stop — the same
+// list that drives its force, so the ghost and the force it represents
+// appear and disappear together. This module also witnesses the moment a
+// neighbour's drag reaches inside this viewport — the ghost-hand discovery.
 
 import { drawHaloParticle } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
@@ -45,13 +48,6 @@ const GHOST = defineConstants("skyLink.ghost", {
     step: 0.01,
     description: "Per-frame easing of ghost opacity toward its target",
   },
-  STALE_MS: {
-    value: 1600,
-    min: 200,
-    max: 10000,
-    step: 100,
-    description: "Silence after which a ghost starts fading out (ms)",
-  },
   GLOW_MID_STOP: {
     value: 0.35,
     min: 0,
@@ -88,12 +84,9 @@ export function createCursorGhosts() {
      * is above zero even after `remotes` empties.
      */
     draw(ctx, pal, remotes, canvas) {
-      const now = Date.now();
       for (const rp of remotes) {
-        const fresh = now - rp.seenAt < GHOST.STALE_MS;
-        const target = fresh
-          ? GHOST.OPACITY + rp.holdStrength * GHOST.HOLD_OPACITY_BOOST
-          : 0;
+        const target =
+          GHOST.OPACITY + rp.holdStrength * GHOST.HOLD_OPACITY_BOOST;
         const g = ghosts.get(rp.id) || {
           opacity: 0,
           x: rp.x,

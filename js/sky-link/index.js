@@ -84,6 +84,14 @@ export const SKY_LINK = defineConstants("skyLink", {
     step: 2,
     description: "Interval between pointer-state broadcasts while linked (ms)",
   },
+  POINTER_TTL_MS: {
+    value: 1800,
+    min: 300,
+    max: 6000,
+    step: 100,
+    description:
+      "Pointer silence before its force and ghost drop — tighter than the rect TTL so a lost cursor stops acting fast (ms)",
+  },
 });
 
 // Interaction ramps arrive as continuous floats; quantizing them keeps the
@@ -108,7 +116,7 @@ export function initSkyLink() {
   const id = randomId();
   const channel = new BroadcastChannel(CHANNEL_NAME);
   const registry = createPeerRegistry(SKY_LINK.TTL_MS);
-  const pointers = createRemotePointerRegistry(SKY_LINK.TTL_MS);
+  const pointers = createRemotePointerRegistry(SKY_LINK.POINTER_TTL_MS);
 
   let selfRect = viewportDesktopRect();
   let lastSentJson = "";
