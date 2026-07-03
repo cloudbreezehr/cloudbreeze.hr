@@ -53,6 +53,7 @@ export const palettes = {
     clickColor: [150, 210, 255],
     orbitColor: [180, 220, 255],
     trailColor: [180, 220, 255],
+    cursorGhost: [190, 220, 255],
     // Fury
     lightningColor: [200, 225, 255],
     lightningShadow: [180, 210, 255, 0.8],
@@ -100,6 +101,7 @@ export const palettes = {
     clickColor: [55, 120, 200],
     orbitColor: [55, 130, 210],
     trailColor: [55, 120, 200],
+    cursorGhost: [70, 130, 200],
     // Fury
     lightningColor: [200, 225, 255],
     lightningShadow: [180, 210, 255, 0.8],

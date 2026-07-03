@@ -9,6 +9,8 @@ import { subscribe as subscribeScroll } from "./scroll-bus.js";
 import { mirrorYWhenInverted, getViewportHeight } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
+import { createCursorGhosts } from "./sky-link/ghosts.js";
+import { remotePointers, setLocalPointerSource } from "./sky-link/seam.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds, getTheme } from "./themes/registry.js";
@@ -176,9 +178,33 @@ export function initCanvas(canvasEl, appearance, options) {
     wellStrength: 0,
     hover: { x: 0, y: 0, active: false },
     lastMoveTime: performance.now(),
+    // Pointers of linked windows, folded into every force helper. Refreshed
+    // once per frame from the seam; empty solo, so solo pays nothing.
+    remotePointers: [],
   };
   _forces = forces;
   const interactions = createInteractions();
+  const cursorGhosts = createCursorGhosts();
+
+  // Publish this window's pointer for linked peers to fold in as a force
+  // source. A drag reports the drag point (canvas coords are already
+  // desktop-orientation-neutral once un-mirrored); otherwise the hover
+  // point when the cursor is present. Coordinates are viewport-local; the
+  // transport shifts them to desktop space.
+  setLocalPointerSource(() => {
+    const dragging = forces.isDragging;
+    const active = dragging || forces.hover.active;
+    const y = dragging ? forces.dragPos.y : forces.hover.y;
+    return {
+      x: dragging ? forces.dragPos.x : forces.hover.x,
+      // Un-mirror so a flipped window still reports true viewport coords.
+      y: mirrorYWhenInverted(y, canvas.height),
+      active,
+      isDragging: dragging,
+      holdStrength: forces.holdStrength,
+      wellStrength: forces.wellStrength,
+    };
+  });
 
   const sky = opts.stars ? createSky(opts.starCount) : null;
   const moon = createMoon();
@@ -188,6 +214,9 @@ export function initCanvas(canvasEl, appearance, options) {
   const canvasY = (y) => mirrorYWhenInverted(y, canvas.height);
 
   let lastFrameTime = performance.now();
+  // Nonzero while cursor ghosts are still easing out; keeps the ghost draw
+  // alive for a few frames after the last remote pointer vanishes.
+  let ghostsVisible = 0;
 
   // ── Sky gradient cache ──
   // Rebuilding the gradient every frame is the most expensive per-frame op.
@@ -213,6 +242,17 @@ export function initCanvas(canvasEl, appearance, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
+    // Refresh linked peers' pointers once per frame into the shared forces
+    // object. The seam hands them over in true viewport coordinates;
+    // `canvasY` re-mirrors Y into this window's canvas space so a flipped
+    // window still folds them in correctly.
+    const remotes = remotePointers();
+    if (remotes.length || forces.remotePointers.length) {
+      forces.remotePointers = remotes.map((rp) => ({
+        ...rp,
+        y: canvasY(rp.y),
+      }));
+    }
     // Atmosphere skips horizon glow when blocky is active — that's a
     // coupling the suppress system can't model (blocky post-processes
     // atmosphere instead of replacing it).
@@ -359,6 +399,17 @@ export function initCanvas(canvasEl, appearance, options) {
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
+    // Soft presence for each linked window's cursor, sitting with the
+    // interaction particles it drives. Keep drawing while ghosts are still
+    // easing out, even after the last remote pointer went quiet.
+    if (forces.remotePointers.length || ghostsVisible) {
+      ghostsVisible = cursorGhosts.draw(
+        ctx,
+        pal,
+        forces.remotePointers,
+        canvas,
+      );
+    }
 
     for (const { hooks } of activeHooks) hooks.drawForeground?.(frame);
     for (const { hooks } of activeHooks) hooks.drawPost?.(frame);
