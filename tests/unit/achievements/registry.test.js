@@ -211,6 +211,7 @@ describe("device reachability", () => {
     "star-courier",
     "triptych",
     "fixed-stars",
+    "ghost-hand",
   ];
   const GATED = [...KEYBOARD_ONLY, ...HOVER_ONLY, ...MULTIWINDOW_ONLY];
 

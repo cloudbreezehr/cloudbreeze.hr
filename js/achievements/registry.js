@@ -1608,6 +1608,16 @@ export const ACHIEVEMENTS = [
     requires: "multiwindow",
   },
   {
+    id: "ghost-hand",
+    title: "Ghost Hand",
+    description: "A cursor from the next window reached into yours.",
+    hint: "While linked, drag your cursor from one window into another",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+    requires: "multiwindow",
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",

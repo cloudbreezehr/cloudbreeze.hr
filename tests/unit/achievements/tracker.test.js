@@ -1783,4 +1783,10 @@ describe("tracker — sky-link handlers", () => {
     dispatchAchievement("sky-scrub");
     expect(storage.isUnlocked("fixed-stars")).toBe(true);
   });
+
+  it("unlocks ghost-hand when a linked cursor reaches into this window", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-link-ghost-hand");
+    expect(storage.isUnlocked("ghost-hand")).toBe(true);
+  });
 });

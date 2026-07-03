@@ -636,6 +636,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("fixed-stars");
     },
 
+    "sky-link-ghost-hand"() {
+      tryUnlock("ghost-hand");
+    },
+
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },
