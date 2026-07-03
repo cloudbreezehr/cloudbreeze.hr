@@ -8,6 +8,9 @@ import {
 } from "./interactions.js";
 import { scaled } from "./motion.js";
 import { getQualityTier } from "./quality.js";
+import { createWorldMotes } from "./world/motes.js";
+import { createAnchorBlend } from "./world/anchor.js";
+import { worldOrigin } from "./world/space.js";
 import {
   STREAK,
   CLOUD,
@@ -283,14 +286,15 @@ class ScrollMote {
       this.vy = 0;
     }
   }
-  draw(pal, opts) {
-    if (this.opacity < MOTE.DRAW_THRESHOLD) return;
+  draw(pal, opts, weight = 1) {
+    const op = this.opacity * weight;
+    if (op < MOTE.DRAW_THRESHOLD) return;
     drawHaloParticle(
       _ctx,
       this.x,
       this.y,
       this.r * MOTE.GLOW_RADIUS,
-      this.opacity,
+      op,
       pal.moteColor,
       opts,
     );
@@ -365,6 +369,13 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
     getQualityTier() === "high"
       ? Array.from({ length: DUST.COUNT }, () => new DepthDust())
       : [];
+
+  // While linked, a deterministic world-anchored mote field replaces the
+  // scroll-reactive solo motes so the dust is continuous across the seam and
+  // present at any scroll depth. The two layouts crossfade on link/unlink; the
+  // shared crossfade timing lives in world/anchor.js.
+  const worldMotes = opts.motes ? createWorldMotes(opts.moteCount) : null;
+  const moteBlend = createAnchorBlend();
 
   return {
     draw(sp, scrollVelocity, pal, forces, blocky, hasTheme) {
@@ -570,66 +581,97 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         });
       }
 
-      // Scroll-reactive particles — blown by scroll, settle with gravity
+      // Scroll-reactive particles — blown by scroll, settle with gravity.
+      // Solo, these motes are the whole layer. Linked, a deterministic
+      // world-anchored field takes over (present at any scroll depth, aligned
+      // across the seam); the two crossfade on link/unlink.
       if (opts.motes) {
+        // One halo opts object shared across every mote this frame — midColor
+        // is palette-derived so it rebuilds per frame, but not per particle.
+        const moteHaloOpts = {
+          midStop: MOTE.GRAD_MID,
+          midAlpha: MOTE.GRAD_MID_OPACITY,
+          midColor: pal.moteGlow,
+        };
         const attractRadius =
           HOLD.ATTRACT_RADIUS_BASE +
           forces.holdStrength * HOLD.ATTRACT_RADIUS_HOLD;
         const attractForce =
           HOLD.ATTRACT_FORCE_BASE +
           forces.holdStrength * HOLD.ATTRACT_FORCE_HOLD;
-        // One halo opts object shared across every mote this frame —
-        // midColor is palette-derived so it must rebuild per frame, but
-        // not per particle.
-        const moteHaloOpts = {
-          midStop: MOTE.GRAD_MID,
-          midAlpha: MOTE.GRAD_MID_OPACITY,
-          midColor: pal.moteGlow,
+        // Solo motes at a crossfade `weight` (1 when they own the layer).
+        const drawSoloMotes = (weight) => {
+          motes.forEach((m) => {
+            m.update(scrollVelocity);
+            if (forces.clickImpulse.strength > 0.05) {
+              const dx = m.x - forces.clickImpulse.x;
+              const dy = m.y - forces.clickImpulse.y;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              const repelR =
+                MOTE_IMP.REPEL_RADIUS +
+                forces.clickImpulse.strength * MOTE_IMP.REPEL_SCALE;
+              if (dist < repelR && dist > 1) {
+                const f = forces.clickImpulse.strength * (1 - dist / repelR);
+                m.vx += (dx / dist) * f;
+                m.vy += (dy / dist) * f;
+                m.opacity = Math.min(
+                  MOTE_IMP.INTERACTION_OPACITY_MAX,
+                  m.opacity + f * MOTE_IMP.CLICK_OPACITY_GAIN,
+                );
+              }
+            }
+            if (forces.isDragging) {
+              const beforeVx = m.vx;
+              const beforeVy = m.vy;
+              applyAttraction(
+                forces,
+                m,
+                attractRadius,
+                attractForce,
+                HOLD.ATTRACT_TANGENT_FACTOR,
+              );
+              // Light up only when the helper actually pulled this mote.
+              if (m.vx !== beforeVx || m.vy !== beforeVy) {
+                m.opacity = Math.min(
+                  MOTE_IMP.INTERACTION_OPACITY_MAX,
+                  m.opacity +
+                    MOTE_IMP.DRAG_OPACITY_GAIN +
+                    forces.holdStrength * MOTE_IMP.DRAG_OPACITY_GAIN_HOLD,
+                );
+              }
+            } else {
+              applyHoverDrift(
+                forces,
+                m,
+                MOTE_HOVER.RADIUS,
+                MOTE_HOVER.STRENGTH,
+              );
+            }
+            applyWellForce(forces, m);
+            m.draw(pal, moteHaloOpts, weight);
+          });
         };
-        motes.forEach((m) => {
-          m.update(scrollVelocity);
-          if (forces.clickImpulse.strength > 0.05) {
-            const dx = m.x - forces.clickImpulse.x;
-            const dy = m.y - forces.clickImpulse.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            const repelR =
-              MOTE_IMP.REPEL_RADIUS +
-              forces.clickImpulse.strength * MOTE_IMP.REPEL_SCALE;
-            if (dist < repelR && dist > 1) {
-              const f = forces.clickImpulse.strength * (1 - dist / repelR);
-              m.vx += (dx / dist) * f;
-              m.vy += (dy / dist) * f;
-              m.opacity = Math.min(
-                MOTE_IMP.INTERACTION_OPACITY_MAX,
-                m.opacity + f * MOTE_IMP.CLICK_OPACITY_GAIN,
-              );
-            }
-          }
-          if (forces.isDragging) {
-            const beforeVx = m.vx;
-            const beforeVy = m.vy;
-            applyAttraction(
+
+        const { anchored, blend } = moteBlend();
+        if (!anchored && blend >= 1) {
+          // Settled solo — the scroll-reactive motes are the entire layer.
+          drawSoloMotes(1);
+        } else {
+          // Linked, or mid-crossfade: the world field fades in at `worldWeight`
+          // while the solo motes fade out, both drawn until the blend settles.
+          const worldWeight = anchored ? blend : 1 - blend;
+          if (worldWeight < 1) drawSoloMotes(1 - worldWeight);
+          if (worldWeight > 0) {
+            worldMotes.draw(
+              _ctx,
+              _canvas,
+              pal,
               forces,
-              m,
-              attractRadius,
-              attractForce,
-              HOLD.ATTRACT_TANGENT_FACTOR,
+              worldOrigin(),
+              worldWeight,
             );
-            // Light up only when the helper actually pulled this mote.
-            if (m.vx !== beforeVx || m.vy !== beforeVy) {
-              m.opacity = Math.min(
-                MOTE_IMP.INTERACTION_OPACITY_MAX,
-                m.opacity +
-                  MOTE_IMP.DRAG_OPACITY_GAIN +
-                  forces.holdStrength * MOTE_IMP.DRAG_OPACITY_GAIN_HOLD,
-              );
-            }
-          } else {
-            applyHoverDrift(forces, m, MOTE_HOVER.RADIUS, MOTE_HOVER.STRENGTH);
           }
-          applyWellForce(forces, m);
-          m.draw(pal, moteHaloOpts);
-        });
+        }
       }
     },
   };
