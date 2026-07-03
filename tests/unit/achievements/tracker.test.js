@@ -1789,4 +1789,10 @@ describe("tracker — sky-link handlers", () => {
     dispatchAchievement("sky-link-ghost-hand");
     expect(storage.isUnlocked("ghost-hand")).toBe(true);
   });
+
+  it("unlocks distant-well when a linked window's well blooms here", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("distant-well");
+    expect(storage.isUnlocked("distant-well")).toBe(true);
+  });
 });

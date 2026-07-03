@@ -477,6 +477,18 @@ export function initCanvas(canvasEl, appearance, options) {
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
+    // Mirror the click into linked windows in true viewport coords (the
+    // transport shifts to desktop space). No-op when solo.
+    window.dispatchEvent(
+      new CustomEvent("sky-effect", {
+        detail: {
+          x: e.clientX,
+          y: e.clientY,
+          strength: HOLD.BLAST_BASE,
+          well: 0,
+        },
+      }),
+    );
     // Forward the nearest service card so achievement handlers can
     // evaluate hit-test without duplicating it.
     const card = e.target.closest(".service-card") || null;
@@ -570,7 +582,21 @@ export function initCanvas(canvasEl, appearance, options) {
     onUp() {
       const ptr = { forces, palFor };
       for (const { hooks } of syncActiveHooks()) hooks.onDragEnd?.(ptr);
-      interactions.releaseDrag(forces, currentPal);
+      const eff = interactions.releaseDrag(forces, currentPal);
+      // Mirror the release blast (well or plain) into linked windows, in true
+      // viewport coords (un-mirror the canvas-space drag point first).
+      if (eff) {
+        window.dispatchEvent(
+          new CustomEvent("sky-effect", {
+            detail: {
+              x: eff.x,
+              y: mirrorYWhenInverted(eff.y, canvas.height),
+              strength: eff.strength,
+              well: eff.well,
+            },
+          }),
+        );
+      }
     },
   });
 
@@ -622,15 +648,18 @@ export function initCanvas(canvasEl, appearance, options) {
   window.addEventListener("dock-snap", (e) => handleDockEvent(e, "snap"));
   window.addEventListener("dock-release", (e) => handleDockEvent(e, "release"));
 
-  // A click in a linked window pushes this sky's particles too (each event
-  // has exactly one publisher in the codebase). Forces only — no burst, no
-  // fury, no achievement: the visible click happened in the other window,
-  // and its origin here usually sits outside the viewport.
-  window.addEventListener("sky-link-impulse", (e) => {
-    const { x, y, strength } = e.detail;
+  // A click or gravity-well release in a linked window lands here too, as both
+  // a force and its visible burst (each event has exactly one publisher in the
+  // codebase). No achievement or fury — the effect's origin was the other
+  // window; this side just answers to it. The burst self-gates under reduced
+  // motion, so only the push crosses then.
+  window.addEventListener("sky-link-effect", (e) => {
+    const { x, y, strength, well } = e.detail;
+    const cy = canvasY(y);
     forces.clickImpulse.x = x;
-    forces.clickImpulse.y = canvasY(y);
+    forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = strength;
+    interactions.burst(x, cy, currentPal, { strength, well });
   });
 
   render();

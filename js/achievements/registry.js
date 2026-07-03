@@ -1618,6 +1618,16 @@ export const ACHIEVEMENTS = [
     requires: "multiwindow",
   },
   {
+    id: "distant-well",
+    title: "Distant Gravity",
+    description: "A gravity well from the next window bloomed in yours.",
+    hint: "While linked, charge a gravity well near the seam and watch the next window",
+    set: "exploration",
+    points: RARE,
+    hidden: true,
+    requires: "multiwindow",
+  },
+  {
     id: "triple-stack",
     title: "Triple Stack",
     description: "Three worlds at once.",

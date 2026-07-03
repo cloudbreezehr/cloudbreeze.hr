@@ -5,8 +5,8 @@
 // `sky-linked`, the edges facing peer windows glow, the renderer sees the
 // live peer rects through the seam and anchors the shared sky to the
 // desktop, pointer states stream between windows so a neighbour's cursor
-// acts on this sky as a live force source, and click impulses ripple
-// across into neighbouring viewports.
+// acts on this sky as a live force source, and clicks and gravity-well blasts
+// mirror across into neighbouring viewports as both force and visible burst.
 //
 // Everything is desktop-coordinate math from peers.js; this module owns the
 // transport (channel, heartbeats, expiry) and the DOM touchpoints (body
@@ -56,19 +56,20 @@ export const SKY_LINK = defineConstants("skyLink", {
     step: 100,
     description: "Peer expiry — silence longer than this drops the link (ms)",
   },
-  IMPULSE_REACH_PX: {
+  EFFECT_REACH_PX: {
     value: 600,
     min: 0,
     max: 2000,
     step: 25,
-    description: "How far beyond a peer's viewport a click still pushes (px)",
+    description:
+      "How far beyond a peer's viewport a mirrored effect still reaches (px)",
   },
-  IMPULSE_FACTOR: {
+  EFFECT_FORCE_FACTOR: {
     value: 0.7,
     min: 0,
     max: 2,
     step: 0.05,
-    description: "Remote click impulse strength relative to a local click",
+    description: "Mirrored effect's push strength relative to the original",
   },
   GLOW_RANGE_PX: {
     value: 900,
@@ -248,30 +249,33 @@ export function initSkyLink() {
     } else if (msg.kind === "bye") {
       pointers.remove(msg.id);
       if (registry.remove(msg.id)) refreshLinkState();
-    } else if (msg.kind === "impulse") {
-      receiveImpulse(msg.point);
+    } else if (msg.kind === "effect") {
+      receiveEffect(msg);
     }
   };
 
-  // ── Cross-window click impulses ──
-  // Local canvas clicks already announce themselves on the achievement
-  // stream; forward those to peers so a click near a shared edge nudges the
-  // neighbouring sky too.
-  function onLocalAchievement(e) {
+  // ── Cross-window effect mirroring ──
+  // A local click or gravity-well release dispatches `sky-effect` in true
+  // viewport coordinates; forward it to peers in desktop space so the effect
+  // lands in every window whose viewport it reaches — carried as both the push
+  // and its visible burst, not just a weakened nudge.
+  function onLocalEffect(e) {
     const d = e.detail || {};
-    if (d.type !== "click" || d.x == null || d.y == null) return;
+    if (d.x == null || d.y == null) return;
     if (registry.count() === 0) return;
     channel.postMessage({
-      kind: "impulse",
+      kind: "effect",
       id,
       point: toDesktop({ x: d.x, y: d.y }, selfRect),
+      strength: d.strength,
+      well: d.well || 0,
     });
   }
-  window.addEventListener("achievement", onLocalAchievement);
+  window.addEventListener("sky-effect", onLocalEffect);
 
-  function receiveImpulse(point) {
-    const local = toLocal(point, selfRect);
-    const reach = SKY_LINK.IMPULSE_REACH_PX;
+  function receiveEffect(msg) {
+    const local = toLocal(msg.point, selfRect);
+    const reach = SKY_LINK.EFFECT_REACH_PX;
     if (
       local.x < -reach ||
       local.x > selfRect.w + reach ||
@@ -281,11 +285,13 @@ export function initSkyLink() {
       return;
     }
     window.dispatchEvent(
-      new CustomEvent("sky-link-impulse", {
+      new CustomEvent("sky-link-effect", {
         detail: {
           x: local.x,
           y: local.y,
-          strength: HOLD.BLAST_BASE * SKY_LINK.IMPULSE_FACTOR,
+          strength:
+            (msg.strength ?? HOLD.BLAST_BASE) * SKY_LINK.EFFECT_FORCE_FACTOR,
+          well: msg.well || 0,
         },
       }),
     );
@@ -329,7 +335,7 @@ export function initSkyLink() {
   return function cleanup() {
     clearInterval(pollTimer);
     clearInterval(pointerTimer);
-    window.removeEventListener("achievement", onLocalAchievement);
+    window.removeEventListener("sky-effect", onLocalEffect);
     window.removeEventListener("pagehide", onPageHide);
     channel.postMessage({ kind: "bye", id });
     channel.close();

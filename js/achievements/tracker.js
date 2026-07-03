@@ -640,6 +640,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("ghost-hand");
     },
 
+    "distant-well"() {
+      tryUnlock("distant-well");
+    },
+
     "timestamp-toggle"() {
       tryUnlock("time-warp");
     },

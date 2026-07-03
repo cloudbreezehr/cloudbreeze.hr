@@ -297,58 +297,63 @@ describe("sky-link/index", () => {
     expect(seam.peerWorldRects()).toEqual([]);
   });
 
-  it("forwards local canvas clicks to peers as desktop-space impulses", () => {
+  it("forwards a local effect to peers in desktop coordinates", () => {
     injectPeer();
+    // A gravity-well release carries its blast strength and well charge.
     window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "click", x: 10, y: 20 },
+      new CustomEvent("sky-effect", {
+        detail: { x: 10, y: 20, strength: 9, well: 0.5 },
       }),
     );
-    const impulse = channel().sent.find((m) => m.kind === "impulse");
-    expect(impulse.point).toEqual({
-      x: selfRect.x + 10,
-      y: selfRect.y + 20,
-    });
+    const effect = channel().sent.find((m) => m.kind === "effect");
+    expect(effect.point).toEqual({ x: selfRect.x + 10, y: selfRect.y + 20 });
+    expect(effect.strength).toBe(9);
+    expect(effect.well).toBe(0.5);
   });
 
-  it("keeps clicks local while no peer is linked", () => {
+  it("keeps effects local while no peer is linked", () => {
     window.dispatchEvent(
-      new CustomEvent("achievement", {
-        detail: { type: "click", x: 10, y: 20 },
+      new CustomEvent("sky-effect", {
+        detail: { x: 10, y: 20, strength: 5, well: 0 },
       }),
     );
-    expect(channel().sent.find((m) => m.kind === "impulse")).toBeUndefined();
+    expect(channel().sent.find((m) => m.kind === "effect")).toBeUndefined();
   });
 
-  it("applies a nearby remote impulse and ignores a distant one", () => {
-    const impulses = [];
-    window.addEventListener("sky-link-impulse", (e) => impulses.push(e.detail));
-    // Just past the right edge — within reach.
+  it("applies a nearby mirrored effect and ignores a distant one", () => {
+    const effects = [];
+    window.addEventListener("sky-link-effect", (e) => effects.push(e.detail));
+    // Just past the right edge — within reach. Force is scaled down, well
+    // charge rides along untouched.
     channel().onmessage({
       data: {
-        kind: "impulse",
+        kind: "effect",
         id: "peer-1",
         point: {
-          x: selfRect.x + selfRect.w + SKY_LINK.IMPULSE_REACH_PX / 2,
+          x: selfRect.x + selfRect.w + SKY_LINK.EFFECT_REACH_PX / 2,
           y: selfRect.y + 50,
         },
+        strength: 8,
+        well: 0.5,
       },
     });
-    expect(impulses.length).toBe(1);
-    expect(impulses[0].strength).toBeGreaterThan(0);
+    expect(effects.length).toBe(1);
+    expect(effects[0].strength).toBeGreaterThan(0);
+    expect(effects[0].well).toBe(0.5);
 
     // Far beyond reach — dropped.
     channel().onmessage({
       data: {
-        kind: "impulse",
+        kind: "effect",
         id: "peer-1",
         point: {
-          x: selfRect.x + selfRect.w + SKY_LINK.IMPULSE_REACH_PX * 3,
+          x: selfRect.x + selfRect.w + SKY_LINK.EFFECT_REACH_PX * 3,
           y: selfRect.y + 50,
         },
+        strength: 8,
       },
     });
-    expect(impulses.length).toBe(1);
+    expect(effects.length).toBe(1);
   });
 
   it("cleanup says goodbye, closes the channel, and removes the glows", () => {
