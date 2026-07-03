@@ -272,14 +272,17 @@ architecture, is what made the field test underwhelm.
   the word locally at the translated origin. No reach limit — screen-wide spells
   (SNOW, CONFETTI, flashes) fill every pane. The remote re-cast calls `cast()`
   directly, so it neither re-broadcasts nor re-fires the caster's achievements.
-- **The ghost is the cursor continuing.** `js/sky-link/ghosts.js` draws a core
-  dot + ring + glow in `pal.cursorGhost`, swelling with the stronger of the
-  peer's hold or well charge. It eases position (smoothing the send cadence into
-  the render's) so it glides, not steps. And when a peer's ghost is inside this
-  viewport — the real mouse is over us but owned by the peer that captured the
-  drag, so our own custom cursor is frozen/stale — `canvas.js` sets
-  `body.peer-pointer-inside` and CSS hides the local cursor, leaving the ghost as
-  the single cursor gliding across the seam.
+- **The peer cursor is the real cursor continuing.** `js/sky-link/ghosts.js`
+  draws each linked peer's pointer as a pair of DOM elements on the cursor layer,
+  styled exactly like `#cursor`/`#cursor-ring` (same size, theme colour via
+  `--cursor-glow`, on top of the page) — not a canvas lookalike behind content.
+  The cursor layer sits outside the flipped `.page`, so it needs no coordinate
+  mirroring; a short CSS transition smooths the stream cadence, and the ring
+  swells its glow with the peer's streamed well charge. When a peer's pointer is
+  inside this viewport — the real mouse is over us but owned by the peer that
+  captured the drag, so our own cursor is frozen/stale — `canvas.js` sets
+  `body.peer-pointer-inside` and CSS hides the local cursor, leaving the peer's
+  as the single cursor crossing the seam. Pointer stream: `POINTER_SEND_MS` 33.
 - **New achievement:** `distant-well` — a linked window's gravity well blooms in
   yours (dispatched from the interactions draw seam when a remote aura renders
   above a threshold).
