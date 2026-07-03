@@ -356,6 +356,46 @@ describe("sky-link/index", () => {
     expect(effects.length).toBe(1);
   });
 
+  it("forwards a local spell cast to peers in desktop coordinates", () => {
+    injectPeer();
+    window.dispatchEvent(
+      new CustomEvent("sky-cast", {
+        detail: { word: "SNOW", x: 10, y: 20, charge: 2 },
+      }),
+    );
+    const cast = channel().sent.find((m) => m.kind === "cast");
+    expect(cast.word).toBe("SNOW");
+    expect(cast.point).toEqual({ x: selfRect.x + 10, y: selfRect.y + 20 });
+    expect(cast.charge).toBe(2);
+  });
+
+  it("keeps casts local while no peer is linked", () => {
+    window.dispatchEvent(
+      new CustomEvent("sky-cast", { detail: { word: "SNOW", x: 1, y: 1 } }),
+    );
+    expect(channel().sent.find((m) => m.kind === "cast")).toBeUndefined();
+  });
+
+  it("re-casts a peer's spell at the translated origin, with no reach limit", () => {
+    const casts = [];
+    window.addEventListener("sky-link-cast", (e) => casts.push(e.detail));
+    // Far from this viewport — a cast still lands (unlike a click/well).
+    channel().onmessage({
+      data: {
+        kind: "cast",
+        id: "peer-1",
+        word: "CONFETTI",
+        point: {
+          x: selfRect.x + selfRect.w + SKY_LINK.EFFECT_REACH_PX * 5,
+          y: selfRect.y + 120,
+        },
+        charge: 3,
+      },
+    });
+    expect(casts).toHaveLength(1);
+    expect(casts[0]).toMatchObject({ word: "CONFETTI", charge: 3 });
+  });
+
   it("cleanup says goodbye, closes the channel, and removes the glows", () => {
     injectPeer();
     cleanup();

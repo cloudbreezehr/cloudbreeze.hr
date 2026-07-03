@@ -251,6 +251,8 @@ export function initSkyLink() {
       if (registry.remove(msg.id)) refreshLinkState();
     } else if (msg.kind === "effect") {
       receiveEffect(msg);
+    } else if (msg.kind === "cast") {
+      receiveCast(msg);
     }
   };
 
@@ -272,6 +274,38 @@ export function initSkyLink() {
     });
   }
   window.addEventListener("sky-effect", onLocalEffect);
+
+  // ── Cross-window spell casts ──
+  // A local incantation broadcasts to every linked window so the same spell
+  // blooms across the shared sky. No reach limit — unlike a click/well, a cast
+  // reaches all windows, each rendering it at the desktop-translated origin.
+  function onLocalCast(e) {
+    const d = e.detail || {};
+    if (d.word == null || d.x == null || d.y == null) return;
+    if (registry.count() === 0) return;
+    channel.postMessage({
+      kind: "cast",
+      id,
+      word: d.word,
+      point: toDesktop({ x: d.x, y: d.y }, selfRect),
+      charge: d.charge || 0,
+    });
+  }
+  window.addEventListener("sky-cast", onLocalCast);
+
+  function receiveCast(msg) {
+    const local = toLocal(msg.point, selfRect);
+    window.dispatchEvent(
+      new CustomEvent("sky-link-cast", {
+        detail: {
+          word: msg.word,
+          x: local.x,
+          y: local.y,
+          charge: msg.charge || 0,
+        },
+      }),
+    );
+  }
 
   function receiveEffect(msg) {
     const local = toLocal(msg.point, selfRect);
@@ -336,6 +370,7 @@ export function initSkyLink() {
     clearInterval(pollTimer);
     clearInterval(pointerTimer);
     window.removeEventListener("sky-effect", onLocalEffect);
+    window.removeEventListener("sky-cast", onLocalCast);
     window.removeEventListener("pagehide", onPageHide);
     channel.postMessage({ kind: "bye", id });
     channel.close();

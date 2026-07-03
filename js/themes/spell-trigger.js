@@ -374,6 +374,14 @@ function buildActions() {
     });
     actions.set(id, (origin, charge) => {
       inc.cast(origin, charge);
+      // Mirror the cast into linked windows so the same spell blooms across the
+      // shared sky, each casting locally at the desktop-translated origin. Sent
+      // in true viewport coords; the transport shifts to desktop space.
+      window.dispatchEvent(
+        new CustomEvent("sky-cast", {
+          detail: { word: inc.word, x: origin.x, y: origin.y, charge },
+        }),
+      );
       // Light up the weapon slot with this incantation's own icon.
       window.dispatchEvent(
         new CustomEvent("weapon-select", {
@@ -545,6 +553,16 @@ export function initSpellTrigger() {
   document.addEventListener("pointermove", onPointerMove, { passive: true });
   document.addEventListener("keydown", onKeydown);
   document.addEventListener("click", onClick);
+
+  // A cast in a linked window blooms here too — re-cast the same incantation
+  // locally at the peer-translated origin. Calls cast() directly (not through
+  // the matcher), so it neither re-broadcasts nor re-fires local achievements.
+  function onRemoteCast(e) {
+    const { word, x, y, charge } = e.detail || {};
+    const inc = INCANTATIONS.find((i) => i.word === word);
+    if (inc) inc.cast({ x, y }, charge || 0);
+  }
+  window.addEventListener("sky-link-cast", onRemoteCast);
 
   return {
     stop() {
