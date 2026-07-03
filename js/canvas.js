@@ -251,6 +251,15 @@ export function initCanvas(canvasEl, appearance, options) {
         y: canvasY(rp.y),
       }));
     }
+    // A linked peer's pointer physically inside this viewport means the real
+    // mouse is over this window but owned by the peer (it captured the drag),
+    // so this window's own custom cursor is frozen at a stale spot — hide it and
+    // let the ghost stand in as the one cursor. CSS keys off the body class.
+    const peerPointerInside = forces.remotePointers.some(
+      (rp) =>
+        rp.x >= 0 && rp.x <= canvas.width && rp.y >= 0 && rp.y <= canvas.height,
+    );
+    document.body.classList.toggle("peer-pointer-inside", peerPointerInside);
     // Atmosphere skips horizon glow when blocky is active — that's a
     // coupling the suppress system can't model (blocky post-processes
     // atmosphere instead of replacing it).

@@ -79,7 +79,7 @@ export const SKY_LINK = defineConstants("skyLink", {
     description: "Peer distance at which the facing-edge glow fades to zero",
   },
   POINTER_SEND_MS: {
-    value: 50,
+    value: 33,
     min: 16,
     max: 500,
     step: 2,

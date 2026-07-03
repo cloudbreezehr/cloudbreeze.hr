@@ -79,6 +79,23 @@ describe("sky-link/ghosts", () => {
     expect(charged).toBeGreaterThan(rest);
   });
 
+  it("eases the ghost toward the streamed point instead of snapping", () => {
+    const ghosts = createCursorGhosts();
+    const ctx = makeRecordingCtx();
+    // Settle the ghost at the start point.
+    for (let i = 0; i < 20; i++)
+      ghosts.draw(ctx, pal, [remote({ x: 100 })], canvas);
+    // Jump the streamed point — the ghost should trail, not teleport.
+    ghosts.draw(ctx, pal, [remote({ x: 500 })], canvas);
+    const midX = ctx.halos.at(-1).x;
+    expect(midX).toBeGreaterThan(100);
+    expect(midX).toBeLessThan(500);
+    // Given enough frames it catches up.
+    for (let i = 0; i < 40; i++)
+      ghosts.draw(ctx, pal, [remote({ x: 500 })], canvas);
+    expect(ctx.halos.at(-1).x).toBeCloseTo(500, 0);
+  });
+
   it("draws the ghost as a cursor — glow, ring, and core dot", () => {
     const ghosts = createCursorGhosts();
     const ctx = makeRecordingCtx();

@@ -5,9 +5,11 @@
 // pointer to only one window at a time, so as the mouse leaves the neighbour
 // its ghost here takes over, handing off to this window's own cursor when the
 // mouse arrives. Dot, ring and glow brighten and widen while the neighbour
-// charges a hold or a well. Opacity eases per frame, so a pointer that
-// vanishes from the live list (idle, unlinked, gone quiet, pruned) fades out
-// from its last known spot instead of popping. Liveness is the seam's to
+// charges a hold or a well. Opacity and position both ease per frame — the
+// position easing smooths the pointer stream's cadence into the render's, so
+// the ghost glides instead of stepping — and a pointer that vanishes from the
+// live list (idle, unlinked, gone quiet, pruned) fades out from its last known
+// spot instead of popping. Liveness is the seam's to
 // decide: a pointer present in `remotes` is live, full stop — the same list
 // that drives its force, so the ghost and the force it represents appear and
 // disappear together. This module also witnesses the moment a neighbour's drag
@@ -51,6 +53,14 @@ const GHOST = defineConstants("skyLink.ghost", {
     max: 1,
     step: 0.01,
     description: "Per-frame easing of ghost opacity toward its target",
+  },
+  POS_EASE: {
+    value: 0.5,
+    min: 0.05,
+    max: 1,
+    step: 0.05,
+    description:
+      "Per-frame easing of ghost position toward the streamed point (smooths the send cadence)",
   },
   GLOW_MID_STOP: {
     value: 0.35,
@@ -135,8 +145,10 @@ export function createCursorGhosts() {
           charge: 0,
         };
         g.opacity += (target - g.opacity) * GHOST.EASE;
-        g.x = rp.x;
-        g.y = rp.y;
+        // Ease position too — a ghost snapped to the streamed point reads as
+        // laggy at the stream's rate; easing it glides at render rate instead.
+        g.x += (rp.x - g.x) * GHOST.POS_EASE;
+        g.y += (rp.y - g.y) * GHOST.POS_EASE;
         g.charge = charge;
         ghosts.set(rp.id, g);
 
