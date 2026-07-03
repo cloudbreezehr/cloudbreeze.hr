@@ -23,4 +23,30 @@ describe("sky-link/seam", () => {
     seam.setPeerRectsSource(null);
     expect(seam.peerWorldRects()).toEqual([]);
   });
+
+  it("reports no remote pointers while unbound", () => {
+    expect(seam.remotePointers()).toEqual([]);
+  });
+
+  it("reads live remote pointers from the bound source", () => {
+    const ptrs = [
+      { id: "a", x: 5, y: 6, active: true, isDragging: true, holdStrength: 1 },
+    ];
+    seam.setRemotePointersSource(() => ptrs);
+    expect(seam.remotePointers()).toEqual(ptrs);
+    seam.setRemotePointersSource(null);
+    expect(seam.remotePointers()).toEqual([]);
+  });
+
+  it("reports no local pointer until the renderer binds one", () => {
+    expect(seam.localPointerState()).toBeNull();
+  });
+
+  it("reads the local pointer state from the bound source", () => {
+    const state = { x: 1, y: 2, active: true, isDragging: false };
+    seam.setLocalPointerSource(() => state);
+    expect(seam.localPointerState()).toEqual(state);
+    seam.setLocalPointerSource(null);
+    expect(seam.localPointerState()).toBeNull();
+  });
 });
