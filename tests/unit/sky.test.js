@@ -264,15 +264,30 @@ describe("sky.js star projection — solo vs world-anchored", () => {
     expect(xs).toEqual([100, 100 + 1920]);
   });
 
-  it("measures linked parallax in sky-tile units, solo in canvas units", () => {
+  it("freezes linked parallax to a tunable fraction of the tile-scaled shift", () => {
     const depth = 1;
     const sp = 0.5;
     const canvasH = 600;
+    // Solo parallax scales with local scroll and the canvas height.
     const solo = mod.starsParallaxShift(depth, sp, canvasH);
+    expect(solo).toBeGreaterThan(0);
+    // The same shift measured in sky-tile units (1080-tall tile vs canvas).
+    const tileEquivalent = solo * (1080 / canvasH);
     linkUp();
-    const linked = mod.starsParallaxShift(depth, sp, canvasH);
-    // Same tunables, different length scale — 1080-tall tile vs canvas.
-    expect(linked / solo).toBeCloseTo(1080 / canvasH, 6);
+    const saved = mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED;
+    try {
+      // Fully frozen: windows at different scroll offsets stay aligned.
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = 0;
+      expect(mod.starsParallaxShift(depth, sp, canvasH)).toBe(0);
+      // Turned up to 1, the linked shift matches the tile-scaled parallax.
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = 1;
+      expect(mod.starsParallaxShift(depth, sp, canvasH)).toBeCloseTo(
+        tileEquivalent,
+        6,
+      );
+    } finally {
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = saved;
+    }
   });
 
   it("reports the anchoring regime off the live link state", () => {

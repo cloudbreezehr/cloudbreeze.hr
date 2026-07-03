@@ -12,9 +12,14 @@ import {
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
 import { peerWorldRects } from "./sky-link/seam.js";
+import { isWorldAnchored, createAnchorBlend } from "./world/anchor.js";
 import { worldTickTime, tickToMs } from "./world/clock.js";
 import { WORLD_W, WORLD_H, floorMod, worldOrigin } from "./world/space.js";
 import { tickRoll, tickStream } from "./world/schedule.js";
+
+// The world/solo regime probe lives in world/anchor.js now; re-export it here
+// so consumers that hit-test or mirror star positions keep one import.
+export { isWorldAnchored };
 import { shootingStarBoost } from "./real-sky/boost.js";
 import { arrangementRandom, skySeedKey } from "./daily/random.js";
 import { hashString } from "./daily/seed.js";
@@ -686,16 +691,10 @@ export const SKY_SHARED = defineConstants("sky.shared", {
 // star is always somewhere on screen whatever the window size, which the
 // constellation puzzle depends on. Linked, the tile repeats across the
 // desktop plane and each window draws its own world slice, so positions
-// agree across every linked window and the sky reads as one surface.
+// agree across every linked window and the sky reads as one surface. The
+// link/unlink crossfade timing lives in world/anchor.js, shared with the
+// other world-anchored layers.
 export const WORLD_ANCHOR = defineConstants("sky.world", {
-  LINK_BLEND_MS: {
-    value: 1200,
-    min: 0,
-    max: 5000,
-    step: 100,
-    description:
-      "Crossfade between the window-folded and desktop-anchored star layouts (ms)",
-  },
   SCRUB_TRAVEL_PX: {
     value: 400,
     min: 50,
@@ -703,6 +702,14 @@ export const WORLD_ANCHOR = defineConstants("sky.world", {
     step: 25,
     description:
       "Cumulative window travel while linked that earns the fixed-stars discovery",
+  },
+  PARALLAX_WHILE_LINKED: {
+    value: 0,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description:
+      "Fraction of local scroll that still drives world-layer parallax while linked (0 = frozen so windows at different scroll offsets stay aligned; 1 = full per-window parallax)",
   },
 });
 
@@ -714,8 +721,19 @@ function soloShift(depth, sp, canvasH) {
   return depth * sp * canvasH * STARS.PARALLAX_SCALE;
 }
 
+// Linked parallax is frozen to a shared fraction of local scroll
+// (PARALLAX_WHILE_LINKED) so windows at different scroll offsets still sample
+// the same slice and align across the seam — the spanned sky is anchored to the
+// desktop, not to any one window's scroll. The solo regime uses soloShift, so
+// this factor never touches solo behaviour.
 function worldShift(depth, sp) {
-  return depth * sp * WORLD_H * STARS.PARALLAX_SCALE;
+  return (
+    depth *
+    sp *
+    WORLD_ANCHOR.PARALLAX_WHILE_LINKED *
+    WORLD_H *
+    STARS.PARALLAX_SCALE
+  );
 }
 
 // Single on-screen position of a star in the solo regime.
@@ -744,11 +762,6 @@ function worldInstances(star, sp, canvas, origin) {
     }
   }
   return out;
-}
-
-/** True while this window renders the desktop-anchored world regime. */
-export function isWorldAnchored() {
-  return peerWorldRects().length > 0;
 }
 
 /** Parallax displacement the star renderer applies at `depth` for scroll
@@ -893,10 +906,9 @@ export function createSky(starCount) {
   // animation runs at the same world speed on every display refresh rate.
   let lastTickTime = worldTickTime();
 
-  // Star-layout regime of the previous frame, and when it last flipped —
-  // drives the link/unlink crossfade.
-  let anchoredPrev = false;
-  let regimeFlipAt = -Infinity;
+  // Link/unlink crossfade tracker for the star layout — shared crossfade
+  // timing with the other world-anchored layers.
+  const anchorBlend = createAnchorBlend();
 
   // Window travel accumulated while linked, for the fixed-stars discovery.
   let scrubOrigin = null;
@@ -1031,16 +1043,7 @@ export function createSky(starCount) {
       // Regime crossfade — on link/unlink the two star layouts dissolve
       // into each other instead of snapping, so the merge reads as the
       // skies joining rather than a glitch. Instant under reduced motion.
-      const anchored = isWorldAnchored();
-      if (anchored !== anchoredPrev) {
-        anchoredPrev = anchored;
-        regimeFlipAt = performance.now();
-      }
-      const sinceFlip = performance.now() - regimeFlipAt;
-      const blend =
-        prefersReducedMotion() || sinceFlip >= WORLD_ANCHOR.LINK_BLEND_MS
-          ? 1
-          : sinceFlip / WORLD_ANCHOR.LINK_BLEND_MS;
+      const { anchored, blend } = anchorBlend();
       const origin = anchored || blend < 1 ? worldOrigin() : null;
 
       // The payoff of desktop anchoring is discoverable: move the window
