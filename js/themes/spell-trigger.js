@@ -569,6 +569,7 @@ export function initSpellTrigger() {
       document.removeEventListener("pointermove", onPointerMove);
       document.removeEventListener("keydown", onKeydown);
       document.removeEventListener("click", onClick);
+      window.removeEventListener("sky-link-cast", onRemoteCast);
       resetCharge();
     },
   };

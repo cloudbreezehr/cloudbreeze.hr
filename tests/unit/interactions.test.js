@@ -167,6 +167,8 @@ function recordingCtx() {
   const grad = { addColorStop() {} };
   return {
     halos,
+    // Bounds the distant-well "blooms on this slice" gate reads via ctx.canvas.
+    canvas: { width: 1000, height: 1000 },
     createRadialGradient(x0, y0, r0, x1, y1, r1) {
       halos.push({ x: x1, y: y1, r: r1 });
       return grad;
@@ -231,6 +233,30 @@ describe("interactions — mirrored well visuals across the seam", () => {
       });
       for (let i = 0; i < 5; i++) inter.draw(ctx, wellPal, forces);
       expect(events.filter((d) => d.type === "distant-well")).toHaveLength(1);
+    } finally {
+      window.removeEventListener("achievement", onAch);
+    }
+  });
+
+  it("does not fire distant-well when the well blooms off this slice", () => {
+    const inter = createInteractions();
+    const ctx = recordingCtx();
+    const events = [];
+    const onAch = (e) => events.push(e.detail);
+    window.addEventListener("achievement", onAch);
+    try {
+      // Strong well, but its source sits well outside this viewport.
+      const forces = makeForces({
+        remotePointers: [
+          remote(5000, 150, {
+            isDragging: true,
+            holdStrength: 1,
+            wellStrength: 0.8,
+          }),
+        ],
+      });
+      for (let i = 0; i < 5; i++) inter.draw(ctx, wellPal, forces);
+      expect(events.filter((d) => d.type === "distant-well")).toHaveLength(0);
     } finally {
       window.removeEventListener("achievement", onAch);
     }

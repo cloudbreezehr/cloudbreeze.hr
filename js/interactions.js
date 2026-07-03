@@ -386,6 +386,8 @@ export function createInteractions() {
       );
       const remotes = forces.remotePointers;
       if (remotes && remotes.length) {
+        const cw = ctx.canvas.width;
+        const ch = ctx.canvas.height;
         const live = new Set();
         for (const rp of remotes) {
           live.add(rp.id);
@@ -395,9 +397,15 @@ export function createInteractions() {
             remoteWells.set(rp.id, pool);
           }
           drawWell(ctx, pal, rp, pool, orbitOpts, auraOpts);
+          // Only celebrate a well the player can actually see bloom — its
+          // source must land on this window's slice, not off-canvas.
           if (
             !distantWellFired &&
-            rp.wellStrength > DISTANT_WELL_MIN_STRENGTH
+            rp.wellStrength > DISTANT_WELL_MIN_STRENGTH &&
+            rp.x >= 0 &&
+            rp.x <= cw &&
+            rp.y >= 0 &&
+            rp.y <= ch
           ) {
             distantWellFired = true;
             window.dispatchEvent(

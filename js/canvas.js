@@ -254,8 +254,11 @@ export function initCanvas(canvasEl, appearance, options) {
     // A linked peer's pointer physically inside this viewport means the real
     // mouse is over this window but owned by the peer (it captured the drag),
     // so this window's own custom cursor is frozen at a stale spot — hide it and
-    // let the ghost stand in as the one cursor. CSS keys off the body class.
-    const peerPointerInside = forces.remotePointers.some(
+    // let the peer cursor stand in as the one cursor. CSS keys off the body
+    // class. Tested against the raw seam pointers (true viewport Y), the same
+    // space the peer cursors use — so "hide the local cursor" and "a peer cursor
+    // is shown" stay in lockstep, including under upside-down.
+    const peerPointerInside = remotes.some(
       (rp) =>
         rp.x >= 0 && rp.x <= canvas.width && rp.y >= 0 && rp.y <= canvas.height,
     );
