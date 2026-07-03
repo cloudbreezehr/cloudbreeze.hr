@@ -28,10 +28,13 @@ js/
   audio/                         Opt-in Web Audio: engine, procedural SFX voices, per-theme bus tint, event bridges
   daily/                         Sky-of-the-day: date-seeded arrangement stream, word of the day, #sky= links
   world/                         The shared world behind the multi-window sky: fixed-timestep clock,
-                                 desktop-anchored sky-tile geometry, seeded per-tile event schedule
+                                 desktop-anchored sky-tile geometry, seeded per-tile event schedule,
+                                 the world/solo regime + link crossfade, and the deterministic
+                                 world-anchored mote field
   sky-link/                      Multi-window link: peer transport + registry, desktop-space peer
                                  geometry, facing-edge glows, the renderer-facing seam, remote-pointer
-                                 input bus + cursor ghosts
+                                 input bus + cursor ghosts, mirrored one-shot effects (clicks / well
+                                 blasts) across viewports
   real-sky/                      The actual sky: solar/lunar math, day-phase tint, meteor-shower calendar,
                                  live Open-Meteo weather for the footer badge
   terminal/                      Hidden Quake-style console (spell SHELL / backquote): command catalogue

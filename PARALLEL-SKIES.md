@@ -69,24 +69,27 @@ that needs no leader).
 
 ## Phases
 
-> **Revised after phase-2 field testing** — see "Phase-2 field test" at the
-> end for the diagnosis and the reordered priority. Short version: the
-> plumbing (1–2) works, but the _felt_ payoff lives in phase 3 + a slice of
-> phase 5, so those come next, ahead of more input polish.
+> **Revised priority landed.** The phase-2 field test (below) reordered the
+> work, and its three items are now done (see "Phase-3 decisions" at the end):
+> world-anchor the motes behind a scroll-parallax policy, mirror the well/click
+> visuals across the seam, and make the ghost read as one continuous cursor.
+> The plumbing (1–2) was already in place; what remains of 3–6 is the
+> lower-payoff polish.
 
 1. ✅ Fixed-timestep + shared-epoch refactor for the shared layers (stars,
    shooting stars); windows render desktop-space slices. The sky
    becomes visibly continuous — stars align across the gap.
 2. ✅ Input bus: remote pointers as force sources + cursor ghosts. Wells,
-   orbits, drags all cross the border. (Motes' _layout_ still isn't
-   world-anchored — that waits on the phase-5 scroll policy — but they now
-   answer to a neighbour's cursor like every other force-driven particle.)
-3. Effect mirroring at the three seams (casts, fury/clicks, theme toggles).
+   orbits, drags all cross the border.
+3. ◐ Effect mirroring at the dispatch seams. ✅ **fury/clicks** — the well
+   aura/orbit/blast and click bursts mirror into every window the effect
+   touches, through one `effect` broadcast seam. _Remaining:_ speller casts,
+   fury bolts/aurora/meteors, `toggleTheme`.
 4. Viewport mode for secondary windows (chrome fades; pure sky).
-5. Toast routing, leader hardening (pagehide, TTL churn), scroll-parallax
-   policy while linked (freeze shared-layer parallax or follow the leader).
-   Depth dust joins the world here — it's only visible mid-scroll, so its
-   alignment is moot until the scroll policy exists.
+5. ◐ ✅ **scroll-parallax policy** (frozen while linked, tunable) + ✅
+   **world-anchored motes** (deterministic dust, present at any scroll depth,
+   force-responsive). _Remaining:_ toast routing, leader hardening (pagehide,
+   TTL churn). Depth dust can join the world next — same regime as the motes.
 6. Stretch: dev-console border crossing, elongated-nav illusion.
 
 Keep from v1: peers.js geometry (all of it), the seam module pattern
@@ -216,26 +219,59 @@ Done right they compose into _one_ cursor gliding across the seam: the mouse
 leaves A, and the ghost in B hands off to B's own cursor as it enters. So don't
 drop the ghost — style it to read as the same cursor continuing.
 
-**Revised priority (do these before more input polish):**
+**Revised priority — now built (see "Phase-3 decisions" below):**
 
-1. **World-anchor the motes** — pull a slice of phase 5 forward. The lively,
-   force-responsive layer has to be continuous across the seam _and_ present,
-   not just the inert stars. Needs the scroll policy decided first (freeze
-   shared-layer parallax while linked, or follow the leader).
-2. **Mirror effects at the seam (phase 3)** — above all, draw the well's
-   aura/orbit/blast and the click bursts in _every_ window whose rect the
-   effect touches (translate the origin by the peer rect). This is what makes
-   item 2 read as "it works."
-3. **Style the ghost as one continuous cursor** — so it reads as the same
-   cursor continuing across the seam, handing off to the entering window's own
-   cursor, rather than a separate blob hovering near the edge.
+1. ✅ **World-anchor the motes** — pulled a slice of phase 5 forward. The
+   lively, force-responsive layer is now continuous across the seam _and_
+   present at any scroll depth, not just the inert stars. Needed the scroll
+   policy decided first (froze shared-layer parallax while linked).
+2. ✅ **Mirror effects at the seam (phase 3)** — the well's aura/orbit/blast
+   and click bursts now draw in _every_ window whose rect the effect touches.
+   This is what makes it read as "it works."
+3. ✅ **Style the ghost as one continuous cursor** — the ghost is now the
+   site's cursor shape (core dot + ring + glow) continuing across the seam,
+   handing off to the entering window's own cursor, not a separate blob.
 
 Rationale: phases 1–2 built the plumbing (continuous stars + cross-window
-forces); the _felt_ payoff lives in 3 + a slice of 5. Sequencing, not
+forces); the _felt_ payoff lived in 3 + a slice of 5. Sequencing, not
 architecture, is what made the field test underwhelm.
 
-Entry points for the next session: `js/atmosphere.js` (motes + their force
-calls), `js/world/space.js` + `js/sky-link/seam.js` (world/desktop projection,
-to anchor motes), `js/interactions.js` (the well/click visible payload to
-mirror), `js/sky-link/index.js` (channel; a likely new `effect`/`cast`
-message for phase 3), `js/canvas.js` (render loop, `forces.remotePointers`).
+## Phase-3 decisions (as built)
+
+- **Scroll-parallax freeze, not follow-the-leader.** While linked, world-layer
+  parallax is frozen to a tunable fraction of local scroll
+  (`sky.world.PARALLAX_WHILE_LINKED`, default 0), so windows at different scroll
+  offsets still sample the same slice and align across the seam — the spanned
+  sky is anchored to the desktop, not to any one window's scroll. No leader, no
+  scroll broadcast. Applied inside the single world-projection path in `sky.js`,
+  so the moon and click hit-tests freeze in lockstep for free. Turning the
+  factor toward 1 restores per-window parallax without a rewrite.
+- **The regime + crossfade moved to `js/world/anchor.js`.** `isWorldAnchored()`
+  and the link/unlink crossfade (`createAnchorBlend`, `LINK_BLEND_MS`) are now
+  shared by both world-anchored layers (stars and motes); `sky.js` re-exports
+  `isWorldAnchored` for its existing consumers.
+- **World-anchored motes are a deterministic field, not state streaming**
+  (`js/world/motes.js`). Every window seeds the same homes from the daily key,
+  drives a shared ambient drift off the world clock, and springs each mote
+  toward that target. Pointer forces (local + every peer, folded in by the same
+  helpers as everything else) perturb the field; the spring heals it back to the
+  shared target, so the dust only diverges transiently right under an
+  actively-moving cursor. Solo keeps the old scroll-reactive motes verbatim;
+  `atmosphere.js` crossfades between the two regimes on link/unlink.
+- **Well visuals ride the pointer stream; one-shots ride one broadcast.** The
+  well aura + orbit swarm render for every charging peer straight off the
+  already-streamed pointer state (per-peer orbit pools in `interactions.js`);
+  clicks and well-release blasts mirror through a single `sky-effect` →
+  `effect` → `sky-link-effect` seam (`canvas.js` ↔ `sky-link/index.js`), landing
+  in each window as both a force and its visible burst. This replaces the old
+  click-only `impulse` path (`IMPULSE_*` → `EFFECT_*`).
+- **The ghost is the cursor continuing.** `js/sky-link/ghosts.js` now draws a
+  core dot + ring + glow in `pal.cursorGhost`, swelling with the stronger of the
+  peer's hold or well charge, so it reads as one cursor gliding across the seam.
+- **New achievement:** `distant-well` — a linked window's gravity well blooms in
+  yours (dispatched from the interactions draw seam when a remote aura renders
+  above a threshold).
+
+Remaining seams for a later pass: speller casts, fury bolts/aurora/meteors, and
+`toggleTheme` (phase 3 leftovers); viewport mode (phase 4); toast routing and
+leader hardening (phase 5).
