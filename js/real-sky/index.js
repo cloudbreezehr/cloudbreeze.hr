@@ -15,8 +15,8 @@ import { fetchWeather } from "./weather.js";
 import {
   mountLocationControls,
   usePreciseLocationIfGranted,
-  isReturnVisit,
 } from "./location-prompt.js";
+import { isReturnVisit } from "../visit.js";
 import { bindClickable } from "../clickable.js";
 
 // Sky phases move on the scale of minutes.

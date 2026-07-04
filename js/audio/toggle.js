@@ -15,12 +15,10 @@
 import { isSoundEnabled, toggleSound, onSoundChange } from "./engine.js";
 import { playSfx } from "./sfx.js";
 import { defineConstants } from "../dev/registry.js";
+import { isReturnVisit } from "../visit.js";
 
 const TOOLTIP_ON = "Sound on";
 const TOOLTIP_OFF = "Sound off";
-// Persisted once the site has been loaded before — drives the return-visit
-// reveal. Set on first load so every later visit reveals the toggle at once.
-const VISITED_KEY = "cb_visited";
 
 const REVEAL = defineConstants("audio.toggle", {
   DWELL_MS: {
@@ -47,18 +45,6 @@ export function revealSoundToggle() {
   reveal();
 }
 
-// Read whether the site has been loaded before, marking it visited for next
-// time. Returns true for a returning visitor.
-function visitedBefore() {
-  try {
-    const seen = localStorage.getItem(VISITED_KEY) === "1";
-    localStorage.setItem(VISITED_KEY, "1");
-    return seen;
-  } catch {
-    return false;
-  }
-}
-
 export function initSoundToggle(el) {
   buttonEl = el;
   if (!buttonEl) return;
@@ -83,10 +69,8 @@ export function initSoundToggle(el) {
   onSoundChange(paint);
 
   // Reveal now if the visitor already cares (sound on, or a return visit);
-  // otherwise wait out the dwell. Always mark visited so the next visit is a
-  // return regardless of which path fires.
-  const returning = visitedBefore();
-  if (isSoundEnabled() || returning) reveal();
+  // otherwise wait out the dwell.
+  if (isSoundEnabled() || isReturnVisit()) reveal();
   else setTimeout(reveal, REVEAL.DWELL_MS);
 }
 

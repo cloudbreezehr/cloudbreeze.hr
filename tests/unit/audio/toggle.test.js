@@ -47,7 +47,7 @@ describe("audio/toggle", () => {
   });
 
   it("reveals immediately for a returning visitor", () => {
-    localStorage.setItem("cb_visited", "1");
+    localStorage.setItem("cloudbreeze-visited", "1");
     initSoundToggle(btn);
     expect(revealed()).toBe(true);
   });
@@ -60,7 +60,7 @@ describe("audio/toggle", () => {
 
   it("marks the visitor so a later visit reveals at once", () => {
     initSoundToggle(btn);
-    expect(localStorage.getItem("cb_visited")).toBe("1");
+    expect(localStorage.getItem("cloudbreeze-visited")).toBe("1");
   });
 
   it("plays a rising power-up when turning sound on", () => {
