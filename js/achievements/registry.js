@@ -89,6 +89,12 @@ export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
 export const SETS = [
   { id: "cloudlog", label: "Cloudlog", color: null, icon: CLOUDLOG_ICON },
   {
+    id: "interaction",
+    label: "Interaction",
+    color: null,
+    icon: INTERACTION_ICON,
+  },
+  {
     id: "exploration",
     label: "Exploration",
     color: null,
@@ -97,12 +103,6 @@ export const SETS = [
   { id: "appearance", label: "Appearance", color: null, icon: APPEARANCE_ICON },
   { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
   { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
-  {
-    id: "interaction",
-    label: "Interaction",
-    color: null,
-    icon: INTERACTION_ICON,
-  },
   {
     id: "incantations",
     label: "Incantations",
