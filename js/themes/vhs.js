@@ -297,9 +297,12 @@ export function initVhs() {
       }
       vhs.drawAfter(ctx, palFor("vhs"));
     },
-    onClick({ cx, cy, reducedMotion }) {
+    onClick({ x, y, reducedMotion }) {
       if (reducedMotion) return;
-      vhs.clickGlitch(cx, cy);
+      // The glitch is a screen-space DOM element (appended to body, not the
+      // flipped canvas), so place it at the raw client point — cy is
+      // canvas-mirrored and would land it upside-down under the flip.
+      vhs.clickGlitch(x, y);
     },
     onDeactivate() {
       vhs.cleanup();
