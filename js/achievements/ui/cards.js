@@ -430,9 +430,16 @@ export function renderSections(container) {
   // no card is "new since last time".
   const sinceTs = storage.getPref(storage.LAST_PANEL_CLOSE_PREF, null);
 
+  // Reachable on this device — computed once, the same for every set.
+  const reachable = getReachableAchievements();
+
   for (const set of SETS) {
     // Theme sets: only show if user has at least one unlocked
     if (isThemeSet(set.id) && !hasAnyInSet(set.id)) continue;
+    // A set with nothing earnable on this device stays hidden entirely — e.g.
+    // the multi-window set on a touch/single-window device, where every entry
+    // requires that capability. Otherwise it'd render as an empty "0 / 0".
+    if (reachable.every((a) => a.set !== set.id)) continue;
 
     const section = document.createElement("div");
     section.className = "achievement-set";
@@ -494,9 +501,7 @@ export function renderSections(container) {
 
     // Achievement cards — only those earnable on this device, so a touch user
     // never sees a keyboard/hover-only entry they can't complete.
-    const setAchievements = getReachableAchievements().filter(
-      (a) => a.set === set.id,
-    );
+    const setAchievements = reachable.filter((a) => a.set === set.id);
     for (const ach of setAchievements) {
       const isUnlocked = storage.isUnlocked(ach.id);
       const card = document.createElement("div");
