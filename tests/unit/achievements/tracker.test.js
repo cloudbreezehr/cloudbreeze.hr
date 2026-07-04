@@ -1672,10 +1672,18 @@ describe("tracker — daily-sky handlers", () => {
     expect(storage.isUnlocked("in-season")).toBe(true);
   });
 
-  it("unlocks time-traveler on a time-travel visit", async () => {
+  it("unlocks time-traveler when arriving under a past-day sky link", async () => {
+    // A #sky= seed from a day other than today's (system time is 2026-05-08).
+    location.hash = "#sky=2025-12-24";
     const { storage } = await startTracker();
-    dispatchAchievement("time-travel", { seed: "2025-12-24" });
     expect(storage.isUnlocked("time-traveler")).toBe(true);
+    location.hash = "";
+  });
+
+  it("leaves time-traveler locked on an ordinary same-day visit", async () => {
+    location.hash = "";
+    const { storage } = await startTracker();
+    expect(storage.isUnlocked("time-traveler")).toBe(false);
   });
 });
 

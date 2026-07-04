@@ -14,6 +14,7 @@ import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { getThemeIds } from "../themes/registry.js";
 import { wordOfTheDay } from "../daily/word.js";
+import { isTimeTraveling } from "../daily/random.js";
 import {
   themeEnterLine,
   themeExitLine,
@@ -684,10 +685,6 @@ export function createTracker(onUnlock, onRelock) {
       if (data && data.word === wordOfTheDay()) tryUnlock("in-season");
     },
 
-    "time-travel"() {
-      tryUnlock("time-traveler");
-    },
-
     "theme-combo"(data) {
       if (!data || !data.combo) return;
       tryUnlock("alchemist");
@@ -802,6 +799,12 @@ export function createTracker(onUnlock, onRelock) {
     if (hour >= MOONLIT_START_HOUR && hour <= MOONLIT_END_HOUR) {
       tryUnlock("moonlit");
     }
+
+    // Time Traveler — arriving under a shared sky seeded from another day.
+    // Sampled here rather than delivered as an event: it's a standing
+    // condition present at load (like moonlit), so a boot-time dispatch would
+    // race this listener's registration and be lost.
+    if (isTimeTraveling()) tryUnlock("time-traveler");
   }
 
   function stop() {

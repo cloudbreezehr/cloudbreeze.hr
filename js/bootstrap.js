@@ -167,9 +167,6 @@ const MODULES = [
   // Real sky — day phase, live weather badge
   { path: "./real-sky/index.js", init: (m) => m.initRealSky() },
 
-  // Daily sky — time-travel detection for shared sky links
-  { path: "./daily/index.js", init: (m) => m.initDailySky() },
-
   // Speedrun — resume an in-progress run left by a reload
   { path: "./effects/speedrun.js", init: (m) => m.initSpeedrun() },
 
