@@ -28,6 +28,11 @@ export function initLightsOut() {
       const active = getThemes().filter((m) =>
         document.body.classList.contains(m.id),
       );
+      // A theme that runs its own Escape chord to exit (VHS) owns the key
+      // while it's the only thing active — yield so its exit gesture (and its
+      // leave achievement) runs instead of this silent wipe stealing the
+      // presses. Stacked with other themes, the panic-clear still wins.
+      if (active.length === 1 && active[0].ownsEscape) return;
       if (active.length > 0) {
         e.preventDefault();
         active.forEach((m) => toggleTheme(m.id, { silent: true }));

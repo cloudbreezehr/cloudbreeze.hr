@@ -16,7 +16,11 @@ describe("themes/lights-out", () => {
     vi.resetModules();
 
     registryMock = {
-      themes: [{ id: "frozen" }, { id: "deep-sea" }],
+      themes: [
+        { id: "frozen" },
+        { id: "deep-sea" },
+        { id: "vhs", ownsEscape: true },
+      ],
       toggled: [],
     };
     vi.doMock("../../../js/themes/registry.js", () => ({
@@ -69,6 +73,22 @@ describe("themes/lights-out", () => {
   it("does nothing when no theme is active", () => {
     doubleTapEsc();
     expect(registryMock.toggled).toHaveLength(0);
+  });
+
+  it("yields to a sole Escape-owning theme so its own exit gesture runs", () => {
+    document.body.classList.add("vhs");
+    doubleTapEsc();
+    expect(registryMock.toggled).toHaveLength(0);
+  });
+
+  it("still clears when an Escape-owning theme is stacked with another", () => {
+    document.body.classList.add("frozen");
+    document.body.classList.add("vhs");
+    doubleTapEsc();
+    expect(registryMock.toggled).toEqual([
+      { id: "frozen", opts: { silent: true } },
+      { id: "vhs", opts: { silent: true } },
+    ]);
   });
 
   it("does not fire when presses are outside the window", () => {

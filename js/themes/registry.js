@@ -82,6 +82,10 @@ const THEMES = [
     id: "vhs",
     label: "VHS",
     color: "#b4f0b4",
+    // VHS enters and exits on an Escape chord, so it owns the Escape key — the
+    // double-Escape lights-out yields while VHS is the only active theme, so
+    // its own exit gesture (and leave achievement) runs instead of a silent wipe.
+    ownsEscape: true,
     icon:
       '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
       '<rect x="2" y="4" width="12" height="8" rx="1"/>' +
