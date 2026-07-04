@@ -101,8 +101,6 @@ export const SETS = [
     icon: EXPLORATION_ICON,
   },
   { id: "appearance", label: "Appearance", color: null, icon: APPEARANCE_ICON },
-  { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
-  { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
   {
     id: "incantations",
     label: "Incantations",
@@ -116,6 +114,8 @@ export const SETS = [
     color: null,
     icon: LINKED_SKIES_ICON,
   },
+  { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
+  { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
   {
     id: "deep-sea",
     label: "Deep Sea",
