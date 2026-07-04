@@ -15,6 +15,7 @@ import { fetchWeather } from "./weather.js";
 import {
   mountLocationControls,
   usePreciseLocationIfGranted,
+  isReturnVisit,
 } from "./location-prompt.js";
 import { bindClickable } from "../clickable.js";
 
@@ -122,11 +123,12 @@ export function initRealSky(getLocation = currentLocation) {
   };
 
   let controls = null;
-  // A returning granter's fix is used silently from load. Otherwise mount the
-  // floating corner button and, the first time the sky is peeked, nudge with
-  // the popover once — the button remains as the quiet, always-available way in.
+  // A returning granter's fix is used silently from load. Otherwise, on a
+  // return visit (never the first — keep that corner clean), mount the floating
+  // button and, the first time the sky is peeked, nudge with the popover once;
+  // the button remains as the quiet, always-available way in.
   usePreciseLocationIfGranted(onUpgrade).then((upgraded) => {
-    if (upgraded) return;
+    if (upgraded || !isReturnVisit()) return;
     controls = mountLocationControls({ onUpgrade });
     weather?.onFirstReveal(() => controls.offerOnce());
   });

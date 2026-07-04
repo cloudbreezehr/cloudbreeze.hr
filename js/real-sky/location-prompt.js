@@ -13,6 +13,7 @@ import { requestPreciseLocation } from "./geolocate.js";
 import { prefersReducedMotion } from "../motion.js";
 
 const OFFER_SHOWN_KEY = "cloudbreeze-location-offer-shown";
+const VISITED_KEY = "cloudbreeze-visited";
 const FADE_MS = 240;
 // Gap between the card and the button it points down at.
 const ANCHOR_GAP_PX = 10;
@@ -59,6 +60,22 @@ function emitUnlock() {
   window.dispatchEvent(
     new CustomEvent("achievement", { detail: { type: "precise-location" } }),
   );
+}
+
+/**
+ * First-visit gate. Read-and-mark: false the first time the site is ever
+ * loaded (keep that visit's corner clean), true on every later load — so the
+ * button surfaces on a return, same day or next. Falls open when storage is
+ * unavailable so the control (and its achievement) never becomes unreachable.
+ */
+export function isReturnVisit() {
+  try {
+    const seen = localStorage.getItem(VISITED_KEY) === "1";
+    localStorage.setItem(VISITED_KEY, "1");
+    return seen;
+  } catch {
+    return true;
+  }
 }
 
 // Pin the card just above the anchor, right-aligned to it — the button lives in
@@ -219,10 +236,12 @@ export function mountLocationControls({ onUpgrade } = {}) {
   };
 }
 
-// Test hook — clear the auto-offer flag so a follow-up call offers again.
+// Test hook — clear the auto-offer and visited flags so follow-up calls behave
+// like a fresh visitor again.
 export function _resetForTests() {
   try {
     window.localStorage.removeItem(OFFER_SHOWN_KEY);
+    window.localStorage.removeItem(VISITED_KEY);
   } catch {
     // ignore
   }

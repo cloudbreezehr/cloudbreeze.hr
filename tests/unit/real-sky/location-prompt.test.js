@@ -147,6 +147,15 @@ describe("real-sky/location-prompt", () => {
     });
   });
 
+  describe("isReturnVisit", () => {
+    it("is false the first time and true on every later load", async () => {
+      const { isReturnVisit } = await load();
+      expect(isReturnVisit()).toBe(false); // fresh visitor — keep it clean
+      expect(isReturnVisit()).toBe(true); // marked — now returning
+      expect(isReturnVisit()).toBe(true);
+    });
+  });
+
   describe("usePreciseLocationIfGranted", () => {
     it("upgrades silently on a standing grant, without awarding", async () => {
       stubNavigator({ permission: "granted" });
