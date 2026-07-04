@@ -117,6 +117,47 @@ describe("themes/spell-trigger", () => {
       expect(spell(m, "HI").matchedId).toBeNull();
     });
 
+    describe("overlapping words (subsequence collisions)", () => {
+      // Words where one's letters are a subsequence of another's: BOOM inside
+      // BLOOM, and NOVA / SUN inside SUPERNOVA.
+      const OVERLAP = [
+        { id: "boom", name: "BOOM" },
+        { id: "bloom", name: "BLOOM" },
+        { id: "nova", name: "NOVA" },
+        { id: "sun", name: "SUN" },
+        { id: "supernova", name: "SUPERNOVA" },
+      ];
+
+      // Every matchedId seen while spelling the word, in order.
+      function matchesWhileSpelling(word) {
+        const m = createSpellMatcher(OVERLAP);
+        const ids = [];
+        let t = 0;
+        for (const ch of word) {
+          const res = m.feed(ch, t++);
+          if (res.matchedId) ids.push(res.matchedId);
+        }
+        return ids;
+      }
+
+      it("fires the longest word when a shorter one finishes on the same letter", () => {
+        expect(matchesWhileSpelling("BLOOM")).toEqual(["bloom"]);
+        expect(matchesWhileSpelling("SUPERNOVA")).toEqual(["supernova"]);
+      });
+
+      it("still fires a short word spelled on its own", () => {
+        expect(matchesWhileSpelling("BOOM")).toEqual(["boom"]);
+        expect(matchesWhileSpelling("NOVA")).toEqual(["nova"]);
+        expect(matchesWhileSpelling("SUN")).toEqual(["sun"]);
+      });
+
+      it("shadows a short word embedded mid-spell in a longer one", () => {
+        // SUN's letters sit inside SUPERNOVA (S,U,…,N) and would finish at that
+        // N — it must not fire while SUPERNOVA is still being spelled past it.
+        expect(matchesWhileSpelling("SUPERNOVA")).not.toContain("sun");
+      });
+    });
+
     it("accumulates charge from extra repeats of a chargeChar", () => {
       const m = createSpellMatcher([
         { id: "boom", name: "BOOM", chargeChar: "O" },

@@ -127,6 +127,10 @@ export function createSpellMatcher(
     let chargeMatched = false; // a charge letter landed, even if already maxed
     let matchedId = null;
     let matchedCharge = 0;
+    let matchedLen = 0;
+    // Targets that finished on this letter, resolved after the loop (below) so
+    // the longest wins and an embedded shorter word can be shadowed.
+    const completions = [];
     for (const t of targets) {
       const i = prog.get(t.id);
       if (t.letters[i] === letter) {
@@ -134,10 +138,11 @@ export function createSpellMatcher(
         stray.set(t.id, 0); // a correct letter resets the tolerance
         const next = i + 1;
         if (next === t.letters.length) {
-          if (!matchedId) {
-            matchedId = t.id;
-            matchedCharge = charge.get(t.id);
-          }
+          completions.push({
+            id: t.id,
+            len: t.letters.length,
+            charge: charge.get(t.id),
+          });
           prog.set(t.id, 0); // ready to re-spell (toggles back off)
           charge.set(t.id, 0);
         } else {
@@ -175,6 +180,23 @@ export function createSpellMatcher(
         } else {
           stray.set(t.id, s);
         }
+      }
+    }
+    // Resolve the winning completion. When one word's letters are a
+    // subsequence of another's, several can finish on the same letter (BOOM
+    // within BLOOM, NOVA within SUPERNOVA) — the longest wins, since the user
+    // typed the extra letters. And a shorter word that completed as a
+    // subsequence embedded in a longer word still being spelled (SUN inside
+    // SUPERNOVA) is shadowed while that longer word has already matched past
+    // the shorter word's whole length.
+    for (const c of completions) {
+      const shadowed = targets.some(
+        (u) => u.letters.length > c.len && prog.get(u.id) > c.len,
+      );
+      if (!shadowed && c.len > matchedLen) {
+        matchedId = c.id;
+        matchedCharge = c.charge;
+        matchedLen = c.len;
       }
     }
     // Live buildup signals for the cursor: how far into the nearest word we
