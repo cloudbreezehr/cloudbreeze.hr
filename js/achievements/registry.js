@@ -57,6 +57,13 @@ const LINKED_SKIES_ICON =
   '<rect x="2" y="4.5" width="8" height="7" rx="1"/>' +
   '<rect x="6" y="4.5" width="8" height="7" rx="1"/>' +
   "</svg>";
+// A bound logbook — spine and a couple of ruled entries.
+const CLOUDLOG_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="3" y="2.5" width="10" height="11" rx="1"/>' +
+  '<path d="M6 2.5v11"/>' +
+  '<path d="M8 6h3M8 8.5h3"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -74,6 +81,7 @@ export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
 // descriptors are static data in themes/registry.js, so `getTheme(id)` is
 // safe to call at module load time — no init order dependency.
 export const SETS = [
+  { id: "cloudlog", label: "Cloudlog", color: null, icon: CLOUDLOG_ICON },
   {
     id: "exploration",
     label: "Exploration",
@@ -167,13 +175,13 @@ export const SETS = [
 // ── Achievement Definitions ──
 
 export const ACHIEVEMENTS = [
-  // ── Exploration: Cloudlog ──
+  // ── Cloudlog ──
   {
     id: "cloudlog-activated",
     title: "Cloudlog Activated",
     description: "You found the hidden logbook.",
     hint: "Triple-click anywhere on the page",
-    set: "exploration",
+    set: "cloudlog",
     points: UNCOMMON,
     hidden: false,
   },
@@ -182,7 +190,7 @@ export const ACHIEVEMENTS = [
     title: "Cloud Reader",
     description: "The first page turns.",
     hint: "Open the Cloudlog panel",
-    set: "exploration",
+    set: "cloudlog",
     points: COMMON,
     hidden: false,
   },
@@ -191,7 +199,7 @@ export const ACHIEVEMENTS = [
     title: "Tab Tourist",
     description: "Both halves of the logbook, browsed.",
     hint: "Switch between the Achievements and Activity tabs",
-    set: "exploration",
+    set: "cloudlog",
     points: UNCOMMON,
     hidden: true,
     progressKey: "panel-tabs-visited",
@@ -201,7 +209,7 @@ export const ACHIEVEMENTS = [
     title: "Time Warp",
     description: "Time stands still when you look closely.",
     hint: "Click a relative timestamp to see absolute time",
-    set: "exploration",
+    set: "cloudlog",
     points: COMMON,
     hidden: true,
   },
@@ -210,7 +218,7 @@ export const ACHIEVEMENTS = [
     title: "Shortcut Master",
     description: "You found the quick way in.",
     hint: "Open the Cloudlog with a keyboard shortcut",
-    set: "exploration",
+    set: "cloudlog",
     points: COMMON,
     hidden: true,
     requires: "keyboard",

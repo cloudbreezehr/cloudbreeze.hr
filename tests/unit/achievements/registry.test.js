@@ -80,11 +80,22 @@ describe("Almanac set", () => {
   });
 });
 
-// The four core-like sets carved out of the old Exploration set. Each is
+// The core-like sets carved out of the old Exploration set. Each is
 // non-theme (always visible, no mastery capstone) with an explicit membership
 // so a stray reassignment shows up as a failing diff.
 describe("Exploration-split sets", () => {
   const cases = [
+    {
+      id: "cloudlog",
+      label: "Cloudlog",
+      ids: [
+        "cloud-reader",
+        "cloudlog-activated",
+        "shortcut-master",
+        "tab-tourist",
+        "time-warp",
+      ],
+    },
     {
       id: "interaction",
       label: "Interaction",
