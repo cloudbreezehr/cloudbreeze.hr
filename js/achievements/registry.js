@@ -45,6 +45,12 @@ const INCANTATIONS_ICON =
   '<path d="M8 1l1.3 4.7L14 7l-4.7 1.3L8 13l-1.3-4.7L2 7l4.7-1.3z"/>' +
   '<circle cx="12.8" cy="12" r="1"/>' +
   "</svg>";
+// A terminal window with a >_ prompt.
+const TERMINAL_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="2" y="3" width="12" height="10" rx="1.5"/>' +
+  '<path d="M4.8 6.5l2 2-2 2M8.5 10.5h3"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -82,6 +88,7 @@ export const SETS = [
     color: null,
     icon: INCANTATIONS_ICON,
   },
+  { id: "terminal", label: "Terminal", color: null, icon: TERMINAL_ICON },
   {
     id: "deep-sea",
     label: "Deep Sea",
@@ -1451,13 +1458,13 @@ export const ACHIEVEMENTS = [
     hidden: true,
     progressKey: "combos-discovered",
   },
-  // ── Exploration: Passport ──
+  // ── Terminal: Passport ──
   {
     id: "passport-issued",
     title: "Passport Issued",
     description: "Progress, packed for travel.",
     hint: "Ask the terminal for a passport",
-    set: "exploration",
+    set: "terminal",
     points: UNCOMMON,
     hidden: true,
   },
@@ -1466,7 +1473,7 @@ export const ACHIEVEMENTS = [
     title: "Passport Stamped",
     description: "The same sky, a different machine.",
     hint: "Import a passport from another device",
-    set: "exploration",
+    set: "terminal",
     points: RARE,
     hidden: true,
   },
@@ -1476,7 +1483,7 @@ export const ACHIEVEMENTS = [
     title: "In Season",
     description: "Today's word, spoken today.",
     hint: "Cast the word of the day — the terminal knows it",
-    set: "exploration",
+    set: "terminal",
     points: RARE,
     hidden: true,
   },
@@ -1554,13 +1561,13 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
   },
-  // ── Exploration: Terminal ──
+  // ── Terminal ──
   {
     id: "shell-access",
     title: "Shell Access",
     description: "The sky has a command line.",
     hint: "Spell SHELL — or find the key that drops consoles",
-    set: "exploration",
+    set: "terminal",
     points: EPIC,
     hidden: true,
   },
@@ -1569,7 +1576,7 @@ export const ACHIEVEMENTS = [
     title: "Not in Sudoers",
     description: "This incident will be reported.",
     hint: "Ask the terminal for more power",
-    set: "exploration",
+    set: "terminal",
     points: UNCOMMON,
     hidden: true,
   },
@@ -1578,7 +1585,7 @@ export const ACHIEVEMENTS = [
     title: "Scorched Earth",
     description: "Force-removed every sky at once.",
     hint: "The most famous command you should never run",
-    set: "exploration",
+    set: "terminal",
     points: RARE,
     hidden: true,
   },
@@ -1587,7 +1594,7 @@ export const ACHIEVEMENTS = [
     title: "Cloud Native",
     description: "kubectl speaks; the sky listens.",
     hint: "Orchestrate the themes from the terminal",
-    set: "exploration",
+    set: "terminal",
     points: UNCOMMON,
     hidden: true,
   },
