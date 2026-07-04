@@ -94,9 +94,13 @@ body.light-appearance .skip-link {
 }
 /* #main is focused programmatically by the skip-link to redirect Tab
    sequence into page content; the section itself isn't a focusable
-   control, so no focus ring should render on it. */
+   control, so no focus ring should render on it. Suppress the whole
+   keyboard-focus treatment below — not just the outline, or the dark
+   box-shadow halo leaks as a full-width line across the section. */
 #main:focus {
   outline: none;
+  box-shadow: none;
+  animation: none;
 }
 
 /* ── Keyboard Focus Rings ── */
