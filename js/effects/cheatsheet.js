@@ -8,6 +8,8 @@
 import { trapFocus } from "../achievements/focus-trap.js";
 import { getThemes } from "../themes/registry.js";
 import { INCANTATIONS } from "./incantations.js";
+import { CHEATS } from "../themes/wanted-cheats.js";
+import { _KONAMI_SEQUENCE } from "../themes/konami.js";
 import { getPref, setPref } from "../achievements/storage.js";
 import { playSfx } from "../audio/sfx.js";
 
@@ -24,6 +26,36 @@ let _releaseFocusTrap = null;
 
 const CLOSE_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M4 12l8-8"/></svg>`;
 const BOOK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>`;
+
+// A one- or two-word nod to each theme's original (non-spell) trigger, shown
+// beside its name so the sheet hints at how to find it without walking through
+// the steps. Spelling the name always works too; this points at the other way.
+const THEME_TRIGGER_HINTS = {
+  frozen: "Logo",
+  "deep-sea": "Footer",
+  blocky: "Appearance",
+  rainy: "Cloud Solutions",
+  paper: "Type SKETCH",
+  vhs: "Rapid Escape",
+  "upside-down": "Overscroll",
+  constellation: "Trace stars",
+  matrix: "Type REDPILL",
+  wanted: "Type HESOYAM",
+};
+
+// The konami sequence rendered as glyphs, shown unlabelled at the foot of the
+// sheet — a secret within the secret, left for the curious to recognise.
+const KONAMI_ARROWS = {
+  ArrowUp: "↑",
+  ArrowDown: "↓",
+  ArrowLeft: "←",
+  ArrowRight: "→",
+};
+function konamiGlyphs() {
+  return _KONAMI_SEQUENCE
+    .map((k) => KONAMI_ARROWS[k] || k.toUpperCase())
+    .join(" ");
+}
 
 function buildSection(heading, rows) {
   const section = document.createElement("section");
@@ -86,7 +118,11 @@ function buildOverlay() {
   body.appendChild(
     buildSection(
       "Themes",
-      getThemes().map((t) => [t.label, "", t.icon]),
+      getThemes().map((t) => [
+        t.label,
+        THEME_TRIGGER_HINTS[t.id] || "",
+        t.icon,
+      ]),
     ),
   );
   body.appendChild(
@@ -95,6 +131,16 @@ function buildOverlay() {
       INCANTATIONS.map((inc) => [inc.word, inc.hint || "", inc.icon]),
     ),
   );
+  // Wanted's cheat codes only work while wanted, and are near-impossible to
+  // guess — surface them, but only in-theme so they stay a wanted-only reward.
+  if (document.body.classList.contains("wanted")) {
+    body.appendChild(
+      buildSection(
+        "Wanted cheats",
+        CHEATS.map((c) => [c.code, c.label, c.icon]),
+      ),
+    );
+  }
   panel.appendChild(body);
 
   const note = document.createElement("p");
@@ -102,6 +148,12 @@ function buildOverlay() {
   note.textContent =
     "Repeat a letter in some words (BOOOOM) to charge them. Esc or × to close.";
   panel.appendChild(note);
+
+  // A bare konami sequence at the foot — deliberately unexplained.
+  const konami = document.createElement("p");
+  konami.className = "cheatsheet-konami";
+  konami.textContent = konamiGlyphs();
+  panel.appendChild(konami);
 
   overlay.appendChild(panel);
   // Backdrop click (outside the panel) closes.

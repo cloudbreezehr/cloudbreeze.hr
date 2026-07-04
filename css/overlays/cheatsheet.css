@@ -112,6 +112,19 @@
   color: rgba(255, 255, 255, 0.4);
   letter-spacing: 0.04em;
 }
+/* Unlabelled konami glyphs at the foot — faint on purpose, a puzzle not a
+   caption. */
+.cheatsheet-konami {
+  margin: 0.9rem 0 0;
+  text-align: center;
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.22);
+  letter-spacing: 0.35em;
+  user-select: none;
+}
+body.light-appearance .cheatsheet-konami {
+  color: rgba(var(--ink-rgb), 0.3);
+}
 body.light-appearance .cheatsheet-panel {
   background: rgba(240, 247, 255, 0.97);
   color: rgba(var(--ink-rgb), 0.9);

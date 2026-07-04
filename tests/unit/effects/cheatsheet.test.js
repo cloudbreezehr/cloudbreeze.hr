@@ -39,12 +39,41 @@ describe("effects/cheatsheet", () => {
     expect(mod.isCheatsheetOpen()).toBe(false);
   });
 
-  it("lists themes and incantations with incantation hints", () => {
+  it("lists themes (with trigger hints) and incantations (with hints)", () => {
     mod.openCheatsheet();
     const text = getOverlay().textContent;
     expect(text).toContain("Frozen"); // a theme label
+    expect(text).toContain("Logo"); // Frozen's original-trigger hint
     expect(text).toContain("BOOM"); // an incantation word
     expect(text).toContain("fireworks rockets"); // its hint
+  });
+
+  it("shows the Wanted cheat codes only while wanted is active", () => {
+    // ROCKETMAN is an in-theme-only cheat (unlike HESOYAM, which is also the
+    // activation hint shown in the always-visible theme list).
+    mod.openCheatsheet();
+    expect(getOverlay().textContent).not.toContain("ROCKETMAN");
+    mod.closeCheatsheet();
+    // The close fades the node out asynchronously; drop it so the reopened
+    // overlay is the only one the query can match.
+    document
+      .querySelectorAll(".cheatsheet-overlay")
+      .forEach((el) => el.remove());
+
+    document.body.classList.add("wanted");
+    mod.openCheatsheet();
+    const text = getOverlay().textContent;
+    expect(text).toContain("Wanted cheats");
+    expect(text).toContain("ROCKETMAN"); // a wanted-only cheat, now surfaced
+  });
+
+  it("shows an unlabelled konami sequence at the foot", () => {
+    mod.openCheatsheet();
+    const konami = getOverlay().querySelector(".cheatsheet-konami");
+    expect(konami).not.toBeNull();
+    expect(konami.textContent).toContain("↑");
+    expect(konami.textContent).toContain("B");
+    expect(konami.textContent).toContain("A");
   });
 
   it("moves focus to the close button and closes on click", () => {
