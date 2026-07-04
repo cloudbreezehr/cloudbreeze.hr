@@ -5,8 +5,9 @@
 // silently (a bulk panic-wipe, not a deliberate single-theme exit) and only
 // acts when a theme is active. Requires a held button/finger and is
 // horizontal-only, so idle mouse drift and vertical scroll-drags never trip
-// it; and it yields to drag-capturing themes (paper) so a scribble there
-// draws instead of wiping.
+// it; and it yields to a drag-capturing theme (paper) only when that's the
+// only thing active, so scribbling a lone drawing draws instead of wiping —
+// but a scrub over a stack still clears everything, paper included.
 
 import { getThemes, toggleTheme } from "./registry.js";
 
@@ -108,10 +109,11 @@ export function initScribbleClear() {
       document.body.classList.contains(m.id),
     );
     if (active.length === 0) return;
-    // A theme that turns drags into content (paper's ink strokes) owns the
-    // gesture — a scribble there is drawing, not a clear — so yield to it
-    // rather than wipe what the user is actively working in.
-    if (active.some((m) => m.capturesPointer)) return;
+    // A lone drag-capturing theme (paper's ink strokes) owns the gesture — a
+    // scribble there is drawing, not a clear — so yield only when the active
+    // set is nothing but drawing themes. A scrub over a stack that also holds
+    // a normal theme still clears everything, matching the double-Escape wipe.
+    if (active.every((m) => m.capturesPointer)) return;
     active.forEach((m) => toggleTheme(m.id, { silent: true }));
     window.dispatchEvent(
       new CustomEvent("achievement", { detail: { type: "themes-scribbled" } }),

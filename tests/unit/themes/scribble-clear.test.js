@@ -143,11 +143,24 @@ describe("themes/scribble-clear", () => {
       expect(achievements).toEqual([]);
     });
 
-    it("yields to a drag-capturing theme so a scribble there isn't a wipe", () => {
+    it("yields when a drag-capturing theme is the only thing active (scribble = drawing)", () => {
       document.body.classList.add("paper");
       scribble();
       expect(toggled).toEqual([]);
       expect(achievements).toEqual([]);
+    });
+
+    it("still clears a stack that also holds a drag-capturing theme", () => {
+      // Paper alone shields the wipe, but stacked with a normal theme a scrub
+      // clears everything, paper included — matching the double-Escape wipe.
+      document.body.classList.add("frozen");
+      document.body.classList.add("paper");
+      scribble();
+      expect(toggled).toEqual([
+        { id: "frozen", opts: { silent: true } },
+        { id: "paper", opts: { silent: true } },
+      ]);
+      expect(achievements).toContainEqual({ type: "themes-scribbled" });
     });
 
     it("does nothing when no theme is active", () => {
