@@ -1375,7 +1375,7 @@ export const ACHIEVEMENTS = [
     description: "Caught a falling star.",
     hint: "Click a shooting star as it crosses the sky",
     set: "exploration",
-    points: UNCOMMON,
+    points: RARE,
     hidden: true,
   },
   {
