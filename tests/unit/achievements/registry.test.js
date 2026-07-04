@@ -80,6 +80,86 @@ describe("Almanac set", () => {
   });
 });
 
+// The four core-like sets carved out of the old Exploration set. Each is
+// non-theme (always visible, no mastery capstone) with an explicit membership
+// so a stray reassignment shows up as a failing diff.
+describe("Exploration-split sets", () => {
+  const cases = [
+    {
+      id: "interaction",
+      label: "Interaction",
+      ids: [
+        "down-to-earth",
+        "first-light",
+        "magnetic-letters",
+        "scroll-surge",
+        "spark",
+        "stargazer",
+        "the-long-drag",
+        "trail-blazer",
+        "zenith",
+      ],
+    },
+    {
+      id: "incantations",
+      label: "Incantations",
+      ids: [
+        "abracadabra",
+        "clean-slate",
+        "grimoire",
+        "open-secrets",
+        "overkill",
+        "wordsmith",
+      ],
+    },
+    {
+      id: "terminal",
+      label: "Terminal",
+      ids: [
+        "cloud-native",
+        "in-season",
+        "not-in-sudoers",
+        "passport-issued",
+        "passport-stamped",
+        "scorched-earth",
+        "shell-access",
+      ],
+    },
+    {
+      id: "linked-skies",
+      label: "Linked Skies",
+      ids: [
+        "distant-well",
+        "fixed-stars",
+        "ghost-hand",
+        "parallel-skies",
+        "star-courier",
+        "triptych",
+      ],
+    },
+  ];
+
+  for (const { id, label, ids } of cases) {
+    describe(`${label} set`, () => {
+      it("is a defined, core (non-theme) set with no mastery capstone", () => {
+        const set = SETS.find((s) => s.id === id);
+        expect(set).toBeTruthy();
+        expect(set.label).toBe(label);
+        expect(set.color).toBeNull();
+        expect(isThemeSet(id)).toBe(false);
+        expect(SET_MASTERY_MAP[id]).toBeUndefined();
+      });
+
+      it("groups exactly its expected achievements", () => {
+        const actual = ACHIEVEMENTS.filter((a) => a.set === id)
+          .map((a) => a.id)
+          .sort();
+        expect(actual).toEqual([...ids].sort());
+      });
+    });
+  }
+});
+
 describe("THEME_SETS", () => {
   it("matches the themes registry one-for-one", () => {
     expect([...THEME_SETS].sort()).toEqual([...getThemeIds()].sort());
