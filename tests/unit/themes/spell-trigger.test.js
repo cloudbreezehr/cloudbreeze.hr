@@ -326,9 +326,13 @@ describe("themes/spell-trigger", () => {
       expect(achievements).toContainEqual({ type: "cheatsheet-discovered" });
     });
 
-    it("reveals the sound toggle when SOUND is spelled", () => {
+    it("reveals the sound toggle and switches sound on when SOUND is spelled", async () => {
+      const engine = await import("../../../js/audio/engine.js");
+      engine.setSoundEnabled(false);
+      expect(engine.isSoundEnabled()).toBe(false);
       type("SOUND");
       expect(soundRevealed).toBe(1);
+      expect(engine.isSoundEnabled()).toBe(true);
     });
 
     it("also reveals it via SOUNDON — SOUND completes at the fifth letter", () => {

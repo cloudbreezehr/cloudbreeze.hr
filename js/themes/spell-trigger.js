@@ -19,14 +19,15 @@ import {
 } from "../effects/cheatsheet.js";
 import { isHelpOpen } from "../effects/keyboard-help.js";
 import { revealSoundToggle } from "../audio/toggle.js";
+import { setSoundEnabled } from "../audio/engine.js";
 import { prefersReducedMotion } from "../motion.js";
 
 // Spelled like an incantation, but it reveals the reference panel rather than
 // casting an effect — kept out of INCANTATIONS so it isn't a collectible spell.
 const CHEATSHEET_WORD = "CHEATSHEET";
-// Surfaces the progressively-disclosed sound toggle for the curious; also a
-// reveal word, not a collectible spell. SOUNDON works too — it completes SOUND
-// at the fifth letter.
+// Reveals the sound toggle and switches sound on outright — a reveal word, not
+// a collectible spell. SOUNDON works too — it completes SOUND at the fifth
+// letter.
 const SOUND_WORD = "SOUND";
 // Drops the hidden terminal — a reveal word, not a collectible spell.
 const SHELL_WORD = "SHELL";
@@ -432,7 +433,12 @@ function buildActions() {
 
   const soundId = `incantation:${SOUND_WORD}`;
   targets.push({ id: soundId, name: SOUND_WORD });
-  actions.set(soundId, () => revealSoundToggle());
+  // Spelling SOUND is a deliberate ask for audio, so turn it on outright —
+  // unlike the nav button, which reveals muted until the visitor toggles it.
+  actions.set(soundId, () => {
+    revealSoundToggle();
+    setSoundEnabled(true);
+  });
 
   const shellId = `incantation:${SHELL_WORD}`;
   targets.push({ id: shellId, name: SHELL_WORD });
