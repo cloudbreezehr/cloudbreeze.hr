@@ -97,6 +97,17 @@ describe("Exploration-split sets", () => {
       ],
     },
     {
+      id: "appearance",
+      label: "Appearance",
+      ids: [
+        "cartographers-almanac",
+        "daybreak",
+        "dusk-and-dawn",
+        "full-spectrum",
+        "nightfall",
+      ],
+    },
+    {
       id: "interaction",
       label: "Interaction",
       ids: [

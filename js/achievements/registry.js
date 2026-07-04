@@ -64,6 +64,12 @@ const CLOUDLOG_ICON =
   '<path d="M6 2.5v11"/>' +
   '<path d="M8 6h3M8 8.5h3"/>' +
   "</svg>";
+// A half-filled circle — the light/dark contrast of the appearance toggle.
+const APPEARANCE_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" aria-hidden="true">' +
+  '<circle cx="8" cy="8" r="5.5"/>' +
+  '<path d="M8 2.5a5.5 5.5 0 0 1 0 11z" fill="currentColor" stroke="none"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -88,6 +94,7 @@ export const SETS = [
     color: null,
     icon: EXPLORATION_ICON,
   },
+  { id: "appearance", label: "Appearance", color: null, icon: APPEARANCE_ICON },
   { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
   { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
   {
@@ -353,13 +360,13 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
-  // ── Exploration: Appearance ──
+  // ── Appearance ──
   {
     id: "daybreak",
     title: "Daybreak",
     description: "Light breaks through.",
     hint: "Switch to light appearance",
-    set: "exploration",
+    set: "appearance",
     points: TRIVIAL,
     hidden: false,
   },
@@ -368,7 +375,7 @@ export const ACHIEVEMENTS = [
     title: "Nightfall",
     description: "The sky darkens at your command.",
     hint: "Switch to dark appearance",
-    set: "exploration",
+    set: "appearance",
     points: TRIVIAL,
     hidden: false,
   },
@@ -377,7 +384,7 @@ export const ACHIEVEMENTS = [
     title: "Dusk and Dawn",
     description: "You've seen both sides of the sky.",
     hint: "Toggle the appearance at least 3 times",
-    set: "exploration",
+    set: "appearance",
     points: UNCOMMON,
     hidden: false,
     progressKey: "appearance-toggles-3",
@@ -387,7 +394,7 @@ export const ACHIEVEMENTS = [
     title: "Full Spectrum",
     description: "Every shade of sky, sampled.",
     hint: "Use dark, light, and auto appearances",
-    set: "exploration",
+    set: "appearance",
     points: UNCOMMON,
     hidden: false,
     progressKey: "appearances-used",
@@ -397,7 +404,7 @@ export const ACHIEVEMENTS = [
     title: "Cartographer's Almanac",
     description: "The same logbook, every shade of sky.",
     hint: "Open the Cloudlog panel under each appearance",
-    set: "exploration",
+    set: "appearance",
     points: UNCOMMON,
     hidden: true,
     progressKey: "almanac-appearances",
