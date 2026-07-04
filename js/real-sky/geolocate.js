@@ -13,7 +13,7 @@
 
 import { HOME_LOCATION } from "./local.js";
 
-const ENDPOINT = "https://ipapi.co/json/";
+const ENDPOINT = "https://ipwho.is/";
 const FETCH_TIMEOUT_MS = 6000;
 
 // The best location known so far. A getter, not a constant, because it changes
