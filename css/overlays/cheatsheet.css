@@ -17,7 +17,7 @@
 }
 .cheatsheet-panel {
   position: relative;
-  max-width: 560px;
+  max-width: 760px;
   width: calc(100vw - 3rem);
   max-height: calc(100vh - 3rem);
   overflow-y: auto;
@@ -139,8 +139,9 @@ body.light-appearance .cheatsheet-list dd,
 body.light-appearance .cheatsheet-note {
   color: rgba(var(--ink-rgb), 0.6);
 }
-/* Single-column on narrow viewports so the two sections stack. */
-@media (max-width: 480px) {
+/* Single-column below the panel's comfortable two-column width, so the term
+   and description stop squeezing and the sections stack. */
+@media (max-width: 600px) {
   .cheatsheet-body {
     grid-template-columns: 1fr;
   }
