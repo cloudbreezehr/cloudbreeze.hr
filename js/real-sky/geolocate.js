@@ -15,6 +15,9 @@ import { HOME_LOCATION } from "./local.js";
 
 const ENDPOINT = "https://ipwho.is/";
 const FETCH_TIMEOUT_MS = 6000;
+// A GPS fix can take longer than an IP lookup while the radio warms up, so
+// give the browser a longer leash before treating it as a no-answer.
+const PRECISE_TIMEOUT_MS = 12000;
 
 // The best location known so far. A getter, not a constant, because it changes
 // once (from the home town to the visitor's city) when the lookup lands.
@@ -60,4 +63,37 @@ export async function locateVisitor() {
   const found = await fetchIpLocation();
   if (found) current = found;
   return current;
+}
+
+/**
+ * Ask the browser for a precise fix and, on success, upgrade the shared
+ * location in place. This is the only path that can trigger the native
+ * permission dialog, so it must be called from a user gesture unless the
+ * permission is already granted. Resolves true when the location was upgraded,
+ * false on denial, error, timeout, or an unavailable API — the caller keeps the
+ * coarse fallback either way. The coarse city label is retained: naming the
+ * precise point would need another network round-trip, and the visitor knows
+ * where they are.
+ */
+export function requestPreciseLocation() {
+  return new Promise((resolve) => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      resolve(false);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const latDeg = pos?.coords?.latitude;
+        const lonDeg = pos?.coords?.longitude;
+        if (!Number.isFinite(latDeg) || !Number.isFinite(lonDeg)) {
+          resolve(false);
+          return;
+        }
+        current = { latDeg, lonDeg, label: current.label };
+        resolve(true);
+      },
+      () => resolve(false),
+      { timeout: PRECISE_TIMEOUT_MS, maximumAge: 0, enableHighAccuracy: true },
+    );
+  });
 }

@@ -73,4 +73,45 @@ describe("real-sky/geolocate", () => {
     expect(resolved).toEqual(HOME_LOCATION);
     expect(geo.currentLocation()).toEqual(HOME_LOCATION);
   });
+
+  describe("requestPreciseLocation", () => {
+    function stubGeolocation(impl) {
+      vi.stubGlobal("navigator", { geolocation: { getCurrentPosition: impl } });
+    }
+
+    it("upgrades to the precise fix, keeping the coarse city label", async () => {
+      // Establish a coarse label first, then a precise fix should adopt it.
+      stubResponse({ city: "Zagreb", latitude: 45.81, longitude: 15.98 });
+      await geo.locateVisitor();
+
+      stubGeolocation((success) =>
+        success({ coords: { latitude: 45.8123, longitude: 15.9876 } }),
+      );
+      expect(await geo.requestPreciseLocation()).toBe(true);
+      expect(geo.currentLocation()).toEqual({
+        latDeg: 45.8123,
+        lonDeg: 15.9876,
+        label: "Zagreb",
+      });
+    });
+
+    it("resolves false and keeps the coarse location on denial", async () => {
+      stubGeolocation((_success, error) => error({ code: 1 }));
+      expect(await geo.requestPreciseLocation()).toBe(false);
+      expect(geo.currentLocation()).toEqual(HOME_LOCATION);
+    });
+
+    it("resolves false on a non-finite coordinate", async () => {
+      stubGeolocation((success) =>
+        success({ coords: { latitude: NaN, longitude: 15.98 } }),
+      );
+      expect(await geo.requestPreciseLocation()).toBe(false);
+      expect(geo.currentLocation()).toEqual(HOME_LOCATION);
+    });
+
+    it("resolves false when the Geolocation API is unavailable", async () => {
+      vi.stubGlobal("navigator", {});
+      expect(await geo.requestPreciseLocation()).toBe(false);
+    });
+  });
 });
