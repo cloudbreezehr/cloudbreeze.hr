@@ -597,6 +597,7 @@ export function createConstellationTrigger({
         star: hit.star,
         constellationId: hit.star.constellationId,
         chainLength: chain.length,
+        total: target(),
       });
     }
     emit();

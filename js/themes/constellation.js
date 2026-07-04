@@ -6,6 +6,7 @@ import { createTheme } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createConstellationTrigger } from "./triggers.js";
+import { prefersReducedMotion } from "../motion.js";
 
 // ── Force & Stage Thresholds ──
 const CF = defineConstants(
@@ -35,6 +36,15 @@ const CV = defineConstants(
     HUE_ROTATE: 220,
     SAT_BOOST: 0.3,
     BRI_DROP: 0.45,
+    // Chain length at which the "N / M" progress badge briefly appears.
+    PROGRESS_MIN_CHAIN: 2,
+    // How long the progress badge fades in, holds, and fades out (ms).
+    PROGRESS_SHOW_MS: 1600,
+    // Idle time mid-trace before the remaining stars twinkle strongly (ms).
+    IDLE_HINT_MS: 60000,
+    // Hint-pulse strength for the "you seem stuck" idle nudge — above the
+    // staged HINT_PULSE_STRENGTH so it reads as a deliberate beckon.
+    IDLE_HINT_STRENGTH: 1,
   },
   { theme: "constellation" },
 );
@@ -54,6 +64,59 @@ export function initConstellation() {
 
   const particles = createConstellation(canvasEl);
 
+  // Transient "N / M" badge that surfaces the trace's progress once a couple
+  // of stars are in, then fades — reused across shows so it never accumulates.
+  const progressEl = document.createElement("div");
+  progressEl.className = "constellation-progress";
+  progressEl.setAttribute("aria-hidden", "true");
+  document.body.appendChild(progressEl);
+  let progressAnim = null;
+  let progressHideTimer = null;
+
+  function showProgress(chainLength, total) {
+    if (chainLength < CV.PROGRESS_MIN_CHAIN || !total) return;
+    progressEl.textContent = `${chainLength} / ${total}`;
+    progressAnim?.cancel?.();
+    clearTimeout(progressHideTimer);
+    if (prefersReducedMotion()) {
+      // Reduced motion: still show the count, just plainly — no fade.
+      progressEl.style.opacity = "1";
+      progressHideTimer = setTimeout(() => {
+        progressEl.style.opacity = "";
+      }, CV.PROGRESS_SHOW_MS);
+      return;
+    }
+    progressEl.style.opacity = "";
+    progressAnim = progressEl.animate(
+      [
+        { opacity: 0 },
+        { opacity: 1, offset: 0.15 },
+        { opacity: 1, offset: 0.7 },
+        { opacity: 0 },
+      ],
+      { duration: CV.PROGRESS_SHOW_MS, easing: "ease-out" },
+    );
+  }
+
+  // If a trace stalls mid-pattern, beckon the remaining stars with a stronger
+  // twinkle. Rearmed on each correct hit; only fires while a candidate is
+  // locked and the pattern hasn't formed yet.
+  let idleTimer = null;
+  function clearIdleHint() {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+  }
+  function armIdleHint() {
+    clearIdleHint();
+    idleTimer = setTimeout(() => {
+      const state = trigger.getState();
+      if (state.isActive || !state.candidateId) return;
+      applyHintPulse(CV.IDLE_HINT_STRENGTH);
+    }, CV.IDLE_HINT_MS);
+  }
+
   const trigger = createConstellationTrigger({
     getStars: getSkyStars,
     getCanvas: () => canvasEl,
@@ -61,7 +124,9 @@ export function initConstellation() {
     onChainChange(state) {
       particles.setChain(state);
     },
-    onCorrectHit({ constellationId, chainLength }) {
+    onCorrectHit({ constellationId, chainLength, total }) {
+      showProgress(chainLength, total);
+      armIdleHint();
       window.dispatchEvent(
         new CustomEvent("achievement", {
           detail: {
@@ -203,6 +268,8 @@ export function initConstellation() {
       revealMs: CF.WIPE_REVEAL_MS,
     },
     onActivate({ payload }) {
+      // The pattern formed — no more nudging toward the next star.
+      clearIdleHint();
       const id = payload && payload.constellationId;
       if (id) {
         // Gesture-based activation.  The trigger's last emit ran inside
@@ -231,6 +298,7 @@ export function initConstellation() {
       // particle renderer follows in the same step.
       trigger.reset();
       clearAllHints();
+      clearIdleHint();
     },
   });
 
@@ -246,8 +314,11 @@ export function initConstellation() {
   return {
     stop() {
       trigger.stop();
+      clearIdleHint();
+      clearTimeout(progressHideTimer);
       nebulaOverlay.remove();
       vignetteOverlay.remove();
+      progressEl.remove();
       clearAllHints();
     },
   };

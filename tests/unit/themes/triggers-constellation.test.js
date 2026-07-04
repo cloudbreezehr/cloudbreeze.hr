@@ -108,6 +108,34 @@ describe("createConstellationTrigger", () => {
     expect(ctx.setForce).toHaveBeenLastCalledWith(1 / 3);
   });
 
+  it("reports chain length and constellation size to onCorrectHit", () => {
+    stars = [
+      makeStar("orions-belt", 0, 100, 100),
+      makeStar("orions-belt", 1, 200, 100),
+      makeStar("orions-belt", 2, 300, 100),
+    ];
+    const ctx = makeStubCtx();
+    const onCorrectHit = vi.fn();
+    const trigger = makeTrigger({
+      getStars,
+      getCanvas,
+      hitRadius: 30,
+      onCorrectHit,
+    });
+    trigger.start(ctx);
+
+    dispatchClick(100, 100);
+    dispatchClick(200, 100);
+
+    expect(onCorrectHit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        constellationId: "orions-belt",
+        chainLength: 2,
+        total: 3,
+      }),
+    );
+  });
+
   it("reaches force 1 and calls complete after every star of a constellation is hit", () => {
     stars = [
       makeStar("orions-belt", 0, 100, 100),

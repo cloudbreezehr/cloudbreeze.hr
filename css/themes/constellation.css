@@ -40,6 +40,24 @@
   );
 }
 
+/* Transient "N / M" trace-progress badge — opacity is driven by a WAAPI
+   animation in the theme module, so it rests at 0 here. Sits above the tint
+   overlays (same layer, appended after them in the DOM). */
+.constellation-progress {
+  position: fixed;
+  top: 18%;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-theme-buildup);
+  pointer-events: none;
+  opacity: 0;
+  font-family: "DM Mono", monospace;
+  font-size: 1.5rem;
+  letter-spacing: 0.28em;
+  color: rgba(210, 218, 255, 0.92);
+  text-shadow: 0 0 14px rgba(150, 170, 255, 0.7);
+}
+
 /* Constellation wipe transition */
 .constellation-wipe {
   position: fixed;
