@@ -25,6 +25,35 @@ export function hashString(str) {
   return hash >>> 0;
 }
 
+// Murmur3 finalizer constants — the avalanche step that makes the low bits
+// of hashInts usable directly as a uniform value.
+const FMIX_MUL_1 = 0x85ebca6b;
+const FMIX_MUL_2 = 0xc2b2ae35;
+
+const TWO_32 = 4294967296;
+
+/**
+ * Hash a list of numbers into one well-mixed 32-bit unsigned int. Each value
+ * is folded in as two 32-bit halves, so inputs beyond 2^32 (world ticks) and
+ * negative inputs (tile indices) stay distinct. Same inputs, same hash —
+ * everywhere.
+ */
+export function hashInts(...values) {
+  let hash = FNV_OFFSET_BASIS;
+  for (let i = 0; i < values.length; i++) {
+    const v = values[i];
+    const hi = Math.floor(v / TWO_32);
+    hash = Math.imul(hash ^ (v >>> 0), FNV_PRIME);
+    hash = Math.imul(hash ^ (hi >>> 0), FNV_PRIME);
+  }
+  hash ^= hash >>> 16;
+  hash = Math.imul(hash, FMIX_MUL_1);
+  hash ^= hash >>> 13;
+  hash = Math.imul(hash, FMIX_MUL_2);
+  hash ^= hash >>> 16;
+  return hash >>> 0;
+}
+
 // Mulberry32 — a solid small PRNG; returns a () => [0, 1) function.
 const MULBERRY_INCREMENT = 0x6d2b79f5;
 

@@ -27,6 +27,10 @@ function isTouchOnly() {
 const CAPABILITY_AVAILABLE = {
   keyboard: () => !isTouchOnly(),
   hover: () => !isTouchOnly(),
+  // Side-by-side windows need a desktop-style window manager; touch-only
+  // devices run browsers full-screen (or in OS splits that report no
+  // usable screen coordinates), so they can't exercise multi-window play.
+  multiwindow: () => !isTouchOnly(),
 };
 
 // True when the current device can exercise the named capability. Unknown

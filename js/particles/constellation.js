@@ -2,8 +2,8 @@ import { drawHaloParticle, rgbaStr } from "../canvas-utils.js";
 import { defineConstants } from "../dev/registry.js";
 import {
   getSkyStars,
-  getStarsParallaxScale,
   getStarsFadeOpacity,
+  starScreenInstances,
 } from "../sky.js";
 import {
   applyRepulsion,
@@ -121,13 +121,13 @@ export function createConstellation(canvasEl) {
     chainState = state || { chain: [], candidateId: null, isActive: false };
   }
 
-  // Invariant: same parallax projection used by the star renderer —
-  // any divergence visually disconnects chain lines from their stars.
-  function starScreenPos(star, sp, canvasH, canvasW) {
-    const shift = star.depth * sp * canvasH * getStarsParallaxScale();
-    const sx = star.x % canvasW;
-    const py = (((star.y - shift) % canvasH) + canvasH) % canvasH;
-    return { sx, py };
+  // Invariant: same projection as the star renderer — any divergence
+  // visually disconnects chain lines from their stars.  A star can be off
+  // this window's slice of the linked sky (no instances); its chain
+  // segments and halo simply don't render here.
+  function starScreenPos(star, sp) {
+    const inst = starScreenInstances(star, sp, canvas);
+    return inst.length > 0 ? inst[0] : null;
   }
 
   function drawChain(pal, sp) {
@@ -159,12 +159,13 @@ export function createConstellation(canvasEl) {
       const prev = stars[chainState.chain[i - 1].index];
       const cur = stars[chainState.chain[i].index];
       if (!prev || !cur) continue;
-      const a = starScreenPos(prev, sp, h, w);
-      const b = starScreenPos(cur, sp, h, w);
-      if (Math.abs(a.py - b.py) > wrapLimitY) continue;
-      if (Math.abs(a.sx - b.sx) > wrapLimitX) continue;
-      ctx.moveTo(a.sx, a.py);
-      ctx.lineTo(b.sx, b.py);
+      const a = starScreenPos(prev, sp);
+      const b = starScreenPos(cur, sp);
+      if (!a || !b) continue;
+      if (Math.abs(a.y - b.y) > wrapLimitY) continue;
+      if (Math.abs(a.x - b.x) > wrapLimitX) continue;
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
     }
     ctx.stroke();
     ctx.restore();
@@ -179,11 +180,12 @@ export function createConstellation(canvasEl) {
     for (const c of chainState.chain) {
       const s = stars[c.index];
       if (!s) continue;
-      const { sx, py } = starScreenPos(s, sp, h, w);
+      const pos = starScreenPos(s, sp);
+      if (!pos) continue;
       drawHaloParticle(
         ctx,
-        sx,
-        py,
+        pos.x,
+        pos.y,
         s.r * CHAIN.HALO_RADIUS_MULT,
         CHAIN.HALO_OPACITY * fade,
         glowColor,

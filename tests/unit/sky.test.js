@@ -173,3 +173,336 @@ describe("sky.js dwell-pulse detector", () => {
     expect(untagged.every((s) => s.idleFlash === 0)).toBe(true);
   });
 });
+
+describe("sky.js star projection — solo vs world-anchored", () => {
+  let mod;
+  let seam;
+
+  beforeEach(async () => {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+    seam = await import("../../js/sky-link/seam.js");
+    mod = await import("../../js/sky.js");
+  });
+
+  afterEach(() => {
+    seam.setPeerRectsSource(null);
+    delete window.matchMedia;
+  });
+
+  const peerRect = { x: 2000, y: 0, w: 800, h: 600 };
+
+  function linkUp() {
+    seam.setPeerRectsSource(() => [peerRect]);
+  }
+
+  it("folds the sky tile onto the viewport while solo", () => {
+    const star = { x: 1500, y: 900, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    const instances = mod.starScreenInstances(star, 0, canvas);
+    expect(instances).toEqual([{ x: 1500 % 800, y: 900 % 600 }]);
+  });
+
+  it("slices the desktop-anchored world while linked", () => {
+    linkUp();
+    const star = { x: 300, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    // Window at world origin: the star sits at its world position.
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 0, y: 0 })).toEqual([
+      { x: 300, y: 200 },
+    ]);
+    // Window 250px to the right: the same world position, shifted.
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 250, y: 0 })).toEqual([
+      { x: 50, y: 200 },
+    ]);
+  });
+
+  it("agrees across two adjacent windows — one continuous field", () => {
+    linkUp();
+    mod.createSky(120);
+    const left = makeFakeCanvas(960, 1080);
+    const right = makeFakeCanvas(960, 1080);
+    const leftOrigin = { x: 0, y: 0 };
+    const rightOrigin = { x: 960, y: 0 };
+    for (const star of mod.getSkyStars()) {
+      const a = mod.starScreenInstances(star, 0, left, leftOrigin);
+      const b = mod.starScreenInstances(star, 0, right, rightOrigin);
+      // Every instance, mapped back to world coordinates, must land on
+      // the same tile-relative spot regardless of which window projected
+      // it — the world repeats per sky tile, so agreement is modulo the
+      // tile width.
+      const worldXs = new Set(
+        [
+          ...a.map((p) => p.x + leftOrigin.x),
+          ...b.map((p) => p.x + rightOrigin.x),
+        ].map((x) => Math.round((((x % 1920) + 1920) % 1920) * 1000) / 1000),
+      );
+      expect(worldXs.size).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it("drops stars that fall outside this window's world slice", () => {
+    linkUp();
+    const star = { x: 1800, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(800, 600);
+    expect(mod.starScreenInstances(star, 0, canvas, { x: 0, y: 0 })).toEqual(
+      [],
+    );
+  });
+
+  it("repeats the sky tile for a viewport wider than the tile", () => {
+    linkUp();
+    const star = { x: 100, y: 200, depth: 0.5 };
+    const canvas = makeFakeCanvas(2200, 600);
+    const xs = mod
+      .starScreenInstances(star, 0, canvas, { x: 0, y: 0 })
+      .map((p) => p.x);
+    expect(xs).toEqual([100, 100 + 1920]);
+  });
+
+  it("freezes linked parallax to a tunable fraction of the tile-scaled shift", () => {
+    const depth = 1;
+    const sp = 0.5;
+    const canvasH = 600;
+    // Solo parallax scales with local scroll and the canvas height.
+    const solo = mod.starsParallaxShift(depth, sp, canvasH);
+    expect(solo).toBeGreaterThan(0);
+    // The same shift measured in sky-tile units (1080-tall tile vs canvas).
+    const tileEquivalent = solo * (1080 / canvasH);
+    linkUp();
+    const saved = mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED;
+    try {
+      // Fully frozen: windows at different scroll offsets stay aligned.
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = 0;
+      expect(mod.starsParallaxShift(depth, sp, canvasH)).toBe(0);
+      // Turned up to 1, the linked shift matches the tile-scaled parallax.
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = 1;
+      expect(mod.starsParallaxShift(depth, sp, canvasH)).toBeCloseTo(
+        tileEquivalent,
+        6,
+      );
+    } finally {
+      mod.WORLD_ANCHOR.PARALLAX_WHILE_LINKED = saved;
+    }
+  });
+
+  it("reports the anchoring regime off the live link state", () => {
+    expect(mod.isWorldAnchored()).toBe(false);
+    linkUp();
+    expect(mod.isWorldAnchored()).toBe(true);
+  });
+
+  it("dispatches the sky-scrub discovery after enough window travel while linked", () => {
+    // The renderer reads its world origin from window metrics each frame;
+    // sliding screenX between draws simulates the user dragging the
+    // window across the desktop.
+    let screenX = 0;
+    const originalScreenX = Object.getOwnPropertyDescriptor(window, "screenX");
+    Object.defineProperty(window, "screenX", {
+      configurable: true,
+      get: () => screenX,
+    });
+    const events = [];
+    const onAchievement = (e) => events.push(e.detail);
+    window.addEventListener("achievement", onAchievement);
+    try {
+      linkUp();
+      const sky = mod.createSky(30);
+      const canvas = makeFakeCanvas(800, 600);
+      const ctx = makeFakeCtx();
+      const pal = makeFakePalette();
+      const forces = makeForces(null, null);
+      const scrubbed = () => events.some((d) => d.type === "sky-scrub");
+      sky.draw(ctx, canvas, 0, pal, forces);
+      // Slide well past the threshold in a handful of steps.
+      const step = mod.WORLD_ANCHOR.SCRUB_TRAVEL_PX / 4;
+      for (let i = 0; i < 8 && !scrubbed(); i++) {
+        screenX += step;
+        sky.draw(ctx, canvas, 0, pal, forces);
+      }
+      expect(scrubbed()).toBe(true);
+    } finally {
+      window.removeEventListener("achievement", onAchievement);
+      if (originalScreenX) {
+        Object.defineProperty(window, "screenX", originalScreenX);
+      } else {
+        delete window.screenX;
+      }
+    }
+  });
+});
+
+describe("sky.js world-arc courier witness", () => {
+  let mod;
+  let seam;
+  let space;
+
+  beforeEach(async () => {
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+    vi.resetModules();
+    seam = await import("../../js/sky-link/seam.js");
+    space = await import("../../js/world/space.js");
+    mod = await import("../../js/sky.js");
+  });
+
+  afterEach(() => {
+    seam.setPeerRectsSource(null);
+    vi.useRealTimers();
+    delete window.matchMedia;
+  });
+
+  it("fires sky-link-handoff when an arc crosses into a linked peer", async () => {
+    const { TICK_MS } = await import("../../js/world/clock.js");
+    const daily = await import("../../js/daily/random.js");
+    const { hashString } = await import("../../js/daily/seed.js");
+    const seedHash = hashString(daily.skySeedKey());
+
+    // This window's world rect, exactly as the renderer derives it, with
+    // a same-size peer sitting flush to its right.
+    const myRect = space.viewportDesktopRect(window);
+    const peerRect = {
+      x: myRect.x + myRect.w,
+      y: myRect.y,
+      w: myRect.w,
+      h: myRect.h,
+    };
+    seam.setPeerRectsSource(() => [peerRect]);
+    const sky = mod.createSky(30);
+    const canvas = { width: myRect.w, height: myRect.h };
+
+    // Hunt the deterministic schedule for a flight that starts over this
+    // window and ends over the peer — the seed is fixed by the frozen
+    // clock, so the same arc is found on every run.
+    const inRect = (x, y, r) =>
+      x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+    let crossing = null;
+    for (let t = 100; t < 500000 && !crossing; t += 40) {
+      for (const arc of mod.activeWorldArcs(t, myRect, seedHash)) {
+        const endX = arc.x + Math.cos(arc.angle) * arc.speed * arc.maxLife;
+        const endY = arc.y + Math.sin(arc.angle) * arc.speed * arc.maxLife;
+        if (inRect(arc.x, arc.y, myRect) && inRect(endX, endY, peerRect)) {
+          crossing = arc;
+          break;
+        }
+      }
+    }
+    expect(crossing).toBeTruthy();
+
+    // Replay the flight through real draws, one tick at a time.
+    const events = [];
+    const onAchievement = (e) => events.push(e.detail);
+    window.addEventListener("achievement", onAchievement);
+    try {
+      const ctx = makeFakeCtx();
+      const pal = makeFakePalette();
+      const forces = makeForces(null, null);
+      for (let life = 0; life <= crossing.maxLife; life++) {
+        vi.setSystemTime(Math.ceil((crossing.spawnTick + life) * TICK_MS) + 1);
+        sky.draw(ctx, canvas, 0, pal, forces);
+      }
+    } finally {
+      window.removeEventListener("achievement", onAchievement);
+    }
+    expect(events.some((d) => d.type === "sky-link-handoff")).toBe(true);
+  });
+});
+
+describe("activeWorldArcs — schedule-driven shooting stars", () => {
+  let activeWorldArcs;
+
+  beforeEach(async () => {
+    // sky.js pulls in motion.js, whose module scope reads matchMedia.
+    window.matchMedia = vi.fn(() => ({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+    ({ activeWorldArcs } = await import("../../js/sky.js"));
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  const SEED = 0xc10d;
+  const TILE = { x: 0, y: 0, w: 1920, h: 1080 };
+
+  // Sample the schedule at maxLife-sized strides until an arc shows up —
+  // strictly deterministic, so the found tick is stable across runs.
+  function findTickWithArc() {
+    for (let tickTime = 0; tickTime < 200000; tickTime += 40) {
+      const arcs = activeWorldArcs(tickTime, TILE, SEED);
+      if (arcs.length > 0) return { tickTime, arcs };
+    }
+    throw new Error("schedule produced no arcs in the probed range");
+  }
+
+  it("replays identically — same seed, same instant, same arcs", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    expect(activeWorldArcs(tickTime, TILE, SEED)).toEqual(arcs);
+  });
+
+  it("agrees between overlapping queries — one world, many windows", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const wide = activeWorldArcs(
+      tickTime,
+      { x: -1920, y: -1080, w: 3 * 1920, h: 3 * 1080 },
+      SEED,
+    );
+    for (const arc of arcs) {
+      const twin = wide.find((a) => a.key === arc.key);
+      expect(twin).toBeDefined();
+      expect(twin.headX).toBe(arc.headX);
+      expect(twin.headY).toBe(arc.headY);
+    }
+  });
+
+  it("flies each arc along a straight world line as time advances", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const arc = arcs[0];
+    const later = activeWorldArcs(tickTime + 1, TILE, SEED).find(
+      (a) => a.key === arc.key,
+    );
+    if (later) {
+      expect(later.headX - arc.headX).toBeCloseTo(
+        Math.cos(arc.angle) * arc.speed,
+        6,
+      );
+      expect(later.headY - arc.headY).toBeCloseTo(
+        Math.sin(arc.angle) * arc.speed,
+        6,
+      );
+    }
+    // Well past its lifetime the arc is gone everywhere.
+    const gone = activeWorldArcs(tickTime + arc.maxLife + 41, TILE, SEED).find(
+      (a) => a.key === arc.key,
+    );
+    expect(gone).toBeUndefined();
+  });
+
+  it("uses a different schedule for a different seed", () => {
+    const { tickTime, arcs } = findTickWithArc();
+    const other = activeWorldArcs(tickTime, TILE, SEED + 1);
+    expect(other.map((a) => a.key)).not.toEqual(arcs.map((a) => a.key));
+  });
+
+  it("never returns an arc older than its own lifetime", () => {
+    for (let tickTime = 0; tickTime < 20000; tickTime += 17) {
+      for (const arc of activeWorldArcs(tickTime, TILE, SEED)) {
+        expect(arc.life).toBeGreaterThanOrEqual(0);
+        expect(arc.life).toBeLessThanOrEqual(arc.maxLife);
+      }
+    }
+  });
+});

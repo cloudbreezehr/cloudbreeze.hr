@@ -11,8 +11,18 @@ import {
 } from "./constellations.js";
 import { defineConstants } from "./dev/registry.js";
 import { scaled, chance, prefersReducedMotion } from "./motion.js";
+import { peerWorldRects } from "./sky-link/seam.js";
+import { isWorldAnchored, createAnchorBlend } from "./world/anchor.js";
+import { worldTickTime, tickToMs } from "./world/clock.js";
+import { WORLD_W, WORLD_H, floorMod, worldOrigin } from "./world/space.js";
+import { tickRoll, tickStream } from "./world/schedule.js";
+
+// The world/solo regime probe lives in world/anchor.js now; re-export it here
+// so consumers that hit-test or mirror star positions keep one import.
+export { isWorldAnchored };
 import { shootingStarBoost } from "./real-sky/boost.js";
-import { arrangementRandom } from "./daily/random.js";
+import { arrangementRandom, skySeedKey } from "./daily/random.js";
+import { hashString } from "./daily/seed.js";
 
 // ── Stars ──
 const STARS = defineConstants("sky.stars", {
@@ -140,7 +150,7 @@ const STARS = defineConstants("sky.stars", {
     min: 0,
     max: 0.05,
     step: 0.001,
-    description: "Per-frame time increment for glare rotation",
+    description: "Per-tick time increment for glare rotation",
   },
   GLOW_THRESHOLD: {
     value: 0.8,
@@ -311,7 +321,8 @@ const SHOOTING = defineConstants("sky.shooting", {
     min: 0,
     max: 0.05,
     step: 0.001,
-    description: "Per-frame spawn probability",
+    description:
+      "Spawn probability — per frame solo, per sky tile per tick linked",
   },
   Y_MAX: {
     value: 0.4,
@@ -406,6 +417,99 @@ const SHOOTING = defineConstants("sky.shooting", {
   },
 });
 
+// ── World Arcs ──
+// While linked, shooting stars are world events: a seeded roll per sky
+// tile per world tick decides every spawn, and an arc's whole flight is a
+// pure function of its spawn slot. Every window replays the same schedule
+// from the same daily seed, so an arc crossing the gap between windows is
+// the same arc on both sides — no handoff, no messaging, no leader. A
+// window opening mid-flight recomputes the recent schedule and finds the
+// arc already in the air.
+
+// The daily seed, hashed once for the schedule.
+let _worldSeedHash = null;
+function worldSeedHash() {
+  if (_worldSeedHash === null) _worldSeedHash = hashString(skySeedKey());
+  return _worldSeedHash;
+}
+
+function arcMaxLifeTicks() {
+  return SHOOTING.LIFE_MIN + SHOOTING.LIFE_RANGE;
+}
+
+// Materialize the arc spawned at slot (i, j, spawnTick), or null when the
+// schedule rolls no spawn there.
+function arcAt(seedHash, i, j, spawnTick) {
+  const boost = shootingStarBoost(tickToMs(spawnTick));
+  if (tickRoll(seedHash, i, j, spawnTick) >= SHOOTING.SPAWN_CHANCE * boost) {
+    return null;
+  }
+  const r = tickStream(seedHash, i, j, spawnTick);
+  return {
+    key: `${i}:${j}:${spawnTick}`,
+    spawnTick,
+    x:
+      i * WORLD_W + (r() * SKY_SHARED.X_SPREAD + SKY_SHARED.X_OFFSET) * WORLD_W,
+    y: j * WORLD_H + r() * SHOOTING.Y_MAX * WORLD_H,
+    angle:
+      Math.PI * SKY_SHARED.ANGLE_MIN + r() * Math.PI * SHOOTING.ANGLE_RANGE,
+    speed: SHOOTING.SPEED_MIN + r() * SHOOTING.SPEED_RANGE,
+    len: SHOOTING.LEN_MIN + r() * SHOOTING.LEN_RANGE,
+    opacity: SHOOTING.OPACITY_MIN + r() * SHOOTING.OPACITY_RANGE,
+    maxLife: SHOOTING.LIFE_MIN + r() * SHOOTING.LIFE_RANGE,
+  };
+}
+
+/**
+ * Every scheduled arc alive at `tickTime` whose flight currently touches
+ * `rect` (world coordinates), oldest spawn first. Pure: two windows asking
+ * about overlapping rects at the same instant get the same arcs at the
+ * same world positions. Each arc carries its head position (`headX`,
+ * `headY`) and fractional `life` in ticks.
+ */
+export function activeWorldArcs(tickTime, rect, seedHash = worldSeedHash()) {
+  const maxLife = arcMaxLifeTicks();
+  // Farthest a flight can reach from its spawn tile, tail included — tiles
+  // beyond this can't produce an arc visible in `rect`.
+  const reach =
+    (SHOOTING.SPEED_MIN + SHOOTING.SPEED_RANGE) * maxLife +
+    (SHOOTING.LEN_MIN + SHOOTING.LEN_RANGE);
+  const tick = Math.floor(tickTime);
+  const i0 = Math.floor((rect.x - reach) / WORLD_W);
+  const i1 = Math.floor((rect.x + rect.w + reach) / WORLD_W);
+  const j0 = Math.floor((rect.y - reach) / WORLD_H);
+  const j1 = Math.floor((rect.y + rect.h + reach) / WORLD_H);
+  const arcs = [];
+  for (let i = i0; i <= i1; i++) {
+    for (let j = j0; j <= j1; j++) {
+      for (let s = tick - maxLife; s <= tick; s++) {
+        const arc = arcAt(seedHash, i, j, s);
+        if (!arc) continue;
+        const life = tickTime - arc.spawnTick;
+        if (life > arc.maxLife) continue;
+        const headX = arc.x + Math.cos(arc.angle) * arc.speed * life;
+        const headY = arc.y + Math.sin(arc.angle) * arc.speed * life;
+        // The tail trails the head by at most `len` — a head within that
+        // slack of the rect is the loosest flight that can still touch it.
+        if (
+          headX < rect.x - arc.len ||
+          headX > rect.x + rect.w + arc.len ||
+          headY < rect.y - arc.len ||
+          headY > rect.y + rect.h + arc.len
+        ) {
+          continue;
+        }
+        arc.life = life;
+        arc.headX = headX;
+        arc.headY = headY;
+        arcs.push(arc);
+      }
+    }
+  }
+  arcs.sort((a, b) => a.spawnTick - b.spawnTick || a.x - b.x);
+  return arcs;
+}
+
 // ── Aurora ──
 const AURORA = defineConstants("sky.aurora", {
   IDLE_MS: {
@@ -434,7 +538,7 @@ const AURORA = defineConstants("sky.aurora", {
     min: 0,
     max: 0.1,
     step: 0.001,
-    description: "Phase advance per frame for the aurora wave",
+    description: "Phase advance per tick for the aurora wave",
   },
   WAVE_AMP: {
     value: 0.03,
@@ -581,9 +685,111 @@ export const SKY_SHARED = defineConstants("sky.shared", {
   },
 });
 
+// ── World Anchoring ──
+// The star arrangement is laid out in one sky tile (WORLD_W × WORLD_H).
+// Solo, the tile is folded onto the viewport with a plain modulo — every
+// star is always somewhere on screen whatever the window size, which the
+// constellation puzzle depends on. Linked, the tile repeats across the
+// desktop plane and each window draws its own world slice, so positions
+// agree across every linked window and the sky reads as one surface. The
+// link/unlink crossfade timing lives in world/anchor.js, shared with the
+// other world-anchored layers.
+export const WORLD_ANCHOR = defineConstants("sky.world", {
+  SCRUB_TRAVEL_PX: {
+    value: 400,
+    min: 50,
+    max: 2000,
+    step: 25,
+    description:
+      "Cumulative window travel while linked that earns the fixed-stars discovery",
+  },
+  PARALLAX_WHILE_LINKED: {
+    value: 0,
+    min: 0,
+    max: 1,
+    step: 0.05,
+    description:
+      "Fraction of local scroll that still drives world-layer parallax while linked (0 = frozen so windows at different scroll offsets stay aligned; 1 = full per-window parallax)",
+  },
+});
+
+// Off-viewport margin still considered on-slice, so halos and glare spikes
+// don't pop at the edge of a world slice.
+const WORLD_DRAW_MARGIN = 32;
+
+function soloShift(depth, sp, canvasH) {
+  return depth * sp * canvasH * STARS.PARALLAX_SCALE;
+}
+
+// Linked parallax is frozen to a shared fraction of local scroll
+// (PARALLAX_WHILE_LINKED) so windows at different scroll offsets still sample
+// the same slice and align across the seam — the spanned sky is anchored to the
+// desktop, not to any one window's scroll. The solo regime uses soloShift, so
+// this factor never touches solo behaviour.
+function worldShift(depth, sp) {
+  return (
+    depth *
+    sp *
+    WORLD_ANCHOR.PARALLAX_WHILE_LINKED *
+    WORLD_H *
+    STARS.PARALLAX_SCALE
+  );
+}
+
+// Single on-screen position of a star in the solo regime. X and Y both wrap
+// through floorMod so a star arrangement isn't required to stay positive.
+function soloInstance(star, sp, canvas) {
+  return {
+    x: floorMod(star.x, canvas.width),
+    y: floorMod(
+      star.y - soloShift(star.depth, sp, canvas.height),
+      canvas.height,
+    ),
+  };
+}
+
+// Every on-screen position of a star in the linked regime — the sky tile
+// repeats across the desktop, so a viewport larger than the tile sees a
+// star more than once, and a smaller one may not see it at all.
+function worldInstances(star, sp, canvas, origin) {
+  const m = WORLD_DRAW_MARGIN;
+  const worldY = star.y - worldShift(star.depth, sp);
+  const startX = floorMod(star.x - origin.x + m, WORLD_W) - m;
+  const startY = floorMod(worldY - origin.y + m, WORLD_H) - m;
+  const out = [];
+  for (let x = startX; x < canvas.width + m; x += WORLD_W) {
+    for (let y = startY; y < canvas.height + m; y += WORLD_H) {
+      out.push({ x, y });
+    }
+  }
+  return out;
+}
+
+/** Parallax displacement the star renderer applies at `depth` for scroll
+ *  `sp`. Anchored, it's measured in sky-tile units so every window shifts
+ *  identically; solo it scales with the local canvas height, as it always
+ *  has. Consumers that mirror star positions must use this, never their
+ *  own copy of the formula. */
+export function starsParallaxShift(depth, sp, canvasH) {
+  return isWorldAnchored()
+    ? worldShift(depth, sp)
+    : soloShift(depth, sp, canvasH);
+}
+
+/** Screen-space positions of a star this frame under the current regime —
+ *  the single source of truth for anything that hit-tests or draws at star
+ *  positions. May be empty in the linked regime (star off this window's
+ *  world slice). `origin` is injectable for callers that already read it
+ *  this frame. */
+export function starScreenInstances(star, sp, canvas, origin) {
+  return isWorldAnchored()
+    ? worldInstances(star, sp, canvas, origin || worldOrigin())
+    : [soloInstance(star, sp, canvas)];
+}
+
 // ── Factory ──
 
-// Anchor positions in raw 1920x1080 space, one per quadrant. Constellations
+// Anchor positions in sky-tile space, one per quadrant. Constellations
 // are planted relative to these; stars of a single constellation share an
 // anchor and a parallax depth so they shift together on scroll and keep
 // their visual shape.
@@ -659,14 +865,6 @@ export function getSkyStars() {
   return _latestStars;
 }
 
-/** Live parallax-scale read for consumers that need to mirror sky.js's
- *  star screen-position math (constellation chain hit-tests, chain line
- *  rendering).  Reads the tunable constant fresh each call so dev-console
- *  retunes propagate to all consumers in the same frame. */
-export function getStarsParallaxScale() {
-  return STARS.PARALLAX_SCALE;
-}
-
 /** Live scroll-fade read using the same window the star renderer uses.
  *  Returns 1 above FADE_START, ramps to 0 at FADE_END.  Overlays that
  *  anchor to star positions read this so they fade in lockstep — without
@@ -681,7 +879,7 @@ export function createSky(starCount) {
   plantConstellations(stars, starCount);
   while (stars.length < starCount) {
     stars.push(
-      makeStar(arrangementRandom() * 1920, arrangementRandom() * 1080),
+      makeStar(arrangementRandom() * WORLD_W, arrangementRandom() * WORLD_H),
     );
   }
   _latestStars = stars;
@@ -705,8 +903,38 @@ export function createSky(starCount) {
   let dwellPulseFired = false;
   let _auroraPhase = 0;
 
+  // Fixed-timestep anchor: phase advances scale by elapsed world ticks, so
+  // animation runs at the same world speed on every display refresh rate.
+  let lastTickTime = worldTickTime();
+
+  // Link/unlink crossfade tracker for the star layout — shared crossfade
+  // timing with the other world-anchored layers.
+  const anchorBlend = createAnchorBlend();
+
+  // Window travel accumulated while linked, for the fixed-stars discovery.
+  let scrubOrigin = null;
+  let scrubTravel = 0;
+  let scrubFired = false;
+
+  // Arc heads drawn this frame, in canvas coordinates — the click
+  // hit-test's view of what the user can currently see.
+  const drawnArcs = [];
+
+  // Border-crossing witness state, keyed by world-arc slot: an arc whose
+  // head has visited both this window's slice and a linked peer's counts
+  // as a crossing. Every window detects it from world truth alone and
+  // fires its own achievement event — no messaging.
+  const arcCrossings = new Map();
+
   return {
     draw(ctx, canvas, sp, pal, forces, scrollVelocity = 0) {
+      // Elapsed world ticks since the last frame — clamped at zero because
+      // the wall clock can step backwards under NTP adjustment.
+      const tickTime = worldTickTime();
+      const dTicks = Math.max(0, tickTime - lastTickTime);
+      lastTickTime = tickTime;
+      // Nothing is visible (or clickable) until this frame draws it.
+      drawnArcs.length = 0;
       const starVis = scrollFade(
         sp,
         0,
@@ -725,7 +953,7 @@ export function createSky(starCount) {
         );
         const auroraAlpha = fadeIn * AURORA.PEAK_OPACITY * starVis;
         if (auroraAlpha > AURORA.MIN_VISIBLE_ALPHA) {
-          _auroraPhase += scaled(AURORA.WAVE_SPEED);
+          _auroraPhase += scaled(AURORA.WAVE_SPEED * dTicks);
           const bandH = canvas.height * AURORA.BAND_HEIGHT;
           const waveH = canvas.height * AURORA.WAVE_AMP;
           const steps = AURORA.RIBBON_STEPS;
@@ -806,32 +1034,59 @@ export function createSky(starCount) {
       let dwellNearestStar = null;
       let dwellNearestDistSq = Infinity;
 
-      t += scaled(STARS.TIME_STEP);
+      t += scaled(STARS.TIME_STEP * dTicks);
       // Hoisted halo opts shared across every glow-tier star this frame.
       const haloOpts = {
         midStop: STARS.GLOW_MID,
         midAlpha: STARS.GLOW_MID_ALPHA,
       };
-      stars.forEach((s) => {
-        s.twinkle += scaled(s.twinkleSpeed);
-        // Random bright flash — rare, brief spike.  Spawn probability
-        // dampens with motion budget so no flash fires under reduced motion.
-        if (s.flash > 0) {
-          s.flash *= STARS.FLASH_DECAY;
-          if (s.flash < STARS.FLASH_THRESHOLD) s.flash = 0;
-        } else if (chance(STARS.FLASH_CHANCE)) {
-          s.flash = STARS.FLASH_MIN + Math.random() * STARS.FLASH_RANGE;
-          s.glare =
-            s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
+
+      // Regime crossfade — on link/unlink the two star layouts dissolve
+      // into each other instead of snapping, so the merge reads as the
+      // skies joining rather than a glitch. Instant under reduced motion.
+      const { anchored, blend } = anchorBlend();
+      const origin = anchored || blend < 1 ? worldOrigin() : null;
+
+      // The payoff of desktop anchoring is discoverable: move the window
+      // and the sky holds still.  Enough cumulative travel while linked
+      // earns the discovery, once per page load.
+      if (anchored) {
+        if (scrubOrigin) {
+          scrubTravel +=
+            Math.abs(origin.x - scrubOrigin.x) +
+            Math.abs(origin.y - scrubOrigin.y);
+          if (!scrubFired && scrubTravel >= WORLD_ANCHOR.SCRUB_TRAVEL_PX) {
+            scrubFired = true;
+            window.dispatchEvent(
+              new CustomEvent("achievement", { detail: { type: "sky-scrub" } }),
+            );
+          }
         }
-        // Parallax — closer stars (higher depth) shift more on scroll
-        const shift = s.depth * sp * canvas.height * STARS.PARALLAX_SCALE;
-        const py =
-          (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
-        const sx = s.x % canvas.width;
-        const base =
-          s.opacity *
-          (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
+        scrubOrigin = { x: origin.x, y: origin.y };
+      } else {
+        scrubOrigin = null;
+      }
+
+      // Comet-streak inputs are star-independent — computed once.
+      const absVel = Math.abs(scrollVelocity);
+      let trailLen = 0;
+      let trailDir = 0;
+      if (!prefersReducedMotion() && absVel > COMET.VEL_THRESHOLD) {
+        const frac = Math.min(
+          1,
+          (absVel - COMET.VEL_THRESHOLD) /
+            (COMET.VEL_FULL - COMET.VEL_THRESHOLD),
+        );
+        trailLen = scaled(COMET.MAX_TRAIL_LEN * frac);
+        trailDir = scrollVelocity > 0 ? -1 : 1;
+      }
+
+      // Draw one on-screen instance of a star.  Everything position-bound
+      // lives here — hover boost, dwell candidacy, halo/dot, comet trail,
+      // marker ring, glare — so both layout regimes and the crossfade
+      // share a single code path.  `layerAlpha` is the regime's crossfade
+      // weight.
+      const drawStarInstance = (s, sx, py, layerAlpha, base, hint) => {
         // Hover proximity — stars near the cursor glow brighter.
         // Planted constellation stars get a small extra boost so they
         // become noticeably brighter under the cursor without standing
@@ -861,24 +1116,6 @@ export function createSky(starCount) {
             dwellNearestDistSq = distSq;
           }
         }
-        // `hintPulse` 0..1 is set externally to highlight stars the
-        // user should click next.  Wave uses the shared `t` clock so
-        // every hinted star breathes in sync but with an index-phased
-        // offset, and freezes under reduced motion because `t` does.
-        let hint = 0;
-        if (s.hintPulse > 0) {
-          const wave =
-            0.5 +
-            0.5 * Math.sin(t * STARS.HINT_PULSE_RATE + s.constellationIndex);
-          hint = s.hintPulse * wave * STARS.HOVER_BOOST;
-        }
-        // Brief one-shot flash awarded when the cursor dwells near a
-        // tagged star — decays per frame; latch above prevents respawn
-        // until the cursor moves and returns.
-        if (s.idleFlash > 0) {
-          s.idleFlash *= STARS.IDLE_FLASH_DECAY;
-          if (s.idleFlash < 0.01) s.idleFlash = 0;
-        }
         const op =
           Math.min(
             1,
@@ -887,7 +1124,9 @@ export function createSky(starCount) {
               hoverBoost +
               hint +
               s.idleFlash * STARS.HOVER_BOOST,
-          ) * starVis;
+          ) *
+          starVis *
+          layerAlpha;
         const sc = pal.starColor;
         // Larger stars get a soft radial glow halo
         if (s.r >= STARS.GLOW_THRESHOLD) {
@@ -908,27 +1147,17 @@ export function createSky(starCount) {
         }
         // Comet streak: extend each star in the direction opposite to scroll.
         // Trail length scales with scroll velocity; collapses under reduced motion.
-        const absVel = Math.abs(scrollVelocity);
-        if (!prefersReducedMotion() && absVel > COMET.VEL_THRESHOLD) {
-          const frac = Math.min(
-            1,
-            (absVel - COMET.VEL_THRESHOLD) /
-              (COMET.VEL_FULL - COMET.VEL_THRESHOLD),
+        if (trailLen > 0.5) {
+          drawTrail(
+            ctx,
+            sx,
+            py,
+            sx,
+            py + trailDir * trailLen,
+            [sc, sc, sc],
+            op * COMET.OPACITY_SCALE,
+            s.r * COMET.TRAIL_WIDTH_FACTOR,
           );
-          const trailLen = scaled(COMET.MAX_TRAIL_LEN * frac);
-          if (trailLen > 0.5) {
-            const dir = scrollVelocity > 0 ? -1 : 1;
-            drawTrail(
-              ctx,
-              sx,
-              py,
-              sx,
-              py + dir * trailLen,
-              [sc, sc, sc],
-              op * COMET.OPACITY_SCALE,
-              s.r * COMET.TRAIL_WIDTH_FACTOR,
-            );
-          }
         }
         // Planted-star discovery marker: a faint, always-on outline ring.
         // Subtle enough not to spoil the puzzle at a glance, distinct
@@ -936,7 +1165,7 @@ export function createSky(starCount) {
         // sweep the cursor across the sky.
         if (s.constellationId) {
           ctx.save();
-          ctx.globalAlpha = STARS.TAGGED_RING_OPACITY * starVis;
+          ctx.globalAlpha = STARS.TAGGED_RING_OPACITY * starVis * layerAlpha;
           ctx.strokeStyle = rgbaStr(sc, 1);
           ctx.lineWidth = STARS.TAGGED_RING_WIDTH;
           ctx.beginPath();
@@ -950,7 +1179,7 @@ export function createSky(starCount) {
           const angle = t * STARS.GLARE_ROTATION_SPEED + s.glarePhase;
           ctx.save();
           ctx.globalCompositeOperation = "lighter";
-          ctx.globalAlpha = s.flash * starVis;
+          ctx.globalAlpha = s.flash * starVis * layerAlpha;
           ctx.lineWidth = STARS.GLARE_WIDTH;
           ctx.lineCap = "round";
           for (let i = 0; i < 2; i++) {
@@ -974,6 +1203,65 @@ export function createSky(starCount) {
           }
           ctx.restore();
         }
+      };
+
+      // Draw every instance of a star under one regime at the given
+      // crossfade weight.
+      const drawStarRegime = (s, worldAnchored, layerAlpha, base, hint) => {
+        if (worldAnchored) {
+          for (const p of worldInstances(s, sp, canvas, origin)) {
+            drawStarInstance(s, p.x, p.y, layerAlpha, base, hint);
+          }
+        } else {
+          drawStarInstance(
+            s,
+            floorMod(s.x, canvas.width),
+            floorMod(
+              s.y - soloShift(s.depth, sp, canvas.height),
+              canvas.height,
+            ),
+            layerAlpha,
+            base,
+            hint,
+          );
+        }
+      };
+
+      stars.forEach((s) => {
+        s.twinkle += scaled(s.twinkleSpeed * dTicks);
+        // Random bright flash — rare, brief spike.  Spawn probability
+        // dampens with motion budget so no flash fires under reduced motion.
+        if (s.flash > 0) {
+          s.flash *= Math.pow(STARS.FLASH_DECAY, dTicks);
+          if (s.flash < STARS.FLASH_THRESHOLD) s.flash = 0;
+        } else if (chance(STARS.FLASH_CHANCE * dTicks)) {
+          s.flash = STARS.FLASH_MIN + Math.random() * STARS.FLASH_RANGE;
+          s.glare =
+            s.r >= STARS.GLARE_THRESHOLD && Math.random() < STARS.GLARE_CHANCE;
+        }
+        const base =
+          s.opacity *
+          (STARS.TWINKLE_BASE + STARS.TWINKLE_RANGE * Math.sin(s.twinkle));
+        // `hintPulse` 0..1 is set externally to highlight stars the
+        // user should click next.  Wave uses the shared `t` clock so
+        // every hinted star breathes in sync but with an index-phased
+        // offset, and freezes under reduced motion because `t` does.
+        let hint = 0;
+        if (s.hintPulse > 0) {
+          const wave =
+            0.5 +
+            0.5 * Math.sin(t * STARS.HINT_PULSE_RATE + s.constellationIndex);
+          hint = s.hintPulse * wave * STARS.HOVER_BOOST;
+        }
+        // Brief one-shot flash awarded when the cursor dwells near a
+        // tagged star — decays per frame; latch above prevents respawn
+        // until the cursor moves and returns.
+        if (s.idleFlash > 0) {
+          s.idleFlash *= Math.pow(STARS.IDLE_FLASH_DECAY, dTicks);
+          if (s.idleFlash < 0.01) s.idleFlash = 0;
+        }
+        drawStarRegime(s, anchored, blend, base, hint);
+        if (blend < 1) drawStarRegime(s, !anchored, 1 - blend, base, hint);
       });
 
       // Awarded to the closest tagged star inside the hover radius for
@@ -983,11 +1271,36 @@ export function createSky(starCount) {
         dwellNearestStar.idleFlash = STARS.IDLE_FLASH_STRENGTH;
       }
 
-      // Shooting stars — rare fast arcs across the sky.  Spawn rate
+      // Draw one arc trail and record its head for the click hit-test.
+      const drawArcTrail = (hx, hy, angle, len, opacity, p) => {
+        // Fade in quickly, fade out slowly
+        const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
+        const op = opacity * fade * starVis;
+        const tailX = hx - Math.cos(angle) * len * Math.min(1, p * 3);
+        const tailY = hy - Math.sin(angle) * len * Math.min(1, p * 3);
+        drawTrail(
+          ctx,
+          hx,
+          hy,
+          tailX,
+          tailY,
+          pal.shootingColors,
+          op,
+          SHOOTING.LINE_WIDTH,
+          {
+            radius: SHOOTING.HEAD_GLOW_RADIUS,
+            alpha: SHOOTING.HEAD_GLOW_ALPHA,
+          },
+        );
+        drawnArcs.push({ x: hx, y: hy });
+      };
+
+      // Shooting stars — rare fast arcs across the sky.  Solo, this window
+      // rolls its own in local coordinates, exactly as ever: spawn rate
       // dampens with motion budget, so under reduced motion no new arcs
       // appear (in-flight ones still complete and fade out cleanly).
       // During a real meteor shower the sky actually falls more often.
-      if (chance(SHOOTING.SPAWN_CHANCE * shootingStarBoost())) {
+      if (!anchored && chance(SHOOTING.SPAWN_CHANCE * shootingStarBoost())) {
         const ss = shootingStars.find((s) => !s.active);
         if (ss) {
           ss.x =
@@ -1008,48 +1321,125 @@ export function createSky(starCount) {
       }
       shootingStars.forEach((ss) => {
         if (!ss.active) return;
-        ss.life++;
+        ss.life += dTicks;
         if (ss.life > ss.maxLife) {
           ss.active = false;
           return;
         }
-        const p = ss.life / ss.maxLife;
-        // Position is intentionally unscaled — once an arc is in flight
-        // it must complete instead of freezing mid-trail if the user
-        // toggles reduced motion mid-flight.  Spawn is gated by chance()
-        // above; this branch only runs for already-spawned arcs.
-        ss.x += Math.cos(ss.angle) * ss.speed;
-        ss.y += Math.sin(ss.angle) * ss.speed;
-        // Fade in quickly, fade out slowly
-        const fade = p < 0.1 ? p / 0.1 : (1 - p) / 0.9;
-        const op = ss.opacity * fade * starVis;
-        const tailX = ss.x - Math.cos(ss.angle) * ss.len * Math.min(1, p * 3);
-        const tailY = ss.y - Math.sin(ss.angle) * ss.len * Math.min(1, p * 3);
-        drawTrail(
-          ctx,
+        // Position advances by elapsed ticks, intentionally not motion-
+        // scaled — once an arc is in flight it must complete instead of
+        // freezing mid-trail if the user toggles reduced motion
+        // mid-flight.  Spawn is gated by chance() above; this branch only
+        // runs for already-spawned arcs.
+        ss.x += Math.cos(ss.angle) * ss.speed * dTicks;
+        ss.y += Math.sin(ss.angle) * ss.speed * dTicks;
+        // Fully off-screen (tail included) the arc is invisible for the
+        // rest of its life — free the slot.
+        if (
+          ss.x < -ss.len ||
+          ss.x > canvas.width + ss.len ||
+          ss.y < -ss.len ||
+          ss.y > canvas.height + ss.len
+        ) {
+          ss.active = false;
+          return;
+        }
+        drawArcTrail(
           ss.x,
           ss.y,
-          tailX,
-          tailY,
-          pal.shootingColors,
-          op,
-          SHOOTING.LINE_WIDTH,
-          {
-            radius: SHOOTING.HEAD_GLOW_RADIUS,
-            alpha: SHOOTING.HEAD_GLOW_ALPHA,
-          },
+          ss.angle,
+          ss.len,
+          ss.opacity,
+          ss.life / ss.maxLife,
         );
       });
+
+      // Linked, arcs come from the shared world schedule instead: every
+      // window shows the same flights at the same desktop positions, so a
+      // flight crosses the gap between windows as one continuous arc.
+      // Local leftovers above still finish after a link forms; the
+      // schedule owns every new spawn.  Skipped entirely under reduced
+      // motion — the world truth continues, this window just doesn't show
+      // it (mid-flight arcs vanish if the preference flips mid-flight).
+      if (anchored && !prefersReducedMotion()) {
+        const selfRect = {
+          x: origin.x,
+          y: origin.y,
+          w: canvas.width,
+          h: canvas.height,
+        };
+        const worldArcs = activeWorldArcs(tickTime, selfRect);
+        const drawCount = Math.min(worldArcs.length, SHOOTING.POOL_SIZE);
+        for (let k = 0; k < drawCount; k++) {
+          const arc = worldArcs[k];
+          drawArcTrail(
+            arc.headX - origin.x,
+            arc.headY - origin.y,
+            arc.angle,
+            arc.len,
+            arc.opacity,
+            arc.life / arc.maxLife,
+          );
+        }
+
+        // Border-crossing witness — mark which slices each live arc's
+        // head has visited, and celebrate the first arc seen on both
+        // sides.  Runs only while this window can actually witness it
+        // (visible star layer, motion allowed).
+        const peers = peerWorldRects();
+        const noteVisit = (arc, rect, field) => {
+          if (
+            arc.headX < rect.x ||
+            arc.headX > rect.x + rect.w ||
+            arc.headY < rect.y ||
+            arc.headY > rect.y + rect.h
+          ) {
+            return;
+          }
+          let entry = arcCrossings.get(arc.key);
+          if (!entry) {
+            entry = {
+              spawnTick: arc.spawnTick,
+              mine: false,
+              peer: false,
+              fired: false,
+            };
+            arcCrossings.set(arc.key, entry);
+          }
+          entry[field] = true;
+          if (!entry.fired && entry.mine && entry.peer) {
+            entry.fired = true;
+            window.dispatchEvent(
+              new CustomEvent("achievement", {
+                detail: { type: "sky-link-handoff" },
+              }),
+            );
+          }
+        };
+        for (const arc of worldArcs) noteVisit(arc, selfRect, "mine");
+        for (const peerRect of peers) {
+          for (const arc of activeWorldArcs(tickTime, peerRect)) {
+            noteVisit(arc, peerRect, "peer");
+          }
+        }
+        for (const [key, entry] of arcCrossings) {
+          if (tickTime - entry.spawnTick > arcMaxLifeTicks() + 1) {
+            arcCrossings.delete(key);
+          }
+        }
+      } else if (arcCrossings.size > 0) {
+        arcCrossings.clear();
+      }
     },
 
     // Hit-test a click (canvas-pixel coords) against the head of any
-    // in-flight shooting star.  Generous radius since the arcs move
-    // fast.  Returns true on a hit so the caller can reward the catch.
+    // shooting star drawn this frame.  Generous radius since the arcs
+    // move fast.  Returns true on a hit so the caller can reward the
+    // catch.
     clickShootingStar(cx, cy) {
-      for (const ss of shootingStars) {
-        if (!ss.active) continue;
-        const dx = ss.x - cx;
-        const dy = ss.y - cy;
+      for (const arc of drawnArcs) {
+        const dx = arc.x - cx;
+        const dy = arc.y - cy;
         if (dx * dx + dy * dy <= SHOOTING.HIT_RADIUS * SHOOTING.HIT_RADIUS) {
           return true;
         }

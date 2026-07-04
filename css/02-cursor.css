@@ -828,6 +828,15 @@ body.spell-kick #cursor-ring::after {
 #cursor-ring.visible {
   opacity: 1;
 }
+/* While a linked window's pointer (its ghost) is inside this viewport, the real
+   mouse is over us but owned by that window — our own cursor is frozen at a
+   stale spot, so hide it and let the ghost be the single cursor gliding across
+   the seam. Higher specificity than `.visible`, so it wins while the class is
+   on and the cursor fades back in (opacity transition) when the ghost leaves. */
+body.peer-pointer-inside #cursor,
+body.peer-pointer-inside #cursor-ring {
+  opacity: 0;
+}
 @media (hover: none), (pointer: coarse) {
   #cursor,
   #cursor-ring {

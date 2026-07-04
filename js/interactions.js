@@ -14,6 +14,47 @@ import {
 } from "./interactions.constants.js";
 
 // ── Force Helpers ──
+// Each helper applies its force for the local pointer, then for every
+// entry in `forces.remotePointers` (pointers of linked windows, in local
+// coordinates; absent or empty solo). A remote pointer carries the same
+// interaction state as the local one, so a neighbour's drag, hold, or
+// well moves this window's particles through exactly the same math —
+// remote pointers are force sources, not events.
+
+function attractToward(p, x, y, hold, radius, force, tangentFactor) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < radius && dist > 5) {
+    const f = force * (1 - dist / radius);
+    const nx = dx / dist;
+    const ny = dy / dist;
+    p.vx += nx * f + -ny * f * hold * tangentFactor;
+    p.vy += ny * f + nx * f * hold * tangentFactor;
+  }
+}
+
+function wellToward(p, x, y, strength) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const f = (strength * WELL.FORCE_MAX) / (1 + dist * WELL.DISTANCE_DECAY);
+  const nx = dx / dist;
+  const ny = dy / dist;
+  p.vx += nx * f + -ny * f * WELL.TANGENT;
+  p.vy += ny * f + nx * f * WELL.TANGENT;
+}
+
+function driftToward(p, x, y, radius, strength) {
+  const dx = x - p.x;
+  const dy = y - p.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  if (dist < radius && dist > 1) {
+    const f = strength * (1 - dist / radius);
+    p.vx += (dx / dist) * f;
+    p.vy += (dy / dist) * f;
+  }
+}
 
 export function applyRepulsion(forces, p, radius, damping) {
   if (forces.clickImpulse.strength > 0.05) {
@@ -30,30 +71,44 @@ export function applyRepulsion(forces, p, radius, damping) {
 
 export function applyAttraction(forces, p, radius, force, tangentFactor) {
   if (forces.isDragging) {
-    const dx = forces.dragPos.x - p.x;
-    const dy = forces.dragPos.y - p.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < radius && dist > 5) {
-      const f = force * (1 - dist / radius);
-      const nx = dx / dist;
-      const ny = dy / dist;
-      p.vx += nx * f + -ny * f * forces.holdStrength * tangentFactor;
-      p.vy += ny * f + nx * f * forces.holdStrength * tangentFactor;
+    attractToward(
+      p,
+      forces.dragPos.x,
+      forces.dragPos.y,
+      forces.holdStrength,
+      radius,
+      force,
+      tangentFactor,
+    );
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.isDragging) {
+        attractToward(
+          p,
+          rp.x,
+          rp.y,
+          rp.holdStrength,
+          radius,
+          force,
+          tangentFactor,
+        );
+      }
     }
   }
 }
 
 export function applyWellForce(forces, p) {
-  if (forces.wellStrength <= 0) return;
-  const dx = forces.dragPos.x - p.x;
-  const dy = forces.dragPos.y - p.y;
-  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-  const f =
-    (forces.wellStrength * WELL.FORCE_MAX) / (1 + dist * WELL.DISTANCE_DECAY);
-  const nx = dx / dist;
-  const ny = dy / dist;
-  p.vx += nx * f + -ny * f * WELL.TANGENT;
-  p.vy += ny * f + nx * f * WELL.TANGENT;
+  if (forces.wellStrength > 0) {
+    wellToward(p, forces.dragPos.x, forces.dragPos.y, forces.wellStrength);
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.wellStrength > 0) wellToward(p, rp.x, rp.y, rp.wellStrength);
+    }
+  }
 }
 
 /**
@@ -67,18 +122,119 @@ export function applyWellForce(forces, p) {
  * @param {number} strength - Maximum force at cursor center
  */
 export function applyHoverDrift(forces, p, radius, strength) {
-  if (!forces.hover.active || forces.isDragging) return;
-  const dx = forces.hover.x - p.x;
-  const dy = forces.hover.y - p.y;
-  const dist = Math.sqrt(dx * dx + dy * dy);
-  if (dist < radius && dist > 1) {
-    const f = strength * (1 - dist / radius);
-    p.vx += (dx / dist) * f;
-    p.vy += (dy / dist) * f;
+  if (forces.hover.active && !forces.isDragging) {
+    driftToward(p, forces.hover.x, forces.hover.y, radius, strength);
+  }
+  const remotes = forces.remotePointers;
+  if (remotes) {
+    for (const rp of remotes) {
+      if (rp.active && !rp.isDragging) {
+        driftToward(p, rp.x, rp.y, radius, strength);
+      }
+    }
   }
 }
 
 export { HOLD, WELL };
+
+// A linked peer's well charged past this, rendered in this window, is the
+// "distant well" discovery — a neighbour's gravity well blooming in your sky.
+const DISTANT_WELL_MIN_STRENGTH = 0.2;
+
+// ── Well Visuals ──
+// Render one pointer source's well: the orbit swarm circling it and the pulsing
+// aura while it charges, into `pool` (that source's own orbit particles). The
+// local pointer and every linked peer go through here, so a neighbour's well
+// blooms in this window exactly as the local one does. `source` is
+// {x, y, holdStrength, wellStrength, isDragging}. Orbits fade out when the
+// source stops charging — a released local well clears its pool via a burst; a
+// remote's simply eases away.
+function drawWell(ctx, pal, source, pool, orbitOpts, auraOpts) {
+  const charging =
+    source.isDragging && source.holdStrength > HOLD.WARMUP_THRESHOLD;
+
+  // Spawn orbit particles while charging (boosted during a gravity well).
+  if (charging) {
+    const spawnMul =
+      source.wellStrength > 0
+        ? 1 + source.wellStrength * WELL.ORBIT_SPAWN_BOOST
+        : 1;
+    const maxOrbit =
+      ORBIT.MAX +
+      (source.wellStrength > 0
+        ? Math.floor(source.wellStrength * WELL.ORBIT_MAX_BOOST)
+        : 0);
+    const spawnChance = source.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul;
+    if (chance(spawnChance) && pool.length < maxOrbit) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist =
+        ORBIT.DIST_MIN +
+        Math.random() *
+          (ORBIT.DIST_RANGE + source.holdStrength * ORBIT.DIST_HOLD);
+      pool.push({
+        x: source.x + Math.cos(angle) * dist,
+        y: source.y + Math.sin(angle) * dist,
+        vx: 0,
+        vy: 0,
+        r: ORBIT.RADIUS_MIN + Math.random() * ORBIT.RADIUS_RANGE,
+        opacity: 0,
+        targetOpacity:
+          ORBIT.OPACITY_MIN + source.holdStrength * ORBIT.OPACITY_HOLD,
+      });
+    }
+  }
+
+  // Update and draw orbit particles — pulling inward with a tangential orbit,
+  // easing toward the charge's target opacity, or toward zero once it ends.
+  const oc = pal.orbitColor;
+  const pull = ORBIT.PULL_BASE + source.holdStrength * ORBIT.PULL_HOLD;
+  const orbit = ORBIT.TANGENT_BASE + source.holdStrength * ORBIT.TANGENT_HOLD;
+  for (let i = pool.length - 1; i >= 0; i--) {
+    const p = pool[i];
+    const dx = source.x - p.x;
+    const dy = source.y - p.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = dx / dist;
+    const ny = dy / dist;
+    p.vx += nx * pull + -ny * orbit;
+    p.vy += ny * pull + nx * orbit;
+    p.vx *= ORBIT.FRICTION;
+    p.vy *= ORBIT.FRICTION;
+    p.x += p.vx;
+    p.y += p.vy;
+    const target = charging ? p.targetOpacity : 0;
+    p.opacity += (target - p.opacity) * ORBIT.OPACITY_EASE;
+    if (!charging && p.opacity < ORBIT.DRAW_THRESHOLD) {
+      pool.splice(i, 1);
+      continue;
+    }
+    if (p.opacity > ORBIT.DRAW_THRESHOLD) {
+      drawHaloParticle(
+        ctx,
+        p.x,
+        p.y,
+        p.r * ORBIT.GLOW_RADIUS,
+        p.opacity,
+        oc,
+        orbitOpts,
+      );
+    }
+  }
+
+  // Gravity well aura — pulsing radial glow at the source.
+  if (source.wellStrength > 0 && source.isDragging) {
+    const auraR = WELL.AURA_RADIUS * (1 + source.wellStrength);
+    const pulse =
+      WELL.AURA_PULSE_BASE +
+      WELL.AURA_PULSE_AMP *
+        Math.sin((performance.now() / 1000) * WELL.AURA_PULSE_SPEED);
+    const auraOp = WELL.AURA_OPACITY * source.wellStrength * pulse;
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    drawHaloParticle(ctx, source.x, source.y, auraR, auraOp, oc, auraOpts);
+    ctx.restore();
+  }
+}
 
 // ── Factory ──
 
@@ -94,6 +250,67 @@ export function createInteractions() {
   function pushCapped(arr, item, max) {
     if (arr.length >= max) arr.splice(0, arr.length - max + 1);
     arr.push(item);
+  }
+
+  // Orbit pools for linked peers' wells, keyed by pointer id and pruned when a
+  // pointer leaves the live list. The local pointer keeps its own orbitParticles.
+  const remoteWells = new Map();
+  // A neighbour's well blooming here is a once-per-load discovery.
+  let distantWellFired = false;
+
+  // Scatter a ring of click-burst particles at (x, y).
+  function spawnClickBurst(x, y, color) {
+    const count =
+      CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = CLICK.SPEED_MIN + Math.random() * CLICK.SPEED_RANGE;
+      pushCapped(
+        clickParticles,
+        {
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
+          opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
+          life: 0,
+          maxLife: CLICK.LIFE_MIN + Math.random() * CLICK.LIFE_RANGE,
+          phase: Math.random() * Math.PI * 2,
+          color,
+        },
+        CLICK.MAX,
+      );
+    }
+  }
+
+  // Explode a well's stored charge into a burst at (x, y); `blast` sets speed.
+  function spawnWellBurst(x, y, color, wellStrength, blast) {
+    const wellBurst = Math.floor(wellStrength * WELL.BURST_MAX);
+    for (let i = 0; i < wellBurst; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed =
+        blast *
+        (WELL.BURST_SPEED_FACTOR_MIN +
+          Math.random() * WELL.BURST_SPEED_FACTOR_RANGE);
+      pushCapped(
+        clickParticles,
+        {
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          r: CLICK.RADIUS_MIN + Math.random() * WELL.BURST_RADIUS_RANGE,
+          opacity:
+            WELL.BURST_OPACITY_MIN + Math.random() * WELL.BURST_OPACITY_RANGE,
+          life: 0,
+          maxLife: WELL.BURST_LIFE_MIN + Math.random() * WELL.BURST_LIFE_RANGE,
+          phase: Math.random() * Math.PI * 2,
+          color,
+        },
+        CLICK.MAX,
+      );
+    }
   }
 
   const cursorDot = document.getElementById("cursor");
@@ -150,91 +367,60 @@ export function createInteractions() {
         );
       }
 
-      // Hold-to-charge orbit particles — spawn, orbit, and glow around cursor
-      if (forces.isDragging && forces.holdStrength > HOLD.WARMUP_THRESHOLD) {
-        // Spawn new orbit particles (boosted during gravity well)
-        const spawnMul =
-          forces.wellStrength > 0
-            ? 1 + forces.wellStrength * WELL.ORBIT_SPAWN_BOOST
-            : 1;
-        const maxOrbit =
-          ORBIT.MAX +
-          (forces.wellStrength > 0
-            ? Math.floor(forces.wellStrength * WELL.ORBIT_MAX_BOOST)
-            : 0);
-        const spawnChance = forces.holdStrength * ORBIT.SPAWN_FACTOR * spawnMul;
-        if (chance(spawnChance) && orbitParticles.length < maxOrbit) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist =
-            ORBIT.DIST_MIN +
-            Math.random() *
-              (ORBIT.DIST_RANGE + forces.holdStrength * ORBIT.DIST_HOLD);
-          orbitParticles.push({
-            x: forces.dragPos.x + Math.cos(angle) * dist,
-            y: forces.dragPos.y + Math.sin(angle) * dist,
-            vx: 0,
-            vy: 0,
-            r: ORBIT.RADIUS_MIN + Math.random() * ORBIT.RADIUS_RANGE,
-            opacity: 0,
-            targetOpacity:
-              ORBIT.OPACITY_MIN + forces.holdStrength * ORBIT.OPACITY_HOLD,
-          });
+      // Well visuals for the local pointer and every charging linked peer.
+      // Local uses the persistent orbit pool (converted to a burst on release);
+      // each remote keeps its own pool, so a neighbour's well blooms here too.
+      drawWell(
+        ctx,
+        pal,
+        {
+          x: forces.dragPos.x,
+          y: forces.dragPos.y,
+          holdStrength: forces.holdStrength,
+          wellStrength: forces.wellStrength,
+          isDragging: forces.isDragging,
+        },
+        orbitParticles,
+        orbitOpts,
+        auraOpts,
+      );
+      const remotes = forces.remotePointers;
+      if (remotes && remotes.length) {
+        const cw = ctx.canvas.width;
+        const ch = ctx.canvas.height;
+        const live = new Set();
+        for (const rp of remotes) {
+          live.add(rp.id);
+          let pool = remoteWells.get(rp.id);
+          if (!pool) {
+            pool = [];
+            remoteWells.set(rp.id, pool);
+          }
+          drawWell(ctx, pal, rp, pool, orbitOpts, auraOpts);
+          // Only celebrate a well the player can actually see bloom — its
+          // source must land on this window's slice, not off-canvas.
+          if (
+            !distantWellFired &&
+            rp.wellStrength > DISTANT_WELL_MIN_STRENGTH &&
+            rp.x >= 0 &&
+            rp.x <= cw &&
+            rp.y >= 0 &&
+            rp.y <= ch
+          ) {
+            distantWellFired = true;
+            window.dispatchEvent(
+              new CustomEvent("achievement", {
+                detail: { type: "distant-well" },
+              }),
+            );
+          }
         }
-      }
-      // Update and draw orbit particles
-      const oc = pal.orbitColor;
-      for (let i = orbitParticles.length - 1; i >= 0; i--) {
-        const p = orbitParticles[i];
-        const dx = forces.dragPos.x - p.x;
-        const dy = forces.dragPos.y - p.y;
-        const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-        const nx = dx / dist;
-        const ny = dy / dist;
-        // Pull inward + orbit tangent
-        const pull = ORBIT.PULL_BASE + forces.holdStrength * ORBIT.PULL_HOLD;
-        const orbit =
-          ORBIT.TANGENT_BASE + forces.holdStrength * ORBIT.TANGENT_HOLD;
-        p.vx += nx * pull + -ny * orbit;
-        p.vy += ny * pull + nx * orbit;
-        p.vx *= ORBIT.FRICTION;
-        p.vy *= ORBIT.FRICTION;
-        p.x += p.vx;
-        p.y += p.vy;
-        p.opacity += (p.targetOpacity - p.opacity) * ORBIT.OPACITY_EASE;
-        // Draw with glow
-        if (p.opacity > ORBIT.DRAW_THRESHOLD) {
-          drawHaloParticle(
-            ctx,
-            p.x,
-            p.y,
-            p.r * ORBIT.GLOW_RADIUS,
-            p.opacity,
-            oc,
-            orbitOpts,
-          );
+        // Drop pools whose pointer has left the live list.
+        for (const id of remoteWells.keys()) {
+          if (!live.has(id)) remoteWells.delete(id);
         }
-      }
-
-      // Gravity well aura — pulsing radial glow at cursor
-      if (forces.wellStrength > 0 && forces.isDragging) {
-        const auraR = WELL.AURA_RADIUS * (1 + forces.wellStrength);
-        const pulse =
-          WELL.AURA_PULSE_BASE +
-          WELL.AURA_PULSE_AMP *
-            Math.sin((performance.now() / 1000) * WELL.AURA_PULSE_SPEED);
-        const auraOp = WELL.AURA_OPACITY * forces.wellStrength * pulse;
-        ctx.save();
-        ctx.globalCompositeOperation = "lighter";
-        drawHaloParticle(
-          ctx,
-          forces.dragPos.x,
-          forces.dragPos.y,
-          auraR,
-          auraOp,
-          oc,
-          auraOpts,
-        );
-        ctx.restore();
+      } else if (remoteWells.size) {
+        remoteWells.clear();
       }
 
       // Drag breeze trail
@@ -274,28 +460,16 @@ export function createInteractions() {
     // Spawn click burst particles at (x, y).
     click(x, y, pal) {
       if (prefersReducedMotion()) return;
-      const count =
-        CLICK.COUNT_MIN + Math.floor(Math.random() * CLICK.COUNT_RANGE);
-      for (let i = 0; i < count; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const speed = CLICK.SPEED_MIN + Math.random() * CLICK.SPEED_RANGE;
-        pushCapped(
-          clickParticles,
-          {
-            x,
-            y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            r: CLICK.RADIUS_MIN + Math.random() * CLICK.RADIUS_RANGE,
-            opacity: CLICK.OPACITY_MIN + Math.random() * CLICK.OPACITY_RANGE,
-            life: 0,
-            maxLife: CLICK.LIFE_MIN + Math.random() * CLICK.LIFE_RANGE,
-            phase: Math.random() * Math.PI * 2,
-            color: pal.clickColor,
-          },
-          CLICK.MAX,
-        );
-      }
+      spawnClickBurst(x, y, pal.clickColor);
+    },
+
+    // Mirror a burst arriving from a linked window — a click scatter, plus a
+    // well-release explosion when `well` (0..1) is set. Silent under reduced
+    // motion, like the local click burst it mirrors.
+    burst(x, y, pal, { strength = HOLD.BLAST_BASE, well = 0 } = {}) {
+      if (prefersReducedMotion()) return;
+      spawnClickBurst(x, y, pal.clickColor);
+      if (well > 0) spawnWellBurst(x, y, pal.clickColor, well, strength);
     },
 
     // Spawn directional burst particles along a vertical edge (dock snap / undock release).
@@ -438,8 +612,10 @@ export function createInteractions() {
     },
 
     // End the drag: convert orbits to burst, apply well blast, reset state.
+    // Returns a { x, y, strength, well } blast descriptor to mirror into linked
+    // windows, or null when there's nothing to mirror.
     releaseDrag(forces, pal) {
-      if (!forces.isDragging) return;
+      if (!forces.isDragging) return null;
       if (prefersReducedMotion()) {
         // Quietly tear down the drag state without any particle burst.
         forces.isDragging = false;
@@ -450,7 +626,7 @@ export function createInteractions() {
         cursorRing?.classList.remove("gravity-well");
         cursorDot?.style.removeProperty("--well-strength");
         cursorRing?.style.removeProperty("--well-strength");
-        return;
+        return null;
       }
       const heldSec = (performance.now() - holdStart) / 1000;
       const normalBlast = Math.min(
@@ -530,44 +706,32 @@ export function createInteractions() {
         );
       }
 
-      // Gravity well burst — massive particle explosion on release
+      // Gravity well burst — massive particle explosion on release.
       if (forces.wellStrength > 0) {
-        const wellBurst = Math.floor(forces.wellStrength * WELL.BURST_MAX);
-        for (let i = 0; i < wellBurst; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const speed =
-            blast *
-            (WELL.BURST_SPEED_FACTOR_MIN +
-              Math.random() * WELL.BURST_SPEED_FACTOR_RANGE);
-          pushCapped(
-            clickParticles,
-            {
-              x: forces.dragPos.x,
-              y: forces.dragPos.y,
-              vx: Math.cos(angle) * speed,
-              vy: Math.sin(angle) * speed,
-              r: CLICK.RADIUS_MIN + Math.random() * WELL.BURST_RADIUS_RANGE,
-              opacity:
-                WELL.BURST_OPACITY_MIN +
-                Math.random() * WELL.BURST_OPACITY_RANGE,
-              life: 0,
-              maxLife:
-                WELL.BURST_LIFE_MIN + Math.random() * WELL.BURST_LIFE_RANGE,
-              phase: Math.random() * Math.PI * 2,
-              color: pal.clickColor,
-            },
-            CLICK.MAX,
-          );
-        }
+        spawnWellBurst(
+          forces.dragPos.x,
+          forces.dragPos.y,
+          pal.clickColor,
+          forces.wellStrength,
+          blast,
+        );
         cursorDot?.classList.remove("gravity-well");
         cursorRing?.classList.remove("gravity-well");
         cursorDot?.style.removeProperty("--well-strength");
         cursorRing?.style.removeProperty("--well-strength");
       }
 
+      // Hand the blast back so the caller can mirror it into linked windows.
+      const releasedWell = forces.wellStrength;
       forces.isDragging = false;
       forces.holdStrength = 0;
       forces.wellStrength = 0;
+      return {
+        x: forces.dragPos.x,
+        y: forces.dragPos.y,
+        strength: blast,
+        well: releasedWell,
+      };
     },
 
     // Record the start of a drag interaction.

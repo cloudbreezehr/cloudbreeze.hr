@@ -14,6 +14,7 @@ import { initThemeEffectsAudioBridge } from "./bridges/theme-effects.js";
 import { initDockAudioBridge } from "./bridges/dock.js";
 import { initDiscoveryAudioBridge } from "./bridges/discovery.js";
 import { initUiAudioBridge } from "./bridges/ui.js";
+import { initSkyLinkAudioBridge } from "./bridges/sky-link.js";
 import { initContinuous } from "./continuous.js";
 
 export function initAudio() {
@@ -27,5 +28,6 @@ export function initAudio() {
   initDockAudioBridge();
   initDiscoveryAudioBridge();
   initUiAudioBridge();
+  initSkyLinkAudioBridge();
   initContinuous();
 }

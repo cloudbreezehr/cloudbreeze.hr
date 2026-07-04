@@ -1,0 +1,107 @@
+/* ── Sky-Link Edge Glow ── */
+
+/* One element per viewport edge; JS sets `--sky-link-glow` (0..1, scaled by
+   how near the peer window is) and toggles `.on`. The glow says "the sky
+   continues past this edge" — information, so it stays visible under
+   reduced motion; only the breathing animation is motion. */
+.sky-link-glow {
+  position: fixed;
+  pointer-events: none;
+  z-index: var(--z-sky-link-glow);
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+.sky-link-glow.on {
+  opacity: calc(var(--sky-link-glow, 0) * 0.5);
+  animation: sky-link-breathe 4s ease-in-out infinite;
+}
+.sky-link-glow[data-side="left"] {
+  inset: 0 auto 0 0;
+  width: 72px;
+  background: linear-gradient(90deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="right"] {
+  inset: 0 0 0 auto;
+  width: 72px;
+  background: linear-gradient(270deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="top"] {
+  inset: 0 0 auto 0;
+  height: 72px;
+  background: linear-gradient(180deg, rgba(125, 191, 232, 0.35), transparent);
+}
+.sky-link-glow[data-side="bottom"] {
+  inset: auto 0 0 0;
+  height: 72px;
+  background: linear-gradient(0deg, rgba(125, 191, 232, 0.35), transparent);
+}
+body.light-appearance .sky-link-glow {
+  filter: saturate(1.3) brightness(0.85);
+}
+
+/* ── Linked-peer cursors ── */
+
+/* A neighbour's pointer, drawn as the site's own cursor continuing across the
+   seam: same shape and size as #cursor / #cursor-ring, on the cursor layer (on
+   top of the page), coloured by this window's --cursor-glow so it matches the
+   local cursor exactly. Position is set inline from the streamed pointer; the
+   short translate transition smooths the stream's cadence into the render's.
+   These read as information — a real cursor arriving — so they stay visible
+   under reduced motion; the global rule drops the transition there. */
+.sky-link-cursor,
+.sky-link-cursor-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.25s ease,
+    translate 0.06s linear;
+  will-change: translate, opacity;
+}
+.sky-link-cursor {
+  width: 12px;
+  height: 12px;
+  background: rgb(var(--cursor-glow));
+  border-radius: 50%;
+  z-index: var(--z-cursor);
+  mix-blend-mode: screen;
+}
+/* Brand default keeps the lighter sky dot, matching #cursor's own override. */
+body:not([data-active-theme]) .sky-link-cursor {
+  background: var(--sky-3);
+}
+.sky-link-cursor-ring {
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(var(--cursor-glow), 0.5);
+  border-radius: 50%;
+  z-index: var(--z-cursor-ring);
+}
+.sky-link-cursor.visible,
+.sky-link-cursor-ring.visible {
+  opacity: 1;
+}
+/* Well glow, mirroring #cursor.gravity-well: the ring swells its shadow with the
+   peer's streamed --well-strength. */
+.sky-link-cursor-ring.gravity-well {
+  box-shadow: 0 0 calc(4px + 12px * var(--well-strength, 0))
+    rgba(var(--cursor-glow), 0.55);
+}
+
+@keyframes sky-link-breathe {
+  0%,
+  100% {
+    opacity: calc(var(--sky-link-glow, 0) * 0.5);
+  }
+  50% {
+    opacity: calc(var(--sky-link-glow, 0) * 0.3);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sky-link-glow.on {
+    animation: none;
+  }
+}

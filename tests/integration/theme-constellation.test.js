@@ -24,14 +24,14 @@ function stageDom() {
 }
 
 const activeInstances = [];
-let parallaxScale = 0;
+let starScreenInstances = null;
 
 async function setupConstellation() {
   vi.resetModules();
   stageDom();
   const sky = await import("../../js/sky.js");
   sky.createSky(120);
-  parallaxScale = sky.getStarsParallaxScale();
+  starScreenInstances = sky.starScreenInstances;
   const { initConstellation } =
     await import("../../js/themes/constellation.js");
   const instance = initConstellation();
@@ -50,17 +50,14 @@ function clickAt(x, y) {
   );
 }
 
-// Compute the screen position of a star using the same math the trigger
-// applies for hit-testing.  Raw star positions live in 1920×1080 space
-// while the test canvas is 800×600 — the modulo wrap means the click
-// target isn't just (star.x, star.y).  parallaxScale is read from sky.js
-// so retuning STARS.PARALLAX_SCALE retunes the test automatically.
+// Compute the screen position of a star through the renderer's own
+// projection helper — the same one the trigger hit-tests with.  Raw star
+// positions live in sky-tile space while the test canvas is 800×600, so
+// the click target isn't just (star.x, star.y).
 function clickStar(s, canvas) {
   const sp = 0; // no scroll → no parallax shift in this test
-  const shift = s.depth * sp * canvas.height * parallaxScale;
-  const sx = s.x % canvas.width;
-  const py = (((s.y - shift) % canvas.height) + canvas.height) % canvas.height;
-  clickAt(sx, py);
+  const [inst] = starScreenInstances(s, sp, canvas);
+  clickAt(inst.x, inst.y);
 }
 
 function flushWipe() {

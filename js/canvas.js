@@ -9,6 +9,8 @@ import { subscribe as subscribeScroll } from "./scroll-bus.js";
 import { mirrorYWhenInverted, getViewportHeight } from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
+import { createCursorGhosts } from "./sky-link/ghosts.js";
+import { remotePointers, setLocalPointerSource } from "./sky-link/seam.js";
 import { defineConstants } from "./dev/registry.js";
 import { prefersReducedMotion, scaled } from "./motion.js";
 import { getThemeIds, getTheme } from "./themes/registry.js";
@@ -176,9 +178,31 @@ export function initCanvas(canvasEl, appearance, options) {
     wellStrength: 0,
     hover: { x: 0, y: 0, active: false },
     lastMoveTime: performance.now(),
+    // Pointers of linked windows, folded into every force helper. Refreshed
+    // once per frame from the seam; empty solo, so solo pays nothing.
+    remotePointers: [],
   };
   _forces = forces;
   const interactions = createInteractions();
+  const cursorGhosts = createCursorGhosts();
+
+  // Publish this window's pointer for linked peers to fold in as a force
+  // source: the drag point while dragging, else the hover point when the
+  // cursor is present. Reports true viewport coordinates (Y un-mirrored, so
+  // a flipped window still agrees on where the cursor is); the transport
+  // shifts them to desktop space.
+  setLocalPointerSource(() => {
+    const dragging = forces.isDragging;
+    const y = dragging ? forces.dragPos.y : forces.hover.y;
+    return {
+      x: dragging ? forces.dragPos.x : forces.hover.x,
+      y: mirrorYWhenInverted(y, canvas.height),
+      active: dragging || forces.hover.active,
+      isDragging: dragging,
+      holdStrength: forces.holdStrength,
+      wellStrength: forces.wellStrength,
+    };
+  });
 
   const sky = opts.stars ? createSky(opts.starCount) : null;
   const moon = createMoon();
@@ -188,6 +212,9 @@ export function initCanvas(canvasEl, appearance, options) {
   const canvasY = (y) => mirrorYWhenInverted(y, canvas.height);
 
   let lastFrameTime = performance.now();
+  // Nonzero while peer cursors are still fading out; keeps their update running
+  // for a few frames after the last remote pointer vanishes.
+  let ghostsVisible = 0;
 
   // ── Sky gradient cache ──
   // Rebuilding the gradient every frame is the most expensive per-frame op.
@@ -213,6 +240,29 @@ export function initCanvas(canvasEl, appearance, options) {
     const dt = (now - lastFrameTime) / 1000; // seconds since last frame
     lastFrameTime = now;
     const sp = scrollProgress;
+    // Refresh linked peers' pointers once per frame into the shared forces
+    // object. The seam hands them over in true viewport coordinates;
+    // `canvasY` re-mirrors Y into this window's canvas space so a flipped
+    // window still folds them in correctly.
+    const remotes = remotePointers();
+    if (remotes.length || forces.remotePointers.length) {
+      forces.remotePointers = remotes.map((rp) => ({
+        ...rp,
+        y: canvasY(rp.y),
+      }));
+    }
+    // A linked peer's pointer physically inside this viewport means the real
+    // mouse is over this window but owned by the peer (it captured the drag),
+    // so this window's own custom cursor is frozen at a stale spot — hide it and
+    // let the peer cursor stand in as the one cursor. CSS keys off the body
+    // class. Tested against the raw seam pointers (true viewport Y), the same
+    // space the peer cursors use — so "hide the local cursor" and "a peer cursor
+    // is shown" stay in lockstep, including under upside-down.
+    const peerPointerInside = remotes.some(
+      (rp) =>
+        rp.x >= 0 && rp.x <= canvas.width && rp.y >= 0 && rp.y <= canvas.height,
+    );
+    document.body.classList.toggle("peer-pointer-inside", peerPointerInside);
     // Atmosphere skips horizon glow when blocky is active — that's a
     // coupling the suppress system can't model (blocky post-processes
     // atmosphere instead of replacing it).
@@ -359,6 +409,13 @@ export function initCanvas(canvasEl, appearance, options) {
 
     interactions.decayImpulse(forces);
     interactions.draw(ctx, pal, forces);
+    // Each linked window's cursor, redrawn on the cursor layer as the same
+    // custom cursor continuing across the seam. Fed the raw seam pointers (true
+    // viewport coords — the cursor layer isn't flipped, unlike the canvas). Keep
+    // updating while cursors are still fading out after the pointer went quiet.
+    if (remotes.length || ghostsVisible) {
+      ghostsVisible = cursorGhosts.update(remotes, canvas);
+    }
 
     for (const { hooks } of activeHooks) hooks.drawForeground?.(frame);
     for (const { hooks } of activeHooks) hooks.drawPost?.(frame);
@@ -428,6 +485,18 @@ export function initCanvas(canvasEl, appearance, options) {
     forces.clickImpulse.x = cx;
     forces.clickImpulse.y = cy;
     forces.clickImpulse.strength = HOLD.BLAST_BASE;
+    // Mirror the click into linked windows in true viewport coords (the
+    // transport shifts to desktop space). No-op when solo.
+    window.dispatchEvent(
+      new CustomEvent("sky-effect", {
+        detail: {
+          x: e.clientX,
+          y: e.clientY,
+          strength: HOLD.BLAST_BASE,
+          well: 0,
+        },
+      }),
+    );
     // Forward the nearest service card so achievement handlers can
     // evaluate hit-test without duplicating it.
     const card = e.target.closest(".service-card") || null;
@@ -521,7 +590,21 @@ export function initCanvas(canvasEl, appearance, options) {
     onUp() {
       const ptr = { forces, palFor };
       for (const { hooks } of syncActiveHooks()) hooks.onDragEnd?.(ptr);
-      interactions.releaseDrag(forces, currentPal);
+      const eff = interactions.releaseDrag(forces, currentPal);
+      // Mirror the release blast (well or plain) into linked windows, in true
+      // viewport coords (un-mirror the canvas-space drag point first).
+      if (eff) {
+        window.dispatchEvent(
+          new CustomEvent("sky-effect", {
+            detail: {
+              x: eff.x,
+              y: mirrorYWhenInverted(eff.y, canvas.height),
+              strength: eff.strength,
+              well: eff.well,
+            },
+          }),
+        );
+      }
     },
   });
 
@@ -572,6 +655,20 @@ export function initCanvas(canvasEl, appearance, options) {
   }
   window.addEventListener("dock-snap", (e) => handleDockEvent(e, "snap"));
   window.addEventListener("dock-release", (e) => handleDockEvent(e, "release"));
+
+  // A click or gravity-well release in a linked window lands here too, as both
+  // a force and its visible burst (each event has exactly one publisher in the
+  // codebase). No achievement or fury — the effect's origin was the other
+  // window; this side just answers to it. The burst self-gates under reduced
+  // motion, so only the push crosses then.
+  window.addEventListener("sky-link-effect", (e) => {
+    const { x, y, strength, well } = e.detail;
+    const cy = canvasY(y);
+    forces.clickImpulse.x = x;
+    forces.clickImpulse.y = cy;
+    forces.clickImpulse.strength = strength;
+    interactions.burst(x, cy, currentPal, { strength, well });
+  });
 
   render();
 }

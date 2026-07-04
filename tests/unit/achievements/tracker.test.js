@@ -1745,3 +1745,54 @@ describe("tracker — speedrun handlers", () => {
     expect(storage.isUnlocked("any-percent")).toBe(true);
   });
 });
+
+describe("tracker — sky-link handlers", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("unlocks parallel-skies when a second window links", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-link", { windows: 2 });
+    expect(storage.isUnlocked("parallel-skies")).toBe(true);
+    expect(storage.isUnlocked("triptych")).toBe(false);
+  });
+
+  it("unlocks triptych at three linked windows", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-link", { windows: 3 });
+    expect(storage.isUnlocked("triptych")).toBe(true);
+  });
+
+  it("unlocks star-courier when an arc is seen crossing between windows", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-link-handoff", {});
+    expect(storage.isUnlocked("star-courier")).toBe(true);
+  });
+
+  it("unlocks fixed-stars when the sky scrubs beneath a moving window", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-scrub");
+    expect(storage.isUnlocked("fixed-stars")).toBe(true);
+  });
+
+  it("unlocks ghost-hand when a linked cursor reaches into this window", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("sky-link-ghost-hand");
+    expect(storage.isUnlocked("ghost-hand")).toBe(true);
+  });
+
+  it("unlocks distant-well when a linked window's well blooms here", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("distant-well");
+    expect(storage.isUnlocked("distant-well")).toBe(true);
+  });
+});

@@ -7,7 +7,7 @@
 import { moonPhase } from "./astro.js";
 import { localDayPhase } from "./local.js";
 import { currentLocation } from "./geolocate.js";
-import { getStarsFadeOpacity, getStarsParallaxScale } from "../sky.js";
+import { getStarsFadeOpacity, starsParallaxShift } from "../sky.js";
 import { defineConstants } from "../dev/registry.js";
 
 const MOON = defineConstants("realSky.moon", {
@@ -132,8 +132,7 @@ export function createMoon(getLocation = currentLocation) {
       const alpha = MOON.ALPHA * phaseAlpha * starVis * reveal;
 
       const r = MOON.RADIUS;
-      const shift =
-        MOON.PARALLAX_DEPTH * sp * canvas.height * getStarsParallaxScale();
+      const shift = starsParallaxShift(MOON.PARALLAX_DEPTH, sp, canvas.height);
       const x = canvas.width * MOON.X_FRACTION;
       const y = canvas.height * MOON.Y_FRACTION - shift;
 

@@ -18,16 +18,18 @@ describe("device — input capabilities", () => {
     delete window.matchMedia;
   });
 
-  it("keyboard and hover are available on a hover-capable device", () => {
+  it("keyboard, hover, and multiwindow are available on a hover-capable device", () => {
     stubTouchOnly(false);
     expect(hasCapability("keyboard")).toBe(true);
     expect(hasCapability("hover")).toBe(true);
+    expect(hasCapability("multiwindow")).toBe(true);
   });
 
-  it("keyboard and hover are unavailable on a touch-only device", () => {
+  it("keyboard, hover, and multiwindow are unavailable on a touch-only device", () => {
     stubTouchOnly(true);
     expect(hasCapability("keyboard")).toBe(false);
     expect(hasCapability("hover")).toBe(false);
+    expect(hasCapability("multiwindow")).toBe(false);
   });
 
   it("unknown capabilities fail open so a typo doesn't hide an achievement", () => {
