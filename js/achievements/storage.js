@@ -30,6 +30,9 @@ function defaultState() {
     },
     progress: {},
     relocked: [],
+    // Per-achievement trigger tally (id → count): how many times each has been
+    // earned, the first unlock included. Rides the debounced write.
+    triggers: {},
     // Free-form UI preferences that should survive reloads (reveal-hints
     // toggle, compact density, …).  Additive bag so adding a pref is a
     // getPref/setPref call with no schema bump.
@@ -76,6 +79,9 @@ function mergeIntoDefault(parsed) {
     state.progress = parsed.progress;
   }
   if (Array.isArray(parsed.relocked)) state.relocked = parsed.relocked;
+  if (parsed.triggers && typeof parsed.triggers === "object") {
+    state.triggers = parsed.triggers;
+  }
   if (parsed.prefs && typeof parsed.prefs === "object") {
     Object.assign(state.prefs, parsed.prefs);
   }
@@ -217,11 +223,24 @@ export function resetProgress() {
   state.counters = fresh.counters;
   state.progress = fresh.progress;
   state.relocked = fresh.relocked;
+  state.triggers = fresh.triggers;
   saveNow();
 }
 
 export function isUnlocked(id) {
   return getState().unlocked.some((u) => u.id === id);
+}
+
+// Record another earn of an achievement (first time or repeat). Debounced
+// write on the normal save cadence.
+export function bumpTrigger(id) {
+  const state = getState();
+  state.triggers[id] = (state.triggers[id] || 0) + 1;
+  save();
+}
+
+export function getTriggerCount(id) {
+  return getState().triggers[id] || 0;
 }
 
 export function getUnlockTime(id) {

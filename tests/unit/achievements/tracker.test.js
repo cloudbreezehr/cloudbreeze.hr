@@ -117,6 +117,21 @@ describe("tracker — tryUnlock", () => {
 
     expect(storage.isUnlocked("first-light")).toBe(true);
   });
+
+  it("tallies every trigger, repeats included", async () => {
+    const onUnlock = vi.fn();
+    const { storage } = await startTracker(onUnlock);
+
+    dispatchAchievement("click");
+    dispatchAchievement("click");
+    dispatchAchievement("click");
+
+    // Unlocked once, but the trigger count accumulates each earn.
+    expect(
+      onUnlock.mock.calls.filter((c) => c[0].id === "first-light"),
+    ).toHaveLength(1);
+    expect(storage.getTriggerCount("first-light")).toBe(3);
+  });
 });
 
 describe("tracker — incantations", () => {

@@ -105,9 +105,14 @@ export function createTracker(onUnlock, onRelock) {
   // ── Unlock ──
 
   function tryUnlock(id) {
-    if (storage.isUnlocked(id)) return false;
+    // Tally every earn, repeats included; a repeat stops here.
+    if (storage.isUnlocked(id)) {
+      storage.bumpTrigger(id);
+      return false;
+    }
     const success = storage.unlock(id);
     if (!success) return false;
+    storage.bumpTrigger(id);
     const achievement = getAchievement(id);
     if (achievement && onUnlock) onUnlock(achievement);
     // Any unlock may satisfy count-based progressives (meta totals,

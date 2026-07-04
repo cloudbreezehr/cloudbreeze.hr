@@ -221,6 +221,27 @@ describe("achievements/storage", () => {
     });
   });
 
+  describe("trigger tally", () => {
+    it("counts each earn, starts at 0, and survives a reload", async () => {
+      expect(storage.getTriggerCount("first-light")).toBe(0);
+      storage.bumpTrigger("first-light");
+      storage.bumpTrigger("first-light");
+      expect(storage.getTriggerCount("first-light")).toBe(2);
+      storage.saveNow();
+
+      vi.resetModules();
+      const fresh = await import("../../../js/achievements/storage.js");
+      fresh.load();
+      expect(fresh.getTriggerCount("first-light")).toBe(2);
+    });
+
+    it("is wiped by resetProgress", () => {
+      storage.bumpTrigger("first-light");
+      storage.resetProgress();
+      expect(storage.getTriggerCount("first-light")).toBe(0);
+    });
+  });
+
   describe("preferences", () => {
     it("getPref returns the fallback when unset", () => {
       expect(storage.getPref("revealHints", false)).toBe(false);
