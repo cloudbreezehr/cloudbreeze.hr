@@ -117,6 +117,40 @@ describe("achievements/ui/cards", () => {
       expect(sections.length).toBeGreaterThanOrEqual(3);
     });
 
+    it("drops a set with nothing reachable on this device", () => {
+      // Linked Skies is entirely requires:"multiwindow"; a touch-only device
+      // has zero reachable there, so the section must not render at all
+      // (rather than showing an empty "0 / 0" set).
+      const hasLinkedSkies = () =>
+        [...container.querySelectorAll(".achievement-set-name")].some((el) =>
+          el.textContent.includes("Linked Skies"),
+        );
+      const origMatchMedia = window.matchMedia;
+
+      // Hover-capable: multi-window achievements are reachable → set shows.
+      window.matchMedia = vi.fn(() => ({
+        matches: false,
+        addEventListener() {},
+        removeEventListener() {},
+      }));
+      container.innerHTML = "";
+      mod.renderSections(container);
+      expect(hasLinkedSkies()).toBe(true);
+
+      // Touch-only ((hover: none)): device.js drops the multiwindow capability,
+      // leaving the set with nothing reachable → hidden.
+      window.matchMedia = vi.fn((query) => ({
+        matches: query === "(hover: none)",
+        addEventListener() {},
+        removeEventListener() {},
+      }));
+      container.innerHTML = "";
+      mod.renderSections(container);
+      expect(hasLinkedSkies()).toBe(false);
+
+      window.matchMedia = origMatchMedia;
+    });
+
     it("renders each achievement as a card inside its set", () => {
       mod.renderSections(container);
       // The intro card shares .achievement-card chrome but isn't an

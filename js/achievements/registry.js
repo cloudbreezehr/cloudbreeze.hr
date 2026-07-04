@@ -51,6 +51,12 @@ const TERMINAL_ICON =
   '<rect x="2" y="3" width="12" height="10" rx="1.5"/>' +
   '<path d="M4.8 6.5l2 2-2 2M8.5 10.5h3"/>' +
   "</svg>";
+// Two overlapping windows — one sky across panes.
+const LINKED_SKIES_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" aria-hidden="true">' +
+  '<rect x="2" y="4.5" width="8" height="7" rx="1"/>' +
+  '<rect x="6" y="4.5" width="8" height="7" rx="1"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -89,6 +95,12 @@ export const SETS = [
     icon: INCANTATIONS_ICON,
   },
   { id: "terminal", label: "Terminal", color: null, icon: TERMINAL_ICON },
+  {
+    id: "linked-skies",
+    label: "Linked Skies",
+    color: null,
+    icon: LINKED_SKIES_ICON,
+  },
   {
     id: "deep-sea",
     label: "Deep Sea",
@@ -1598,13 +1610,13 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
-  // ── Exploration: Sky Link ──
+  // ── Linked Skies ──
   {
     id: "parallel-skies",
     title: "Parallel Skies",
     description: "Two windows, one heaven.",
     hint: "Open the site in a second window, side by side",
-    set: "exploration",
+    set: "linked-skies",
     points: EPIC,
     hidden: true,
     requires: "multiwindow",
@@ -1614,7 +1626,7 @@ export const ACHIEVEMENTS = [
     title: "Star Courier",
     description: "It left your sky and landed in another.",
     hint: "Watch a shooting star cross between linked windows",
-    set: "exploration",
+    set: "linked-skies",
     points: RARE,
     hidden: true,
     requires: "multiwindow",
@@ -1624,7 +1636,7 @@ export const ACHIEVEMENTS = [
     title: "Triptych",
     description: "Three panes of the same sky.",
     hint: "Link three windows at once",
-    set: "exploration",
+    set: "linked-skies",
     points: RARE,
     hidden: true,
     requires: "multiwindow",
@@ -1634,7 +1646,7 @@ export const ACHIEVEMENTS = [
     title: "Fixed Stars",
     description: "You moved the window; the sky stayed.",
     hint: "While linked, drag a window around and watch the stars hold still",
-    set: "exploration",
+    set: "linked-skies",
     points: RARE,
     hidden: true,
     requires: "multiwindow",
@@ -1644,7 +1656,7 @@ export const ACHIEVEMENTS = [
     title: "Ghost Hand",
     description: "A cursor from the next window reached into yours.",
     hint: "While linked, drag your cursor from one window into another",
-    set: "exploration",
+    set: "linked-skies",
     points: RARE,
     hidden: true,
     requires: "multiwindow",
@@ -1654,7 +1666,7 @@ export const ACHIEVEMENTS = [
     title: "Distant Gravity",
     description: "A gravity well from the next window bloomed in yours.",
     hint: "While linked, charge a gravity well near the seam and watch the next window",
-    set: "exploration",
+    set: "linked-skies",
     points: RARE,
     hidden: true,
     requires: "multiwindow",
