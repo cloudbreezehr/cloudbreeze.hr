@@ -39,6 +39,12 @@ const INTERACTION_ICON =
   '<circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/>' +
   '<path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/>' +
   "</svg>";
+// A magic sparkle — a four-point star with a small companion.
+const INCANTATIONS_ICON =
+  '<svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">' +
+  '<path d="M8 1l1.3 4.7L14 7l-4.7 1.3L8 13l-1.3-4.7L2 7l4.7-1.3z"/>' +
+  '<circle cx="12.8" cy="12" r="1"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -69,6 +75,12 @@ export const SETS = [
     label: "Interaction",
     color: null,
     icon: INTERACTION_ICON,
+  },
+  {
+    id: "incantations",
+    label: "Incantations",
+    color: null,
+    icon: INCANTATIONS_ICON,
   },
   {
     id: "deep-sea",
@@ -184,12 +196,13 @@ export const ACHIEVEMENTS = [
     hidden: true,
     requires: "keyboard",
   },
+  // ── Incantations ──
   {
     id: "wordsmith",
     title: "Wordsmith",
     description: "You spelled it out.",
     hint: "Toggle a theme by entering the letters of its name",
-    set: "exploration",
+    set: "incantations",
     points: UNCOMMON,
     hidden: true,
   },
@@ -198,7 +211,7 @@ export const ACHIEVEMENTS = [
     title: "Abracadabra",
     description: "Some words are spells.",
     hint: "Spell a magic word that isn't a theme",
-    set: "exploration",
+    set: "incantations",
     points: UNCOMMON,
     hidden: true,
   },
@@ -207,7 +220,7 @@ export const ACHIEVEMENTS = [
     title: "Grimoire",
     description: "The whole spellbook, committed to memory.",
     hint: "Cast every incantation",
-    set: "exploration",
+    set: "incantations",
     points: RARE,
     hidden: true,
     progressKey: "incantations-cast",
@@ -217,7 +230,7 @@ export const ACHIEVEMENTS = [
     title: "Overkill",
     description: "Why stop at boom?",
     hint: "Charge an incantation all the way to its limit",
-    set: "exploration",
+    set: "incantations",
     points: UNCOMMON,
     hidden: true,
   },
@@ -226,7 +239,7 @@ export const ACHIEVEMENTS = [
     title: "Clean Slate",
     description: "Wiped away in a flurry.",
     hint: "Scribble to clear every active theme at once",
-    set: "exploration",
+    set: "incantations",
     points: UNCOMMON,
     hidden: true,
   },
@@ -1395,7 +1408,7 @@ export const ACHIEVEMENTS = [
     title: "Open Secrets",
     description: "Found the panel that lists every secret.",
     hint: "Spell out a word for the curious",
-    set: "exploration",
+    set: "incantations",
     points: UNCOMMON,
     hidden: true,
   },
