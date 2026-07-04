@@ -33,6 +33,12 @@ const ALMANAC_ICON =
   '<path d="M13.6 9A5.5 5.5 0 1 1 7 2.4 4.3 4.3 0 0 0 13.6 9z"/>' +
   '<circle cx="12" cy="3.6" r="1"/>' +
   "</svg>";
+// A click spark — a dot throwing off rays.
+const INTERACTION_ICON =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">' +
+  '<circle cx="8" cy="8" r="1.6" fill="currentColor" stroke="none"/>' +
+  '<path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"/>' +
+  "</svg>";
 
 // ── Point Tiers ──
 const TRIVIAL = 1;
@@ -58,6 +64,12 @@ export const SETS = [
   },
   { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
   { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
+  {
+    id: "interaction",
+    label: "Interaction",
+    color: null,
+    icon: INTERACTION_ICON,
+  },
   {
     id: "deep-sea",
     label: "Deep Sea",
@@ -218,13 +230,13 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
-  // ── Exploration: Interaction ──
+  // ── Interaction ──
   {
     id: "first-light",
     title: "First Light",
     description: "A ripple in the stillness.",
     hint: "Click anywhere on the canvas",
-    set: "exploration",
+    set: "interaction",
     points: TRIVIAL,
     hidden: false,
   },
@@ -233,7 +245,7 @@ export const ACHIEVEMENTS = [
     title: "Spark",
     description: "Something stirs where you touched.",
     hint: "Click to create a particle burst",
-    set: "exploration",
+    set: "interaction",
     points: COMMON,
     hidden: true,
   },
@@ -242,7 +254,7 @@ export const ACHIEVEMENTS = [
     title: "Trail Blazer",
     description: "You leave a mark wherever you go.",
     hint: "Click and drag across the canvas",
-    set: "exploration",
+    set: "interaction",
     points: UNCOMMON,
     hidden: true,
   },
@@ -251,7 +263,7 @@ export const ACHIEVEMENTS = [
     title: "The Long Drag",
     description: "A trail across the sky.",
     hint: "Drag across 40% of the screen in one motion",
-    set: "exploration",
+    set: "interaction",
     points: UNCOMMON,
     hidden: true,
   },
@@ -260,17 +272,17 @@ export const ACHIEVEMENTS = [
     title: "Magnetic Letters",
     description: "The logo leans toward you.",
     hint: "Move your cursor near the Cloudbreeze wordmark",
-    set: "exploration",
+    set: "interaction",
     points: COMMON,
     hidden: true,
   },
-  // ── Exploration: Scroll ──
+  // ── Interaction: Scroll ──
   {
     id: "stargazer",
     title: "Stargazer",
     description: "The sky responds to your gaze.",
     hint: "Scroll past 25% of the page",
-    set: "exploration",
+    set: "interaction",
     points: COMMON,
     hidden: false,
   },
@@ -279,7 +291,7 @@ export const ACHIEVEMENTS = [
     title: "Down to Earth",
     description: "You've seen it all — from stars to horizon.",
     hint: "Scroll to the bottom of the page",
-    set: "exploration",
+    set: "interaction",
     points: COMMON,
     hidden: false,
   },
@@ -288,7 +300,7 @@ export const ACHIEVEMENTS = [
     title: "Zenith",
     description: "The journey there and back again.",
     hint: "Scroll to the bottom, then back to the top",
-    set: "exploration",
+    set: "interaction",
     points: COMMON,
     hidden: false,
   },
@@ -297,7 +309,7 @@ export const ACHIEVEMENTS = [
     title: "Scroll Surge",
     description: "The page blurs past.",
     hint: "Scroll fast enough to blur the particles",
-    set: "exploration",
+    set: "interaction",
     points: UNCOMMON,
     hidden: true,
   },

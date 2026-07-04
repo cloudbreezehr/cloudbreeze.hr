@@ -69,7 +69,7 @@ describe("analytics/bridges/achievements", () => {
     expect(events.length).toEqual(1);
     const p = events[0].props;
     expect(p.achievement_id).toEqual("first-light");
-    expect(p.set_id).toEqual("exploration");
+    expect(p.set_id).toEqual("interaction");
     expect(p.points).toBeGreaterThan(0);
     expect(p.session_unlock_order).toEqual(1);
     expect(p.unlocks_after).toEqual(1);
