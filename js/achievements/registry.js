@@ -1523,6 +1523,15 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
   },
+  {
+    id: "you-are-here",
+    title: "You Are Here",
+    description: "You pinned the sky to your exact spot.",
+    hint: "Enable precise location when the weather badge offers",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Exploration: Photo Mode ──
   {
     id: "sky-photographer",

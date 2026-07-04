@@ -12,6 +12,10 @@ import { moonPhase, activeMeteorShower, seasonalMoment } from "./astro.js";
 import { localDayPhase } from "./local.js";
 import { currentLocation } from "./geolocate.js";
 import { fetchWeather } from "./weather.js";
+import {
+  mountLocationControls,
+  usePreciseLocationIfGranted,
+} from "./location-prompt.js";
 import { bindClickable } from "../clickable.js";
 
 // Sky phases move on the scale of minutes.
@@ -33,20 +37,17 @@ function applyPhase(getLocation) {
 // canvas, the real moon (via the `sky-revealed` class the render loop reads).
 // The moon is deterministic, so it reveals on the toggle even offline; the
 // weather line is best-effort on top, fetched once on the first peek.
-function initWeatherBadge(getLocation) {
-  const badge = document.querySelector(".footer-badge");
-  if (!badge) return;
+function initWeatherBadge(getLocation, badge) {
+  if (!badge) return null;
   const baseText = badge.textContent;
   let weatherLine = null;
   let revealed = false;
   let fetching = false;
+  let firstRevealHandler = null;
+  let firstRevealed = false;
 
-  bindClickable(badge, async () => {
-    revealed = !revealed;
-    document.body.classList.toggle("sky-revealed", revealed);
-    badge.textContent = revealed && weatherLine ? weatherLine : baseText;
-    if (!revealed || weatherLine !== null || fetching) return;
-
+  async function loadWeather() {
+    if (fetching) return;
     fetching = true;
     // Read once so the fetched coordinates and the displayed city agree
     // even if the location upgrades mid-flight.
@@ -61,7 +62,33 @@ function initWeatherBadge(getLocation) {
     emit("real-weather", { code: weather.code, raining: weather.raining });
     // Still the active view when the answer arrives? Paint it in.
     if (revealed) badge.textContent = weatherLine;
+  }
+
+  bindClickable(badge, () => {
+    revealed = !revealed;
+    document.body.classList.toggle("sky-revealed", revealed);
+    badge.textContent = revealed && weatherLine ? weatherLine : baseText;
+    if (revealed && !firstRevealed) {
+      firstRevealed = true;
+      firstRevealHandler?.();
+    }
+    if (revealed && weatherLine === null) loadWeather();
   });
+
+  return {
+    // A location upgrade invalidates the cached line — drop it and, if the
+    // badge is open, re-fetch against the new coordinates so text and sky agree.
+    refreshForNewLocation() {
+      weatherLine = null;
+      if (revealed) {
+        badge.textContent = baseText;
+        loadWeather();
+      }
+    },
+    onFirstReveal(handler) {
+      firstRevealHandler = handler;
+    },
+  };
 }
 
 export function initRealSky(getLocation = currentLocation) {
@@ -83,11 +110,31 @@ export function initRealSky(getLocation = currentLocation) {
     moment: seasonalMoment(now),
   });
 
-  initWeatherBadge(getLocation);
+  const badge = document.querySelector(".footer-badge");
+  const weather = initWeatherBadge(getLocation, badge);
+
+  // Refresh the location-derived surfaces after an in-place upgrade. Phase is
+  // the only one up before the badge is peeked; the moon reads the shared
+  // location live when it renders, and the weather line reloads on demand.
+  const onUpgrade = () => {
+    weather?.refreshForNewLocation();
+    applyPhase(getLocation);
+  };
+
+  let controls = null;
+  // A returning granter's fix is used silently from load. Otherwise mount the
+  // floating corner button and, the first time the sky is peeked, nudge with
+  // the popover once — the button remains as the quiet, always-available way in.
+  usePreciseLocationIfGranted(onUpgrade).then((upgraded) => {
+    if (upgraded) return;
+    controls = mountLocationControls({ onUpgrade });
+    weather?.onFirstReveal(() => controls.offerOnce());
+  });
 
   return function cleanup() {
     clearInterval(phaseTimer);
     delete document.body.dataset.skyPhase;
     document.body.classList.remove("sky-revealed");
+    controls?.destroy();
   };
 }

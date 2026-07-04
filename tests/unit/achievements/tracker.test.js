@@ -1621,6 +1621,12 @@ describe("tracker — real-sky handlers", () => {
     dispatchAchievement("real-weather", { code: 63, raining: true });
     expect(storage.isUnlocked("rain-check")).toBe(true);
   });
+
+  it("unlocks you-are-here when precise location is enabled", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("precise-location");
+    expect(storage.isUnlocked("you-are-here")).toBe(true);
+  });
 });
 
 describe("tracker — photo-mode handlers", () => {

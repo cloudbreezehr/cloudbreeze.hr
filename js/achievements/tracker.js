@@ -610,6 +610,10 @@ export function createTracker(onUnlock, onRelock) {
       if (data && data.raining) tryUnlock("rain-check");
     },
 
+    "precise-location"() {
+      tryUnlock("you-are-here");
+    },
+
     "terminal-open"() {
       tryUnlock("shell-access");
     },
