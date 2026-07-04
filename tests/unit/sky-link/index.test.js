@@ -74,8 +74,8 @@ describe("sky-link/index", () => {
     };
   }
 
-  function injectPeer(id = "peer-1", rect = peerRectRight()) {
-    channel().onmessage({ data: { kind: "rect", id, seed, rect } });
+  function injectPeer(id = "peer-1", rect = peerRectRight(), visible = true) {
+    channel().onmessage({ data: { kind: "rect", id, seed, rect, visible } });
   }
 
   function achievementSpy() {
@@ -138,6 +138,86 @@ describe("sky-link/index", () => {
     injectPeer("peer-1");
     channel().onmessage({ data: { kind: "bye", id: "peer-1" } });
     expect(document.body.classList.contains("sky-linked")).toBe(false);
+  });
+
+  it("does not link, glow, or count a peer reporting itself hidden", () => {
+    // Two tabs of one OS window compute the same rect and both pass the
+    // handshake, but a backgrounded tab reports visible:false — it must never
+    // read as "another window" beside this one.
+    const events = achievementSpy();
+    injectPeer("peer-1", peerRectRight(), false);
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(events.some((d) => d.type === "sky-link")).toBe(false);
+    const glow = document.querySelector('.sky-link-glow[data-side="right"]');
+    expect(glow.classList.contains("on")).toBe(false);
+    expect(seam.peerWorldRects()).toEqual([]);
+  });
+
+  it("links as soon as a hidden peer reports itself visible", () => {
+    injectPeer("peer-1", peerRectRight(), false);
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    injectPeer("peer-1", peerRectRight(), true);
+    expect(document.body.classList.contains("sky-linked")).toBe(true);
+  });
+
+  it("drops the link the instant a peer reports going hidden — no TTL wait", () => {
+    injectPeer(); // visible by default
+    expect(document.body.classList.contains("sky-linked")).toBe(true);
+    injectPeer("peer-1", peerRectRight(), false);
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+  });
+
+  it("evicts a peer's pointer immediately when it reports going hidden", () => {
+    injectPeer();
+    channel().onmessage({
+      data: {
+        kind: "pointer",
+        id: "peer-1",
+        pointer: {
+          x: selfRect.x,
+          y: selfRect.y,
+          active: true,
+          isDragging: true,
+          holdStrength: 1,
+          wellStrength: 1,
+        },
+      },
+    });
+    expect(seam.remotePointers().length).toBe(1);
+    injectPeer("peer-1", peerRectRight(), false);
+    expect(seam.remotePointers()).toEqual([]);
+  });
+
+  it("ignores pointer, effect, and cast from a peer currently reporting hidden", () => {
+    injectPeer("peer-1", peerRectRight(), false); // known, but hidden
+    const effects = [];
+    const casts = [];
+    window.addEventListener("sky-link-effect", (e) => effects.push(e.detail));
+    window.addEventListener("sky-link-cast", (e) => casts.push(e.detail));
+    channel().onmessage({
+      data: {
+        kind: "pointer",
+        id: "peer-1",
+        pointer: {
+          x: selfRect.x,
+          y: selfRect.y,
+          active: true,
+          isDragging: false,
+          holdStrength: 0,
+          wellStrength: 0,
+        },
+      },
+    });
+    const point = { x: selfRect.x + 10, y: selfRect.y + 10 };
+    channel().onmessage({
+      data: { kind: "effect", id: "peer-1", point, strength: 5 },
+    });
+    channel().onmessage({
+      data: { kind: "cast", id: "peer-1", word: "SNOW", point },
+    });
+    expect(seam.remotePointers()).toEqual([]);
+    expect(effects).toEqual([]);
+    expect(casts).toEqual([]);
   });
 
   it("broadcasts the local pointer to peers in desktop coordinates", () => {
@@ -524,5 +604,21 @@ describe("sky-link/index — hidden windows", () => {
     hidden = false;
     vi.advanceTimersByTime(SKY_LINK.HEARTBEAT_MS + SKY_LINK.POLL_MS);
     expect(rects().length).toBeGreaterThan(1);
+  });
+
+  it("broadcasts visible:false the instant it goes hidden — no heartbeat wait", () => {
+    const rects = () => channels[0].sent.filter((m) => m.kind === "rect");
+    hidden = true;
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(rects().at(-1).visible).toBe(false);
+  });
+
+  it("re-announces visible:true immediately on returning — no heartbeat wait", () => {
+    const rects = () => channels[0].sent.filter((m) => m.kind === "rect");
+    hidden = true;
+    document.dispatchEvent(new Event("visibilitychange"));
+    hidden = false;
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(rects().at(-1).visible).toBe(true);
   });
 });

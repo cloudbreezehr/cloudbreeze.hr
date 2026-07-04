@@ -41,19 +41,28 @@ export function edgeGap(a, b) {
 /**
  * Live registry of peer windows, expiring entries not re-announced within
  * `ttlMs`. Time is an explicit parameter everywhere — the caller owns the
- * clock.
+ * clock. Each peer also carries whether it's currently reporting itself
+ * visible: only one tab of a given OS window can ever be visible at once (a
+ * backgrounded tab is always hidden), while two genuinely separate windows can
+ * both be visible side by side — so "visible" is what distinguishes another
+ * window from another tab of this one, and is what "linked" (glow, world
+ * anchoring, force admission) means. A peer can be known (`has`) but not
+ * currently visible (`hasVisible`) — that's exactly a backgrounded tab.
  */
 export function createPeerRegistry(ttlMs) {
   const peers = new Map();
   return {
-    upsert(id, rect, now) {
-      peers.set(id, { id, rect, seenAt: now });
+    upsert(id, rect, now, visible = true) {
+      peers.set(id, { id, rect, seenAt: now, visible });
     },
     remove(id) {
       return peers.delete(id);
     },
     has(id) {
       return peers.has(id);
+    },
+    hasVisible(id) {
+      return !!peers.get(id)?.visible;
     },
     /** Drop expired peers; returns true when anything was removed. */
     prune(now) {
@@ -68,6 +77,11 @@ export function createPeerRegistry(ttlMs) {
     },
     all() {
       return [...peers.values()];
+    },
+    /** Known peers currently reporting themselves visible — the set that
+     *  counts as "linked" for glow, world-anchoring, and achievements. */
+    visiblePeers() {
+      return [...peers.values()].filter((p) => p.visible);
     },
     count() {
       return peers.size;

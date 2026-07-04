@@ -1,12 +1,21 @@
 // ── Sky Link ──
 // Links every open window of the site on the same machine into one
 // continuous sky. Windows announce their desktop-space viewport rects over a
-// BroadcastChannel; while at least one peer is fresh, the body carries
+// BroadcastChannel; while at least one peer is visible, the body carries
 // `sky-linked`, the edges facing peer windows glow, the renderer sees the
 // live peer rects through the seam and anchors the shared sky to the
 // desktop, pointer states stream between windows so a neighbour's cursor
 // acts on this sky as a live force source, and clicks and gravity-well blasts
 // mirror across into neighbouring viewports as both force and visible burst.
+//
+// "Visible" is load-bearing, not decorative: BroadcastChannel is shared by
+// every same-origin browsing context, tabs included, and a window's on-screen
+// rect alone can't tell two tabs of one window apart from two real windows —
+// they can compute the same rect. Visibility can: only one tab of a window is
+// ever visible at once, while two real windows can both be visible side by
+// side. Every rect carries the sender's current visibility, and every
+// consumer of "linked" state (glow, world-anchoring, force/effect admission)
+// keys off the visible peer set, never merely the known one.
 //
 // Everything is desktop-coordinate math from peers.js; this module owns the
 // transport (channel, heartbeats, expiry) and the DOM touchpoints (body
@@ -152,7 +161,7 @@ export function initSkyLink() {
 
   function refreshGlows() {
     const strongest = { left: 0, right: 0, top: 0, bottom: 0 };
-    for (const peer of registry.all()) {
+    for (const peer of registry.visiblePeers()) {
       const side = sideToward(selfRect, peer.rect);
       const gap = edgeGap(selfRect, peer.rect);
       const intensity = Math.max(0, 1 - gap / SKY_LINK.GLOW_RANGE_PX);
@@ -168,7 +177,7 @@ export function initSkyLink() {
   // The body class flips with any live peer; the achievement event fires
   // only when the window count grows, so heartbeats stay silent.
   function refreshLinkState() {
-    const windows = registry.count() + 1;
+    const windows = registry.visiblePeers().length + 1;
     document.body.classList.toggle("sky-linked", windows > 1);
     if (windows > linkedWindows) {
       window.dispatchEvent(
@@ -181,6 +190,16 @@ export function initSkyLink() {
     refreshGlows();
   }
 
+  function postRect(visible) {
+    channel.postMessage({
+      kind: "rect",
+      id,
+      seed: skySeedKey(),
+      rect: selfRect,
+      visible,
+    });
+  }
+
   function announce(now) {
     // A hidden window isn't visibly beside anything — go quiet and let the
     // peers' TTL drop this side of the link until the window is seen again.
@@ -191,13 +210,23 @@ export function initSkyLink() {
       return;
     lastSentJson = json;
     lastSentAt = now;
-    channel.postMessage({
-      kind: "rect",
-      id,
-      seed: skySeedKey(),
-      rect: selfRect,
-    });
+    postRect(true);
   }
+
+  // ── Visibility transitions ──
+  // The periodic poll alone would let a peer's "linked" state outlive its
+  // visibility by up to TTL_MS after it backgrounds — plenty of time to
+  // switch tabs and see a stale, confusing glow. Broadcast the transition
+  // immediately instead of waiting for silence to be noticed.
+  function onVisibilityChange() {
+    if (document.hidden) {
+      postRect(false);
+      lastSentJson = ""; // force a fresh send once visible again
+    } else {
+      announce(Date.now());
+    }
+  }
+  document.addEventListener("visibilitychange", onVisibilityChange);
 
   // ── Pointer broadcast ──
   // The renderer's pointer state, sampled on its own cadence and shipped in
@@ -234,9 +263,10 @@ export function initSkyLink() {
   }
 
   function receivePointer(peerId, pointer) {
-    // Only pointers of linked windows exert force — the rect handshake
-    // (same seed, fresh TTL) is what admits a peer to the registry.
-    if (!registry.has(peerId)) return;
+    // Only pointers of linked, currently-visible windows exert force — the
+    // rect handshake (same seed, fresh TTL, reporting visible) is what admits
+    // a peer here; a backgrounded tab of this same window never qualifies.
+    if (!registry.hasVisible(peerId)) return;
     if (!isFinitePoint(pointer)) return;
     if (!pointer.active) {
       pointers.remove(peerId);
@@ -253,7 +283,11 @@ export function initSkyLink() {
       // time-traveling via #sky=, or left open past midnight — never
       // links, it just coexists.
       if (msg.seed !== skySeedKey() || !isFiniteRect(msg.rect)) return;
-      registry.upsert(msg.id, msg.rect, Date.now());
+      const visible = msg.visible !== false;
+      registry.upsert(msg.id, msg.rect, Date.now(), visible);
+      // A peer that just went hidden shouldn't keep pushing force from its
+      // last-known pointer for the rest of that pointer's TTL.
+      if (!visible) pointers.remove(msg.id);
       refreshLinkState();
     } else if (msg.kind === "pointer") {
       receivePointer(msg.id, msg.pointer);
@@ -306,9 +340,11 @@ export function initSkyLink() {
   window.addEventListener("sky-cast", onLocalCast);
 
   function receiveCast(msg) {
-    // Same-seed handshake: only a registered peer's spell blooms here, so a
-    // different-day #sky= window never renders a linked pair's casts.
-    if (!registry.has(msg.id)) return;
+    // Same-seed handshake, currently visible: only a registered, visible
+    // peer's spell blooms here, so a different-day #sky= window — or a
+    // backgrounded tab of this same window — never renders a linked pair's
+    // casts.
+    if (!registry.hasVisible(msg.id)) return;
     if (typeof msg.word !== "string" || !isFinitePoint(msg.point)) return;
     const local = toLocal(msg.point, selfRect);
     window.dispatchEvent(
@@ -324,9 +360,11 @@ export function initSkyLink() {
   }
 
   function receiveEffect(msg) {
-    // Same-seed handshake: only a registered peer's effect reaches this sky, so
-    // a different-day #sky= window never takes a linked pair's pushes/bursts.
-    if (!registry.has(msg.id)) return;
+    // Same-seed handshake, currently visible: only a registered, visible
+    // peer's effect reaches this sky, so a different-day #sky= window — or a
+    // backgrounded tab of this same window — never takes a linked pair's
+    // pushes/bursts.
+    if (!registry.hasVisible(msg.id)) return;
     if (!isFinitePoint(msg.point)) return;
     const local = toLocal(msg.point, selfRect);
     const reach = SKY_LINK.EFFECT_REACH_PX;
@@ -351,7 +389,7 @@ export function initSkyLink() {
     );
   }
 
-  setPeerRectsSource(() => registry.all().map((peer) => peer.rect));
+  setPeerRectsSource(() => registry.visiblePeers().map((peer) => peer.rect));
   setRemotePointersSource(() =>
     pointers.all().map((ptr) => {
       const local = toLocal(ptr, selfRect);
@@ -392,6 +430,7 @@ export function initSkyLink() {
     window.removeEventListener("sky-effect", onLocalEffect);
     window.removeEventListener("sky-cast", onLocalCast);
     window.removeEventListener("pagehide", onPageHide);
+    document.removeEventListener("visibilitychange", onVisibilityChange);
     channel.postMessage({ kind: "bye", id });
     channel.close();
     setPeerRectsSource(null);

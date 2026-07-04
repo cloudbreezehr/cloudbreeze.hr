@@ -54,6 +54,36 @@ describe("sky-link/peers — facing sides and gaps", () => {
   });
 });
 
+describe("sky-link/peers — visibility", () => {
+  it("defaults a peer to visible, and hasVisible reflects the reported state", () => {
+    const reg = createPeerRegistry(TTL_MS);
+    reg.upsert("a", rect(0, 0), 0);
+    expect(reg.hasVisible("a")).toBe(true);
+    reg.upsert("a", rect(0, 0), 1, false);
+    expect(reg.hasVisible("a")).toBe(false);
+    // Known, just not visible — a backgrounded tab, not a gone peer.
+    expect(reg.has("a")).toBe(true);
+  });
+
+  it("excludes a hidden peer from visiblePeers() but keeps it in all()", () => {
+    const reg = createPeerRegistry(TTL_MS);
+    reg.upsert("a", rect(0, 0), 0, true);
+    reg.upsert("b", rect(1000, 0), 0, false);
+    expect(reg.visiblePeers().map((p) => p.id)).toEqual(["a"]);
+    expect(
+      reg
+        .all()
+        .map((p) => p.id)
+        .sort(),
+    ).toEqual(["a", "b"]);
+  });
+
+  it("hasVisible is false for a peer that was never registered", () => {
+    const reg = createPeerRegistry(TTL_MS);
+    expect(reg.hasVisible("ghost")).toBe(false);
+  });
+});
+
 describe("sky-link/peers — registry expiry", () => {
   it("tracks peers and prunes those past their TTL", () => {
     const registry = createPeerRegistry(TTL_MS);
