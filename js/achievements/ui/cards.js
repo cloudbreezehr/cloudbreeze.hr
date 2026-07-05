@@ -226,6 +226,10 @@ function bindThemeStackListener() {
     const t = e.detail?.type;
     if (t === "theme-activate" || t === "theme-deactivate") {
       refreshThemeSetDimming();
+    } else if (t === "dev-console-open" || t === "dev-console-close") {
+      // Dev-gated card affordances may now show or hide; re-render so an open
+      // panel reflects it at once rather than on the next earn.
+      if (_isPanelOpen()) _refreshPanel();
     }
   };
   window.addEventListener("achievement", _themeStackListener);

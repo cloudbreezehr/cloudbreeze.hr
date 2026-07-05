@@ -231,6 +231,28 @@ describe("achievements/ui/cards", () => {
       );
     });
 
+    it("re-renders an open panel when the dev console toggles", () => {
+      const dispatchDev = (type) =>
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type } }),
+        );
+      refreshPanelStub.mockClear();
+      dispatchDev("dev-console-open");
+      dispatchDev("dev-console-close");
+      expect(refreshPanelStub).toHaveBeenCalledTimes(2);
+    });
+
+    it("ignores a dev-console toggle when the panel is closed", () => {
+      panelOpen = false;
+      refreshPanelStub.mockClear();
+      window.dispatchEvent(
+        new CustomEvent("achievement", {
+          detail: { type: "dev-console-open" },
+        }),
+      );
+      expect(refreshPanelStub).not.toHaveBeenCalled();
+    });
+
     it("renders the intro card while unlocked count is at or below the threshold", () => {
       mod.renderSections(container);
       expect(container.querySelector(".achievement-intro-card")).not.toBeNull();

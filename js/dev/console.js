@@ -1184,6 +1184,9 @@ export function openDevConsole() {
 export function closeDevConsole() {
   hideFps();
   document.body.classList.remove("dev-active");
+  window.dispatchEvent(
+    new CustomEvent("achievement", { detail: { type: "dev-console-close" } }),
+  );
   if (panelInstance) {
     panelInstance.panel.style.display = "none";
   }
