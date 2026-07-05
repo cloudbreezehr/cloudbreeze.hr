@@ -18,7 +18,7 @@ import { paintRelativeTime } from "../../time-ago.js";
 import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
-import { hideHintTooltip } from "./tooltip.js";
+import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { playSfx } from "../../audio/sfx.js";
 import { setActive as setNavActive, updateBadge } from "./nav-button.js";
 import { configureToasts, showActivationToast } from "./toast.js";
@@ -184,10 +184,6 @@ function paintNewSince(el) {
     }
   }
   el.textContent = count > 0 ? `+${count} new` : "";
-  el.setAttribute(
-    "data-tooltip",
-    count > 0 ? `${count} unlocked since your last visit` : "",
-  );
 }
 
 // Paint the "Last: <title> · <relative time>" caption from the most
@@ -509,6 +505,12 @@ function buildPanel(onHide) {
   const newSince = document.createElement("span");
   newSince.className = "achievement-new-since";
   paintNewSince(newSince);
+  // "+N new" is opaque on its own — surface its meaning through the same
+  // hint-tooltip cards use, so hover (and a tap on touch) both explain it.
+  newSince.addEventListener("mouseenter", () =>
+    showHintTooltip(newSince, "Achievements earned since your last visit"),
+  );
+  newSince.addEventListener("mouseleave", hideHintTooltip);
 
   titleRow.appendChild(title);
   titleRow.appendChild(newSince);

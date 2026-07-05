@@ -437,6 +437,17 @@ describe("achievements/ui/panel", () => {
       const badge = document.querySelector(".achievement-new-since");
       expect(badge.textContent).toBe("");
     });
+
+    it("explains itself through the hint tooltip on hover/tap", () => {
+      storage.setPref(storage.LAST_PANEL_CLOSE_PREF, Date.now() - 60_000);
+      storage.unlock("first-light");
+      mod.openPanel();
+      const badge = document.querySelector(".achievement-new-since");
+      badge.dispatchEvent(new Event("mouseenter"));
+      const tip = document.querySelector(".achievement-tooltip");
+      expect(tip.classList.contains("visible")).toBe(true);
+      expect(tip.textContent).toBe("Achievements earned since your last visit");
+    });
   });
 
   it("lifts both sides of the footer count when a bonus is earned", () => {
