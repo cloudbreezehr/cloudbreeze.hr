@@ -14,11 +14,32 @@ import { onSoundChange, isSoundEnabled } from "../audio/engine.js";
 
 const SHAKE = defineConstants("effects.shake", {
   THRESHOLD: {
-    value: 24,
+    value: 26,
     min: 8,
     max: 80,
     step: 1,
-    description: "Acceleration change that counts as a shake (m/s² summed)",
+    description: "Acceleration change (m/s² summed) that counts as one jerk",
+  },
+  JERK_GAP_MS: {
+    value: 100,
+    min: 40,
+    max: 400,
+    step: 10,
+    description: "Min gap between counted jerks, so one swing isn't many",
+  },
+  JERKS_REQUIRED: {
+    value: 4,
+    min: 2,
+    max: 10,
+    step: 1,
+    description: "Distinct jerks within the window for a deliberate shake",
+  },
+  WINDOW_MS: {
+    value: 1200,
+    min: 400,
+    max: 4000,
+    step: 100,
+    description: "Window the required jerks must fall within",
   },
   COOLDOWN_MS: {
     value: 1400,
@@ -43,15 +64,23 @@ const SHAKE = defineConstants("effects.shake", {
   },
 });
 
-// Pure detector: feed accelerometer readings; returns true on a shake (a large
-// change since the last reading), then stays quiet until the cooldown passes so
-// one vigorous shake fires once rather than a burst.
+// Pure detector: feed accelerometer readings; returns true only for a
+// deliberate shake — several distinct jerks within a short window, not a single
+// jolt. A jolt is what tilting or lifting the phone produces (gravity shifts
+// across axes and spikes the delta once); requiring repeated, separated jerks
+// keeps ordinary handling from triggering. Fires once, then waits out the
+// cooldown so one shake doesn't burst.
 export function createShakeDetector({
   threshold = SHAKE.THRESHOLD,
   cooldownMs = SHAKE.COOLDOWN_MS,
+  jerkGapMs = SHAKE.JERK_GAP_MS,
+  jerksRequired = SHAKE.JERKS_REQUIRED,
+  windowMs = SHAKE.WINDOW_MS,
 } = {}) {
   let last = null;
   let lastFire = -Infinity;
+  let lastJerk = -Infinity;
+  let jerks = []; // timestamps of recent distinct jerks, pruned to the window
   return {
     feed(x, y, z, now) {
       if (x == null || y == null || z == null) return false;
@@ -59,9 +88,17 @@ export function createShakeDetector({
       if (last) {
         const delta =
           Math.abs(x - last.x) + Math.abs(y - last.y) + Math.abs(z - last.z);
-        if (delta > threshold && now - lastFire > cooldownMs) {
-          lastFire = now;
-          fired = true;
+        // Count a jerk only when it's separated from the previous one, so the
+        // many readings inside a single swing collapse to one jerk.
+        if (delta > threshold && now - lastJerk >= jerkGapMs) {
+          lastJerk = now;
+          jerks.push(now);
+          while (jerks.length && now - jerks[0] > windowMs) jerks.shift();
+          if (jerks.length >= jerksRequired && now - lastFire > cooldownMs) {
+            lastFire = now;
+            jerks = []; // consume — the next shake needs a fresh run of jerks
+            fired = true;
+          }
         }
       }
       last = { x, y, z };
