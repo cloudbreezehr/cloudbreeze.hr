@@ -71,7 +71,7 @@ export const LONG_WATCH_MS = 300000;
 const MOONLIT_START_HOUR = 0;
 const MOONLIT_END_HOUR = 5;
 
-export function createTracker(onUnlock, onRelock, onRepeat) {
+export function createTracker(onUnlock, onRelock) {
   // ── Session State ──
   const session = {
     clicks: 0,
@@ -108,7 +108,6 @@ export function createTracker(onUnlock, onRelock, onRepeat) {
     // Tally every earn, repeats included; a repeat stops here.
     if (storage.isUnlocked(id)) {
       storage.bumpTrigger(id);
-      if (onRepeat) onRepeat(id);
       return false;
     }
     const success = storage.unlock(id);

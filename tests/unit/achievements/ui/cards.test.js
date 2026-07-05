@@ -200,13 +200,13 @@ describe("achievements/ui/cards", () => {
 
       // Turning dev mode on surfaces it on the next live refresh.
       document.body.classList.add("dev-active");
-      mod.refreshCardTally("first-light");
+      mod.refreshDynamicCardState();
       expect(card.querySelector(".achievement-card-tally").textContent).toBe(
         "×2",
       );
     });
 
-    it("live-updates one card's tally without a re-render (dev mode)", () => {
+    it("live-updates card bits in place without a re-render (dev mode)", () => {
       document.body.classList.add("dev-active");
       storage.unlock("first-light");
       storage.bumpTrigger("first-light");
@@ -216,18 +216,58 @@ describe("achievements/ui/cards", () => {
       );
       expect(card.querySelector(".achievement-card-tally")).toBeNull();
 
-      // A repeat earn bumps the count; the live refresh should surface it in
-      // place, and grow it on further repeats.
+      // A repeat earn bumps the count; the in-place refresh should surface it
+      // and grow it on further repeats.
       storage.bumpTrigger("first-light"); // now 2
-      mod.refreshCardTally("first-light");
+      mod.refreshDynamicCardState();
       expect(card.querySelector(".achievement-card-tally").textContent).toBe(
         "×2",
       );
 
       storage.bumpTrigger("first-light"); // now 3
-      mod.refreshCardTally("first-light");
+      mod.refreshDynamicCardState();
       expect(card.querySelector(".achievement-card-tally").textContent).toBe(
         "×3",
+      );
+    });
+
+    it("live-updates a locked achievement's progress bar in place", () => {
+      // Persistent (clicks-1000) is a continuous fill bar; its line shows N/M.
+      storage.setCounter("totalClicks", 250);
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="persistent"]',
+      );
+      const line = () => card.querySelector(".achievement-card-progress-text");
+      const fill = () =>
+        card.querySelector(".achievement-card-progress-bar-fill");
+      expect(line().textContent).toBe("250/1000");
+      expect(fill().style.width).toBe("25%");
+
+      storage.setCounter("totalClicks", 900);
+      mod.refreshDynamicCardState();
+      expect(line().textContent).toBe("900/1000");
+      expect(fill().style.width).toBe("90%");
+    });
+
+    it("keeps an open card current on any achievement event", async () => {
+      document.body.classList.add("dev-active");
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+
+      storage.bumpTrigger("first-light"); // now 2
+      // Any event, not a bespoke tally hook, drives the refresh (coalesced to
+      // a microtask so it runs after the tracker would have updated state).
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "click" } }),
+      );
+      await Promise.resolve();
+      expect(card.querySelector(".achievement-card-tally").textContent).toBe(
+        "×2",
       );
     });
 

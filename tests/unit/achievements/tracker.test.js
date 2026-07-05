@@ -36,17 +36,13 @@ const _activeTrackers = [];
 // cleanup. The tracker's setInterval for night-owl would otherwise leak
 // between tests and cause one suite's advanceTimersByTime to trip another's
 // assertions.
-async function startTracker(
-  onUnlock = () => {},
-  onRelock = () => {},
-  onRepeat = () => {},
-) {
+async function startTracker(onUnlock = () => {}, onRelock = () => {}) {
   vi.resetModules();
   localStorage.clear();
   const storage = await import("../../../js/achievements/storage.js");
   const { createTracker } = await import("../../../js/achievements/tracker.js");
   storage.activate();
-  const tracker = createTracker(onUnlock, onRelock, onRepeat);
+  const tracker = createTracker(onUnlock, onRelock);
   tracker.start();
   _activeTrackers.push(tracker);
   return { storage, tracker };
@@ -98,18 +94,15 @@ describe("tracker — tryUnlock", () => {
     expect(firstLightCalls).toHaveLength(1);
   });
 
-  it("calls onRepeat (not onUnlock) and bumps the tally on a repeat earn", async () => {
+  it("bumps the tally on a repeat earn without a fresh unlock", async () => {
     const onUnlock = vi.fn();
-    const onRepeat = vi.fn();
-    const { storage } = await startTracker(onUnlock, () => {}, onRepeat);
+    const { storage } = await startTracker(onUnlock);
 
     dispatchAchievement("click"); // first earn
     expect(storage.getTriggerCount("first-light")).toBe(1);
-    expect(onRepeat).not.toHaveBeenCalled();
 
     dispatchAchievement("click"); // repeat
     expect(storage.getTriggerCount("first-light")).toBe(2);
-    expect(onRepeat).toHaveBeenCalledWith("first-light");
     // The repeat is not a fresh unlock.
     const firstLightUnlocks = onUnlock.mock.calls.filter(
       (c) => c[0].id === "first-light",

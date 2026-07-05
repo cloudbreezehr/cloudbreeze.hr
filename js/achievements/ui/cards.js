@@ -171,15 +171,52 @@ function applyCardTally(titleEl, id) {
   }
 }
 
-// Live-update one card's tally on a repeat earn — cheap enough to run on every
-// re-trigger (a click, a re-cast) while the panel is open. No-op when closed or
-// when the card isn't currently rendered.
-export function refreshCardTally(id) {
+// Update a rendered card's progress line + bar in place from its current count,
+// without rebuilding the card (which would replay reveal animations and drop
+// scroll/focus). Handles both bar shapes: a continuous fill (width) and a
+// segmented bar (per-tick filled state).
+function updateCardProgress(card, progressKey) {
+  const total = resolveProgressTotal(progressKey);
+  if (total <= 0) return;
+  const collected = Math.min(resolveProgressCurrent(progressKey), total);
+  const text = card.querySelector(".achievement-card-progress-text");
+  if (text) text.textContent = `${collected}/${total}`;
+  const fill = card.querySelector(".achievement-card-progress-bar-fill");
+  if (fill) {
+    fill.style.width = `${(collected / total) * 100}%`;
+    return;
+  }
+  const segs = card.querySelectorAll(".achievement-card-progress-bar-segment");
+  segs.forEach((seg, i) => seg.classList.toggle("filled", i < collected));
+}
+
+// Refresh the live-changing bits of every rendered card in place — the re-earn
+// tally and any progress line/bar. One pass, no rebuild; this is the single
+// home for "keep an open card current", so new live bits extend here rather
+// than adding another per-bit refresh path.
+export function refreshDynamicCardState() {
   const panelEl = _getPanelEl();
   if (!panelEl || !_isPanelOpen()) return;
-  const card = panelEl.querySelector(`.achievement-card[data-id="${id}"]`);
-  const title = card && card.querySelector(".achievement-card-title");
-  if (title) applyCardTally(title, id);
+  for (const card of panelEl.querySelectorAll(".achievement-card[data-id]")) {
+    const id = card.dataset.id;
+    const title = card.querySelector(".achievement-card-title");
+    if (title) applyCardTally(title, id);
+    const ach = getAchievement(id);
+    if (ach && ach.progressKey) updateCardProgress(card, ach.progressKey);
+  }
+}
+
+// Coalesce live refreshes to a microtask: it runs after the tracker has
+// processed the current event (so counts/tallies are already updated,
+// regardless of listener order), and a burst of events folds into one pass.
+let _liveRefreshScheduled = false;
+function scheduleLiveRefresh() {
+  if (_liveRefreshScheduled) return;
+  _liveRefreshScheduled = true;
+  queueMicrotask(() => {
+    _liveRefreshScheduled = false;
+    refreshDynamicCardState();
+  });
 }
 
 // A set's N / M. Core always counts toward the total; bonus counts only once
@@ -238,13 +275,17 @@ function bindThemeStackListener() {
   if (_themeStackListener) return;
   _themeStackListener = (e) => {
     const t = e.detail?.type;
+    if (t === "dev-console-open" || t === "dev-console-close") {
+      // Visibility gate changed — a full rebuild adds/removes gated bits.
+      if (_isPanelOpen()) _refreshPanel();
+      return;
+    }
     if (t === "theme-activate" || t === "theme-deactivate") {
       refreshThemeSetDimming();
-    } else if (t === "dev-console-open" || t === "dev-console-close") {
-      // Dev-gated card affordances may now show or hide; re-render so an open
-      // panel reflects it at once rather than on the next earn.
-      if (_isPanelOpen()) _refreshPanel();
     }
+    // Any event may nudge a live card bit (a tally, a progress bar); keep the
+    // open panel current in place.
+    scheduleLiveRefresh();
   };
   window.addEventListener("achievement", _themeStackListener);
 }
@@ -877,6 +918,7 @@ export function _resetForTests() {
   _scrollToActivityEntryFor = () => {};
   lastProgressShineSnapshot.clear();
   _searchState.query = "";
+  _liveRefreshScheduled = false;
   if (_themeStackListener) {
     window.removeEventListener("achievement", _themeStackListener);
     _themeStackListener = null;
