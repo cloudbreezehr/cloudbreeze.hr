@@ -239,6 +239,15 @@ export function bumpTrigger(id) {
   save();
 }
 
+// Set the tally directly — for achievements whose earn count is derived (e.g.
+// a milestone reached N times), so the value stays authoritative regardless of
+// how many times an unlock path incidentally bumped it.
+export function setTriggerCount(id, n) {
+  const state = getState();
+  state.triggers[id] = n;
+  save();
+}
+
 export function getTriggerCount(id) {
   return getState().triggers[id] || 0;
 }

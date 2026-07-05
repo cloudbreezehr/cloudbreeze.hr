@@ -240,6 +240,13 @@ describe("achievements/storage", () => {
       storage.resetProgress();
       expect(storage.getTriggerCount("first-light")).toBe(0);
     });
+
+    it("setTriggerCount overrides the tally regardless of prior bumps", () => {
+      storage.bumpTrigger("persistent");
+      storage.bumpTrigger("persistent"); // 2 from an incidental unlock path
+      storage.setTriggerCount("persistent", 1); // derived milestone value wins
+      expect(storage.getTriggerCount("persistent")).toBe(1);
+    });
   });
 
   describe("preferences", () => {

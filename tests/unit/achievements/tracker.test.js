@@ -1841,3 +1841,70 @@ describe("tracker — sky-link handlers", () => {
     expect(storage.isUnlocked("distant-well")).toBe(true);
   });
 });
+
+describe("tracker — re-earn tally accounting", () => {
+  beforeEach(() => {
+    document.body.className = "";
+    delete document.body.dataset.activeTheme;
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
+  });
+
+  afterEach(() => {
+    stopAllTrackers();
+    vi.useRealTimers();
+  });
+
+  it("counts persistent once per thousand-click milestone, jump-proof", async () => {
+    const { storage } = await startTracker();
+    storage.setCounter("totalClicks", 999);
+    dispatchAchievement("click"); // 1000 → first milestone
+    expect(storage.getTriggerCount("persistent")).toBe(1);
+
+    // A slow run of clicks past 1000 must not each re-count.
+    for (let i = 0; i < 50; i++) dispatchAchievement("click");
+    expect(storage.getTriggerCount("persistent")).toBe(1);
+
+    // A jump straight past 2000 (batched clicks) still lands exactly one more.
+    storage.setCounter("totalClicks", 1999);
+    dispatchAchievement("click"); // 2000
+    expect(storage.getTriggerCount("persistent")).toBe(2);
+  });
+
+  it("counts the-long-drag once per drag, not per move past the threshold", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("drag", { x: 100, y: 100 });
+    // Several moves all beyond the threshold within one drag.
+    dispatchAchievement("drag", { x: 600, y: 100 });
+    dispatchAchievement("drag", { x: 700, y: 100 });
+    dispatchAchievement("drag", { x: 800, y: 100 });
+    expect(storage.getTriggerCount("the-long-drag")).toBe(1);
+
+    // A click resets the drag origin; the next long drag re-earns.
+    dispatchAchievement("click");
+    dispatchAchievement("drag", { x: 100, y: 100 });
+    dispatchAchievement("drag", { x: 700, y: 100 });
+    expect(storage.getTriggerCount("the-long-drag")).toBe(2);
+  });
+
+  it("counts scroll-surge once per burst, rearming when it settles", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("scroll", { progress: 0.5, velocity: 80 });
+    dispatchAchievement("scroll", { progress: 0.6, velocity: 90 });
+    dispatchAchievement("scroll", { progress: 0.7, velocity: 85 });
+    expect(storage.getTriggerCount("scroll-surge")).toBe(1);
+
+    // Velocity settles below the threshold, then a fresh burst re-earns.
+    dispatchAchievement("scroll", { progress: 0.7, velocity: 5 });
+    dispatchAchievement("scroll", { progress: 0.9, velocity: 80 });
+    expect(storage.getTriggerCount("scroll-surge")).toBe(2);
+  });
+
+  it("counts zenith once per return to the top, not per event there", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("scroll", { progress: 0.96 }); // reach the bottom
+    dispatchAchievement("scroll", { progress: 0.02 }); // back to top
+    dispatchAchievement("scroll", { progress: 0.01 }); // lingering at top
+    expect(storage.getTriggerCount("zenith")).toBe(1);
+  });
+});

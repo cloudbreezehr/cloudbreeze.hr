@@ -97,6 +97,8 @@ export function createTracker(onUnlock, onRelock) {
     dragStartY: null,
     lastFuryTime: 0,
     longWatchTimer: null,
+    // Rising-edge latches for onEdge, keyed by occurrence.
+    edges: {},
     // Tracks which constellations have been formed in this session for
     // the celestial-cartographer "all four in one session" achievement.
     constellationsFound: new Set(),
@@ -119,6 +121,41 @@ export function createTracker(onUnlock, onRelock) {
     // set mastery, point thresholds). Re-evaluate the progressive set.
     checkProgressiveState();
     return true;
+  }
+
+  // ── Re-earn helpers ──
+  // These keep the re-earn tally meaningful: tryUnlock bumps the tally on every
+  // call, so a level condition (past a threshold, or held through a continuous
+  // gesture) would otherwise inflate it. Both funnel to a single tryUnlock per
+  // genuine occurrence.
+
+  // Credit each newly-reached multiple of `step`. Jump-proof (999 → 1001 or a
+  // batch still lands the 1000 milestone) and idempotent across reloads. The
+  // tally is *set* to milestones-reached rather than bumped, so the separate
+  // progressive-unlock path (these carry a progressKey for their bar) can't
+  // double-count it.
+  function tryMilestone(id, counter, step) {
+    const reached = Math.floor(counter / step);
+    if (reached < 1) return;
+    const key = `milestone:${id}`;
+    if (reached <= storage.getCounter(key)) return;
+    storage.setCounter(key, reached);
+    tryUnlock(id);
+    storage.setTriggerCount(id, reached);
+  }
+
+  // Fire once when `condition` goes false → true, rearming when it returns to
+  // false — so a held condition (a drag, a fast scroll, time past a mark) counts
+  // once per occurrence instead of every event. Edge state is per session.
+  function onEdge(key, condition, fn) {
+    if (condition) {
+      if (!session.edges[key]) {
+        session.edges[key] = true;
+        fn();
+      }
+    } else {
+      session.edges[key] = false;
+    }
   }
 
   // ── Progressive Achievements ──
@@ -195,10 +232,10 @@ export function createTracker(onUnlock, onRelock) {
       storage.incrementCounter("totalClicks");
       tryUnlock("first-light");
 
-      // Lifetime click milestones — persistent counters, so these tick
-      // over across sessions.
-      if (totalClicks >= PERSISTENT_CLICKS) tryUnlock("persistent");
-      if (totalClicks >= DEVOTED_CLICKS) tryUnlock("devoted");
+      // Lifetime click milestones — persistent counters, so these tick over
+      // across sessions and re-earn once per thousand/ten-thousand.
+      tryMilestone("persistent", totalClicks, PERSISTENT_CLICKS);
+      tryMilestone("devoted", totalClicks, DEVOTED_CLICKS);
 
       // Rapid fire: 10 clicks in 3 seconds
       const now = Date.now();
@@ -210,10 +247,16 @@ export function createTracker(onUnlock, onRelock) {
       ) {
         session.clickTimestamps.shift();
       }
-      if (session.clickTimestamps.length >= RAPID_FIRE_CLICKS) {
-        tryUnlock("rapid-fire");
-        if (activeTheme() === "upside-down") tryUnlock("vertigo");
-      }
+      // One credit per rapid burst — rearms once the window empties below the
+      // count, not on every click while it stays full.
+      onEdge(
+        "rapid-fire",
+        session.clickTimestamps.length >= RAPID_FIRE_CLICKS,
+        () => {
+          tryUnlock("rapid-fire");
+          if (activeTheme() === "upside-down") tryUnlock("vertigo");
+        },
+      );
 
       // Quadrant tracking for cartographer
       if (data && data.x != null && data.y != null) {
@@ -267,25 +310,30 @@ export function createTracker(onUnlock, onRelock) {
           tryUnlock("down-to-earth");
         }
 
-        // Zenith: scroll to bottom then back to top
-        if (session.hasScrolledBottom && data.progress <= SCROLL_TOP) {
-          tryUnlock("zenith");
-        }
+        // Zenith: scroll to bottom then back to top — once per arrival at the
+        // top, not every event while lingering there.
+        onEdge(
+          "zenith",
+          session.hasScrolledBottom && data.progress <= SCROLL_TOP,
+          () => tryUnlock("zenith"),
+        );
 
-        // Upside-down full scroll
-        if (activeTheme() === "upside-down" && data.progress >= SCROLL_BOTTOM) {
-          tryUnlock("disoriented");
-        }
+        // Upside-down full scroll — once per reaching the bottom.
+        onEdge(
+          "disoriented",
+          activeTheme() === "upside-down" && data.progress >= SCROLL_BOTTOM,
+          () => tryUnlock("disoriented"),
+        );
       }
 
-      // Scroll surge — high scroll velocity
-      if (
-        data &&
-        data.velocity != null &&
-        Math.abs(data.velocity) >= SCROLL_SURGE_VELOCITY
-      ) {
-        tryUnlock("scroll-surge");
-      }
+      // Scroll surge — once per high-velocity burst, rearming when it settles.
+      onEdge(
+        "scroll-surge",
+        data != null &&
+          data.velocity != null &&
+          Math.abs(data.velocity) >= SCROLL_SURGE_VELOCITY,
+        () => tryUnlock("scroll-surge"),
+      );
     },
 
     "appearance-change"(data) {
@@ -309,6 +357,9 @@ export function createTracker(onUnlock, onRelock) {
         if (session.dragStartX === null) {
           session.dragStartX = data.x;
           session.dragStartY = data.y;
+          // New gesture — rearm so this drag can re-earn the long-drag credit
+          // even if the prior one stayed past the threshold at its end.
+          session.edges["the-long-drag"] = false;
         } else {
           const dx = data.x - session.dragStartX;
           const dy = data.y - session.dragStartY;
@@ -316,9 +367,11 @@ export function createTracker(onUnlock, onRelock) {
           const threshold =
             LONG_DRAG_SCREEN_FRACTION *
             Math.max(window.innerWidth, window.innerHeight);
-          if (dist >= threshold) {
-            tryUnlock("the-long-drag");
-          }
+          // Once per drag that clears the threshold, not every move past it.
+          // A click resets dragStart, so the next drag rearms from a short dist.
+          onEdge("the-long-drag", dist >= threshold, () =>
+            tryUnlock("the-long-drag"),
+          );
         }
       }
 
@@ -754,9 +807,9 @@ export function createTracker(onUnlock, onRelock) {
     if (session.lastVisibleTime > 0) {
       total += Date.now() - session.lastVisibleTime;
     }
-    if (total >= NIGHT_OWL_MS) {
-      tryUnlock("night-owl");
-    }
+    // Checked on an interval, so gate on the rising edge — once the span is
+    // reached, not every tick thereafter.
+    onEdge("night-owl", total >= NIGHT_OWL_MS, () => tryUnlock("night-owl"));
   }
 
   // ── Session-day tracking ──
