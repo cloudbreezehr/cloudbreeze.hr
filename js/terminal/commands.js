@@ -28,12 +28,13 @@ function pad(text, width) {
 
 // `sudo rm -rf /` in any flag spelling (-rf, -fr, split flags) aimed at the
 // filesystem root.
-function isRmRfRoot(argv) {
-  if (argv[0] !== "rm") return false;
-  const flags = argv.slice(1).filter((a) => a.startsWith("-"));
-  const targets = argv.slice(1).filter((a) => !a.startsWith("-"));
-  const joined = flags.join("");
-  return joined.includes("r") && joined.includes("f") && targets.includes("/");
+// The classic `rm -rf /` in any flag arrangement. `rmArgs` is the tokens that
+// follow `rm` — so `["-rf","/"]`, `["-r","-f","/"]`, or with extra flags like
+// `["-rf","--no-preserve-root","/"]` all qualify.
+function isRmRfRoot(rmArgs) {
+  const flags = rmArgs.filter((a) => a.startsWith("-")).join("");
+  const targets = rmArgs.filter((a) => !a.startsWith("-"));
+  return flags.includes("r") && flags.includes("f") && targets.includes("/");
 }
 
 export function createCommands(deps) {
@@ -49,6 +50,20 @@ export function createCommands(deps) {
     copy, // (text) => void — best-effort clipboard write
     emit, // (type, data?) => void — achievement event stream
   } = deps;
+
+  // The `rm -rf /` payoff, reachable bare or behind `sudo` — clears the active
+  // themes and prints the doomed-but-not-quite transcript.
+  function scorchedEarth() {
+    emit("terminal-rm-rf");
+    const removed = themes.clearAll();
+    const lines = removed.map((id) => `removed '/sky/themes/${id}'`);
+    if (removed.length === 0) {
+      lines.push("rm: nothing to remove — the sky is already clear");
+    }
+    lines.push("rm: cannot remove '/sky': Operation not permitted");
+    lines.push("(some things survive even root)");
+    return { lines };
+  }
 
   const commands = [
     {
@@ -166,19 +181,24 @@ export function createCommands(deps) {
       },
     },
     {
+      name: "rm",
+      summary: "remove files (mind the root)",
+      run(argv) {
+        if (isRmRfRoot(argv)) return scorchedEarth();
+        return {
+          lines: [
+            "rm: missing operand (and courage)",
+            "the truly reckless know the full incantation",
+          ],
+        };
+      },
+    },
+    {
       name: "sudo",
       summary: "ask for more power",
       run(argv) {
-        if (isRmRfRoot(argv)) {
-          emit("terminal-rm-rf");
-          const removed = themes.clearAll();
-          const lines = removed.map((id) => `removed '/sky/themes/${id}'`);
-          if (removed.length === 0) {
-            lines.push("rm: nothing to remove — the sky is already clear");
-          }
-          lines.push("rm: cannot remove '/sky': Operation not permitted");
-          lines.push("(some things survive even root)");
-          return { lines };
+        if (argv[0] === "rm" && isRmRfRoot(argv.slice(1))) {
+          return scorchedEarth();
         }
         emit("terminal-sudo-denied");
         return {

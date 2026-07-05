@@ -122,6 +122,27 @@ describe("terminal/commands", () => {
     expect(lines.join(" ")).toContain("not in the sudoers file");
   });
 
+  it("bare rm -rf / clears every active theme — no sudo needed", () => {
+    const { lines } = run("rm -rf /");
+    expect(deps.themes.clearAll).toHaveBeenCalled();
+    expect(deps.emit).toHaveBeenCalledWith("terminal-rm-rf");
+    expect(lines).toContain("removed '/sky/themes/matrix'");
+    expect(lines.join(" ")).toContain("Operation not permitted");
+  });
+
+  it("bare rm with the meme's extra flags still counts as the classic", () => {
+    run("rm -rf --no-preserve-root /");
+    expect(deps.emit).toHaveBeenCalledWith("terminal-rm-rf");
+  });
+
+  it("bare rm short of the classic is a playful refusal, not command-not-found", () => {
+    const { lines } = run("rm -rf");
+    const text = lines.join(" ");
+    expect(text).not.toContain("command not found");
+    expect(text.toLowerCase()).toContain("rm:");
+    expect(deps.emit).not.toHaveBeenCalledWith("terminal-rm-rf");
+  });
+
   it("kubectl get themes prints a status table", () => {
     const { lines } = run("kubectl get themes");
     expect(lines[0]).toMatch(/NAME\s+READY\s+STATUS/);
