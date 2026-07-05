@@ -1,17 +1,26 @@
 // ── Precise-Location Pin ──
-// A pin that lives inside the expanded "Systems online" badge and upgrades the
-// coarse IP location to a precise GPS fix — refining the very weather and moon
-// the badge is showing, so it reads as an enhancement to that, not a standalone
-// control. The browser's permission dialog fires only from a tap on the pin; a
-// standing grant is used silently at load (no pin needed then).
+// A pin inside the expanded "Systems online" badge that upgrades the coarse IP
+// location to a precise GPS fix — refining the very weather and moon the badge
+// is showing, so it reads as an enhancement to that, not a standalone control.
+// Tapping it opens a small card that explains and reassures before the browser
+// prompt (and reports when the browser has location blocked, where the prompt
+// never appears). A standing grant is used silently at load (no pin needed).
 
 import { requestPreciseLocation } from "./geolocate.js";
+import { prefersReducedMotion } from "../motion.js";
 import {
   showHintTooltip,
   hideHintTooltip,
 } from "../achievements/ui/tooltip.js";
 
 const TOOLTIP = "Use precise location";
+const PROMPT_TEXT = "Show weather for your exact spot.";
+const REASSURE_TEXT = "Used only for the forecast — never saved.";
+const BLOCKED_TEXT =
+  "Location is blocked. Allow it in your browser's site settings, then tap again.";
+const FADE_MS = 240;
+// Gap between the card and the pin it points down at.
+const ANCHOR_GAP_PX = 10;
 
 // A map-pin, tinted by the badge's glow via currentColor; sized in CSS.
 const LOCATION_ICON =
@@ -49,11 +58,103 @@ export async function usePreciseLocationIfGranted(onUpgrade) {
   return ok;
 }
 
+// Position the card just above the pin, right-aligned to it (the badge sits in
+// the bottom corner, so the card grows up and to the left).
+function position(el, anchor) {
+  const r = anchor.getBoundingClientRect();
+  el.style.left = "auto";
+  el.style.right = `${window.innerWidth - r.right}px`;
+  el.style.bottom = `${window.innerHeight - r.top + ANCHOR_GAP_PX}px`;
+}
+
+// The explanatory card. `onEnable` runs the real request and resolves to whether
+// the upgrade succeeded; on failure (including a browser-level block, where no
+// prompt shows) the card stays open with a blocked hint so the tap isn't a
+// silent no-op. `onClose` fires whenever the card leaves.
+function renderPopover(anchor, { onEnable, onClose }) {
+  const el = document.createElement("div");
+  el.className = "location-prompt";
+  el.setAttribute("role", "dialog");
+  el.setAttribute("aria-label", "Precise location");
+
+  const dismiss = document.createElement("button");
+  dismiss.type = "button";
+  dismiss.className = "location-prompt-dismiss";
+  dismiss.setAttribute("aria-label", "Dismiss");
+  dismiss.textContent = "×";
+
+  const msg = document.createElement("p");
+  msg.className = "location-prompt-msg";
+  msg.textContent = PROMPT_TEXT;
+
+  const note = document.createElement("p");
+  note.className = "location-prompt-note";
+  note.textContent = REASSURE_TEXT;
+
+  const enable = document.createElement("button");
+  enable.type = "button";
+  enable.className = "location-prompt-enable";
+  enable.textContent = "Enable";
+
+  el.append(dismiss, msg, note, enable);
+  document.body.appendChild(el);
+
+  position(el, anchor);
+  const reposition = () => position(el, anchor);
+  window.addEventListener("resize", reposition);
+  window.addEventListener("scroll", reposition, { passive: true });
+
+  let closed = false;
+  function close() {
+    if (closed) return;
+    closed = true;
+    window.removeEventListener("resize", reposition);
+    window.removeEventListener("scroll", reposition);
+    if (prefersReducedMotion()) {
+      el.remove();
+      return;
+    }
+    const anim = el.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: FADE_MS,
+      easing: "ease-in",
+    });
+    anim.onfinish = () => el.remove();
+  }
+
+  dismiss.addEventListener("click", () => {
+    close();
+    onClose?.();
+  });
+  enable.addEventListener("click", async () => {
+    enable.disabled = true;
+    if (await onEnable()) {
+      close();
+      onClose?.();
+    } else {
+      // Blocked or unavailable — say so, and drop the note (the reassurance is
+      // moot now) and the button (retrying needs a browser-settings change).
+      msg.textContent = BLOCKED_TEXT;
+      note.remove();
+      enable.remove();
+    }
+  });
+
+  if (!prefersReducedMotion()) {
+    el.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: FADE_MS,
+      easing: "ease-out",
+    });
+  }
+
+  return { close };
+}
+
 /**
  * Create the pin control. Starts hidden; setVisible(true) reveals it (the badge
- * shows it only while displaying weather). A successful tap upgrades the
- * location, runs `onUpgrade`, fires the achievement, and retires the pin. Uses
- * the site's hint tooltip rather than the browser's native title.
+ * shows it only while displaying weather). Tapping opens the explanatory card;
+ * enabling from there upgrades the location, runs `onUpgrade`, fires the
+ * achievement, and retires the pin. Uses the site's hint tooltip on hover, not
+ * the browser's native title.
  */
 export function createLocationPin({ onUpgrade } = {}) {
   const el = document.createElement("button");
@@ -64,23 +165,42 @@ export function createLocationPin({ onUpgrade } = {}) {
   el.hidden = true;
 
   let done = false;
+  let popover = null;
+
+  function closePopover() {
+    popover?.close();
+    popover = null;
+  }
   function retire() {
     done = true;
     el.hidden = true;
     hideHintTooltip();
+    closePopover();
   }
 
-  el.addEventListener("mouseenter", () => showHintTooltip(el, TOOLTIP));
-  el.addEventListener("mouseleave", hideHintTooltip);
-  el.addEventListener("click", async (e) => {
-    // The badge itself toggles the weather; keep this tap to the pin's job.
-    e.stopPropagation();
-    if (done) return;
-    if (await requestPreciseLocation()) {
+  async function attemptEnable() {
+    const ok = await requestPreciseLocation();
+    if (ok) {
       onUpgrade?.();
       emitUnlock();
       retire();
     }
+    return ok;
+  }
+
+  el.addEventListener("mouseenter", () => showHintTooltip(el, TOOLTIP));
+  el.addEventListener("mouseleave", hideHintTooltip);
+  el.addEventListener("click", (e) => {
+    // The badge itself toggles the weather; keep this tap to the pin's job.
+    e.stopPropagation();
+    hideHintTooltip();
+    if (done || popover || !el.isConnected) return;
+    popover = renderPopover(el, {
+      onEnable: attemptEnable,
+      onClose: () => {
+        popover = null;
+      },
+    });
   });
 
   return {

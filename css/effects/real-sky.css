@@ -48,3 +48,64 @@ body:not([data-active-theme])[data-sky-phase="night"] #bg-canvas {
 .location-pin[hidden] {
   display: none;
 }
+
+/* Card the pin opens: explains + reassures before the browser prompt, and
+   reports a browser-level block. JS sets right/bottom from the pin's rect. */
+.location-prompt {
+  position: fixed;
+  z-index: var(--z-tooltip);
+  max-width: 240px;
+  padding: 12px 14px;
+  background: rgba(var(--ink-rgb), 0.96);
+  border: 1px solid rgba(var(--theme-glow), 0.35);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.9);
+  font-family: "DM Mono", monospace;
+  font-size: 0.7rem;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+}
+.location-prompt-msg {
+  margin: 0 0 4px;
+}
+.location-prompt-note {
+  margin: 0 0 12px;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 0.62rem;
+}
+.location-prompt-enable {
+  font: inherit;
+  color: rgb(var(--ink-rgb));
+  background: rgb(var(--theme-glow));
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+.location-prompt-enable:hover {
+  filter: brightness(1.1);
+}
+.location-prompt-enable:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.location-prompt-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.5);
+  background: none;
+  border: none;
+  padding: 2px 4px;
+  cursor: pointer;
+}
+.location-prompt-dismiss:hover {
+  color: rgba(255, 255, 255, 0.85);
+}

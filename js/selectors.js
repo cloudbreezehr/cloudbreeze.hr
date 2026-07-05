@@ -4,4 +4,5 @@
 // lands inside one of these regions.
 export const UI_OVERLAY_SELECTOR =
   "nav, .achievement-panel, .achievement-toast-container, .dev-console, " +
-  ".terminal-overlay, .photo-mode-bar, .speedrun-hud, .speedrun-dialog-overlay";
+  ".terminal-overlay, .photo-mode-bar, .speedrun-hud, .speedrun-dialog-overlay, " +
+  ".location-pin, .location-prompt";

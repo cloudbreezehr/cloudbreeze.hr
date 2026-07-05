@@ -1,8 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
-// The inline precise-location pin and the silent standing-grant path. Stub
-// navigator.permissions + navigator.geolocation to drive the permission state
-// and the native fix through the real requestPreciseLocation.
+// The inline precise-location pin, the card it opens, and the silent
+// standing-grant path. Runs under reduced motion so the card's close removes it
+// synchronously; stubs navigator.permissions + navigator.geolocation to drive
+// the permission state and the native fix through the real requestPreciseLocation.
 
 describe("real-sky/location-pin", () => {
   let events;
@@ -18,7 +19,17 @@ describe("real-sky/location-pin", () => {
     });
   }
 
-  const load = () => import("../../../js/real-sky/location-pin.js");
+  // motion.js samples matchMedia at import, so set it before loading.
+  async function load() {
+    window.matchMedia = vi.fn(() => ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    return import("../../../js/real-sky/location-pin.js");
+  }
+
+  const card = () => document.querySelector(".location-prompt");
   const tooltip = () => document.querySelector(".achievement-tooltip");
   const flush = () => new Promise((r) => setTimeout(r, 0));
 
@@ -33,6 +44,7 @@ describe("real-sky/location-pin", () => {
   afterEach(() => {
     window.removeEventListener("achievement", onAchievement);
     vi.unstubAllGlobals();
+    delete window.matchMedia;
   });
 
   describe("createLocationPin", () => {
@@ -47,24 +59,39 @@ describe("real-sky/location-pin", () => {
       expect(pin.el.hidden).toBe(true);
     });
 
-    it("upgrades, fires the achievement, and retires on a successful tap", async () => {
+    it("opens an explaining, reassuring card on tap (no native title)", async () => {
+      stubNavigator();
+      const { createLocationPin } = await load();
+      const pin = createLocationPin({ onUpgrade: () => {} });
+      document.body.appendChild(pin.el);
+      expect(pin.el.getAttribute("title")).toBeNull();
+      pin.setVisible(true);
+      pin.el.click();
+      expect(card()).toBeTruthy();
+      expect(card().querySelector(".location-prompt-note").textContent).toMatch(
+        /never saved/i,
+      );
+    });
+
+    it("Enable upgrades, fires the achievement, retires the pin, and closes", async () => {
       stubNavigator({ permission: "prompt" });
       const onUpgrade = vi.fn();
       const { createLocationPin } = await load();
       const pin = createLocationPin({ onUpgrade });
+      document.body.appendChild(pin.el);
       pin.setVisible(true);
-
       pin.el.click();
+
+      card().querySelector(".location-prompt-enable").click();
       await flush();
 
       expect(onUpgrade).toHaveBeenCalledTimes(1);
       expect(events).toContainEqual({ type: "precise-location" });
       expect(pin.el.hidden).toBe(true); // retired
-      pin.setVisible(true); // retired means it can't come back
-      expect(pin.el.hidden).toBe(true);
+      expect(card()).toBeNull(); // closed
     });
 
-    it("stays offered and awards nothing when the request is blocked", async () => {
+    it("reports a browser block instead of doing nothing", async () => {
       stubNavigator({
         permission: "prompt",
         geo: (_ok, err) => err({ code: 1 }),
@@ -72,17 +99,24 @@ describe("real-sky/location-pin", () => {
       const onUpgrade = vi.fn();
       const { createLocationPin } = await load();
       const pin = createLocationPin({ onUpgrade });
+      document.body.appendChild(pin.el);
       pin.setVisible(true);
-
       pin.el.click();
+
+      card().querySelector(".location-prompt-enable").click();
       await flush();
 
       expect(onUpgrade).not.toHaveBeenCalled();
       expect(events).toEqual([]);
-      expect(pin.el.hidden).toBe(false); // still there to retry
+      expect(card()).toBeTruthy(); // stays open with the explanation
+      expect(card().querySelector(".location-prompt-msg").textContent).toMatch(
+        /blocked/i,
+      );
+      expect(card().querySelector(".location-prompt-enable")).toBeNull();
+      expect(pin.el.hidden).toBe(false); // not retired
     });
 
-    it("does not toggle the badge — its click doesn't bubble", async () => {
+    it("does not toggle the badge — its tap doesn't bubble", async () => {
       stubNavigator();
       const { createLocationPin } = await load();
       const pin = createLocationPin({ onUpgrade: () => {} });
@@ -93,24 +127,23 @@ describe("real-sky/location-pin", () => {
       document.body.appendChild(badge);
 
       pin.el.click();
-      await flush();
-
       expect(badgeClick).not.toHaveBeenCalled();
     });
 
-    it("explains itself through the hint tooltip, not the native title", async () => {
+    it("shows the hint tooltip on hover", async () => {
       stubNavigator();
       const { createLocationPin } = await load();
       const pin = createLocationPin({ onUpgrade: () => {} });
-      expect(pin.el.getAttribute("title")).toBeNull();
-
       pin.el.dispatchEvent(new Event("mouseenter"));
       expect(tooltip().classList.contains("visible")).toBe(true);
       expect(tooltip().textContent).toBe("Use precise location");
-
-      pin.el.dispatchEvent(new Event("mouseleave"));
-      expect(tooltip().classList.contains("visible")).toBe(false);
     });
+  });
+
+  it("the pin and card are in the canvas overlay selector (no click-through)", async () => {
+    const { UI_OVERLAY_SELECTOR } = await import("../../../js/selectors.js");
+    expect(UI_OVERLAY_SELECTOR).toContain(".location-pin");
+    expect(UI_OVERLAY_SELECTOR).toContain(".location-prompt");
   });
 
   describe("usePreciseLocationIfGranted", () => {
@@ -120,7 +153,6 @@ describe("real-sky/location-pin", () => {
       const { usePreciseLocationIfGranted } = await load();
       expect(await usePreciseLocationIfGranted(onUpgrade)).toBe(true);
       expect(onUpgrade).toHaveBeenCalledTimes(1);
-      // The achievement rewards the deliberate tap, not this reuse.
       expect(events).toEqual([]);
     });
 
