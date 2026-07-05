@@ -206,6 +206,19 @@ describe("achievements/ui/cards", () => {
       );
     });
 
+    it("skips the tally scan entirely when dev mode is off (no wasted queries)", () => {
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const title = container
+        .querySelector('.achievement-card[data-id="first-light"]')
+        .querySelector(".achievement-card-title");
+      const spy = vi.spyOn(title, "querySelector");
+      mod.refreshDynamicCardState(); // dev off → tally half not entered
+      expect(spy).not.toHaveBeenCalled();
+    });
+
     it("live-updates card bits in place without a re-render (dev mode)", () => {
       document.body.classList.add("dev-active");
       storage.unlock("first-light");

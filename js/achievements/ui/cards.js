@@ -190,6 +190,8 @@ function updateCardProgress(card, progressKey) {
   if (text && text.textContent !== label) text.textContent = label;
   const fill = card.querySelector(".achievement-card-progress-bar-fill");
   if (fill) {
+    // Plain width, no transition (see the CSS): inside the blurred panel, an
+    // animated property re-blurs every frame, so the fill snaps instead.
     const width = `${(collected / total) * 100}%`;
     if (fill.style.width !== width) fill.style.width = width;
     return;
@@ -202,19 +204,35 @@ function updateCardProgress(card, progressKey) {
   });
 }
 
-// Refresh the live-changing bits of every rendered card in place — the re-earn
-// tally and any progress line/bar. One pass, no rebuild; this is the single
-// home for "keep an open card current", so new live bits extend here rather
-// than adding another per-bit refresh path.
+// Refresh the live-changing bits of the open panel in place — any progress
+// line/bar and (in dev) the re-earn tally. The single home for "keep an open
+// card current", so new live bits extend here rather than adding a per-bit
+// refresh path. Kept cheap enough to run per throttle tick regardless of which
+// event fired: it reaches only the cards that *have* a live bit, never scans
+// the whole panel, and skips the tally half entirely outside dev mode.
 export function refreshDynamicCardState() {
   const panelEl = _getPanelEl();
   if (!panelEl || !_isPanelOpen()) return;
-  for (const card of panelEl.querySelectorAll(".achievement-card[data-id]")) {
-    const id = card.dataset.id;
-    const title = card.querySelector(".achievement-card-title");
-    if (title) applyCardTally(title, id);
-    const ach = getAchievement(id);
+
+  // Progress: reach cards through their bar node, so a panel of 100+ cards
+  // only visits the ~few dozen that track progress.
+  for (const bar of panelEl.querySelectorAll(
+    ".achievement-card-progress-bar-wrap",
+  )) {
+    const card = bar.closest(".achievement-card[data-id]");
+    if (!card) continue;
+    const ach = getAchievement(card.dataset.id);
     if (ach && ach.progressKey) updateCardProgress(card, ach.progressKey);
+  }
+
+  // Tally: dev-only, so the whole scan is skipped for everyone else. (Turning
+  // dev off is handled by a full refresh, which strips any shown tallies.)
+  if (!tallyVisible()) return;
+  for (const card of panelEl.querySelectorAll(
+    ".achievement-card.unlocked[data-id]",
+  )) {
+    const title = card.querySelector(".achievement-card-title");
+    if (title) applyCardTally(title, card.dataset.id);
   }
 }
 

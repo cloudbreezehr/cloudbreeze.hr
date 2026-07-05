@@ -503,7 +503,11 @@ body.light-appearance .achievement-search-input {
   height: 100%;
   background: var(--set-color, var(--achievement-default-accent));
   border-radius: 0 0 6px 6px;
-  transition: width 0.4s ease-out;
+  /* No transition: this fill sits inside the panel's backdrop-filter, and an
+     animating property there forces a re-composite/re-blur every frame of the
+     animation. Live updates (a fast counter) would keep one running
+     continuously. The width just snaps — imperceptible on a 2px bar — and a
+     full re-render already builds a fresh element, so nothing glides anyway. */
 }
 /* Segmented variant — one tick per progress unit, used when the count
    is small enough that individual segments are still readable.  The
