@@ -155,17 +155,23 @@ function tallyVisible() {
   return document.body.classList.contains("dev-active");
 }
 
+// Writes are guarded to the value actually changing: the panel carries a
+// backdrop-filter blur, so any DOM mutation inside it forces an expensive
+// relayout/reblur. A no-op pass must not touch the DOM.
 function applyCardTally(titleEl, id) {
   let tally = titleEl.querySelector(".achievement-card-tally");
   const times = storage.getTriggerCount(id);
   if (times > 1 && tallyVisible()) {
+    const label = `×${times}`;
     if (!tally) {
       tally = document.createElement("span");
       tally.className = "achievement-card-tally";
       titleEl.appendChild(tally);
     }
-    tally.textContent = `×${times}`;
-    tally.setAttribute("data-tooltip", `Earned ${times} times`);
+    if (tally.textContent !== label) {
+      tally.textContent = label;
+      tally.setAttribute("data-tooltip", `Earned ${times} times`);
+    }
   } else if (tally) {
     tally.remove();
   }
@@ -174,20 +180,26 @@ function applyCardTally(titleEl, id) {
 // Update a rendered card's progress line + bar in place from its current count,
 // without rebuilding the card (which would replay reveal animations and drop
 // scroll/focus). Handles both bar shapes: a continuous fill (width) and a
-// segmented bar (per-tick filled state).
+// segmented bar (per-tick filled state). Every write is change-gated.
 function updateCardProgress(card, progressKey) {
   const total = resolveProgressTotal(progressKey);
   if (total <= 0) return;
   const collected = Math.min(resolveProgressCurrent(progressKey), total);
   const text = card.querySelector(".achievement-card-progress-text");
-  if (text) text.textContent = `${collected}/${total}`;
+  const label = `${collected}/${total}`;
+  if (text && text.textContent !== label) text.textContent = label;
   const fill = card.querySelector(".achievement-card-progress-bar-fill");
   if (fill) {
-    fill.style.width = `${(collected / total) * 100}%`;
+    const width = `${(collected / total) * 100}%`;
+    if (fill.style.width !== width) fill.style.width = width;
     return;
   }
   const segs = card.querySelectorAll(".achievement-card-progress-bar-segment");
-  segs.forEach((seg, i) => seg.classList.toggle("filled", i < collected));
+  segs.forEach((seg, i) => {
+    const filled = i < collected;
+    if (seg.classList.contains("filled") !== filled)
+      seg.classList.toggle("filled", filled);
+  });
 }
 
 // Refresh the live-changing bits of every rendered card in place — the re-earn
@@ -206,17 +218,20 @@ export function refreshDynamicCardState() {
   }
 }
 
-// Coalesce live refreshes to a microtask: it runs after the tracker has
-// processed the current event (so counts/tallies are already updated,
-// regardless of listener order), and a burst of events folds into one pass.
-let _liveRefreshScheduled = false;
+// Throttle live refreshes: a rapid stream of events (clicks, scroll ticks)
+// collapses to at most one pass per window instead of one per event, so the
+// panel's blurred DOM isn't relaid-out on every click. Trailing, and gated to
+// an open panel so no timer runs while it's closed. The delay also lands the
+// pass after the tracker has processed the triggering event, regardless of
+// listener order.
+export const LIVE_REFRESH_THROTTLE_MS = 200;
+let _liveRefreshTimer = null;
 function scheduleLiveRefresh() {
-  if (_liveRefreshScheduled) return;
-  _liveRefreshScheduled = true;
-  queueMicrotask(() => {
-    _liveRefreshScheduled = false;
+  if (_liveRefreshTimer || !_isPanelOpen()) return;
+  _liveRefreshTimer = setTimeout(() => {
+    _liveRefreshTimer = null;
     refreshDynamicCardState();
-  });
+  }, LIVE_REFRESH_THROTTLE_MS);
 }
 
 // A set's N / M. Core always counts toward the total; bonus counts only once
@@ -918,7 +933,10 @@ export function _resetForTests() {
   _scrollToActivityEntryFor = () => {};
   lastProgressShineSnapshot.clear();
   _searchState.query = "";
-  _liveRefreshScheduled = false;
+  if (_liveRefreshTimer) {
+    clearTimeout(_liveRefreshTimer);
+    _liveRefreshTimer = null;
+  }
   if (_themeStackListener) {
     window.removeEventListener("achievement", _themeStackListener);
     _themeStackListener = null;

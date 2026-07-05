@@ -260,15 +260,40 @@ describe("achievements/ui/cards", () => {
       );
 
       storage.bumpTrigger("first-light"); // now 2
-      // Any event, not a bespoke tally hook, drives the refresh (coalesced to
-      // a microtask so it runs after the tracker would have updated state).
+      // Any event, not a bespoke tally hook, drives the refresh — throttled, so
+      // it lands after the window rather than synchronously per event.
       window.dispatchEvent(
         new CustomEvent("achievement", { detail: { type: "click" } }),
       );
-      await Promise.resolve();
+      expect(card.querySelector(".achievement-card-tally")).toBeNull(); // not yet
+      await vi.advanceTimersByTimeAsync(mod.LIVE_REFRESH_THROTTLE_MS);
       expect(card.querySelector(".achievement-card-tally").textContent).toBe(
         "×2",
       );
+    });
+
+    it("collapses a burst of events into a single throttled refresh", async () => {
+      document.body.classList.add("dev-active");
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      const title = card.querySelector(".achievement-card-title");
+      const spy = vi.spyOn(title, "querySelector");
+
+      // Ten events in quick succession before the window elapses.
+      for (let i = 0; i < 10; i++) {
+        storage.bumpTrigger("first-light");
+        window.dispatchEvent(
+          new CustomEvent("achievement", { detail: { type: "click" } }),
+        );
+      }
+      expect(spy).not.toHaveBeenCalled(); // nothing painted mid-burst
+      await vi.advanceTimersByTimeAsync(mod.LIVE_REFRESH_THROTTLE_MS);
+      // Exactly one pass touched this card, not ten.
+      expect(spy).toHaveBeenCalledTimes(1);
     });
 
     it("re-renders an open panel when the dev console toggles", () => {
