@@ -182,14 +182,28 @@ export function refreshCardTally(id) {
   if (title) applyCardTally(title, id);
 }
 
-// Core-only, so a set's bar can actually complete: bonus entries are
-// un-schedulable extras that push past 100%, not gate a set at "5 / 9".
-function setCountForSet(setId) {
-  const all = getReachableAchievements().filter(
-    (a) => a.set === setId && !isBonus(a),
-  );
-  const unlocked = all.filter((a) => storage.isUnlocked(a.id));
-  return { total: all.length, unlocked: unlocked.length };
+// A set's N / M. Core always counts toward the total; bonus counts only once
+// earned, and then lifts both sides — so a set reads complete exactly when its
+// core is done (never stranded at "5 / 9"), and each found secret grows the
+// count in step (5 / 5 → 6 / 6) rather than overflowing it (6 / 5) or leaving a
+// phantom gap when an unearned core remains (4 core + 1 bonus → 5 / 6).
+export function setCountForSet(setId) {
+  const inSet = getReachableAchievements().filter((a) => a.set === setId);
+  let total = 0;
+  let unlocked = 0;
+  for (const a of inSet) {
+    const earned = storage.isUnlocked(a.id);
+    if (isBonus(a)) {
+      if (earned) {
+        total++;
+        unlocked++;
+      }
+    } else {
+      total++;
+      if (earned) unlocked++;
+    }
+  }
+  return { total, unlocked };
 }
 
 function hasAnyInSet(setId) {
@@ -547,8 +561,12 @@ export function renderSections(container) {
     section.appendChild(sHeader);
 
     // Achievement cards — only those earnable on this device, so a touch user
-    // never sees a keyboard/hover-only entry they can't complete.
-    const setAchievements = reachable.filter((a) => a.set === set.id);
+    // never sees a keyboard/hover-only entry they can't complete. Bonus stays
+    // hidden until earned, so core-100% reads as done and a found secret is a
+    // surprise rather than a standing "???".
+    const setAchievements = reachable.filter(
+      (a) => a.set === set.id && (!isBonus(a) || storage.isUnlocked(a.id)),
+    );
     for (const ach of setAchievements) {
       const isUnlocked = storage.isUnlocked(ach.id);
       const card = document.createElement("div");

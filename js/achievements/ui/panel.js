@@ -138,6 +138,18 @@ export function completionPercent({ coreUnlocked, coreTotal, bonusUnlocked }) {
   return Math.round((earned / coreTotal) * 100);
 }
 
+// Footer "N / M" count. Mirrors the per-set rule: earned bonus lifts both
+// sides, so it reads as "everything found" and never overflows. (The strip's
+// percent is the one place that shows past 100 — the deliberate Crash-style
+// flourish for going beyond the core.)
+function footerCounts() {
+  const { coreUnlocked, coreTotal, bonusUnlocked } = reachableCounts();
+  return {
+    unlocked: coreUnlocked + bonusUnlocked,
+    total: coreTotal + bonusUnlocked,
+  };
+}
+
 // Paint the overall-completion strip: fill width tracks the percent (capped at
 // full even when bonus pushes the number past 100), plus an accessible label.
 // Re-callable so refreshPanel keeps it current as unlocks land.
@@ -668,12 +680,11 @@ function buildPanel(onHide) {
 
   const countEl = document.createElement("span");
   countEl.className = "achievement-count-total";
-  // Core count only — bonus is a surprise beyond 100%, surfaced in the strip.
-  const { coreUnlocked, coreTotal } = reachableCounts();
-  countEl.textContent = `${coreUnlocked}/${coreTotal}`;
+  const { unlocked, total } = footerCounts();
+  countEl.textContent = `${unlocked}/${total}`;
   countEl.setAttribute(
     "data-tooltip",
-    `Earned ${coreUnlocked} of ${coreTotal} achievements`,
+    `Earned ${unlocked} of ${total} achievements`,
   );
 
   const importInput = buildImportInput();
@@ -722,11 +733,11 @@ export function refreshPanel() {
   paintLastUnlocked(panelEl.querySelector(".achievement-last-unlocked"));
   const countEl = panelEl.querySelector(".achievement-count-total");
   if (countEl) {
-    const { coreUnlocked, coreTotal } = reachableCounts();
-    countEl.textContent = `${coreUnlocked}/${coreTotal}`;
+    const { unlocked, total } = footerCounts();
+    countEl.textContent = `${unlocked}/${total}`;
     countEl.setAttribute(
       "data-tooltip",
-      `Earned ${coreUnlocked} of ${coreTotal} achievements`,
+      `Earned ${unlocked} of ${total} achievements`,
     );
   }
 

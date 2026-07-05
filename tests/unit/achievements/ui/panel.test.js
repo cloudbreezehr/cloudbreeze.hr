@@ -439,6 +439,21 @@ describe("achievements/ui/panel", () => {
     });
   });
 
+  it("lifts both sides of the footer count when a bonus is earned", () => {
+    storage.unlock("first-light"); // a core achievement
+    mod.openPanel();
+    const count = () =>
+      document.querySelector(".achievement-count-total").textContent;
+    const [n0, m0] = count().split("/").map(Number);
+
+    storage.unlock("moonstruck"); // a bonus achievement
+    mod.refreshPanel();
+    const [n1, m1] = count().split("/").map(Number);
+
+    expect(n1).toBe(n0 + 1);
+    expect(m1).toBe(m0 + 1);
+  });
+
   it("keeps the footer count numeric after a refresh", () => {
     // Regression: reachableCounts returns core/bonus fields; a stale
     // {unlocked,total} destructure in refreshPanel would print "undefined".

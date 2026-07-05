@@ -253,6 +253,51 @@ describe("achievements/ui/cards", () => {
       expect(refreshPanelStub).not.toHaveBeenCalled();
     });
 
+    describe("bonus achievements (Almanac)", () => {
+      // 5 core + 4 bonus in the Almanac set.
+      const CORE = ["moonlit", "persistent-explorer", "tenacious", "regular"];
+      const LAST_CORE = "rain-check";
+      const BONUS = "moonstruck";
+
+      it("counts the set as core-complete before any bonus (5 / 5)", () => {
+        [...CORE, LAST_CORE].forEach((id) => storage.unlock(id));
+        expect(mod.setCountForSet("almanac")).toEqual({
+          total: 5,
+          unlocked: 5,
+        });
+      });
+
+      it("lifts both sides when a bonus is earned (6 / 6)", () => {
+        [...CORE, LAST_CORE, BONUS].forEach((id) => storage.unlock(id));
+        expect(mod.setCountForSet("almanac")).toEqual({
+          total: 6,
+          unlocked: 6,
+        });
+      });
+
+      it("shows a gap when a core is missing but a bonus is earned (5 / 6)", () => {
+        [...CORE, BONUS].forEach((id) => storage.unlock(id)); // LAST_CORE unearned
+        expect(mod.setCountForSet("almanac")).toEqual({
+          total: 6,
+          unlocked: 5,
+        });
+      });
+
+      it("hides an unearned bonus card, reveals it once earned", () => {
+        [...CORE, LAST_CORE].forEach((id) => storage.unlock(id));
+        mod.renderSections(container);
+        expect(
+          container.querySelector(`.achievement-card[data-id="${BONUS}"]`),
+        ).toBeNull();
+
+        storage.unlock(BONUS);
+        mod.renderSections(container);
+        expect(
+          container.querySelector(`.achievement-card[data-id="${BONUS}"]`),
+        ).not.toBeNull();
+      });
+    });
+
     it("renders the intro card while unlocked count is at or below the threshold", () => {
       mod.renderSections(container);
       expect(container.querySelector(".achievement-intro-card")).not.toBeNull();
