@@ -1418,6 +1418,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: UNCOMMON,
     hidden: true,
+    progressKey: "clicks-1000",
   },
   {
     id: "devoted",
@@ -1427,6 +1428,7 @@ export const ACHIEVEMENTS = [
     set: "mastery",
     points: EPIC,
     hidden: true,
+    progressKey: "clicks-10000",
   },
   {
     id: "wish-granted",

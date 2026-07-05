@@ -88,5 +88,17 @@ describe("achievements/progress", () => {
       storage.setCounter("jellyfishPulses", 3);
       expect(progress.resolveProgressCurrent("jellyfish-pulses")).toBe(3);
     });
+
+    it("click milestones read totalClicks against their thresholds", () => {
+      storage.setCounter("totalClicks", 750);
+      expect(progress.resolveProgressCurrent("clicks-1000")).toBe(750);
+      expect(progress.resolveProgressTotal("clicks-1000")).toBe(
+        progress.PERSISTENT_CLICKS,
+      );
+      expect(progress.resolveProgressCurrent("clicks-10000")).toBe(750);
+      expect(progress.resolveProgressTotal("clicks-10000")).toBe(
+        progress.DEVOTED_CLICKS,
+      );
+    });
   });
 });

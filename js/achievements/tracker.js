@@ -9,6 +9,8 @@ import {
   PROGRESS_ITEMS,
   resolveProgressCurrent,
   resolveProgressTotal,
+  PERSISTENT_CLICKS,
+  DEVOTED_CLICKS,
 } from "./progress.js";
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
@@ -31,9 +33,6 @@ const TRIPLE_STACK_COUNT = 3;
 // this gap.
 export const RAPID_FIRE_WINDOW_MS = 3000;
 export const RAPID_FIRE_CLICKS = 10;
-// Lifetime click milestones.
-const PERSISTENT_CLICKS = 1000;
-const DEVOTED_CLICKS = 10000;
 // Consecutive-day visit streak for the "Regular" achievement.
 const REGULAR_STREAK_DAYS = 7;
 // Cumulative visible time for night-owl.  Counted via a setInterval

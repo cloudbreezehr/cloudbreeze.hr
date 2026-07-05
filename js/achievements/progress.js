@@ -35,6 +35,10 @@ const PERSISTENT_DAYS = 3;
 const TENACIOUS_DAYS = 7;
 const JELLYFISH_PULSES_TOTAL = 5;
 const PAPER_STROKES_TOTAL = 10;
+// Lifetime-click milestones. Exported so the tracker fires the unlock at the
+// same threshold the progress bar fills to — one source for both.
+export const PERSISTENT_CLICKS = 1000;
+export const DEVOTED_CLICKS = 10000;
 
 export const PROGRESS_ITEMS = {
   "idle-animations": () => IDLE_ANIMATION_NAMES,
@@ -102,6 +106,14 @@ export const PROGRESS_COUNTS = {
   "paper-strokes": {
     current: () => storage.getCounter("paperStrokes"),
     total: () => PAPER_STROKES_TOTAL,
+  },
+  "clicks-1000": {
+    current: () => storage.getCounter("totalClicks"),
+    total: () => PERSISTENT_CLICKS,
+  },
+  "clicks-10000": {
+    current: () => storage.getCounter("totalClicks"),
+    total: () => DEVOTED_CLICKS,
   },
   "deep-sea-set": {
     current: () => countSetUnlocked("deep-sea"),
