@@ -13,10 +13,9 @@ import { localDayPhase } from "./local.js";
 import { currentLocation } from "./geolocate.js";
 import { fetchWeather } from "./weather.js";
 import {
-  mountLocationControls,
+  createLocationPin,
   usePreciseLocationIfGranted,
-} from "./location-prompt.js";
-import { isReturnVisit } from "../visit.js";
+} from "./location-pin.js";
 import { bindClickable } from "../clickable.js";
 
 // Sky phases move on the scale of minutes.
@@ -38,14 +37,28 @@ function applyPhase(getLocation) {
 // canvas, the real moon (via the `sky-revealed` class the render loop reads).
 // The moon is deterministic, so it reveals on the toggle even offline; the
 // weather line is best-effort on top, fetched once on the first peek.
-function initWeatherBadge(getLocation, badge) {
+function initWeatherBadge(getLocation, badge, pin) {
   if (!badge) return null;
-  const baseText = badge.textContent;
+
+  // Badge text lives in its own span so the location pin (a sibling) survives
+  // the text swap on reveal/fold, which only rewrites this span.
+  const textEl = document.createElement("span");
+  textEl.className = "footer-badge-text";
+  textEl.textContent = badge.textContent;
+  badge.textContent = "";
+  badge.appendChild(textEl);
+  const baseText = textEl.textContent;
+  if (pin) badge.appendChild(pin.el);
+
   let weatherLine = null;
   let revealed = false;
   let fetching = false;
-  let firstRevealHandler = null;
-  let firstRevealed = false;
+
+  // The pin belongs with the expanded, weather-showing badge — it refines that
+  // very weather, so it only appears once there's weather to refine.
+  function syncPin() {
+    pin?.setVisible(revealed && weatherLine !== null);
+  }
 
   async function loadWeather() {
     if (fetching) return;
@@ -62,17 +75,17 @@ function initWeatherBadge(getLocation, badge) {
     } over ${location.label}`;
     emit("real-weather", { code: weather.code, raining: weather.raining });
     // Still the active view when the answer arrives? Paint it in.
-    if (revealed) badge.textContent = weatherLine;
+    if (revealed) {
+      textEl.textContent = weatherLine;
+      syncPin();
+    }
   }
 
   bindClickable(badge, () => {
     revealed = !revealed;
     document.body.classList.toggle("sky-revealed", revealed);
-    badge.textContent = revealed && weatherLine ? weatherLine : baseText;
-    if (revealed && !firstRevealed) {
-      firstRevealed = true;
-      firstRevealHandler?.();
-    }
+    textEl.textContent = revealed && weatherLine ? weatherLine : baseText;
+    syncPin();
     if (revealed && weatherLine === null) loadWeather();
   });
 
@@ -82,12 +95,9 @@ function initWeatherBadge(getLocation, badge) {
     refreshForNewLocation() {
       weatherLine = null;
       if (revealed) {
-        badge.textContent = baseText;
+        textEl.textContent = baseText;
         loadWeather();
       }
-    },
-    onFirstReveal(handler) {
-      firstRevealHandler = handler;
     },
   };
 }
@@ -112,31 +122,27 @@ export function initRealSky(getLocation = currentLocation) {
   });
 
   const badge = document.querySelector(".footer-badge");
-  const weather = initWeatherBadge(getLocation, badge);
 
   // Refresh the location-derived surfaces after an in-place upgrade. Phase is
   // the only one up before the badge is peeked; the moon reads the shared
   // location live when it renders, and the weather line reloads on demand.
+  let weather = null;
   const onUpgrade = () => {
     weather?.refreshForNewLocation();
     applyPhase(getLocation);
   };
 
-  let controls = null;
-  // A returning granter's fix is used silently from load. Otherwise, on a
-  // return visit (never the first — keep that corner clean), mount the floating
-  // button and, the first time the sky is peeked, nudge with the popover once;
-  // the button remains as the quiet, always-available way in.
+  const pin = badge ? createLocationPin({ onUpgrade }) : null;
+  weather = initWeatherBadge(getLocation, badge, pin);
+
+  // A returning granter's fix is used silently from load — no pin needed then.
   usePreciseLocationIfGranted(onUpgrade).then((upgraded) => {
-    if (upgraded || !isReturnVisit()) return;
-    controls = mountLocationControls({ onUpgrade });
-    weather?.onFirstReveal(() => controls.offerOnce());
+    if (upgraded) pin?.retire();
   });
 
   return function cleanup() {
     clearInterval(phaseTimer);
     delete document.body.dataset.skyPhase;
     document.body.classList.remove("sky-revealed");
-    controls?.destroy();
   };
 }

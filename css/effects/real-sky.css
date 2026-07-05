@@ -21,101 +21,30 @@ body:not([data-active-theme])[data-sky-phase="night"] #bg-canvas {
   filter: saturate(1.06) brightness(0.97);
 }
 
-/* ── Precise-Location Controls ── */
-/* Faint floating corner button — the always-available way to enable precise
-   location, kept clear of the footer text. Passive at rest, brightening on
-   hover/focus so it never competes with the page. */
-.location-button {
-  position: fixed;
-  right: 0.9rem;
-  bottom: 0.9rem;
-  z-index: var(--z-panel);
-  display: flex;
+/* ── Precise-Location Pin ── */
+/* Inline in the expanded "Systems online" badge (a flex row), so it sits with
+   the weather it refines. Passive at rest, brightening on hover/focus. */
+.location-pin {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
   padding: 0;
-  background: rgba(var(--ink-rgb), 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.55);
-  opacity: 0.35;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  cursor: pointer;
-  transition:
-    opacity 0.2s,
-    color 0.2s,
-    transform 0.2s;
-}
-.location-button:hover,
-.location-button:focus-visible {
-  opacity: 1;
-  color: #fff;
-  transform: translateY(-1px);
-}
-.location-button svg {
-  width: 16px;
-  height: 16px;
-}
-body.light-appearance .location-button {
-  color: rgba(var(--ink-rgb), 0.6);
-  border-color: rgba(0, 0, 0, 0.14);
-}
-
-/* One-time card offering the GPS upgrade, pinned above the weather badge
-   (JS sets left/bottom from the badge's rect). */
-.location-prompt {
-  position: fixed;
-  z-index: var(--z-tooltip);
-  max-width: 260px;
-  padding: 14px 16px;
-  background: rgba(var(--ink-rgb), 0.96);
-  border: 1px solid rgba(var(--theme-glow), 0.35);
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
-  color: rgba(255, 255, 255, 0.9);
-  font-family: "DM Mono", monospace;
-  font-size: 0.72rem;
-  line-height: 1.5;
-  letter-spacing: 0.02em;
-}
-.location-prompt-msg {
-  margin: 0 0 12px;
-}
-.location-prompt-enable {
-  font: inherit;
-  color: rgb(var(--ink-rgb));
-  background: rgb(var(--theme-glow));
-  border: none;
-  border-radius: 6px;
-  padding: 6px 14px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: filter 0.15s ease;
-}
-.location-prompt-enable:hover {
-  filter: brightness(1.1);
-}
-.location-prompt-enable:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
-.location-prompt-dismiss {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  font: inherit;
-  font-size: 0.95rem;
-  line-height: 1;
-  color: rgba(255, 255, 255, 0.5);
   background: none;
   border: none;
-  padding: 2px 4px;
+  line-height: 0;
+  color: rgba(var(--theme-glow), 0.55);
   cursor: pointer;
+  transition: color 0.15s ease;
 }
-.location-prompt-dismiss:hover {
-  color: rgba(255, 255, 255, 0.85);
+.location-pin:hover,
+.location-pin:focus-visible {
+  color: rgb(var(--theme-glow));
+}
+.location-pin svg {
+  width: 12px;
+  height: 12px;
+  display: block;
+}
+/* Beat the `display: inline-flex` above so the `hidden` attribute still hides. */
+.location-pin[hidden] {
+  display: none;
 }
