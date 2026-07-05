@@ -162,7 +162,8 @@ describe("achievements/ui/cards", () => {
       }
     });
 
-    it("shows a re-earn tally on an achievement earned more than once", () => {
+    it("shows a re-earn tally on an achievement earned more than once (dev mode)", () => {
+      document.body.classList.add("dev-active");
       storage.unlock("first-light");
       storage.bumpTrigger("first-light");
       storage.bumpTrigger("first-light");
@@ -176,7 +177,8 @@ describe("achievements/ui/cards", () => {
       expect(tally.textContent).toBe("×3");
     });
 
-    it("shows no tally when earned only once", () => {
+    it("shows no tally when earned only once, even in dev mode", () => {
+      document.body.classList.add("dev-active");
       storage.unlock("first-light");
       storage.bumpTrigger("first-light");
       mod.renderSections(container);
@@ -186,7 +188,26 @@ describe("achievements/ui/cards", () => {
       expect(card.querySelector(".achievement-card-tally")).toBeNull();
     });
 
-    it("live-updates one card's tally without a re-render", () => {
+    it("hides the tally unless the dev console is active", () => {
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      storage.bumpTrigger("first-light"); // count 2, but no dev-active
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.querySelector(".achievement-card-tally")).toBeNull();
+
+      // Turning dev mode on surfaces it on the next live refresh.
+      document.body.classList.add("dev-active");
+      mod.refreshCardTally("first-light");
+      expect(card.querySelector(".achievement-card-tally").textContent).toBe(
+        "×2",
+      );
+    });
+
+    it("live-updates one card's tally without a re-render (dev mode)", () => {
+      document.body.classList.add("dev-active");
       storage.unlock("first-light");
       storage.bumpTrigger("first-light");
       mod.renderSections(container);

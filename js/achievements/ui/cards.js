@@ -147,10 +147,18 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 // Sync a card title's re-earn tally (the ×N badge) to the stored trigger
 // count: create it, update it, or drop it. Shared by the full render and the
 // live per-card refresh so repeats update without rebuilding the panel.
+//
+// Dev-gated while the feature bakes: the tally only shows when the dev console
+// is active (body.dev-active). A later home for this gate could be a completion
+// check (e.g. only at 100%).
+function tallyVisible() {
+  return document.body.classList.contains("dev-active");
+}
+
 function applyCardTally(titleEl, id) {
   let tally = titleEl.querySelector(".achievement-card-tally");
   const times = storage.getTriggerCount(id);
-  if (times > 1) {
+  if (times > 1 && tallyVisible()) {
     if (!tally) {
       tally = document.createElement("span");
       tally.className = "achievement-card-tally";
