@@ -421,6 +421,34 @@ describe("achievements/ui/panel", () => {
     });
   });
 
+  describe("new-since badge", () => {
+    it('shows "+N new" for unlocks since the last close', () => {
+      storage.setPref(storage.LAST_PANEL_CLOSE_PREF, Date.now() - 60_000);
+      storage.unlock("first-light");
+      storage.unlock("spark");
+      mod.openPanel();
+      const badge = document.querySelector(".achievement-new-since");
+      expect(badge.textContent).toBe("+2 new");
+    });
+
+    it("stays empty on a first visit with no prior close", () => {
+      storage.unlock("first-light");
+      mod.openPanel();
+      const badge = document.querySelector(".achievement-new-since");
+      expect(badge.textContent).toBe("");
+    });
+  });
+
+  it("keeps the footer count numeric after a refresh", () => {
+    // Regression: reachableCounts returns core/bonus fields; a stale
+    // {unlocked,total} destructure in refreshPanel would print "undefined".
+    storage.unlock("first-light");
+    mod.openPanel();
+    mod.refreshPanel();
+    const count = document.querySelector(".achievement-count-total");
+    expect(count.textContent).toMatch(/^\d+\/\d+$/);
+  });
+
   describe("completionPercent", () => {
     it("scales with core progress and tops out at 100 with bonus ignored", () => {
       expect(

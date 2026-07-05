@@ -163,6 +163,22 @@ nav.nav-light .achievement-btn::after {
   color: var(--sky-3, #7dbfe8);
   letter-spacing: 0.05em;
 }
+/* "+N new" since last visit — a small theme-tinted pill; hidden when nothing's
+   new so it never nags on a repeat open. */
+.achievement-new-since {
+  font-family: "DM Mono", monospace;
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: rgb(var(--theme-glow));
+  background: rgba(var(--theme-glow), 0.14);
+  border-radius: 999px;
+  padding: 1px 7px;
+  white-space: nowrap;
+}
+.achievement-new-since:empty {
+  display: none;
+}
 /* Overall completion strip — full-width under the title row. */
 .achievement-progress-strip {
   width: 100%;

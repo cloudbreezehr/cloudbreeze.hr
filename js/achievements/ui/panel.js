@@ -158,6 +158,26 @@ function paintProgressStrip(strip) {
   );
 }
 
+// Paint the "+N new" badge — achievements unlocked since the panel last closed.
+// Keys off the same close timestamp the per-card just-unlocked reveal uses, so
+// the header total and the highlighted cards agree. Empty (hidden via :empty
+// CSS) on a first visit or when nothing's new.
+function paintNewSince(el) {
+  if (!el) return;
+  const sinceTs = storage.getPref(storage.LAST_PANEL_CLOSE_PREF, null);
+  let count = 0;
+  if (sinceTs != null) {
+    for (const u of storage.getUnlocked()) {
+      if (u.ts != null && u.ts > sinceTs) count++;
+    }
+  }
+  el.textContent = count > 0 ? `+${count} new` : "";
+  el.setAttribute(
+    "data-tooltip",
+    count > 0 ? `${count} unlocked since your last visit` : "",
+  );
+}
+
 // Paint the "Last: <title> · <relative time>" caption from the most
 // recently unlocked achievement.  Stays empty (and display:none via the
 // :empty CSS) when nothing's unlocked yet.
@@ -474,7 +494,12 @@ function buildPanel(onHide) {
   pointsEl.className = "achievement-points-total";
   pointsEl.textContent = `${totalPoints()} pts`;
 
+  const newSince = document.createElement("span");
+  newSince.className = "achievement-new-since";
+  paintNewSince(newSince);
+
   titleRow.appendChild(title);
+  titleRow.appendChild(newSince);
   titleRow.appendChild(pointsEl);
 
   // Overall completion strip — turns the bare "12/26" count into a
@@ -693,14 +718,15 @@ export function refreshPanel() {
   const pointsEl = panelEl.querySelector(".achievement-points-total");
   if (pointsEl) pointsEl.textContent = `${totalPoints()} pts`;
   paintProgressStrip(panelEl.querySelector(".achievement-progress-strip"));
+  paintNewSince(panelEl.querySelector(".achievement-new-since"));
   paintLastUnlocked(panelEl.querySelector(".achievement-last-unlocked"));
   const countEl = panelEl.querySelector(".achievement-count-total");
   if (countEl) {
-    const { unlocked, total } = reachableCounts();
-    countEl.textContent = `${unlocked}/${total}`;
+    const { coreUnlocked, coreTotal } = reachableCounts();
+    countEl.textContent = `${coreUnlocked}/${coreTotal}`;
     countEl.setAttribute(
       "data-tooltip",
-      `Earned ${unlocked} of ${total} achievements`,
+      `Earned ${coreUnlocked} of ${coreTotal} achievements`,
     );
   }
 
