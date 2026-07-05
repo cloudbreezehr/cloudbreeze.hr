@@ -148,9 +148,10 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 // count: create it, update it, or drop it. Shared by the full render and the
 // live per-card refresh so repeats update without rebuilding the panel.
 //
-// Dev-gated while the feature bakes: the tally only shows when the dev console
-// is active (body.dev-active). A later home for this gate could be a completion
-// check (e.g. only at 100%).
+// Whether the re-earn tally should show. Gated to the dev console
+// (body.dev-active) while the feature bakes; the condition is expected to
+// change (e.g. only past 100% completion), so callers ask this rather than
+// testing the class themselves.
 function tallyVisible() {
   return document.body.classList.contains("dev-active");
 }
@@ -205,11 +206,11 @@ function updateCardProgress(card, progressKey) {
 }
 
 // Refresh the live-changing bits of the open panel in place — any progress
-// line/bar and (in dev) the re-earn tally. The single home for "keep an open
-// card current", so new live bits extend here rather than adding a per-bit
-// refresh path. Kept cheap enough to run per throttle tick regardless of which
-// event fired: it reaches only the cards that *have* a live bit, never scans
-// the whole panel, and skips the tally half entirely outside dev mode.
+// line/bar and the re-earn tally. The single home for "keep an open card
+// current", so new live bits extend here rather than adding a per-bit refresh
+// path. Kept cheap enough to run per throttle tick regardless of which event
+// fired: it reaches only the cards that *have* a live bit, never scans the
+// whole panel, and skips the tally half entirely when the tally isn't shown.
 export function refreshDynamicCardState() {
   const panelEl = _getPanelEl();
   if (!panelEl || !_isPanelOpen()) return;
@@ -225,8 +226,8 @@ export function refreshDynamicCardState() {
     if (ach && ach.progressKey) updateCardProgress(card, ach.progressKey);
   }
 
-  // Tally: dev-only, so the whole scan is skipped for everyone else. (Turning
-  // dev off is handled by a full refresh, which strips any shown tallies.)
+  // Tally: skipped entirely when it isn't being shown, so the common case pays
+  // nothing to scan for it.
   if (!tallyVisible()) return;
   for (const card of panelEl.querySelectorAll(
     ".achievement-card.unlocked[data-id]",
