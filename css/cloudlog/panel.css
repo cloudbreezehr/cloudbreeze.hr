@@ -120,8 +120,8 @@ nav.nav-light .achievement-btn::after {
   height: 100vh;
   height: 100dvh;
   background: rgba(var(--ink-rgb), 0.92);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-left: 1px solid rgba(255, 255, 255, 0.08);
   z-index: var(--z-panel);
   display: flex;

@@ -64,9 +64,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.35);
-  background: rgba(var(--ink-rgb), 0.92);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(var(--ink-rgb), 0.96);
 }
 body.light-appearance .activity-group-header {
   color: rgba(var(--ink-rgb), 0.45);
