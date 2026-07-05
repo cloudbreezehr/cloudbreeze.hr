@@ -144,6 +144,36 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 
 // ── Section helpers ──
 
+// Sync a card title's re-earn tally (the ×N badge) to the stored trigger
+// count: create it, update it, or drop it. Shared by the full render and the
+// live per-card refresh so repeats update without rebuilding the panel.
+function applyCardTally(titleEl, id) {
+  let tally = titleEl.querySelector(".achievement-card-tally");
+  const times = storage.getTriggerCount(id);
+  if (times > 1) {
+    if (!tally) {
+      tally = document.createElement("span");
+      tally.className = "achievement-card-tally";
+      titleEl.appendChild(tally);
+    }
+    tally.textContent = `×${times}`;
+    tally.setAttribute("data-tooltip", `Earned ${times} times`);
+  } else if (tally) {
+    tally.remove();
+  }
+}
+
+// Live-update one card's tally on a repeat earn — cheap enough to run on every
+// re-trigger (a click, a re-cast) while the panel is open. No-op when closed or
+// when the card isn't currently rendered.
+export function refreshCardTally(id) {
+  const panelEl = _getPanelEl();
+  if (!panelEl || !_isPanelOpen()) return;
+  const card = panelEl.querySelector(`.achievement-card[data-id="${id}"]`);
+  const title = card && card.querySelector(".achievement-card-title");
+  if (title) applyCardTally(title, id);
+}
+
 // Core-only, so a set's bar can actually complete: bonus entries are
 // un-schedulable extras that push past 100%, not gate a set at "5 / 9".
 function setCountForSet(setId) {
@@ -579,16 +609,7 @@ export function renderSections(container) {
 
       // Re-earn tally: achievements you can trigger again (a theme, a spell)
       // show how many times you have. Once-only ones stay at 1 and show nothing.
-      if (isUnlocked) {
-        const times = storage.getTriggerCount(ach.id);
-        if (times > 1) {
-          const tally = document.createElement("span");
-          tally.className = "achievement-card-tally";
-          tally.textContent = `×${times}`;
-          tally.setAttribute("data-tooltip", `Earned ${times} times`);
-          cardTitle.appendChild(tally);
-        }
-      }
+      if (isUnlocked) applyCardTally(cardTitle, ach.id);
 
       text.appendChild(cardTitle);
       text.appendChild(cardDesc);
@@ -785,7 +806,11 @@ export function refreshCard(achievementId) {
 
   // Update text
   const title = card.querySelector(".achievement-card-title");
-  if (title) title.textContent = ach.title;
+  if (title) {
+    // textContent reset drops any prior tally span — re-apply from the count.
+    title.textContent = ach.title;
+    applyCardTally(title, achievementId);
+  }
   const desc = card.querySelector(".achievement-card-desc");
   if (desc) desc.textContent = ach.description;
 

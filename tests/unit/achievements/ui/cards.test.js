@@ -186,6 +186,30 @@ describe("achievements/ui/cards", () => {
       expect(card.querySelector(".achievement-card-tally")).toBeNull();
     });
 
+    it("live-updates one card's tally without a re-render", () => {
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.querySelector(".achievement-card-tally")).toBeNull();
+
+      // A repeat earn bumps the count; the live refresh should surface it in
+      // place, and grow it on further repeats.
+      storage.bumpTrigger("first-light"); // now 2
+      mod.refreshCardTally("first-light");
+      expect(card.querySelector(".achievement-card-tally").textContent).toBe(
+        "×2",
+      );
+
+      storage.bumpTrigger("first-light"); // now 3
+      mod.refreshCardTally("first-light");
+      expect(card.querySelector(".achievement-card-tally").textContent).toBe(
+        "×3",
+      );
+    });
+
     it("renders the intro card while unlocked count is at or below the threshold", () => {
       mod.renderSections(container);
       expect(container.querySelector(".achievement-intro-card")).not.toBeNull();

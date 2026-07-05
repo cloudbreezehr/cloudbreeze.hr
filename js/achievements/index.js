@@ -18,6 +18,7 @@ import {
   setActiveTab,
   getActiveTab,
   refreshPanel,
+  refreshCardTally,
   updateBadge,
   scrollToCard,
   onAchievementUnlocked,
@@ -87,7 +88,13 @@ export function initAchievements() {
         new CustomEvent("analytics-relock", { detail: { achievement } }),
       );
     }
-    tracker = createTracker(onUnlock, onRelock);
+    // A repeat earn only bumps the tally; live-update that one card's ×N so an
+    // open panel tracks re-triggers without a full re-render. Self-guards when
+    // the panel is closed.
+    function onRepeat(id) {
+      refreshCardTally(id);
+    }
+    tracker = createTracker(onUnlock, onRelock, onRepeat);
     tracker.start();
   }
 
