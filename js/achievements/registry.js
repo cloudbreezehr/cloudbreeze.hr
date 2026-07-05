@@ -1552,6 +1552,8 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   // ── Exploration: Real Sky ──
+  // Ones tied to a real-world moment no one can schedule carry `bonus: true`
+  // (see isBonus) — outside the core 100%, pushing completion past it.
   {
     id: "moonstruck",
     title: "Moonstruck",
@@ -1560,6 +1562,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    bonus: true,
   },
   {
     id: "star-shower",
@@ -1569,6 +1572,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    bonus: true,
   },
   {
     id: "sun-stands-still",
@@ -1578,6 +1582,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    bonus: true,
   },
   {
     id: "equal-night",
@@ -1587,6 +1592,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    bonus: true,
   },
   {
     id: "rain-check",
@@ -1741,6 +1747,16 @@ export function getReachableAchievements() {
 }
 
 /**
+ * Whether an achievement sits outside the core 100% — tied to a real-world
+ * moment that can't be scheduled (a solstice, a full moon), so it's an extra
+ * that pushes completion *past* 100% rather than gating it. Kept out of every
+ * core denominator (completionist, the completion strip, the speedrun finish).
+ */
+export function isBonus(achievement) {
+  return achievement.bonus === true;
+}
+
+/**
  * Sum point values for a list of unlocked entries [{id, ts}, ...].
  */
 export function sumPoints(unlockedList) {
@@ -1792,13 +1808,15 @@ export function getSetPrereqs(setId) {
 }
 
 /**
- * Get all non-meta achievement IDs (for completionist check). Excludes entries
- * unreachable on this device so set-mastery and completionist stay earnable.
+ * Get all core non-meta achievement IDs (for the completionist check and the
+ * completion strip's denominator). Excludes device-unreachable entries so
+ * completion stays earnable, and bonus entries so the un-schedulable ones don't
+ * gate 100% — they push past it instead.
  */
 export function getAllNonMeta() {
-  return ACHIEVEMENTS.filter((a) => a.set !== "meta" && isReachable(a)).map(
-    (a) => a.id,
-  );
+  return ACHIEVEMENTS.filter(
+    (a) => a.set !== "meta" && !a.bonus && isReachable(a),
+  ).map((a) => a.id);
 }
 
 /**

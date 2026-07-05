@@ -11,6 +11,7 @@ import {
   getAllNonMeta,
   getReachableAchievements,
   isReachable,
+  isBonus,
   isThemeSet,
   getProgressiveAchievements,
 } from "../../../js/achievements/registry.js";
@@ -252,11 +253,33 @@ describe("getSetPrereqs", () => {
 });
 
 describe("getAllNonMeta", () => {
-  it("excludes meta-set achievements", () => {
+  it("holds exactly the reachable, non-meta, non-bonus achievements", () => {
     const nonMeta = new Set(getAllNonMeta());
     for (const a of ACHIEVEMENTS) {
-      if (a.set === "meta") expect(nonMeta.has(a.id)).toBe(false);
-      else expect(nonMeta.has(a.id)).toBe(true);
+      const shouldCount = a.set !== "meta" && !a.bonus && isReachable(a);
+      expect(nonMeta.has(a.id)).toBe(shouldCount);
+    }
+  });
+
+  it("excludes every bonus achievement so they can't gate 100%", () => {
+    const nonMeta = new Set(getAllNonMeta());
+    const bonus = ACHIEVEMENTS.filter(isBonus);
+    expect(bonus.length).toBeGreaterThan(0);
+    for (const a of bonus) expect(nonMeta.has(a.id)).toBe(false);
+  });
+});
+
+describe("isBonus", () => {
+  it("flags only achievements with the bonus field", () => {
+    for (const a of ACHIEVEMENTS) {
+      expect(isBonus(a)).toBe(a.bonus === true);
+    }
+  });
+
+  it("every bonus achievement lives in the Almanac set", () => {
+    // Bonus is an Almanac-only concept today; this guards a stray tag elsewhere.
+    for (const a of ACHIEVEMENTS.filter(isBonus)) {
+      expect(a.set).toBe("almanac");
     }
   });
 });

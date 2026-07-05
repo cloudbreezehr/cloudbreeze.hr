@@ -420,4 +420,66 @@ describe("achievements/ui/panel", () => {
       ).toHaveLength(1);
     });
   });
+
+  describe("completionPercent", () => {
+    it("scales with core progress and tops out at 100 with bonus ignored", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 0,
+          coreTotal: 50,
+          bonusUnlocked: 0,
+        }),
+      ).toBe(0);
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 25,
+          coreTotal: 50,
+          bonusUnlocked: 0,
+        }),
+      ).toBe(50);
+      // Bonus never counts while core is unfinished — it can't mask a gap.
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 49,
+          coreTotal: 50,
+          bonusUnlocked: 4,
+        }),
+      ).toBe(98);
+    });
+
+    it("pushes past 100 once core is complete, each bonus a core-sized slice", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 50,
+          coreTotal: 50,
+          bonusUnlocked: 0,
+        }),
+      ).toBe(100);
+      // +1 bonus over 50 core ≈ +2% → 102.
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 50,
+          coreTotal: 50,
+          bonusUnlocked: 1,
+        }),
+      ).toBe(102);
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 50,
+          coreTotal: 50,
+          bonusUnlocked: 4,
+        }),
+      ).toBe(108);
+    });
+
+    it("is zero when there is nothing to complete", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 0,
+          coreTotal: 0,
+          bonusUnlocked: 3,
+        }),
+      ).toBe(0);
+    });
+  });
 });

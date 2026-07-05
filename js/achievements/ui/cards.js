@@ -13,6 +13,7 @@ import {
   SETS,
   getAchievement,
   getReachableAchievements,
+  isBonus,
   isThemeSet,
 } from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
@@ -143,8 +144,12 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 
 // ── Section helpers ──
 
+// Core-only, so a set's bar can actually complete: bonus entries are
+// un-schedulable extras that push past 100%, not gate a set at "5 / 9".
 function setCountForSet(setId) {
-  const all = getReachableAchievements().filter((a) => a.set === setId);
+  const all = getReachableAchievements().filter(
+    (a) => a.set === setId && !isBonus(a),
+  );
   const unlocked = all.filter((a) => storage.isUnlocked(a.id));
   return { total: all.length, unlocked: unlocked.length };
 }

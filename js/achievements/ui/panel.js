@@ -8,6 +8,7 @@
 
 import {
   getReachableAchievements,
+  isBonus,
   sumPoints,
   getAchievement,
 } from "../registry.js";
@@ -109,29 +110,52 @@ function totalPoints() {
 }
 
 // Completion counts scoped to what this device can earn, so a touch-only
-// device isn't held below 100% by keyboard/hover-only achievements (and a
-// bonus unlock of one — e.g. on a hybrid — can't push the count past total).
+// device isn't held below 100% by achievements it can't reach. Core (the 100%
+// denominator) and bonus are split: bonus is un-schedulable, so it never gates
+// completion — it pushes past it once core is done.
 function reachableCounts() {
-  const reachable = getReachableAchievements();
-  const ids = new Set(reachable.map((a) => a.id));
-  const unlocked = storage.getUnlocked().filter((u) => ids.has(u.id)).length;
-  return { unlocked, total: reachable.length };
+  const unlockedIds = new Set(storage.getUnlocked().map((u) => u.id));
+  let coreTotal = 0;
+  let coreUnlocked = 0;
+  let bonusUnlocked = 0;
+  for (const a of getReachableAchievements()) {
+    if (isBonus(a)) {
+      if (unlockedIds.has(a.id)) bonusUnlocked++;
+    } else {
+      coreTotal++;
+      if (unlockedIds.has(a.id)) coreUnlocked++;
+    }
+  }
+  return { coreUnlocked, coreTotal, bonusUnlocked };
 }
 
-// Paint the overall-completion strip: fill width = unlocked / total,
-// plus an accessible label.  Re-callable so refreshPanel keeps it
-// current as unlocks land.
+// Completion percent. Core alone tops out at 100%; bonus counts only once core
+// is complete, so those un-schedulable secrets push the number past 100 (each
+// worth the same slice a core one would) rather than masking missing core.
+export function completionPercent({ coreUnlocked, coreTotal, bonusUnlocked }) {
+  if (coreTotal <= 0) return 0;
+  const earned = coreUnlocked + (coreUnlocked >= coreTotal ? bonusUnlocked : 0);
+  return Math.round((earned / coreTotal) * 100);
+}
+
+// Paint the overall-completion strip: fill width tracks the percent (capped at
+// full even when bonus pushes the number past 100), plus an accessible label.
+// Re-callable so refreshPanel keeps it current as unlocks land.
 function paintProgressStrip(strip) {
   if (!strip) return;
   const fill = strip.querySelector(".achievement-progress-strip-fill");
-  const { unlocked, total } = reachableCounts();
-  const pct = total > 0 ? Math.round((unlocked / total) * 100) : 0;
-  if (fill) fill.style.width = `${pct}%`;
+  const pct = completionPercent(reachableCounts());
+  if (fill) fill.style.width = `${Math.min(pct, 100)}%`;
   strip.setAttribute("role", "progressbar");
   strip.setAttribute("aria-valuemin", "0");
-  strip.setAttribute("aria-valuemax", "100");
+  strip.setAttribute("aria-valuemax", String(Math.max(100, pct)));
   strip.setAttribute("aria-valuenow", String(pct));
-  strip.setAttribute("aria-label", `${pct}% of achievements unlocked`);
+  strip.setAttribute(
+    "aria-label",
+    pct > 100
+      ? `${pct}% — every secret found`
+      : `${pct}% of achievements unlocked`,
+  );
 }
 
 // Paint the "Last: <title> · <relative time>" caption from the most
@@ -619,11 +643,12 @@ function buildPanel(onHide) {
 
   const countEl = document.createElement("span");
   countEl.className = "achievement-count-total";
-  const { unlocked, total } = reachableCounts();
-  countEl.textContent = `${unlocked}/${total}`;
+  // Core count only — bonus is a surprise beyond 100%, surfaced in the strip.
+  const { coreUnlocked, coreTotal } = reachableCounts();
+  countEl.textContent = `${coreUnlocked}/${coreTotal}`;
   countEl.setAttribute(
     "data-tooltip",
-    `Earned ${unlocked} of ${total} achievements`,
+    `Earned ${coreUnlocked} of ${coreTotal} achievements`,
   );
 
   const importInput = buildImportInput();
