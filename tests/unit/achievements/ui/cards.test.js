@@ -162,6 +162,30 @@ describe("achievements/ui/cards", () => {
       }
     });
 
+    it("shows a re-earn tally on an achievement earned more than once", () => {
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      storage.bumpTrigger("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      const tally = card.querySelector(".achievement-card-tally");
+      expect(tally).toBeTruthy();
+      expect(tally.textContent).toBe("×3");
+    });
+
+    it("shows no tally when earned only once", () => {
+      storage.unlock("first-light");
+      storage.bumpTrigger("first-light");
+      mod.renderSections(container);
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.querySelector(".achievement-card-tally")).toBeNull();
+    });
+
     it("renders the intro card while unlocked count is at or below the threshold", () => {
       mod.renderSections(container);
       expect(container.querySelector(".achievement-intro-card")).not.toBeNull();

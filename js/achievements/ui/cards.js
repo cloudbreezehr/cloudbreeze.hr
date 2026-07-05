@@ -577,6 +577,19 @@ export function renderSections(container) {
         cardDesc.textContent = ach.description;
       }
 
+      // Re-earn tally: achievements you can trigger again (a theme, a spell)
+      // show how many times you have. Once-only ones stay at 1 and show nothing.
+      if (isUnlocked) {
+        const times = storage.getTriggerCount(ach.id);
+        if (times > 1) {
+          const tally = document.createElement("span");
+          tally.className = "achievement-card-tally";
+          tally.textContent = `×${times}`;
+          tally.setAttribute("data-tooltip", `Earned ${times} times`);
+          cardTitle.appendChild(tally);
+        }
+      }
+
       text.appendChild(cardTitle);
       text.appendChild(cardDesc);
 

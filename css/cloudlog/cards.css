@@ -364,6 +364,15 @@ body.light-appearance .achievement-search-input {
 .achievement-card.hidden-ach .achievement-card-title {
   color: rgba(255, 255, 255, 0.5);
 }
+/* Re-earn tally — a quiet count riding beside the title. */
+.achievement-card-tally {
+  margin-left: 6px;
+  font-family: "DM Mono", monospace;
+  font-size: 0.55rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  vertical-align: middle;
+}
 .achievement-card-desc {
   font-family: "DM Mono", monospace;
   font-size: 0.55rem;
