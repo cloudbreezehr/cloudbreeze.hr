@@ -1643,6 +1643,12 @@ describe("tracker — real-sky handlers", () => {
     dispatchAchievement("precise-location");
     expect(storage.isUnlocked("you-are-here")).toBe(true);
   });
+
+  it("unlocks weather-eye when the forecast is opened", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("forecast-open");
+    expect(storage.isUnlocked("weather-eye")).toBe(true);
+  });
 });
 
 describe("tracker — photo-mode handlers", () => {

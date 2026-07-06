@@ -658,6 +658,10 @@ export function createTracker(onUnlock, onRelock) {
       if (data.moment === "equinox") tryUnlock("equal-night");
     },
 
+    "forecast-open"() {
+      tryUnlock("weather-eye");
+    },
+
     "real-weather"(data) {
       if (data && data.raining) tryUnlock("rain-check");
     },

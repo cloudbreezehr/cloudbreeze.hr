@@ -86,6 +86,7 @@ function initWeatherBadge(getLocation, badge, pin) {
     document.body.classList.toggle("sky-revealed", revealed);
     textEl.textContent = revealed && weatherLine ? weatherLine : baseText;
     syncPin();
+    if (revealed) emit("forecast-open");
     if (revealed && weatherLine === null) loadWeather();
   });
 

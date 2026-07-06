@@ -1525,6 +1525,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "weather-eye",
+    title: "Weather Eye",
+    description: "You checked the real sky overhead.",
+    hint: "Ask the footer for the local weather",
+    set: "exploration",
+    points: COMMON,
+    hidden: true,
+  },
+  {
     id: "you-are-here",
     title: "You Are Here",
     description: "You pinned the sky to your exact spot.",
