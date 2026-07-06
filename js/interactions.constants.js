@@ -1,8 +1,8 @@
 // ── Interactions Constants ──
 // Tunable knobs for the click / orbit / hold / well / trail / edge /
-// impulse subsystems.  Split off from interactions.js so the logic file
-// stays readable top-to-bottom; the dev console reads these via the
-// registry, no behavior change versus inlining them.
+// impulse subsystems, kept out of the logic file so it stays readable
+// top-to-bottom.  Registered rather than inlined so they're live-tunable,
+// with no behavior change versus inline literals.
 
 import { defineConstants } from "./dev/registry.js";
 

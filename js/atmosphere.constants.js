@@ -1,7 +1,7 @@
 // ── Atmosphere Constants ──
 // Tunable knobs for streaks / clouds / wisps / motes / horizon / gusts /
-// mote impulse / mote hover.  Split off from atmosphere.js so the logic
-// file stays readable top-to-bottom.
+// mote impulse / mote hover, kept out of the logic file so it stays
+// readable top-to-bottom.
 
 import { defineConstants } from "./dev/registry.js";
 

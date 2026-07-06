@@ -1,16 +1,16 @@
 // ── Scroll Bus ──
 // One window-scoped scroll listener that broadcasts {scrollY, deltaY} to
-// every subscriber.  Replaces the six independent `addEventListener("scroll")`
-// calls that all read `window.scrollY` and recompute deltas privately.
+// every subscriber, so the page has a single source of scroll state
+// instead of each consumer attaching its own listener and recomputing
+// deltas privately.
 //
 // Subscribers receive a single readonly snapshot per scroll event.  Order
 // of dispatch is registration order — but consumers must not depend on
 // it; if a future consumer needs to run before/after another, it should
 // register a coordinated handler rather than rely on incidental ordering.
 //
-// The bus reads `scrollY` once per native event and caches the
-// `lastScrollY` between dispatches, so individual subscribers no longer
-// keep their own `lastScrollY` shadow — the bus owns it.
+// The bus reads `scrollY` once per native event and owns the `lastScrollY`
+// between dispatches, so subscribers don't keep their own shadow copy.
 
 let _lastScrollY = 0;
 let _attached = false;

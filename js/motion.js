@@ -49,7 +49,6 @@
 //                             flashing/sweeping effects that dampening
 //                             can't make safe, layout-cost rAF loops
 //                             with nothing useful to do at zero budget.
-//                             Also recorded by analytics.
 //
 //   - motionScale()      Continuous scalar.  Today returns 0 or 1; the
 //                        scalar shape leaves room for intermediate

@@ -17,7 +17,7 @@ import { worldTickTime, tickToMs } from "./world/clock.js";
 import { WORLD_W, WORLD_H, floorMod, worldOrigin } from "./world/space.js";
 import { tickRoll, tickStream } from "./world/schedule.js";
 
-// The world/solo regime probe lives in world/anchor.js now; re-export it here
+// The world/solo regime probe lives in world/anchor.js; re-export it here
 // so consumers that hit-test or mirror star positions keep one import.
 export { isWorldAnchored };
 import { shootingStarBoost } from "./real-sky/boost.js";

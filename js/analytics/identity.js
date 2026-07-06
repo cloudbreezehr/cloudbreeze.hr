@@ -62,7 +62,7 @@ export function visitCount() {
 }
 
 // Bumps the count and returns the new value.  Called exactly once per tab
-// session (from the session bridge on session_start).
+// session.
 export function bumpVisitCount() {
   const next = visitCount() + 1;
   localSet(KEYS.VISIT_COUNT, String(next));

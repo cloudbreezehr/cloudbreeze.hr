@@ -83,9 +83,8 @@ const RENDER = defineConstants("canvas.render", {
 
 let canvas, ctx;
 
-// The live `forces` object, exposed for read-only pollers (the audio layer
-// drives a drag whoosh and the gravity-well hum from drag speed / well
-// strength). Null until initCanvas runs.
+// The live `forces` object, exposed for read-only pollers of drag speed /
+// well strength. Null until initCanvas runs.
 let _forces = null;
 export function getForces() {
   return _forces;
