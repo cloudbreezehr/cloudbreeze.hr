@@ -55,6 +55,30 @@ describe("url-params", () => {
     });
   });
 
+  describe("getParam — sky resolves from either query or hash", () => {
+    it("reads sky from the query string", () => {
+      location.search = "?sky=2025-06-01";
+      expect(getParam("sky")).toBe("2025-06-01");
+    });
+
+    it("reads sky from the hash fragment", () => {
+      location.hash = "#sky=2025-06-02";
+      expect(getParam("sky")).toBe("2025-06-02");
+    });
+
+    it("prefers the query over the hash when both carry sky", () => {
+      location.search = "?sky=from-query";
+      location.hash = "#sky=from-hash";
+      expect(getParam("sky")).toBe("from-query");
+    });
+
+    it("falls back to the hash when the query is empty", () => {
+      location.search = "?sky=";
+      location.hash = "#sky=from-hash";
+      expect(getParam("sky")).toBe("from-hash");
+    });
+  });
+
   describe("getParam — value from query", () => {
     it("reads and decodes a query param", () => {
       location.search = "?theme=deep%20sea";

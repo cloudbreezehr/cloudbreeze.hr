@@ -10,12 +10,14 @@ describe("daily/random", () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 6, 2, 12, 0));
     location.hash = "";
+    location.search = "";
     vi.resetModules();
     daily = await import("../../../js/daily/random.js");
   });
 
   afterEach(() => {
     location.hash = "";
+    location.search = "";
     vi.useRealTimers();
   });
 
@@ -47,6 +49,14 @@ describe("daily/random", () => {
     location.hash = "#sky=2026-07-02";
     daily._resetForTests();
     expect(daily.isTimeTraveling()).toBe(false);
+  });
+
+  it("a ?sky query seed also overrides the date", () => {
+    location.search = "?sky=2025-12-24";
+    daily._resetForTests();
+    expect(daily.skySeedKey()).toBe("2025-12-24");
+    expect(daily.isTimeTraveling()).toBe(true);
+    location.search = "";
   });
 
   it("different days give different arrangements", () => {

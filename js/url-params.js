@@ -25,7 +25,7 @@ const FLAG = "flag";
 // written back into a shareable URL — the single source buildUrl emits
 // it into.  Adding a URL parameter is one entry here.
 const PARAMS = {
-  sky: { sources: [HASH], kind: VALUE, write: HASH },
+  sky: { sources: [QUERY, HASH], kind: VALUE, write: HASH },
   dev: { sources: [HASH], kind: FLAG },
   theme: { sources: [QUERY], kind: VALUE, write: QUERY },
   finale: { sources: [QUERY], kind: FLAG },
