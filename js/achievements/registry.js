@@ -1388,6 +1388,7 @@ export const ACHIEVEMENTS = [
     set: "meta",
     points: CELESTIAL,
     hidden: true,
+    bonus: true,
   },
   {
     id: "cheat-code",
