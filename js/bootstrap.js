@@ -12,7 +12,7 @@
 // 'self' CSP — inline scripts would force 'unsafe-inline' and undo
 // most of the policy's value.
 
-import { getParam, hasFlag, onUrlChange } from "./url-params.js";
+import { getList, hasFlag, onUrlChange } from "./url-params.js";
 
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
@@ -202,24 +202,26 @@ const MODULES = [
 for (const { path, init } of MODULES) load(path, init);
 
 // ── URL-driven theme preview ──
-// The `theme` parameter (e.g. `theme=frozen`) activates the named theme on
-// load for demos and screenshots.  Silent so it doesn't award the discovery
-// achievement — this is a shortcut, not a found easter egg.  Theme toggles
-// register during each theme module's async init, so poll briefly until the
-// toggle exists rather than racing it.
+// The `theme` parameter (e.g. `theme=frozen`, or `theme=frozen,blocky` to
+// stack several) activates the named theme(s) on load for demos and
+// screenshots.  Silent so it doesn't award the discovery achievement — this
+// is a shortcut, not a found easter egg.  Theme toggles register during each
+// theme module's async init, so poll briefly until the toggle exists rather
+// than racing it.
 const THEME_PARAM_POLL_MS = 50;
 const THEME_PARAM_MAX_ATTEMPTS = 40; // poll window = POLL_MS * MAX_ATTEMPTS
-const themeParam = getParam("theme");
-if (themeParam) {
+const themeParams = getList("theme");
+if (themeParams.length) {
   load("./themes/registry.js", (m) => {
-    if (!m.isThemeRegistered(themeParam)) return;
-    let attempts = 0;
-    const poll = setInterval(() => {
-      if (m.hasToggle(themeParam) || attempts++ >= THEME_PARAM_MAX_ATTEMPTS) {
-        clearInterval(poll);
-        if (m.hasToggle(themeParam))
-          m.toggleTheme(themeParam, { silent: true });
-      }
-    }, THEME_PARAM_POLL_MS);
+    for (const id of themeParams) {
+      if (!m.isThemeRegistered(id)) continue;
+      let attempts = 0;
+      const poll = setInterval(() => {
+        if (m.hasToggle(id) || attempts++ >= THEME_PARAM_MAX_ATTEMPTS) {
+          clearInterval(poll);
+          if (m.hasToggle(id)) m.toggleTheme(id, { silent: true });
+        }
+      }, THEME_PARAM_POLL_MS);
+    }
   });
 }

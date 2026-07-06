@@ -3,6 +3,7 @@ import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import {
   getParam,
   hasFlag,
+  getList,
   buildUrl,
   onUrlChange,
 } from "../../js/url-params.js";
@@ -81,18 +82,18 @@ describe("url-params", () => {
 
   describe("getParam — value from query", () => {
     it("reads and decodes a query param", () => {
-      location.search = "?theme=deep%20sea";
-      expect(getParam("theme")).toBe("deep sea");
+      location.search = "?achievement=first%20light";
+      expect(getParam("achievement")).toBe("first light");
     });
 
     it("returns null when absent", () => {
       location.search = "?other=1";
-      expect(getParam("theme")).toBeNull();
+      expect(getParam("achievement")).toBeNull();
     });
 
     it("returns null for a present-but-empty value", () => {
-      location.search = "?theme=";
-      expect(getParam("theme")).toBeNull();
+      location.search = "?achievement=";
+      expect(getParam("achievement")).toBeNull();
     });
   });
 
@@ -121,6 +122,52 @@ describe("url-params", () => {
       location.hash = "#cloudlog-activity";
       expect(hasFlag("cloudlog-activity")).toBe(true);
       expect(hasFlag("cloudlog-achievements")).toBe(false);
+    });
+  });
+
+  describe("getList", () => {
+    it("splits a comma-separated value", () => {
+      location.search = "?theme=frozen,blocky";
+      expect(getList("theme")).toEqual(["frozen", "blocky"]);
+    });
+
+    it("gathers repeated keys", () => {
+      location.search = "?theme=frozen&theme=blocky";
+      expect(getList("theme")).toEqual(["frozen", "blocky"]);
+    });
+
+    it("reads a mix of repeated keys and comma lists", () => {
+      location.search = "?theme=frozen,blocky&theme=vhs";
+      expect(getList("theme")).toEqual(["frozen", "blocky", "vhs"]);
+    });
+
+    it("trims whitespace and drops empty entries", () => {
+      location.search = "?theme=frozen, ,blocky,";
+      expect(getList("theme")).toEqual(["frozen", "blocky"]);
+    });
+
+    it("de-dupes while preserving first-seen order", () => {
+      location.search = "?theme=frozen,blocky,frozen";
+      expect(getList("theme")).toEqual(["frozen", "blocky"]);
+    });
+
+    it("is empty when absent", () => {
+      location.search = "?other=1";
+      expect(getList("theme")).toEqual([]);
+    });
+  });
+
+  describe("kind guard", () => {
+    it("rejects reading a list through getParam", () => {
+      expect(() => getParam("theme")).toThrow(/list/);
+    });
+
+    it("rejects reading a value through getList", () => {
+      expect(() => getList("sky")).toThrow(/value/);
+    });
+
+    it("rejects an unknown parameter", () => {
+      expect(() => hasFlag("nope")).toThrow(/unknown/);
     });
   });
 

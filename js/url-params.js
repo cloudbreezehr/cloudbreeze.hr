@@ -14,25 +14,41 @@ const HASH = "hash";
 const QUERY = "query";
 
 // ── Kinds ──
-// value — key=value; resolves to the decoded string, or null when absent.
-// flag  — presence of a bare key; resolves to boolean.
+// Each parameter is one kind, read through the matching accessor:
+//   value — key=value; getParam returns the decoded string, or null.
+//   flag  — presence of a bare key; hasFlag returns a boolean.
+//   list  — repeated and/or comma-separated values; getList returns an
+//           order-preserving, de-duped array.
 const VALUE = "value";
 const FLAG = "flag";
+const LIST = "list";
 
 // ── Catalog ──
 // Each entry lists the source(s) to resolve from in precedence order
-// (the first source carrying the key wins), its kind, and — for values
-// written back into a shareable URL — the single source buildUrl emits
-// it into.  Adding a URL parameter is one entry here.
+// (the first source carrying the key wins for a single value; a list
+// gathers across every source), its kind, and — for parameters written
+// back into a shareable URL — the single source buildUrl emits it into.
+// Adding a URL parameter is one entry here.
 const PARAMS = {
   sky: { sources: [QUERY, HASH], kind: VALUE, write: HASH },
   dev: { sources: [HASH], kind: FLAG },
-  theme: { sources: [QUERY], kind: VALUE, write: QUERY },
+  theme: { sources: [QUERY], kind: LIST, write: QUERY },
   finale: { sources: [QUERY], kind: FLAG },
   achievement: { sources: [QUERY], kind: VALUE, write: QUERY },
   "cloudlog-activity": { sources: [HASH], kind: FLAG },
   "cloudlog-achievements": { sources: [HASH], kind: FLAG },
 };
+
+// Guard the accessor contract: a parameter is read only through the
+// accessor matching its declared kind, so catalog/consumer drift surfaces
+// as a clear error rather than a silently wrong value.
+function specOfKind(name, kind) {
+  const spec = PARAMS[name];
+  if (!spec) throw new Error(`[url-params] unknown parameter: ${name}`);
+  if (spec.kind !== kind)
+    throw new Error(`[url-params] ${name} is a ${spec.kind}, not a ${kind}`);
+  return spec;
+}
 
 // ── Parsing ──
 // decodeURIComponent throws on a malformed escape; a stray one in any
@@ -82,11 +98,20 @@ function readSource(source, key) {
   return { value: v === true ? "" : v };
 }
 
+// Every value a source carries for a key.  The query string can repeat a
+// key (?k=a&k=b); the fragment holds at most one.
+function readAll(source, key) {
+  if (source === QUERY) return queryParams().getAll(key);
+  const hit = readSource(HASH, key);
+  return hit ? [hit.value] : [];
+}
+
 // ── Reads ──
 
-/** Decoded value of a parameter, or null when absent / present-but-empty. */
+/** Decoded value of a value parameter, or null when absent / empty. */
 export function getParam(name) {
-  for (const source of PARAMS[name].sources) {
+  const spec = specOfKind(name, VALUE);
+  for (const source of spec.sources) {
     const hit = readSource(source, name);
     if (hit && hit.value) return hit.value;
   }
@@ -95,10 +120,31 @@ export function getParam(name) {
 
 /** True when a flag parameter is present in any of its sources. */
 export function hasFlag(name) {
-  for (const source of PARAMS[name].sources) {
+  const spec = specOfKind(name, FLAG);
+  for (const source of spec.sources) {
     if (readSource(source, name)) return true;
   }
   return false;
+}
+
+/**
+ * All values of a list parameter, gathered across every source and every
+ * repetition, each split on commas.  Order-preserving and de-duped; empty
+ * when absent.  So a single comma-separated value and a repeated key read
+ * the same, as does any mix of the two.
+ */
+export function getList(name) {
+  const spec = specOfKind(name, LIST);
+  const out = [];
+  for (const source of spec.sources) {
+    for (const raw of readAll(source, name)) {
+      for (const part of raw.split(",")) {
+        const v = part.trim();
+        if (v) out.push(v);
+      }
+    }
+  }
+  return [...new Set(out)];
 }
 
 // ── Writes ──
