@@ -276,10 +276,9 @@ describe("isBonus", () => {
     }
   });
 
-  it("every bonus achievement lives in the Almanac set", () => {
-    // Bonus is an Almanac-only concept today; this guards a stray tag elsewhere.
+  it("every bonus achievement is hidden until earned", () => {
     for (const a of ACHIEVEMENTS.filter(isBonus)) {
-      expect(a.set).toBe("almanac");
+      expect(a.hidden, a.id).toBe(true);
     }
   });
 });
