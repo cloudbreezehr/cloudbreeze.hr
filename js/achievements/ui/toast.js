@@ -251,6 +251,7 @@ function freezeProgressBar(ref) {
 // and toast click-pulse both consult this so a tier change lands in one
 // place.
 export function rarityTierFor(points) {
+  if (points >= POINT_TIERS.CELESTIAL) return "celestial";
   if (points >= POINT_TIERS.MYTHIC) return "mythic";
   if (points >= POINT_TIERS.LEGENDARY) return "legendary";
   if (points >= POINT_TIERS.EPIC) return "epic";

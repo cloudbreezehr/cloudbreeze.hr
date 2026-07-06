@@ -77,6 +77,13 @@ describe("achievements/ui/toast", () => {
       expect(mod.rarityTierFor(POINT_TIERS.MYTHIC - 1)).toEqual("legendary");
       expect(mod.rarityTierFor(POINT_TIERS.MYTHIC)).toEqual("mythic");
     });
+
+    it("returns celestial at the celestial threshold", async () => {
+      const { POINT_TIERS } =
+        await import("../../../../js/achievements/registry.js");
+      expect(mod.rarityTierFor(POINT_TIERS.CELESTIAL - 1)).toEqual("mythic");
+      expect(mod.rarityTierFor(POINT_TIERS.CELESTIAL)).toEqual("celestial");
+    });
   });
 
   describe("showCompletionShare", () => {

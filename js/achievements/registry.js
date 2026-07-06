@@ -79,6 +79,7 @@ const RARE = 25;
 const EPIC = 50;
 const LEGENDARY = 100;
 const MYTHIC = 500;
+const CELESTIAL = 1000;
 
 export const POINT_TIERS = {
   TRIVIAL,
@@ -88,6 +89,7 @@ export const POINT_TIERS = {
   EPIC,
   LEGENDARY,
   MYTHIC,
+  CELESTIAL,
 };
 
 // ── Achievement Sets ──
@@ -1397,7 +1399,7 @@ export const ACHIEVEMENTS = [
     description: "Every secret, against the clock.",
     hint: "Rediscover every secret before the clock stops",
     set: "meta",
-    points: EPIC,
+    points: CELESTIAL,
     hidden: true,
   },
   {

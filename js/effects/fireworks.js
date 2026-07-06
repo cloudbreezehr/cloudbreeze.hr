@@ -78,6 +78,7 @@ const FW = defineConstants("effects.fireworks", {
   ROCKET_COUNT_EPIC: { value: 3, min: 0, max: 30, step: 1 },
   ROCKET_COUNT_LEGENDARY: { value: 10, min: 0, max: 100, step: 1 },
   ROCKET_COUNT_MYTHIC: { value: 15, min: 0, max: 100, step: 1 },
+  ROCKET_COUNT_CELESTIAL: { value: 20, min: 0, max: 100, step: 1 },
   // Stagger between rockets in a multi-rocket launch (frames).
   ROCKET_STAGGER_FRAMES: 8,
 
@@ -744,7 +745,7 @@ export function burstFireworks(x, y, opts = {}) {
  * count mapping stays in the fireworks registry so dev-console changes to the
  * ROCKET_COUNT_* knobs apply automatically.
  *
- * @param {"epic"|"legendary"|"mythic"} tier
+ * @param {"epic"|"legendary"|"mythic"|"celestial"} tier
  * @returns {number} Number of rockets, or 0 for unrecognized tiers.
  */
 // Cap applied when the browser reports the user is on a data-saver
@@ -755,6 +756,7 @@ const DATA_SAVER_ROCKET_CAP = 1;
 export function rocketCountForTier(tier) {
   const base =
     {
+      celestial: FW.ROCKET_COUNT_CELESTIAL,
       mythic: FW.ROCKET_COUNT_MYTHIC,
       legendary: FW.ROCKET_COUNT_LEGENDARY,
       epic: FW.ROCKET_COUNT_EPIC,
