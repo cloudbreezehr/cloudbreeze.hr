@@ -1,5 +1,5 @@
 // ── Achievement UI ──
-// Facade that binds the extracted submodules together.  All DOM and
+// Facade that binds the submodules together.  All DOM and
 // behavior live in ./ui/*.js; this file exports the public API plus
 // the two lifecycle callbacks (onAchievementUnlocked,
 // onAchievementRelocked) that fan an unlock out to the toast,

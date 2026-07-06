@@ -237,7 +237,7 @@ export function createTracker(onUnlock, onRelock) {
       tryMilestone("persistent", totalClicks, PERSISTENT_CLICKS);
       tryMilestone("devoted", totalClicks, DEVOTED_CLICKS);
 
-      // Rapid fire: 10 clicks in 3 seconds
+      // Rapid fire — a burst of clicks within a short window
       const now = Date.now();
       session.clickTimestamps.push(now);
       // Prune old timestamps
@@ -849,7 +849,7 @@ export function createTracker(onUnlock, onRelock) {
     window.addEventListener("achievement", handleEvent);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    // Night owl check every 30 seconds
+    // Poll for the night-owl window while the tab is open
     setInterval(checkNightOwl, NIGHT_OWL_CHECK_INTERVAL);
 
     trackSession();

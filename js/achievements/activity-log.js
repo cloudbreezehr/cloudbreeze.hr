@@ -24,7 +24,6 @@ export const AL = defineConstants("achievements.activityLog", {
   // first since they're already out of sight.
   MAX_ENTRIES: { value: 1000, min: 10, max: 10000, step: 10 },
   // Trashed entries are permanently deleted after this many ms.
-  // Default: 7 days.
   TRASH_TTL_MS: {
     value: 604800000,
     min: 60000,
@@ -176,7 +175,7 @@ export function markAllSeen() {
 
 /**
  * Soft-delete a single entry — moves it to trash with a timestamp so it
- * can be restored within TRASH_TTL_MS.  Used by the per-row dismiss button.
+ * can be restored within TRASH_TTL_MS.
  */
 export function trash(id) {
   const entry = _entries.find((e) => e.id === id);
@@ -195,7 +194,7 @@ export function restore(id) {
   notify();
 }
 
-/** Soft-delete every active entry.  Used by the "Clear all" button. */
+/** Soft-delete every active entry. */
 export function clear() {
   const now = Date.now();
   let changed = false;
@@ -211,7 +210,7 @@ export function clear() {
   }
 }
 
-/** Hard-delete every trashed entry.  Used by the "Empty trash" button. */
+/** Hard-delete every trashed entry. */
 export function emptyTrash() {
   const before = _entries.length;
   _entries = _entries.filter((e) => !e.trashedAt);

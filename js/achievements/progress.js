@@ -35,8 +35,8 @@ const PERSISTENT_DAYS = 3;
 const TENACIOUS_DAYS = 7;
 const JELLYFISH_PULSES_TOTAL = 5;
 const PAPER_STROKES_TOTAL = 10;
-// Lifetime-click milestones. Exported so the tracker fires the unlock at the
-// same threshold the progress bar fills to — one source for both.
+// Lifetime-click milestones. Exported so the unlock and the progress bar
+// fill to the same threshold — one source for both.
 export const PERSISTENT_CLICKS = 1000;
 export const DEVOTED_CLICKS = 10000;
 

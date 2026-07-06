@@ -1,8 +1,7 @@
 // ── Focus Trap ──
-// Keeps keyboard focus inside a container while it's open.  Used by
-// the Cloudlog panel so Tab / Shift+Tab cycle through its controls
-// instead of escaping behind the panel into page content the user
-// can't see.
+// Keeps keyboard focus inside a container while it's open, so Tab /
+// Shift+Tab cycle through its controls instead of escaping behind it
+// into page content the user can't see.
 //
 // Contract:
 //   - `trapFocus(container, { initialFocus })` starts trapping and
