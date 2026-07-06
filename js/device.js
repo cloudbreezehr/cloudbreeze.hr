@@ -31,6 +31,9 @@ const CAPABILITY_AVAILABLE = {
   // devices run browsers full-screen (or in OS splits that report no
   // usable screen coordinates), so they can't exercise multi-window play.
   multiwindow: () => !isTouchOnly(),
+  // Device motion (accelerometer) is the inverse of the others: touch-only
+  // phones and tablets have it, hover-capable desktops don't.
+  motion: () => isTouchOnly(),
 };
 
 // True when the current device can exercise the named capability. Unknown

@@ -339,20 +339,30 @@ describe("device reachability", () => {
     "distant-well",
   ];
   const GATED = [...KEYBOARD_ONLY, ...HOVER_ONLY, ...MULTIWINDOW_ONLY];
+  // Motion is the inverse — reachable on touch, not on hover-capable desktops.
+  const MOTION_ONLY = ["good-vibrations"];
 
   it("tags exactly the capability-gated achievements with a requires", () => {
     const required = ACHIEVEMENTS.filter((a) => a.requires).map((a) => a.id);
-    expect(new Set(required)).toEqual(new Set(GATED));
+    expect(new Set(required)).toEqual(new Set([...GATED, ...MOTION_ONLY]));
     for (const a of ACHIEVEMENTS) {
       if (a.requires)
-        expect(["keyboard", "hover", "multiwindow"]).toContain(a.requires);
+        expect(["keyboard", "hover", "multiwindow", "motion"]).toContain(
+          a.requires,
+        );
     }
   });
 
-  it("counts every achievement as reachable on a hover-capable device", () => {
+  it("counts every achievement except motion-only as reachable on a hover-capable device", () => {
     setTouchOnly(false);
-    expect(getReachableAchievements()).toHaveLength(ACHIEVEMENTS.length);
-    for (const a of ACHIEVEMENTS) expect(isReachable(a)).toBe(true);
+    const reachableIds = new Set(getReachableAchievements().map((a) => a.id));
+    for (const id of MOTION_ONLY) expect(reachableIds.has(id), id).toBe(false);
+    expect(getReachableAchievements()).toHaveLength(
+      ACHIEVEMENTS.length - MOTION_ONLY.length,
+    );
+    for (const a of ACHIEVEMENTS) {
+      if (!MOTION_ONLY.includes(a.id)) expect(isReachable(a), a.id).toBe(true);
+    }
   });
 
   it("drops capability-gated achievements on a touch-only device", () => {
@@ -361,6 +371,7 @@ describe("device reachability", () => {
     for (const id of GATED) {
       expect(reachableIds.has(id), id).toBe(false);
     }
+    for (const id of MOTION_ONLY) expect(reachableIds.has(id), id).toBe(true);
     expect(getReachableAchievements()).toHaveLength(
       ACHIEVEMENTS.length - GATED.length,
     );

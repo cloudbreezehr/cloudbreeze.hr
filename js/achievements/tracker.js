@@ -670,6 +670,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("you-are-here");
     },
 
+    shake() {
+      tryUnlock("good-vibrations");
+    },
+
     "terminal-open"() {
       tryUnlock("shell-access");
     },

@@ -1543,6 +1543,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
     bonus: true,
   },
+  {
+    id: "good-vibrations",
+    title: "Good Vibrations",
+    description: "You gave the sky a good shake.",
+    hint: "Give your device a real shake",
+    set: "exploration",
+    points: UNCOMMON,
+    hidden: true,
+    requires: "motion",
+  },
   // ── Exploration: Photo Mode ──
   {
     id: "sky-photographer",

@@ -1649,6 +1649,12 @@ describe("tracker — real-sky handlers", () => {
     dispatchAchievement("forecast-open");
     expect(storage.isUnlocked("weather-eye")).toBe(true);
   });
+
+  it("unlocks good-vibrations on a shake", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("shake");
+    expect(storage.isUnlocked("good-vibrations")).toBe(true);
+  });
 });
 
 describe("tracker — photo-mode handlers", () => {

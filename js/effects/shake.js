@@ -113,6 +113,9 @@ function shakeEffect() {
     count: SHAKE.CONFETTI,
     origin: { x: window.innerWidth / 2, y: window.innerHeight / 2 },
   });
+  window.dispatchEvent(
+    new CustomEvent("achievement", { detail: { type: "shake" } }),
+  );
 }
 
 /**
