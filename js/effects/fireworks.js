@@ -754,13 +754,9 @@ export function burstFireworks(x, y, opts = {}) {
 const DATA_SAVER_ROCKET_CAP = 1;
 
 export function rocketCountForTier(tier) {
-  const base =
-    {
-      celestial: FW.ROCKET_COUNT_CELESTIAL,
-      mythic: FW.ROCKET_COUNT_MYTHIC,
-      legendary: FW.ROCKET_COUNT_LEGENDARY,
-      epic: FW.ROCKET_COUNT_EPIC,
-    }[tier] || 0;
+  // One knob per rarity, named ROCKET_COUNT_<TIER>, so a new tier is picked up
+  // from its registry entry with nothing to change here.
+  const base = (tier && FW[`ROCKET_COUNT_${tier.toUpperCase()}`]) || 0;
   if (base > 0 && navigator.connection?.saveData) return DATA_SAVER_ROCKET_CAP;
   return base;
 }

@@ -202,8 +202,8 @@ body.light-appearance .achievement-search-input {
   }
 }
 
-/* Click pop — squish then spring back.  Rarity-flavored variants
-   below give epic and legendary unlocks a distinct re-click feel. */
+/* Click pop — squish then spring back.  The rarity block below escalates it
+   per tier (deeper, brighter, a glow at the top) for epic-and-up unlocks. */
 .achievement-card.unlocked.clicked,
 .achievement-toast.clicked {
   animation: card-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -246,85 +246,63 @@ body.light-appearance .achievement-search-input {
   }
 }
 
+/* Rarity click-pop — one keyframe, scaled per tier through custom properties.
+   Each tier sets only the vars that differ from the resting defaults, so a new
+   tier is one block here (alongside its row in tiers.js). Escalates with
+   rarity: deeper squash/stretch, a brighter flash, a rotate, then a glow. */
 .achievement-toast[data-rarity="epic"].clicked {
-  animation: card-pop-epic 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pop-down: 0.05;
+  --pop-up: 0.04;
+  --pop-rot: 1.5deg;
+  animation: card-pop-rarity 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes card-pop-epic {
-  0% {
-    transform: translateY(0) scale(1) rotate(0);
-  }
-  35% {
-    transform: translateY(0) scale(0.95) rotate(-1.5deg);
-  }
-  70% {
-    transform: translateY(0) scale(1.04) rotate(1.5deg);
-  }
-  100% {
-    transform: translateY(0) scale(1) rotate(0);
-  }
-}
-
 .achievement-toast[data-rarity="legendary"].clicked {
-  animation: card-pop-legendary 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pop-down: 0.06;
+  --pop-up: 0.06;
+  --pop-bright: 1.5;
+  --pop-sat: 1.4;
+  animation: card-pop-rarity 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes card-pop-legendary {
-  0% {
-    transform: translateY(0) scale(1);
-    filter: brightness(1) saturate(1);
-  }
-  30% {
-    transform: translateY(0) scale(0.94);
-    filter: brightness(1.5) saturate(1.4);
-  }
-  70% {
-    transform: translateY(0) scale(1.06);
-    filter: brightness(1.2) saturate(1.2);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-    filter: brightness(1) saturate(1);
-  }
-}
-
 .achievement-toast[data-rarity="mythic"].clicked {
-  animation: card-pop-mythic 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pop-down: 0.08;
+  --pop-up: 0.09;
+  --pop-rot: 2deg;
+  --pop-bright: 1.7;
+  --pop-sat: 1.6;
+  animation: card-pop-rarity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes card-pop-mythic {
-  0% {
-    transform: translateY(0) scale(1) rotate(0);
-    filter: brightness(1) saturate(1);
-  }
-  30% {
-    transform: translateY(0) scale(0.92) rotate(-2deg);
-    filter: brightness(1.7) saturate(1.6);
-  }
-  70% {
-    transform: translateY(0) scale(1.09) rotate(2deg);
-    filter: brightness(1.3) saturate(1.3);
-  }
-  100% {
-    transform: translateY(0) scale(1) rotate(0);
-    filter: brightness(1) saturate(1);
-  }
-}
-
 .achievement-toast[data-rarity="celestial"].clicked {
-  animation: card-pop-celestial 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --pop-down: 0.1;
+  --pop-up: 0.12;
+  --pop-rot: 2.5deg;
+  --pop-bright: 1.9;
+  --pop-sat: 1.8;
+  --pop-glow: 12px;
+  --pop-glow-a: 0.75;
+  animation: card-pop-rarity 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
-@keyframes card-pop-celestial {
+@keyframes card-pop-rarity {
   0% {
     transform: translateY(0) scale(1) rotate(0);
     filter: brightness(1) saturate(1) drop-shadow(0 0 0 transparent);
   }
   30% {
-    transform: translateY(0) scale(0.9) rotate(-2.5deg);
-    filter: brightness(1.9) saturate(1.8)
-      drop-shadow(0 0 12px rgba(255, 255, 255, 0.75));
+    transform: translateY(0) scale(calc(1 - var(--pop-down, 0)))
+      rotate(calc(-1 * var(--pop-rot, 0deg)));
+    filter: brightness(var(--pop-bright, 1)) saturate(var(--pop-sat, 1))
+      drop-shadow(
+        0 0 var(--pop-glow, 0px) rgba(255, 255, 255, var(--pop-glow-a, 0))
+      );
   }
   70% {
-    transform: translateY(0) scale(1.12) rotate(2.5deg);
-    filter: brightness(1.4) saturate(1.4)
-      drop-shadow(0 0 6px rgba(255, 255, 255, 0.45));
+    transform: translateY(0) scale(calc(1 + var(--pop-up, 0)))
+      rotate(var(--pop-rot, 0deg));
+    filter: brightness(calc(1 + (var(--pop-bright, 1) - 1) * 0.4))
+      saturate(calc(1 + (var(--pop-sat, 1) - 1) * 0.5))
+      drop-shadow(
+        0 0 calc(var(--pop-glow, 0px) * 0.5)
+          rgba(255, 255, 255, calc(var(--pop-glow-a, 0) * 0.6))
+      );
   }
   100% {
     transform: translateY(0) scale(1) rotate(0);

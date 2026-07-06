@@ -55,37 +55,6 @@ describe("achievements/ui/toast", () => {
     return document.querySelector(".achievement-toast-container");
   }
 
-  describe("rarityTierFor", () => {
-    it("returns null for sub-epic point counts", async () => {
-      const { POINT_TIERS } =
-        await import("../../../../js/achievements/registry.js");
-      expect(mod.rarityTierFor(POINT_TIERS.EPIC - 1)).toBeNull();
-      expect(mod.rarityTierFor(POINT_TIERS.RARE)).toBeNull();
-    });
-
-    it("returns epic at the epic threshold and legendary at the legendary threshold", async () => {
-      const { POINT_TIERS } =
-        await import("../../../../js/achievements/registry.js");
-      expect(mod.rarityTierFor(POINT_TIERS.EPIC)).toEqual("epic");
-      expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY - 1)).toEqual("epic");
-      expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY)).toEqual("legendary");
-    });
-
-    it("returns mythic at the mythic threshold", async () => {
-      const { POINT_TIERS } =
-        await import("../../../../js/achievements/registry.js");
-      expect(mod.rarityTierFor(POINT_TIERS.MYTHIC - 1)).toEqual("legendary");
-      expect(mod.rarityTierFor(POINT_TIERS.MYTHIC)).toEqual("mythic");
-    });
-
-    it("returns celestial at the celestial threshold", async () => {
-      const { POINT_TIERS } =
-        await import("../../../../js/achievements/registry.js");
-      expect(mod.rarityTierFor(POINT_TIERS.CELESTIAL - 1)).toEqual("mythic");
-      expect(mod.rarityTierFor(POINT_TIERS.CELESTIAL)).toEqual("celestial");
-    });
-  });
-
   describe("showCompletionShare", () => {
     it("shows a dismissible completion share card with a save action", () => {
       mod.showCompletionShare();

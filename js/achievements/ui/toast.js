@@ -5,12 +5,8 @@
 // stagger cleanly.  buildAchievementToast is exported as the canonical
 // toast renderer so persisted entries render identically to live ones.
 
-import {
-  POINT_TIERS,
-  SETS,
-  getReachableAchievements,
-  sumPoints,
-} from "../registry.js";
+import { SETS, getReachableAchievements, sumPoints } from "../registry.js";
+import { rarityTierFor } from "../tiers.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import { getPref } from "../storage.js";
 import { formatRunTime, BEST_RUN_PREF } from "../../effects/speedrun.js";
@@ -245,17 +241,6 @@ function freezeProgressBar(ref) {
   if (!fill) return;
   fill.style.transition = "none";
   fill.style.transform = `scaleX(${scale})`;
-}
-
-// Single source of truth for the rarity-from-points mapping.  Fireworks
-// and toast click-pulse both consult this so a tier change lands in one
-// place.
-export function rarityTierFor(points) {
-  if (points >= POINT_TIERS.CELESTIAL) return "celestial";
-  if (points >= POINT_TIERS.MYTHIC) return "mythic";
-  if (points >= POINT_TIERS.LEGENDARY) return "legendary";
-  if (points >= POINT_TIERS.EPIC) return "epic";
-  return null;
 }
 
 // Build the achievement-toast DOM for a given achievement.  Canonical

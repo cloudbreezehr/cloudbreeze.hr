@@ -9,6 +9,7 @@
 
 import { getTheme } from "../themes/registry.js";
 import { hasCapability } from "../device.js";
+import { POINT_TIERS } from "./tiers.js";
 
 // Inline SVG icons for the non-theme sets.  Theme sets reuse their theme's
 // icon so there's one source of truth per theme.  All icons use a 16×16
@@ -72,25 +73,11 @@ const APPEARANCE_ICON =
   "</svg>";
 
 // ── Point Tiers ──
-const TRIVIAL = 1;
-const COMMON = 5;
-const UNCOMMON = 10;
-const RARE = 25;
-const EPIC = 50;
-const LEGENDARY = 100;
-const MYTHIC = 500;
-const CELESTIAL = 1000;
-
-export const POINT_TIERS = {
-  TRIVIAL,
-  COMMON,
-  UNCOMMON,
-  RARE,
-  EPIC,
-  LEGENDARY,
-  MYTHIC,
-  CELESTIAL,
-};
+// The ladder lives in tiers.js; re-export the map and unpack the names the
+// definitions below reference. (MYTHIC has no holder yet, so it isn't unpacked.)
+export { POINT_TIERS };
+const { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, CELESTIAL } =
+  POINT_TIERS;
 
 // ── Achievement Sets ──
 // Theme sets pull their icon from the theme registry so there's one source of
