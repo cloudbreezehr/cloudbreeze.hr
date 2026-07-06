@@ -39,8 +39,8 @@ function reveal() {
   if (buttonEl) buttonEl.classList.add("revealed");
 }
 
-// Surface the toggle on demand — used by the spell path (typing SOUND) so a
-// curious visitor doesn't have to wait out the dwell. Idempotent.
+// Surface the toggle on demand, bypassing the reveal dwell so a curious
+// visitor doesn't have to wait it out. Idempotent.
 export function revealSoundToggle() {
   reveal();
 }
