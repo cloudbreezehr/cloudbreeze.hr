@@ -1532,6 +1532,7 @@ export const ACHIEVEMENTS = [
     set: "exploration",
     points: UNCOMMON,
     hidden: true,
+    bonus: true,
   },
   // ── Exploration: Photo Mode ──
   {
