@@ -13,6 +13,7 @@ import {
   getAchievement,
 } from "../registry.js";
 import * as storage from "../storage.js";
+import { exportBackup, importBackup } from "../backup.js";
 import * as activityLog from "../activity-log.js";
 import { paintRelativeTime } from "../../time-ago.js";
 import { trapFocus } from "../focus-trap.js";
@@ -213,9 +214,9 @@ function paintLastUnlocked(el) {
   el.appendChild(time);
 }
 
-// Download the live Cloudlog state as a JSON file.
+// Download the live Cloudlog state as a sealed JSON file.
 function exportCloudlog() {
-  const blob = new Blob([storage.exportState()], { type: "application/json" });
+  const blob = new Blob([exportBackup()], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -236,7 +237,7 @@ function buildImportInput() {
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
-      if (storage.importState(String(reader.result))) {
+      if (importBackup(String(reader.result))) {
         refreshPanel();
         // refreshPanel repaints panel contents only; the nav badge reads
         // the unseen count separately and needs its own nudge.

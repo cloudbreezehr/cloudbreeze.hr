@@ -28,19 +28,31 @@ function fromBase64(b64) {
   return new TextDecoder().decode(bytes);
 }
 
-/** Serialize the current progress into a portable passport code. */
-export function exportPassport() {
-  const state = storage.getState();
-  const payload = {
+// The subset of state a passport carries: unlocks (u), counters (c), and
+// progress-collection items (p). Takes an explicit snapshot rather than reading
+// storage, so the same derivation runs over any state — live or parsed back
+// from a saved file.
+export function payloadFromState(state) {
+  return {
     u: state.unlocked,
     c: state.counters,
     p: Object.fromEntries(
       Object.entries(state.progress).map(([key, entry]) => [key, entry.items]),
     ),
   };
+}
+
+// Seal a payload into the code: base64 body + a checksum that a hand-edit
+// can't survive without recomputing it.
+function sealPayload(payload) {
   const b64 = toBase64(JSON.stringify(payload));
   const checksum = hashString(b64).toString(CHECKSUM_RADIX);
   return `${PASSPORT_PREFIX}.${b64}.${checksum}`;
+}
+
+/** Serialize the current progress into a portable passport code. */
+export function exportPassport() {
+  return sealPayload(payloadFromState(storage.getState()));
 }
 
 /**

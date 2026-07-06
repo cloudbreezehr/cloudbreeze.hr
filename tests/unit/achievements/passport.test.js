@@ -96,6 +96,20 @@ describe("achievements/passport", () => {
     expect(result.added).toBe(1);
     expect(storage.isUnlocked("first-light")).toBe(true);
   });
+
+  it("derives the {u,c,p} payload from an explicit state snapshot", () => {
+    // Pure — reads the argument, not storage.
+    const payload = passport.payloadFromState({
+      unlocked: [{ id: "first-light", ts: 1 }],
+      counters: { totalClicks: 7 },
+      progress: { "appearances-used": { items: ["dark"] } },
+    });
+    expect(payload).toEqual({
+      u: [{ id: "first-light", ts: 1 }],
+      c: { totalClicks: 7 },
+      p: { "appearances-used": ["dark"] },
+    });
+  });
 });
 
 // Hand-build a valid code, mirroring the codec's format (FNV-1a base36
