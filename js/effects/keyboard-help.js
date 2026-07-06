@@ -97,8 +97,7 @@ export function openHelp() {
   document.body.appendChild(overlayEl);
   void overlayEl.offsetHeight;
   overlayEl.classList.add("visible");
-  // A soft panel whoosh as the help sheet opens, like the Cloudlog panel and
-  // cheatsheet — a dry UI cue.
+  // A soft panel whoosh as the help sheet opens — a dry UI cue.
   playSfx("panelOpen", { ui: true });
   // Contain focus inside the dialog — without this an aria-modal dialog
   // still lets Tab reach the page behind it.  Starts focus on the close

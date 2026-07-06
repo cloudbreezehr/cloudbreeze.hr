@@ -36,7 +36,7 @@ const PHOSPHOR = defineConstants(
     // Alpha at which the current frame contributes to the phosphor.
     // Higher = stronger smear from current frame into next frame.
     CAPTURE_OPACITY: 0.4,
-    // Click-glitch DOM element pool cap.  Each glitch is a 50ms element;
+    // Click-glitch DOM element pool cap.  Each glitch is short-lived;
     // a sustained mash beyond this cap drops the oldest.
     GLITCH_MAX: 10,
     // Pixel size of the glitch rect at the click location.
@@ -57,8 +57,8 @@ const PHOSPHOR = defineConstants(
 export const TRAIL = defineConstants(
   "particles.vhs.trail",
   {
-    // Number of cursor positions kept in history.  At ~60fps, 24 ≈ 0.4s
-    // of trail.  Higher values cost a few extra strokes per frame.
+    // Number of cursor positions kept in history — a fraction of a second
+    // of trail at ~60fps.  Higher values cost a few extra strokes per frame.
     HISTORY_LEN: 24,
     // Stroke width at the head (most recent position) in px.
     HEAD_WIDTH_PX: 6,
@@ -307,7 +307,7 @@ export function createVhs(canvasEl) {
     document.body.appendChild(el);
     glitches.push(el);
     // Cap: if we're over the limit, hard-remove the oldest. The animation
-    // is short (~50ms) so most of the time the cap never triggers.
+    // is short-lived so most of the time the cap never triggers.
     while (glitches.length > PHOSPHOR.GLITCH_MAX) {
       const old = glitches.shift();
       old.remove();

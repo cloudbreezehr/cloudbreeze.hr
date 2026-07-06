@@ -1,8 +1,8 @@
 // ── Effect icons ──
 // Hand-drawn line/silhouette art, one unique glyph per incantation and cheat.
 // Each effect carries its own `icon` from this set (like themes carry an icon),
-// so the glyph travels with the effect and is reused anywhere — the GTA weapon
-// slot, the cheatsheet, and beyond. Cohesive set: a 48×48 viewBox, currentColor
+// so the glyph travels with the effect and is reused anywhere it's shown.
+// Cohesive set: a 48×48 viewBox, currentColor
 // so callers tint them, bold enough to read small. Dark interior cut-outs use a
 // near-black fill so they read as recessed detail on a dark panel.
 

@@ -742,8 +742,8 @@ export function burstFireworks(x, y, opts = {}) {
 /**
  * Map a rarity tier to the configured rocket count.  Callers pass the tier
  * they've identified (e.g. from an achievement's point value); the tier-to-
- * count mapping stays in the fireworks registry so dev-console changes to the
- * ROCKET_COUNT_* knobs apply automatically.
+ * count mapping stays with the ROCKET_COUNT_* knobs so retuning them applies
+ * automatically.
  *
  * @param {"epic"|"legendary"|"mythic"|"celestial"} tier
  * @returns {number} Number of rockets, or 0 for unrecognized tiers.

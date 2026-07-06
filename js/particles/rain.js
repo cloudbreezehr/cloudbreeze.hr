@@ -468,8 +468,6 @@ export function createRain(canvasEl, ctxEl) {
       rumbleEnd = now + THUNDER.RUMBLE_MS;
       nextStrikeTime =
         now + THUNDER.INTERVAL_MIN + Math.random() * THUNDER.INTERVAL_RANGE;
-      // Announce the strike so the audio layer can roll a distant rumble; the
-      // bolt + flash render even under reduced motion, so this isn't gated.
       window.dispatchEvent(
         new CustomEvent("achievement", { detail: { type: "rain-thunder" } }),
       );

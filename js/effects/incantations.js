@@ -23,8 +23,7 @@ import { ICONS } from "./effect-icons.js";
 import { defineConstants } from "../dev/registry.js";
 import { prefersReducedMotion } from "../motion.js";
 
-// Dev-tunable so the BOOOOM payoff can be dialled in live in the dev console —
-// the reward scales with how many O's the user bothered to enter.
+// The BOOOOM reward scales with how many O's the user bothered to enter.
 const BOOM = defineConstants("incantations.boom", {
   ROCKETS: {
     value: 3,
@@ -196,7 +195,7 @@ export const INCANTATIONS = [
     hint: "A volley of fireworks rockets",
     // Rockets rise from the bottom and scatter, so the origin is irrelevant.
     // Each extra O charges another rocket (BOOOOM > BOOM), up to a cap — read
-    // live so the dev-console MAX_EXTRA slider also bounds the cursor buildup.
+    // live so the same cap also bounds the cursor buildup.
     chargeChar: "O",
     chargeMax: () => BOOM.MAX_EXTRA,
     cast: (origin, charge) =>
