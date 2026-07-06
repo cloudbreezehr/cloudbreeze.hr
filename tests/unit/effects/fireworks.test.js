@@ -36,6 +36,12 @@ describe("effects/fireworks — rocketCountForTier", () => {
     );
   });
 
+  it("returns more rockets for mythic than legendary", () => {
+    expect(rocketCountForTier("mythic")).toBeGreaterThan(
+      rocketCountForTier("legendary"),
+    );
+  });
+
   it("returns 0 for unknown tier", () => {
     expect(rocketCountForTier("unknown")).toBe(0);
   });

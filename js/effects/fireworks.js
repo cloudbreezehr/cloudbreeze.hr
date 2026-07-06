@@ -74,8 +74,10 @@ const FW = defineConstants("effects.fireworks", {
   // Sideways jitter added as the rocket rises (px per frame, pre-easing).
   ROCKET_DRIFT: 0.2,
   // Default rocket counts per rarity tier; callers override via opts.count.
+  // Escalate with rarity — the rarer the unlock, the bigger the volley.
   ROCKET_COUNT_EPIC: { value: 3, min: 0, max: 30, step: 1 },
   ROCKET_COUNT_LEGENDARY: { value: 10, min: 0, max: 100, step: 1 },
+  ROCKET_COUNT_MYTHIC: { value: 15, min: 0, max: 100, step: 1 },
   // Stagger between rockets in a multi-rocket launch (frames).
   ROCKET_STAGGER_FRAMES: 8,
 
@@ -739,10 +741,10 @@ export function burstFireworks(x, y, opts = {}) {
 /**
  * Map a rarity tier to the configured rocket count.  Callers pass the tier
  * they've identified (e.g. from an achievement's point value); the tier-to-
- * count mapping stays in the fireworks registry so dev-console changes to
- * ROCKET_COUNT_EPIC / ROCKET_COUNT_LEGENDARY apply automatically.
+ * count mapping stays in the fireworks registry so dev-console changes to the
+ * ROCKET_COUNT_* knobs apply automatically.
  *
- * @param {"epic"|"legendary"} tier
+ * @param {"epic"|"legendary"|"mythic"} tier
  * @returns {number} Number of rockets, or 0 for unrecognized tiers.
  */
 // Cap applied when the browser reports the user is on a data-saver
@@ -752,11 +754,11 @@ const DATA_SAVER_ROCKET_CAP = 1;
 
 export function rocketCountForTier(tier) {
   const base =
-    tier === "legendary"
-      ? FW.ROCKET_COUNT_LEGENDARY
-      : tier === "epic"
-        ? FW.ROCKET_COUNT_EPIC
-        : 0;
+    {
+      mythic: FW.ROCKET_COUNT_MYTHIC,
+      legendary: FW.ROCKET_COUNT_LEGENDARY,
+      epic: FW.ROCKET_COUNT_EPIC,
+    }[tier] || 0;
   if (base > 0 && navigator.connection?.saveData) return DATA_SAVER_ROCKET_CAP;
   return base;
 }

@@ -78,8 +78,17 @@ const UNCOMMON = 10;
 const RARE = 25;
 const EPIC = 50;
 const LEGENDARY = 100;
+const MYTHIC = 500;
 
-export const POINT_TIERS = { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY };
+export const POINT_TIERS = {
+  TRIVIAL,
+  COMMON,
+  UNCOMMON,
+  RARE,
+  EPIC,
+  LEGENDARY,
+  MYTHIC,
+};
 
 // ── Achievement Sets ──
 // Theme sets pull their icon from the theme registry so there's one source of

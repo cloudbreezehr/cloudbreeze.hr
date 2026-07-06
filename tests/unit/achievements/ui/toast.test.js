@@ -70,6 +70,13 @@ describe("achievements/ui/toast", () => {
       expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY - 1)).toEqual("epic");
       expect(mod.rarityTierFor(POINT_TIERS.LEGENDARY)).toEqual("legendary");
     });
+
+    it("returns mythic at the mythic threshold", async () => {
+      const { POINT_TIERS } =
+        await import("../../../../js/achievements/registry.js");
+      expect(mod.rarityTierFor(POINT_TIERS.MYTHIC - 1)).toEqual("legendary");
+      expect(mod.rarityTierFor(POINT_TIERS.MYTHIC)).toEqual("mythic");
+    });
   });
 
   describe("showCompletionShare", () => {
