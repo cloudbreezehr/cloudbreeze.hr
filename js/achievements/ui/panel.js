@@ -396,6 +396,11 @@ function openPanelUI(onHide) {
     // openPanelUI un-inerts below; closePanel sets it back.
     panelEl.setAttribute("inert", "");
     document.body.appendChild(panelEl);
+    // Initial tab-badge paint. Must run after panelEl is assigned:
+    // updateTabBadges resolves the panel through the injected getter, which
+    // stays null for the whole of buildPanel. Reflects unseen entries carried
+    // over from prior sessions.
+    updateTabBadges();
   } else {
     refreshPanel();
   }
@@ -713,9 +718,6 @@ function buildPanel(onHide) {
   // Hide "Mark all read" when nothing is unseen
   const markBtn = panel.querySelector(".achievement-mark-read");
   if (markBtn && storage.getUnseenCount() === 0) markBtn.style.display = "none";
-
-  // Initial badge paint reflects any unseen entries from prior sessions.
-  updateTabBadges();
 
   return panel;
 }

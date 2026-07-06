@@ -165,6 +165,22 @@ describe("achievements/ui/panel", () => {
       expect(tabButtons[1].dataset.tab).toEqual("activity");
     });
 
+    it("paints the tab unseen badge on the very first open", () => {
+      // An unlock from a prior session is unseen (unlock doesn't mark seen,
+      // and the seen-observer is a no-op in tests). The badge must appear on
+      // the first open — not only after a later tab-switch/reopen/refresh.
+      storage.unlock("first-light");
+      expect(storage.getUnseenCount()).toBeGreaterThan(0);
+
+      mod.openPanel();
+
+      const badge = document
+        .querySelector('.achievement-tab[data-tab="achievements"]')
+        .querySelector(".achievement-tab-badge");
+      expect(badge.classList.contains("visible")).toBe(true);
+      expect(Number(badge.textContent)).toEqual(storage.getUnseenCount());
+    });
+
     it("paints the total points text", () => {
       storage.unlock("first-light");
       mod.openPanel();
