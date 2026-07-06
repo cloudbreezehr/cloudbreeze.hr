@@ -12,6 +12,8 @@
 // 'self' CSP — inline scripts would force 'unsafe-inline' and undo
 // most of the policy's value.
 
+import { getParam, hasFlag, onUrlChange } from "./url-params.js";
+
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
@@ -100,9 +102,9 @@ async function wireKeyboardHotkeys({ onKey }) {
   const [{ toggleDevConsole, openDevConsole }, { toggleFps }] =
     await Promise.all([import("./dev/console.js"), import("./dev/fps.js")]);
 
-  if (window.location.hash === "#dev") openDevConsole();
-  window.addEventListener("hashchange", () => {
-    if (window.location.hash === "#dev") openDevConsole();
+  if (hasFlag("dev")) openDevConsole();
+  onUrlChange(() => {
+    if (hasFlag("dev")) openDevConsole();
   });
   onKey(".", toggleDevConsole, { ctrl: true, shift: true, allowInInput: true });
   onKey("F", toggleFps, { ctrl: true, shift: true, allowInInput: true });
@@ -200,14 +202,14 @@ const MODULES = [
 for (const { path, init } of MODULES) load(path, init);
 
 // ── URL-driven theme preview ──
-// `?theme=frozen` activates the named theme on load for demos and
-// screenshots.  Silent so it doesn't award the discovery achievement —
-// this is a shortcut, not a found easter egg.  Theme toggles register
-// during each theme module's async init, so poll briefly until the
+// The `theme` parameter (e.g. `theme=frozen`) activates the named theme on
+// load for demos and screenshots.  Silent so it doesn't award the discovery
+// achievement — this is a shortcut, not a found easter egg.  Theme toggles
+// register during each theme module's async init, so poll briefly until the
 // toggle exists rather than racing it.
 const THEME_PARAM_POLL_MS = 50;
 const THEME_PARAM_MAX_ATTEMPTS = 40; // poll window = POLL_MS * MAX_ATTEMPTS
-const themeParam = new URLSearchParams(window.location.search).get("theme");
+const themeParam = getParam("theme");
 if (themeParam) {
   load("./themes/registry.js", (m) => {
     if (!m.isThemeRegistered(themeParam)) return;

@@ -22,6 +22,7 @@ import { wordOfTheDay } from "../daily/word.js";
 import { trapFocus } from "../achievements/focus-trap.js";
 import { playSfx } from "../audio/sfx.js";
 import { onKey } from "../keyboard.js";
+import { buildUrl } from "../url-params.js";
 
 // Fallback removal delay — generously past the overlay's CSS slide so the
 // node is still removed if transitionend never fires.
@@ -117,11 +118,7 @@ function buildDeps() {
       todayKey: dayKey(),
       traveling: isTimeTraveling(),
       word: wordOfTheDay(),
-      link:
-        location.origin +
-        location.pathname +
-        "#sky=" +
-        encodeURIComponent(skySeedKey()),
+      link: buildUrl({ sky: skySeedKey() }),
     }),
     passport: { issue: exportPassport, stamp: importPassport },
     copy: (text) => {

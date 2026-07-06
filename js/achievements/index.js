@@ -27,6 +27,7 @@ import {
 import { onKey } from "../keyboard.js";
 import { maybeShowWelcomeBack, markGreeted } from "./welcome-back.js";
 import { initDiscoveryHint } from "./discovery-hint.js";
+import { getParam, hasFlag, onUrlChange } from "../url-params.js";
 
 // ── Triple-click detection ──
 // Window during which a click counts toward the same triple. Each click
@@ -38,7 +39,7 @@ export const TRIPLE_CLICK_COUNT = 3;
 // Wait for the panel slide-in before scrolling a deep-linked card into
 // view, so the scroll lands against a laid-out container.
 const PANEL_SETTLE_MS = 350;
-// Delay before the `?finale` demo preview fires, so the page has painted.
+// Delay before the `finale` demo preview fires, so the page has painted.
 const FINALE_PREVIEW_DELAY_MS = 800;
 
 /**
@@ -182,10 +183,10 @@ export function initAchievements() {
     });
   });
 
-  // Demo preview: `?finale` fires the completionist celebration once so it can
-  // be judged without clearing the whole Cloudlog. Harmless in production —
-  // nobody navigates here — and mirrors the `?theme=` demo shortcut.
-  if (new URLSearchParams(window.location.search).has("finale")) {
+  // Demo preview: the `finale` flag fires the completionist celebration
+  // once so it can be judged without clearing the whole Cloudlog. Harmless
+  // in production — nobody navigates here — and mirrors the `theme` shortcut.
+  if (hasFlag("finale")) {
     setTimeout(celebrateCompletion, FINALE_PREVIEW_DELAY_MS);
   }
 
@@ -222,13 +223,13 @@ export function initAchievements() {
   onKey("[", () => stepTab(-1));
   onKey("]", () => stepTab(1));
 
-  // Hash deep-links: #cloudlog-activity / #cloudlog-achievements open
-  // the panel directly to a tab (shareable "look what I unlocked" URLs).
+  // Deep-links open the panel directly to a tab (shareable "look what I
+  // unlocked" URLs).
   function openFromHash() {
-    const hash = window.location.hash;
-    const tab = hash === "#cloudlog-activity" ? "activity" : "achievements";
-    if (hash !== "#cloudlog-activity" && hash !== "#cloudlog-achievements")
-      return;
+    let tab = null;
+    if (hasFlag("cloudlog-activity")) tab = "activity";
+    else if (hasFlag("cloudlog-achievements")) tab = "achievements";
+    if (!tab) return;
     if (!storage.isActive()) return;
     if (!isPanelOpen()) {
       openPanel(() => {
@@ -238,7 +239,7 @@ export function initAchievements() {
     }
     setActiveTab(tab);
   }
-  window.addEventListener("hashchange", openFromHash);
+  onUrlChange(openFromHash);
   openFromHash();
 
   createTripleClickDetector(document, (e) => activate(e.clientX, e.clientY));
@@ -267,11 +268,9 @@ export function initAchievements() {
     { once: true },
   );
 
-  // `?achievement=<id>` deep-links to a specific card — opens the panel
-  // and scrolls/highlights the card.  Shareable "look what I found" URL.
-  const achParam = new URLSearchParams(window.location.search).get(
-    "achievement",
-  );
+  // The `achievement` parameter deep-links to a specific card — opens the
+  // panel and scrolls/highlights the card.  Shareable "look what I found" URL.
+  const achParam = getParam("achievement");
   if (achParam && storage.isActive() && getAchievement(achParam)) {
     if (!isPanelOpen()) {
       openPanel(() => {

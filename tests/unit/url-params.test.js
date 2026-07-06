@@ -1,0 +1,139 @@
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+
+import {
+  getParam,
+  hasFlag,
+  buildUrl,
+  onUrlChange,
+} from "../../js/url-params.js";
+
+// Reads are stateless — they parse location.hash / location.search on each
+// call — so tests just set the URL and query by name.  The catalog wires:
+//   sky/dev              → hash        theme/finale/achievement → query
+//   cloudlog-activity, cloudlog-achievements → hash (bare-token flags)
+
+describe("url-params", () => {
+  beforeEach(() => {
+    location.hash = "";
+    location.search = "";
+  });
+
+  afterEach(() => {
+    location.hash = "";
+    location.search = "";
+  });
+
+  describe("getParam — value from hash", () => {
+    it("decodes a key=value fragment", () => {
+      location.hash = "#sky=2025-12-24";
+      expect(getParam("sky")).toBe("2025-12-24");
+    });
+
+    it("percent-decodes the value", () => {
+      location.hash = "#sky=" + encodeURIComponent("a b/c");
+      expect(getParam("sky")).toBe("a b/c");
+    });
+
+    it("finds the key among &-separated fragment segments", () => {
+      location.hash = "#other=1&sky=2025-01-01";
+      expect(getParam("sky")).toBe("2025-01-01");
+    });
+
+    it("returns null when absent", () => {
+      location.hash = "#nothing";
+      expect(getParam("sky")).toBeNull();
+    });
+
+    it("returns null for a bare key with no value", () => {
+      location.hash = "#sky";
+      expect(getParam("sky")).toBeNull();
+    });
+
+    it("survives a malformed escape without throwing", () => {
+      location.hash = "#sky=%E0%A4%A";
+      expect(() => getParam("sky")).not.toThrow();
+    });
+  });
+
+  describe("getParam — value from query", () => {
+    it("reads and decodes a query param", () => {
+      location.search = "?theme=deep%20sea";
+      expect(getParam("theme")).toBe("deep sea");
+    });
+
+    it("returns null when absent", () => {
+      location.search = "?other=1";
+      expect(getParam("theme")).toBeNull();
+    });
+
+    it("returns null for a present-but-empty value", () => {
+      location.search = "?theme=";
+      expect(getParam("theme")).toBeNull();
+    });
+  });
+
+  describe("hasFlag", () => {
+    it("is true for a bare hash token", () => {
+      location.hash = "#dev";
+      expect(hasFlag("dev")).toBe(true);
+    });
+
+    it("is false when the fragment is something else", () => {
+      location.hash = "#sky=2025-01-01";
+      expect(hasFlag("dev")).toBe(false);
+    });
+
+    it("distinguishes similar tokens", () => {
+      location.hash = "#devil";
+      expect(hasFlag("dev")).toBe(false);
+    });
+
+    it("is true for a valueless query flag", () => {
+      location.search = "?finale";
+      expect(hasFlag("finale")).toBe(true);
+    });
+
+    it("routes cloudlog deep-links by their own token", () => {
+      location.hash = "#cloudlog-activity";
+      expect(hasFlag("cloudlog-activity")).toBe(true);
+      expect(hasFlag("cloudlog-achievements")).toBe(false);
+    });
+  });
+
+  describe("buildUrl", () => {
+    it("emits a hash-target param into the fragment", () => {
+      const url = buildUrl(
+        { sky: "2025-12-24" },
+        { base: "https://cloudbreeze.hr/" },
+      );
+      expect(url).toBe("https://cloudbreeze.hr/#sky=2025-12-24");
+    });
+
+    it("percent-encodes the value", () => {
+      const url = buildUrl({ sky: "a b" }, { base: "https://x/" });
+      expect(url).toBe("https://x/#sky=a%20b");
+    });
+
+    it("emits a query-target param into the query string", () => {
+      const url = buildUrl({ theme: "frozen" }, { base: "https://x/" });
+      expect(url).toBe("https://x/?theme=frozen");
+    });
+
+    it("defaults the base to origin + pathname", () => {
+      const url = buildUrl({ sky: "2025-01-01" });
+      expect(url).toBe(location.origin + location.pathname + "#sky=2025-01-01");
+    });
+  });
+
+  describe("onUrlChange", () => {
+    it("fires subscribers on hashchange and stops after unsubscribe", () => {
+      let count = 0;
+      const off = onUrlChange(() => count++);
+      window.dispatchEvent(new Event("hashchange"));
+      expect(count).toBe(1);
+      off();
+      window.dispatchEvent(new Event("hashchange"));
+      expect(count).toBe(1);
+    });
+  });
+});

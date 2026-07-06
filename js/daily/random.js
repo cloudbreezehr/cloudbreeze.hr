@@ -2,26 +2,21 @@
 // The seeded random stream behind the sky's *arrangement* — star positions,
 // sizes, which quadrant each constellation hides in. Seeded from today's
 // key, so every visitor shares one sky per day and a fresh one appears at
-// midnight; a `#sky=<key>` in the URL revisits any past day's arrangement.
+// midnight; a `sky=<key>` URL parameter revisits any past day's arrangement.
 //
 // Per-frame randomness (twinkles, spawns, flashes) is NOT this stream —
 // only the once-per-load layout draws from here. Lazily initialized so the
 // first consumer, whichever module loads first, finds it ready.
 
 import { dayKey, hashString, mulberry32 } from "./seed.js";
-
-const SEED_HASH_PATTERN = /[#&]sky=([^&]+)/;
+import { getParam } from "../url-params.js";
 
 let _rand = null;
 let _seedKey = null;
 
 function ensure() {
   if (_rand) return;
-  const match =
-    typeof location !== "undefined"
-      ? SEED_HASH_PATTERN.exec(location.hash)
-      : null;
-  _seedKey = match ? decodeURIComponent(match[1]) : dayKey();
+  _seedKey = getParam("sky") ?? dayKey();
   _rand = mulberry32(hashString(_seedKey));
 }
 
