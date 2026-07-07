@@ -97,6 +97,18 @@ describe("achievements/ui/panel", () => {
       expect(navBtn.classList.contains("active")).toBe(true);
     });
 
+    it("exposes the panel as a labelled modal dialog", () => {
+      mod.openPanel();
+      const panel = getPanel();
+      expect(panel.getAttribute("role")).toBe("dialog");
+      expect(panel.getAttribute("aria-modal")).toBe("true");
+      const titleId = panel.getAttribute("aria-labelledby");
+      expect(titleId).toBeTruthy();
+      const title = document.getElementById(titleId);
+      expect(title).not.toBeNull();
+      expect(title.textContent).toBe("Cloudlog");
+    });
+
     it("dispatches a panel-open achievement event", () => {
       const listener = vi.fn();
       window.addEventListener("achievement", listener);

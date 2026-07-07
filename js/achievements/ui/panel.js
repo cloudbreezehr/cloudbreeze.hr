@@ -477,6 +477,11 @@ export function isPanelOpen() {
 function buildPanel(onHide) {
   const panel = document.createElement("div");
   panel.className = "achievement-panel";
+  // A focus-trapped, Escape-dismissable modal — name it so assistive tech
+  // announces it as a dialog and reads its title on open (see the title id).
+  panel.setAttribute("role", "dialog");
+  panel.setAttribute("aria-modal", "true");
+  panel.setAttribute("aria-labelledby", "cloudlog-title");
   // Restore the persisted density preference so it survives reloads.
   if (storage.getPref(COMPACT_PREF, false)) panel.classList.add("compact");
 
@@ -489,6 +494,7 @@ function buildPanel(onHide) {
 
   const title = document.createElement("h3");
   title.className = "achievement-title";
+  title.id = "cloudlog-title";
   title.textContent = "Cloudlog";
 
   const pointsEl = document.createElement("span");
