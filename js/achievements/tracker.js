@@ -97,6 +97,7 @@ export function createTracker(onUnlock, onRelock) {
     dragStartY: null,
     lastFuryTime: 0,
     longWatchTimer: null,
+    nightOwlInterval: null,
     // Rising-edge latches for onEdge, keyed by occurrence.
     edges: {},
     // Tracks which constellations have been formed in this session for
@@ -850,7 +851,10 @@ export function createTracker(onUnlock, onRelock) {
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     // Poll for the night-owl window while the tab is open
-    setInterval(checkNightOwl, NIGHT_OWL_CHECK_INTERVAL);
+    session.nightOwlInterval = setInterval(
+      checkNightOwl,
+      NIGHT_OWL_CHECK_INTERVAL,
+    );
 
     trackSession();
 
@@ -875,6 +879,10 @@ export function createTracker(onUnlock, onRelock) {
     window.removeEventListener("achievement", handleEvent);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     clearLongWatch();
+    if (session.nightOwlInterval != null) {
+      clearInterval(session.nightOwlInterval);
+      session.nightOwlInterval = null;
+    }
   }
 
   /**

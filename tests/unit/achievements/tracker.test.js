@@ -1211,6 +1211,15 @@ describe("tracker — night-owl", () => {
     expect(storage.isUnlocked("night-owl")).toBe(true);
   });
 
+  it("stops the poll on stop() so the window can't unlock after teardown", async () => {
+    const { storage, tracker } = await startTracker();
+
+    tracker.stop();
+    vi.advanceTimersByTime(PAST_NIGHT_OWL_MS);
+
+    expect(storage.isUnlocked("night-owl")).toBe(false);
+  });
+
   it("does not count time while the page is hidden", async () => {
     const { storage } = await startTracker();
 
