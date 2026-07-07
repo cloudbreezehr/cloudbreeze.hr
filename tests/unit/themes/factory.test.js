@@ -7,8 +7,23 @@ vi.mock("../../../js/effects/wipe.js", () => ({
 }));
 
 import { playWipe } from "../../../js/effects/wipe.js";
-import { createTheme } from "../../../js/themes/factory.js";
+import { createTheme, rampAbove } from "../../../js/themes/factory.js";
 import { toggleTheme } from "../../../js/themes/registry.js";
+
+describe("rampAbove", () => {
+  it("is 0 at the threshold and 1 at full progress", () => {
+    expect(rampAbove(0.4, 0.4)).toBe(0);
+    expect(rampAbove(1, 0.4)).toBe(1);
+  });
+
+  it("ramps linearly across the span above the threshold", () => {
+    expect(rampAbove(0.7, 0.4)).toBeCloseTo(0.5, 5); // halfway from 0.4 → 1
+  });
+
+  it("clamps at 1 past full progress", () => {
+    expect(rampAbove(2, 0.4)).toBe(1);
+  });
+});
 
 // createTheme requires an id that exists in the registry; pick one and share it.
 // The id is only used as a body-class and an achievement-event field.
