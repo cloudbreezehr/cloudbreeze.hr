@@ -74,6 +74,43 @@ describe("real-sky/geolocate", () => {
     expect(geo.currentLocation()).toEqual(HOME_LOCATION);
   });
 
+  describe("onLocationUpgrade", () => {
+    const ZAGREB = { city: "Zagreb", latitude: 45.81, longitude: 15.98 };
+
+    it("notifies subscribers when the lookup upgrades the location", async () => {
+      stubResponse(ZAGREB);
+      const cb = vi.fn();
+      geo.onLocationUpgrade(cb);
+      await geo.locateVisitor();
+      expect(cb).toHaveBeenCalledTimes(1);
+    });
+
+    it("does not notify when the lookup fails", async () => {
+      stubResponse({}, false);
+      const cb = vi.fn();
+      geo.onLocationUpgrade(cb);
+      await geo.locateVisitor();
+      expect(cb).not.toHaveBeenCalled();
+    });
+
+    it("fires immediately for a subscriber that binds after the upgrade", async () => {
+      stubResponse(ZAGREB);
+      await geo.locateVisitor();
+      const late = vi.fn();
+      geo.onLocationUpgrade(late);
+      expect(late).toHaveBeenCalledTimes(1);
+    });
+
+    it("stops notifying after unsubscribe", async () => {
+      stubResponse(ZAGREB);
+      const cb = vi.fn();
+      const off = geo.onLocationUpgrade(cb);
+      off();
+      await geo.locateVisitor();
+      expect(cb).not.toHaveBeenCalled();
+    });
+  });
+
   describe("requestPreciseLocation", () => {
     function stubGeolocation(impl) {
       vi.stubGlobal("navigator", { geolocation: { getCurrentPosition: impl } });

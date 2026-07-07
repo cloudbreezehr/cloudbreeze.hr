@@ -75,6 +75,40 @@ describe("real-sky/index", () => {
     );
   });
 
+  it("refreshes the open badge to the visitor's city when the IP lookup lands", async () => {
+    // The IP endpoint and the weather endpoint answer differently.
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) =>
+        String(url).includes("ipwho.is")
+          ? {
+              ok: true,
+              json: async () => ({
+                city: "Zagreb",
+                latitude: 45.81,
+                longitude: 15.98,
+              }),
+            }
+          : {
+              ok: true,
+              json: async () => ({
+                current: { temperature_2m: 16, weather_code: 0 },
+              }),
+            },
+      ),
+    );
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    const geo = await import("../../../js/real-sky/geolocate.js");
+    cleanup = realSky.initRealSky(); // default getter reads the shared location
+    const badge = document.querySelector(".footer-badge");
+
+    badge.click(); // opens; fetches the home-town weather first
+    await vi.waitFor(() => expect(badge.textContent).toContain("over Pula"));
+
+    await geo.locateVisitor(); // the coarse lookup lands and upgrades
+    await vi.waitFor(() => expect(badge.textContent).toContain("over Zagreb"));
+  });
+
   it("labels the weather with whatever location the getter returns", async () => {
     stubWeather({ current: { temperature_2m: 16.6, weather_code: 63 } });
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));

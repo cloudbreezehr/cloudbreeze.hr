@@ -10,7 +10,7 @@
 
 import { moonPhase, activeMeteorShower, seasonalMoment } from "./astro.js";
 import { localDayPhase } from "./local.js";
-import { currentLocation } from "./geolocate.js";
+import { currentLocation, onLocationUpgrade } from "./geolocate.js";
 import { fetchWeather } from "./weather.js";
 import {
   createLocationPin,
@@ -136,6 +136,11 @@ export function initRealSky(getLocation = currentLocation) {
   const pin = badge ? createLocationPin({ onUpgrade }) : null;
   weather = initWeatherBadge(getLocation, badge, pin);
 
+  // The coarse IP lookup (kicked off in parallel at load) upgrades the shared
+  // location after init; refresh the same surfaces the precise path does once
+  // it lands, rather than leaving home-town weather pinned.
+  const unsubscribeUpgrade = onLocationUpgrade(onUpgrade);
+
   // A returning granter's fix is used silently from load — no pin needed then.
   usePreciseLocationIfGranted(onUpgrade).then((upgraded) => {
     if (upgraded) pin?.retire();
@@ -143,6 +148,7 @@ export function initRealSky(getLocation = currentLocation) {
 
   return function cleanup() {
     clearInterval(phaseTimer);
+    unsubscribeUpgrade();
     delete document.body.dataset.skyPhase;
     document.body.classList.remove("sky-revealed");
   };

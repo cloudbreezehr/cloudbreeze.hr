@@ -23,8 +23,28 @@ const PRECISE_TIMEOUT_MS = 12000;
 // once (from the home town to the visitor's city) when the lookup lands.
 let current = HOME_LOCATION;
 
+// Latch + subscribers for the IP lookup's in-place upgrade. The precise path
+// notifies its own caller directly, so it isn't routed through here.
+let ipUpgraded = false;
+const upgradeListeners = new Set();
+
 export function currentLocation() {
   return current;
+}
+
+/**
+ * Subscribe to the coarse IP lookup landing and upgrading the shared location.
+ * Fires immediately if that already happened — the lookup is kicked off early,
+ * in parallel with module init, so a subscriber that binds after it lands must
+ * still hear about it. Returns an unsubscribe function.
+ */
+export function onLocationUpgrade(cb) {
+  if (ipUpgraded) {
+    cb();
+    return () => {};
+  }
+  upgradeListeners.add(cb);
+  return () => upgradeListeners.delete(cb);
 }
 
 /**
@@ -61,7 +81,11 @@ export async function fetchIpLocation() {
  */
 export async function locateVisitor() {
   const found = await fetchIpLocation();
-  if (found) current = found;
+  if (found) {
+    current = found;
+    ipUpgraded = true;
+    for (const cb of upgradeListeners) cb();
+  }
   return current;
 }
 
