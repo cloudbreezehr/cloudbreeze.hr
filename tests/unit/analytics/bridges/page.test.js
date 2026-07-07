@@ -78,6 +78,7 @@ describe("analytics/bridges/page", () => {
       <nav>
         <a href="#services">Services</a>
         <a href="#about">About</a>
+        <a href="#contact" class="nav-cta">Get in touch</a>
         <a href="https://example.com">External</a>
       </nav>
       <section id="services"></section>
@@ -171,6 +172,12 @@ describe("analytics/bridges/page", () => {
 
     it("does not fire for external links in nav (CTA bridge owns that)", () => {
       document.querySelector("a[href='https://example.com']").click();
+      core.flush();
+      expect(eventsNamed("nav_click").length).toEqual(0);
+    });
+
+    it("does not fire for the nav CTA (CTA bridge owns it, so no double-count)", () => {
+      document.querySelector("nav .nav-cta").click();
       core.flush();
       expect(eventsNamed("nav_click").length).toEqual(0);
     });

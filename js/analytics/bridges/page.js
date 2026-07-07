@@ -5,6 +5,7 @@
 
 import { track } from "../core.js";
 import { sessionCounters } from "./session.js";
+import { isCta } from "./cta.js";
 
 const SCROLL_THRESHOLDS = [25, 50, 75, 100];
 const SECTION_VIEW_RATIO = 0.5;
@@ -119,12 +120,13 @@ export function initPageBridge() {
     for (const { el } of sectionState.values()) observer.observe(el);
   }
 
-  // Nav clicks — internal anchors only.  External are covered by the CTA
-  // bridge so each click lands in exactly one bucket.
+  // Nav clicks — internal anchors, minus the ones the CTA bridge already
+  // records (the nav CTA + logo). Deferring to its definition of a CTA keeps
+  // each click in exactly one bucket.
   document.addEventListener("click", (e) => {
     const a =
       e.target && e.target.closest && e.target.closest("nav a[href^='#']");
-    if (!a) return;
+    if (!a || isCta(a)) return;
     const target = a.getAttribute("href").slice(1) || null;
     track("nav_click", {
       target_id: target,

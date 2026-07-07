@@ -28,6 +28,12 @@ function matchCta(el) {
   return null;
 }
 
+// The single definition of "this click is a tracked CTA", so another bridge
+// can defer to it rather than re-listing the selectors and drifting out of sync.
+export function isCta(el) {
+  return matchCta(el) !== null;
+}
+
 function hrefType(href) {
   if (!href) return "unknown";
   if (href.startsWith("mailto:")) return "mailto";
