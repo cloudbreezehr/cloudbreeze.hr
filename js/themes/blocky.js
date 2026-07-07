@@ -2,7 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createBlocky } from "../particles/blocky.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
 import { playSfx } from "../audio/sfx.js";
@@ -101,7 +101,7 @@ export function initBlocky(toggleEl) {
         jitterRunning = false;
         return;
       }
-      const t = Math.min(1, (force - BF.JITTER_AT) / (1 - BF.JITTER_AT));
+      const t = rampAbove(force, BF.JITTER_AT);
       const amp = BV.JITTER_AMPLITUDE * t;
       const tx = (Math.random() - 0.5) * amp * 2;
       const ty = (Math.random() - 0.5) * amp * 2;
@@ -193,10 +193,7 @@ export function initBlocky(toggleEl) {
             toggleEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - BF.ICON_PIXEL_AT) / (1 - BF.ICON_PIXEL_AT),
-          );
+          const t = rampAbove(progress, BF.ICON_PIXEL_AT);
           const shrink = 1 - t * BV.ICON_SHRINK_FACTOR;
           toggleEl.style.imageRendering = "pixelated";
           toggleEl.style.transform = `scale(${shrink.toFixed(3)})`;
@@ -219,10 +216,7 @@ export function initBlocky(toggleEl) {
             scanlineOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - BF.SCANLINE_AT) / (1 - BF.SCANLINE_AT),
-          );
+          const t = rampAbove(progress, BF.SCANLINE_AT);
           scanlineOverlay.style.opacity = String(
             t * BV.SCANLINE_BASE_OPACITY +
               (progress >= BF.HEAVY_PIXEL_AT ? t * BV.SCANLINE_HEAVY_BOOST : 0),
@@ -242,10 +236,7 @@ export function initBlocky(toggleEl) {
             if (page) page.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - BF.QUANTIZE_AT) / (1 - BF.QUANTIZE_AT),
-          );
+          const t = rampAbove(progress, BF.QUANTIZE_AT);
           gridOverlay.style.opacity = String(t * BV.GRID_MAX_OPACITY);
           const page = document.querySelector(".page");
           if (page) {

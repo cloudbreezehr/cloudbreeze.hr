@@ -5,7 +5,7 @@ import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
 import { reducedDuration } from "../motion.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
@@ -222,10 +222,7 @@ export function initRainy() {
             canvasEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
-          );
+          const t = rampAbove(progress, RF.CLOUD_DARKEN_AT);
           const sat = 1 - t * RV.DARKEN_SAT_RANGE;
           const bri = 1 - t * RV.DARKEN_BRI_RANGE;
           canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
@@ -242,10 +239,7 @@ export function initRainy() {
             heroTagEl.style.textShadow = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - RF.CLOUD_DARKEN_AT) / (1 - RF.CLOUD_DARKEN_AT),
-          );
+          const t = rampAbove(progress, RF.CLOUD_DARKEN_AT);
           const spread = RV.TAG_GLOW_SPREAD_MIN + t * RV.TAG_GLOW_SPREAD_RANGE;
           const alpha = RV.TAG_GLOW_ALPHA_MIN + t * RV.TAG_GLOW_ALPHA_RANGE;
           heroTagEl.style.textShadow = `0 0 ${spread}px rgba(160,180,210,${alpha.toFixed(2)})`;
@@ -262,10 +256,7 @@ export function initRainy() {
             stormOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
-          );
+          const t = rampAbove(progress, RF.WIND_PICKUP_AT);
           stormOverlay.style.opacity = String(t * 0.8);
         },
         clear() {
@@ -282,10 +273,7 @@ export function initRainy() {
             return;
           }
           heroTagEl.style.animation = "rain-sway 2s ease-in-out infinite";
-          const t = Math.min(
-            1,
-            (progress - RF.WIND_PICKUP_AT) / (1 - RF.WIND_PICKUP_AT),
-          );
+          const t = rampAbove(progress, RF.WIND_PICKUP_AT);
           heroTagEl.style.setProperty(
             "--sway-deg",
             (t * RV.SWAY_MAX_DEG).toFixed(1) + "deg",
@@ -304,10 +292,7 @@ export function initRainy() {
             if (cloudSvg) cloudSvg.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - RF.FIRST_DROPS_AT) / (1 - RF.FIRST_DROPS_AT),
-          );
+          const t = rampAbove(progress, RF.FIRST_DROPS_AT);
           const spread =
             RV.LOGO_GLOW_SPREAD_MIN + t * RV.LOGO_GLOW_SPREAD_RANGE;
           const alpha = RV.LOGO_GLOW_ALPHA_MIN + t * RV.LOGO_GLOW_ALPHA_RANGE;

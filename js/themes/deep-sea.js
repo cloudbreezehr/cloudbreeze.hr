@@ -3,7 +3,7 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createDeepSea } from "../particles/deep-sea.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
@@ -234,10 +234,7 @@ export function initDeepSea() {
             waterOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - DF.WATER_CREEP_AT) / (1 - DF.WATER_CREEP_AT),
-          );
+          const t = rampAbove(progress, DF.WATER_CREEP_AT);
           waterOverlay.style.opacity = String(t);
           const size = DV.WATER_SIZE_MIN + t * DV.WATER_SIZE_RANGE;
           waterOverlay.style.setProperty("--water-size", size + "%");
@@ -259,10 +256,7 @@ export function initDeepSea() {
             canvasEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - DF.COLOR_SHIFT_AT) / (1 - DF.COLOR_SHIFT_AT),
-          );
+          const t = rampAbove(progress, DF.COLOR_SHIFT_AT);
           const hue = 360 - t * DV.HUE_ROTATE;
           const sat = 1 + t * DV.SAT_BOOST;
           const bri = 1 - t * DV.BRI_DROP;
@@ -280,10 +274,7 @@ export function initDeepSea() {
             vignetteOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - DF.VIGNETTE_AT) / (1 - DF.VIGNETTE_AT),
-          );
+          const t = rampAbove(progress, DF.VIGNETTE_AT);
           vignetteOverlay.style.opacity = String(t * DV.VIGNETTE_MAX_OPACITY);
         },
         clear() {

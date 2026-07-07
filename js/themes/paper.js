@@ -5,7 +5,7 @@ import { prefersReducedMotion, scaled } from "../motion.js";
 import { playSfx } from "../audio/sfx.js";
 import { createPaper } from "../particles/paper.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeySequenceTrigger } from "./triggers.js";
@@ -319,7 +319,7 @@ export function initPaper() {
             document.body.style.removeProperty("--paper-grain-opacity");
             return;
           }
-          const t = Math.min(1, (progress - PF.GRAIN_AT) / (1 - PF.GRAIN_AT));
+          const t = rampAbove(progress, PF.GRAIN_AT);
           const o =
             PV.GRAIN_OPACITY_BASE +
             t * (PV.GRAIN_OPACITY_PEAK - PV.GRAIN_OPACITY_BASE);
@@ -345,7 +345,7 @@ export function initPaper() {
             canvasEl.style.filter = "";
             return;
           }
-          const t = Math.min(1, (progress - PF.DESAT_AT) / (1 - PF.DESAT_AT));
+          const t = rampAbove(progress, PF.DESAT_AT);
           const sat = 1 - t * (1 - PV.DESAT_SAT_MIN);
           const contrast = 1 + t * PV.DESAT_CONTRAST_BOOST;
           const sepia = t * PV.DESAT_SEPIA_MAX;
@@ -364,10 +364,7 @@ export function initPaper() {
             overlay.style.removeProperty("--paper-vignette-inner");
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - PF.STROKE_SEEP_AT) / (1 - PF.STROKE_SEEP_AT),
-          );
+          const t = rampAbove(progress, PF.STROKE_SEEP_AT);
           overlay.style.opacity = (t * PV.OVERLAY_MAX_OPACITY).toFixed(2);
           // Tighten the vignette inward as the trigger nears — the ink closes
           // in on the page before the wipe sweeps it to paper.
@@ -393,10 +390,7 @@ export function initPaper() {
             cloudSvg.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - PF.INK_FLOOD_AT) / (1 - PF.INK_FLOOD_AT),
-          );
+          const t = rampAbove(progress, PF.INK_FLOOD_AT);
           const sat = 1 - t * PV.LOGO_SAT_DROP;
           const bri = 1 - t * PV.LOGO_BRI_DROP;
           const con = 1 + t * PV.LOGO_CONTRAST_BOOST;

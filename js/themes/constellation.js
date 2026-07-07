@@ -2,7 +2,7 @@ import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { getSkyStars } from "../sky.js";
 import { createConstellation } from "../particles/constellation.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createConstellationTrigger } from "./triggers.js";
@@ -186,7 +186,7 @@ export function initConstellation() {
             nebulaOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(1, (progress - CF.NEBULA_AT) / (1 - CF.NEBULA_AT));
+          const t = rampAbove(progress, CF.NEBULA_AT);
           nebulaOverlay.style.opacity = String(t * CV.NEBULA_MAX_OPACITY);
         },
         clear() {
@@ -207,10 +207,7 @@ export function initConstellation() {
             applyHintPulse(floor);
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - CF.HINT_PULSE_AT) / (1 - CF.HINT_PULSE_AT),
-          );
+          const t = rampAbove(progress, CF.HINT_PULSE_AT);
           applyHintPulse(Math.max(floor, t * CV.HINT_PULSE_STRENGTH));
         },
         clear() {
@@ -225,10 +222,7 @@ export function initConstellation() {
             vignetteOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - CF.VIGNETTE_AT) / (1 - CF.VIGNETTE_AT),
-          );
+          const t = rampAbove(progress, CF.VIGNETTE_AT);
           vignetteOverlay.style.opacity = String(t * CV.VIGNETTE_MAX_OPACITY);
         },
         clear() {
@@ -247,10 +241,7 @@ export function initConstellation() {
             canvasEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - CF.DIM_REST_AT) / (1 - CF.DIM_REST_AT),
-          );
+          const t = rampAbove(progress, CF.DIM_REST_AT);
           const sat = 1 + t * CV.SAT_BOOST;
           const bri = 1 - t * CV.BRI_DROP;
           const hue = t * CV.HUE_ROTATE;

@@ -4,7 +4,7 @@ import { enableCardEffects } from "../service-cards.js";
 import { scaled } from "../motion.js";
 import { createVhs } from "../particles/vhs.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeyChordTrigger } from "./triggers.js";
@@ -327,10 +327,7 @@ export function initVhs() {
             scanlines.style.removeProperty("--vhs-scanline-opacity");
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - VF.SCANLINE_AT) / (1 - VF.SCANLINE_AT),
-          );
+          const t = rampAbove(progress, VF.SCANLINE_AT);
           const o =
             VV.SCANLINE_OPACITY_BASE +
             t * (VV.SCANLINE_OPACITY_PEAK - VV.SCANLINE_OPACITY_BASE);
@@ -352,10 +349,7 @@ export function initVhs() {
             document.body.removeAttribute("data-vhs-buildup");
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - VF.COLOR_CAST_AT) / (1 - VF.COLOR_CAST_AT),
-          );
+          const t = rampAbove(progress, VF.COLOR_CAST_AT);
           const sat = 1 - t * (1 - VV.BUILDUP_SAT_MIN);
           const sepia = t * VV.BUILDUP_SEPIA_MAX;
           document.body.dataset.vhsBuildup = "true";

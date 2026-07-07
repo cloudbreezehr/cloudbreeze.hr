@@ -6,7 +6,7 @@ import { createSnow } from "../particles/frozen.js";
 import { reducedDuration, prefersReducedMotion } from "../motion.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { playSfx } from "../audio/sfx.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { hasActiveThemeExcept } from "./registry.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
@@ -265,10 +265,7 @@ export function initFrozen() {
             cloudSvg.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - FF.FROST_RIM_AT) / (1 - FF.FROST_RIM_AT),
-          );
+          const t = rampAbove(progress, FF.FROST_RIM_AT);
           const spread = FV.RIM_SPREAD_MIN + t * FV.RIM_SPREAD_RANGE;
           const alpha = FV.RIM_ALPHA_MIN + t * FV.RIM_ALPHA_RANGE;
           // Thaw buildup (active=true) paints warm orange; freeze buildup paints cyan.
@@ -288,10 +285,7 @@ export function initFrozen() {
             frostOverlay.style.opacity = "0";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - FF.FROST_CREEP_AT) / (1 - FF.FROST_CREEP_AT),
-          );
+          const t = rampAbove(progress, FF.FROST_CREEP_AT);
           frostOverlay.style.opacity = String(t);
           const size = FV.FROST_SIZE_MIN + t * FV.FROST_SIZE_RANGE;
           frostOverlay.style.setProperty("--frost-size", size + "%");
@@ -313,10 +307,7 @@ export function initFrozen() {
             canvasEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - FF.TEMP_DROP_AT) / (1 - FF.TEMP_DROP_AT),
-          );
+          const t = rampAbove(progress, FF.TEMP_DROP_AT);
           const sat = 1 - t * FV.TEMP_SAT_DROP;
           const bri = 1 + t * FV.TEMP_BRI_BOOST;
           canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
@@ -338,10 +329,7 @@ export function initFrozen() {
             logoEl.style.filter = "";
             return;
           }
-          const t = Math.min(
-            1,
-            (progress - FF.LOGO_FROST_AT) / (1 - FF.LOGO_FROST_AT),
-          );
+          const t = rampAbove(progress, FF.LOGO_FROST_AT);
           const sat = 1 - t * FV.LOGO_SAT_DROP;
           const bri = 1 + t * FV.LOGO_BRI_BOOST;
           logoEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;

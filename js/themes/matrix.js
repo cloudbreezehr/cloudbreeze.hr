@@ -1,6 +1,6 @@
 import { defineConstants } from "../dev/registry.js";
 import { createMatrix } from "../particles/matrix.js";
-import { createTheme } from "./factory.js";
+import { createTheme, rampAbove } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeySequenceTrigger } from "./triggers.js";
 
@@ -78,7 +78,7 @@ export function initMatrix() {
             chargeGlow.style.opacity = "0";
             return;
           }
-          const t = Math.min(1, (progress - MF.CHARGE_AT) / (1 - MF.CHARGE_AT));
+          const t = rampAbove(progress, MF.CHARGE_AT);
           chargeGlow.style.opacity = t.toFixed(3);
         },
         clear() {

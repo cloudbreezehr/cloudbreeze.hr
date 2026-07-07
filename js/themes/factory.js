@@ -70,6 +70,15 @@ import { registerToggle } from "./registry.js";
  */
 
 /**
+ * Normalize progress into a 0→1 ramp across the span above a threshold,
+ * reaching 1 at full progress — the shared shape of a theme indicator that
+ * eases in only past its activation point. Indicators gate on the threshold
+ * first, so the sub-threshold (negative) region isn't exercised.
+ */
+export const rampAbove = (progress, threshold) =>
+  Math.min(1, (progress - threshold) / (1 - threshold));
+
+/**
  * Create and wire up a theme.
  * @param {ThemeDefinition} def
  * @returns {ThemeCtx} Live ctx (getter-backed) for callers that need ongoing
