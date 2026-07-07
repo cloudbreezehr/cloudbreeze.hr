@@ -77,6 +77,27 @@ describe("analytics/bridges/session", () => {
       expect(["low", "mid", "high"]).toContain(start.props.quality_tier);
     });
 
+    it("persists no visit counter or first-visit timestamp while opted out", async () => {
+      // Re-init from a clean slate, opted out before the bridge runs.
+      core._stopForTests();
+      localStorage.clear();
+      sessionStorage.clear();
+      vi.resetModules();
+      const consent = await import("../../../../js/analytics/consent.js");
+      const identity = await import("../../../../js/analytics/identity.js");
+      core = await import("../../../../js/analytics/core.js");
+      bridge = await import("../../../../js/analytics/bridges/session.js");
+      consent.optOut();
+      core.start({
+        adapter: { name: "capture", send: (batch) => captured.push(...batch) },
+      });
+      bridge.initSessionBridge();
+
+      // The visit counter and first-visit timestamp were never materialized.
+      expect(identity.visitCount()).toEqual(0);
+      expect(identity.isFirstVisitEver()).toBe(true);
+    });
+
     it("is_first_visit_ever becomes false on a second load", async () => {
       core.flush();
       // Simulate a page reload: new session, same origin.

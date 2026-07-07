@@ -6,6 +6,7 @@
 
 import { track } from "../core.js";
 import * as identity from "../identity.js";
+import * as consent from "../consent.js";
 import { getQualityTier } from "../../quality.js";
 
 export const HEARTBEAT_MS = 15000;
@@ -105,9 +106,17 @@ export function initSessionBridge() {
   _startedAt = Date.now();
   _lastVisibleTs = document.hidden ? 0 : _startedAt;
 
-  const firstEver = identity.isFirstVisitEver();
-  identity.firstVisitTs(); // materialize if missing
-  const newVisitCount = identity.bumpVisitCount();
+  // Identity is persisted, growing state — materialize it only when sending is
+  // allowed, so an opted-out or DNT visitor leaves no visit counter or
+  // first-visit timestamp behind. session_start itself short-circuits in
+  // track() when consent is denied, so these values only ever ship when set.
+  let firstEver = false;
+  let newVisitCount = 0;
+  if (consent.allowed()) {
+    firstEver = identity.isFirstVisitEver();
+    identity.firstVisitTs(); // materialize if missing
+    newVisitCount = identity.bumpVisitCount();
+  }
 
   const conn =
     (typeof navigator !== "undefined" && navigator.connection) || null;
