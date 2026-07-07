@@ -214,9 +214,6 @@ export const INCANTATIONS = [
     icon: ICONS.pulse,
     hint: "Rings ripple outward from the cursor",
     cast: (origin) => {
-      // spawnRipple animates unconditionally, so gate it here — its siblings
-      // (launchRocketFireworks / burstFireworks) already self-skip.
-      if (prefersReducedMotion()) return;
       spawnRipple(origin.x, origin.y, {
         className: "incantation-ring",
         count: PULSE_RINGS,
@@ -248,7 +245,6 @@ export const INCANTATIONS = [
     chargeMax: () => NOVA_MAX_CHARGE,
     cast: (origin, charge) => {
       burstFireworks(origin.x, origin.y);
-      if (prefersReducedMotion()) return;
       spawnRipple(origin.x, origin.y, {
         className: "incantation-ring",
         count: NOVA_RINGS,
@@ -521,7 +517,6 @@ export const INCANTATIONS = [
     chargeMax: () => SUPERNOVA_MAX_CHARGE,
     cast: (origin, charge) => {
       burstFireworks(origin.x, origin.y);
-      if (prefersReducedMotion()) return;
       spawnRipple(origin.x, origin.y, {
         className: "incantation-ring",
         count: SUPERNOVA_RINGS,
@@ -540,7 +535,6 @@ export const INCANTATIONS = [
     hint: "Rings echo outward like sonar",
     // Several staggered rings rippling out, with the sonar echo voice.
     cast: (origin) => {
-      if (prefersReducedMotion()) return;
       spawnRipple(origin.x, origin.y, {
         className: "incantation-ring",
         count: ECHO_RINGS,

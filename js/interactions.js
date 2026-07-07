@@ -578,21 +578,19 @@ export function createInteractions() {
         );
         cursorDot?.classList.add("gravity-well");
         cursorRing?.classList.add("gravity-well");
-        if (!prefersReducedMotion()) {
-          spawnRipple(
-            forces.dragPos.x,
-            mirrorYWhenInverted(forces.dragPos.y, getViewportHeight()),
-            {
-              className: "well-pulse-ring",
-              count: WELL.PULSE_RING_COUNT,
-              staggerMs: WELL.PULSE_RING_STAGGER_MS,
-              duration: WELL.PULSE_RING_DURATION_MS,
-              maxScale: WELL.PULSE_RING_MAX_SCALE,
-              startOpacity: WELL.PULSE_RING_OPACITY,
-              sound: "wellPulse",
-            },
-          );
-        }
+        spawnRipple(
+          forces.dragPos.x,
+          mirrorYWhenInverted(forces.dragPos.y, getViewportHeight()),
+          {
+            className: "well-pulse-ring",
+            count: WELL.PULSE_RING_COUNT,
+            staggerMs: WELL.PULSE_RING_STAGGER_MS,
+            duration: WELL.PULSE_RING_DURATION_MS,
+            maxScale: WELL.PULSE_RING_MAX_SCALE,
+            startOpacity: WELL.PULSE_RING_OPACITY,
+            sound: "wellPulse",
+          },
+        );
       }
       if (forces.wellStrength >= 1 && prevWell < 1) {
         window.dispatchEvent(

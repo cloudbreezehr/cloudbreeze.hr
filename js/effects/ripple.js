@@ -3,11 +3,16 @@
 // CSS classes control the visual appearance (size, color, border).
 
 import { playSfx } from "../audio/sfx.js";
+import { prefersReducedMotion } from "../motion.js";
 
 /**
  * Spawn one or more expanding ripple rings at (x, y).
  * Each ring is a DOM element animated via Web Animations API and
  * self-removes on completion.
+ *
+ * A one-shot visual, so it no-ops under reduced motion — and, since the
+ * voice is tied to the ring it never draws, falls silent there too.
+ * Callers need no reduced-motion guard of their own.
  *
  * @param {number} x - X coordinate relative to parent
  * @param {number} y - Y coordinate relative to parent
@@ -22,6 +27,7 @@ import { playSfx } from "../audio/sfx.js";
  * @param {string}      [opts.sound]       - Voice to play (default: "drop")
  */
 export function spawnRipple(x, y, opts) {
+  if (prefersReducedMotion()) return;
   playSfx(opts.sound || "drop");
   const parent = opts.parent || document.body;
   const count = opts.count || 1;
