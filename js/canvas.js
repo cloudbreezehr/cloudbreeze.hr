@@ -148,6 +148,10 @@ export function initCanvas(canvasEl, appearance, options) {
       document.documentElement.scrollHeight - getViewportHeight();
     scrollProgress =
       docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
+    // Fold this delta into the velocity before dispatching, so the event
+    // carries the velocity this scroll produced rather than the prior frame's
+    // already-decayed value — a flick from rest must not report zero.
+    scrollVelocity += deltaY * SCROLL.VEL_GAIN;
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: {
@@ -157,7 +161,6 @@ export function initCanvas(canvasEl, appearance, options) {
         },
       }),
     );
-    scrollVelocity += deltaY * SCROLL.VEL_GAIN;
   }
 
   resize();
