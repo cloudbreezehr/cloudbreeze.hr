@@ -97,8 +97,11 @@ function initWeatherBadge(getLocation, badge, pin) {
     }
   }
 
+  // The badge is a disclosure — it expands to reveal the live weather line.
+  badge.setAttribute("aria-expanded", "false");
   bindClickable(badge, () => {
     revealed = !revealed;
+    badge.setAttribute("aria-expanded", String(revealed));
     document.body.classList.toggle("sky-revealed", revealed);
     textEl.textContent = revealed && weatherLine ? weatherLine : baseText;
     syncPin();

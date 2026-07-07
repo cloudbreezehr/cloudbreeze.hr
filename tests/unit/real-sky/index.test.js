@@ -242,6 +242,18 @@ describe("real-sky/index", () => {
     expect(badge.tabIndex).toBe(0);
   });
 
+  it("reflects its expanded state via aria-expanded", () => {
+    stubWeather({ current: { temperature_2m: 16, weather_code: 0 } });
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+    expect(badge.getAttribute("aria-expanded")).toBe("false");
+    badge.click();
+    expect(badge.getAttribute("aria-expanded")).toBe("true");
+    badge.click();
+    expect(badge.getAttribute("aria-expanded")).toBe("false");
+  });
+
   it("leaves the badge untouched when the network fails", async () => {
     vi.stubGlobal(
       "fetch",
