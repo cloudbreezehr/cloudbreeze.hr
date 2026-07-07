@@ -151,8 +151,11 @@ export function getList(name) {
 
 /**
  * Build a URL carrying the given { name: value } parameters, each placed
- * into its catalog `write` source.  Defaults to the current page's
- * origin + pathname; pass { base } to target another.
+ * into its catalog `write` source.  A list parameter given an array emits
+ * one key per value (?k=a&k=b).  Throws on a name that's unknown or has no
+ * writable source — mirroring the read-side guard so catalog/caller drift
+ * surfaces loudly.  Defaults to the current page's origin + pathname; pass
+ * { base } to target another.
  */
 export function buildUrl(params, { base } = {}) {
   const origin =
@@ -163,9 +166,13 @@ export function buildUrl(params, { base } = {}) {
   const queryParts = [];
   const hashParts = [];
   for (const [name, value] of Object.entries(params)) {
-    const encoded = `${name}=${encodeURIComponent(value)}`;
-    if (PARAMS[name].write === HASH) hashParts.push(encoded);
-    else queryParts.push(encoded);
+    const spec = PARAMS[name];
+    if (!spec) throw new Error(`[url-params] unknown parameter: ${name}`);
+    if (!spec.write)
+      throw new Error(`[url-params] ${name} has no writable source`);
+    const bucket = spec.write === HASH ? hashParts : queryParts;
+    const values = spec.kind === LIST && Array.isArray(value) ? value : [value];
+    for (const v of values) bucket.push(`${name}=${encodeURIComponent(v)}`);
   }
   let url = origin;
   if (queryParts.length) url += "?" + queryParts.join("&");
@@ -174,10 +181,10 @@ export function buildUrl(params, { base } = {}) {
 }
 
 // ── Change notification ──
-// The URL can change in place (a hash deep-link followed live, the
-// address bar edited).  Subscribers re-read by name on each change; the
-// callback carries no payload because the value is always a fresh query
-// away.
+// The URL can change in place — a hash deep-link followed live, the address
+// bar edited, or history Back/Forward (popstate) restoring a query-string
+// parameter.  Subscribers re-read by name on each change; the callback carries
+// no payload because the value is always a fresh query away.
 const listeners = new Set();
 let bound = false;
 
@@ -193,6 +200,7 @@ export function onUrlChange(cb) {
   if (!bound && typeof window !== "undefined") {
     bound = true;
     window.addEventListener("hashchange", emitChange);
+    window.addEventListener("popstate", emitChange);
   }
   return () => listeners.delete(cb);
 }

@@ -194,6 +194,23 @@ describe("url-params", () => {
       const url = buildUrl({ sky: "2025-01-01" });
       expect(url).toBe(location.origin + location.pathname + "#sky=2025-01-01");
     });
+
+    it("emits a list param as repeated keys", () => {
+      const url = buildUrl(
+        { theme: ["frozen", "blocky"] },
+        { base: "https://x/" },
+      );
+      expect(url).toBe("https://x/?theme=frozen&theme=blocky");
+    });
+
+    it("throws on an unknown parameter", () => {
+      expect(() => buildUrl({ nope: "x" })).toThrow(/unknown/);
+    });
+
+    it("throws on a parameter with no writable source", () => {
+      // `dev` resolves from the hash but declares no `write` target.
+      expect(() => buildUrl({ dev: true })).toThrow(/writable/);
+    });
   });
 
   describe("onUrlChange", () => {
@@ -205,6 +222,14 @@ describe("url-params", () => {
       off();
       window.dispatchEvent(new Event("hashchange"));
       expect(count).toBe(1);
+    });
+
+    it("fires subscribers on popstate (query-string Back/Forward)", () => {
+      let count = 0;
+      const off = onUrlChange(() => count++);
+      window.dispatchEvent(new Event("popstate"));
+      expect(count).toBe(1);
+      off();
     });
   });
 });
