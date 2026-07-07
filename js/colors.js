@@ -608,9 +608,20 @@ const overrides = {
   },
 };
 
+// Memoized because palettes/overrides are static: a given (appearance, theme)
+// always resolves to the same object, and the render loop asks for it every
+// frame — once for the winning theme, again per active theme via palFor — so
+// the spread below would otherwise allocate a fresh ~30-key object each frame.
+// Inner color arrays stay reference-stable, which the sky-gradient cache needs.
+const _paletteCache = new Map();
+
 export function resolvePalette(appearance, theme) {
+  const key = `${appearance}|${theme || ""}`;
+  let pal = _paletteCache.get(key);
+  if (pal) return pal;
   const base = palettes[appearance] || palettes.dark;
-  if (!theme || !overrides[theme]) return base;
-  const over = overrides[theme][appearance];
-  return over ? { ...base, ...over } : base;
+  const over = theme && overrides[theme] ? overrides[theme][appearance] : null;
+  pal = over ? { ...base, ...over } : base;
+  _paletteCache.set(key, pal);
+  return pal;
 }
