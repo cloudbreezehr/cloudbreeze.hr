@@ -1,16 +1,76 @@
 import { defineConstants } from "./dev/registry.js";
 
 const C = defineConstants("cursor", {
-  RING_EASING: 0.12,
-  RING_EASING_SNAP: 1,
-  DOT_SIZE_DEFAULT: 12,
-  DOT_SIZE_HOVER: 6,
-  DOT_SIZE_PRESS: 16,
-  DOT_SIZE_HOVER_PRESS: 10,
-  RING_SIZE_DEFAULT: 36,
-  RING_SIZE_HOVER: 52,
-  RING_SIZE_PRESS: 20,
-  RING_SIZE_HOVER_PRESS: 32,
+  RING_EASING: {
+    value: 0.12,
+    min: 0.01,
+    max: 1,
+    step: 0.01,
+    description: "Ring follow easing (lower = laggier trail)",
+  },
+  RING_EASING_SNAP: {
+    value: 1,
+    min: 0.01,
+    max: 1,
+    step: 0.01,
+    description: "Ring easing when snapping straight to the pointer",
+  },
+  DOT_SIZE_DEFAULT: {
+    value: 12,
+    min: 2,
+    max: 40,
+    step: 1,
+    description: "Cursor dot diameter at rest (px)",
+  },
+  DOT_SIZE_HOVER: {
+    value: 6,
+    min: 2,
+    max: 40,
+    step: 1,
+    description: "Cursor dot diameter over a clickable (px)",
+  },
+  DOT_SIZE_PRESS: {
+    value: 16,
+    min: 2,
+    max: 40,
+    step: 1,
+    description: "Cursor dot diameter while pressing (px)",
+  },
+  DOT_SIZE_HOVER_PRESS: {
+    value: 10,
+    min: 2,
+    max: 40,
+    step: 1,
+    description: "Cursor dot diameter pressing over a clickable (px)",
+  },
+  RING_SIZE_DEFAULT: {
+    value: 36,
+    min: 8,
+    max: 100,
+    step: 1,
+    description: "Cursor ring diameter at rest (px)",
+  },
+  RING_SIZE_HOVER: {
+    value: 52,
+    min: 8,
+    max: 100,
+    step: 1,
+    description: "Cursor ring diameter over a clickable (px)",
+  },
+  RING_SIZE_PRESS: {
+    value: 20,
+    min: 8,
+    max: 100,
+    step: 1,
+    description: "Cursor ring diameter while pressing (px)",
+  },
+  RING_SIZE_HOVER_PRESS: {
+    value: 32,
+    min: 8,
+    max: 100,
+    step: 1,
+    description: "Cursor ring diameter pressing over a clickable (px)",
+  },
 });
 
 const NATIVE_CURSOR_SELECTOR = ".dev-console";
