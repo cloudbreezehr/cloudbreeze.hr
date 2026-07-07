@@ -47,6 +47,20 @@ const RELEASE_FLASH_START_SPREAD = 8;
 const RELEASE_FLASH_END_SPREAD = 36;
 const RELEASE_FLASH_OPACITY = 0.6;
 const RELEASE_FLASH_END_WIDTH = 10;
+// ── Tooltip ──
+const TOOLTIP_WIDTH = 260; // clamp keeps the tooltip inside the right edge
+const TOOLTIP_GAP = 6; // vertical gap below the anchored row
+// ── Float placement ──
+const FLOAT_INIT_X = 100;
+const FLOAT_INIT_Y = 0;
+const UNDOCK_FLOAT_OFFSET = 60; // where a docked panel lands when it pops free
+// ── Movement epsilons ──
+// Below these deltas a docked→docked animation counts as no movement.
+const NO_MOVE_EPS_PX = 1;
+const NO_MOVE_EPS_SCALE = 0.01;
+// ── Feedback timing ──
+const COPY_FEEDBACK_MS = 1500; // how long the "Copied!" label lingers
+const SEARCH_FOCUS_DELAY_MS = 100; // defer focus so it doesn't fight the open
 const SECTION_LABEL_MAP = {
   "sky.stars": "Stars",
   "sky.shooting": "Shooting Stars",
@@ -151,8 +165,8 @@ function showTooltip(target, entry, category, key) {
   tooltipEl.innerHTML = lines.join("<br>");
   tooltipEl.style.display = "block";
   const rect = target.getBoundingClientRect();
-  tooltipEl.style.left = `${Math.min(rect.left, window.innerWidth - 260)}px`;
-  tooltipEl.style.top = `${rect.bottom + 6}px`;
+  tooltipEl.style.left = `${Math.min(rect.left, window.innerWidth - TOOLTIP_WIDTH)}px`;
+  tooltipEl.style.top = `${rect.bottom + TOOLTIP_GAP}px`;
 }
 function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";
@@ -418,7 +432,7 @@ function buildPanel() {
     const json = JSON.stringify(exportConfig(), null, 2);
     navigator.clipboard.writeText(json).then(() => {
       btnExport.textContent = "Copied!";
-      setTimeout(() => (btnExport.textContent = "Export"), 1500);
+      setTimeout(() => (btnExport.textContent = "Export"), COPY_FEEDBACK_MS);
     });
   });
 
@@ -615,8 +629,8 @@ function setupDocking(panel) {
   let dragOffX = 0;
   let dragOffY = 0;
   let dockState = "docked-right"; // docked-right | docked-left | floating
-  let floatX = 100;
-  let floatY = 0;
+  let floatX = FLOAT_INIT_X;
+  let floatY = FLOAT_INIT_Y;
   let dockAnimating = false;
   let magnetEngaged = false; // latched true while the panel sits in the magnet zone
   let recalibrateDrag = false;
@@ -747,10 +761,10 @@ function setupDocking(panel) {
     const sy = fromRect.height / toRect.height;
 
     const noMovement =
-      Math.abs(dx) < 1 &&
-      Math.abs(dy) < 1 &&
-      Math.abs(sx - 1) < 0.01 &&
-      Math.abs(sy - 1) < 0.01;
+      Math.abs(dx) < NO_MOVE_EPS_PX &&
+      Math.abs(dy) < NO_MOVE_EPS_PX &&
+      Math.abs(sx - 1) < NO_MOVE_EPS_SCALE &&
+      Math.abs(sy - 1) < NO_MOVE_EPS_SCALE;
     if (noMovement) {
       clearMagnet();
       return;
@@ -790,7 +804,10 @@ function setupDocking(panel) {
     if (dockAnimating) return;
     if (dockState === "docked-right") animateToState("docked-left");
     else if (dockState === "docked-left")
-      animateToState("floating", { floatX: 60, floatY: 60 });
+      animateToState("floating", {
+        floatX: UNDOCK_FLOAT_OFFSET,
+        floatY: UNDOCK_FLOAT_OFFSET,
+      });
     else animateToState("docked-right");
   });
 
@@ -1178,7 +1195,7 @@ export function openDevConsole() {
   });
 
   // Focus search on open
-  setTimeout(() => searchInput.focus(), 100);
+  setTimeout(() => searchInput.focus(), SEARCH_FOCUS_DELAY_MS);
 }
 
 export function closeDevConsole() {
