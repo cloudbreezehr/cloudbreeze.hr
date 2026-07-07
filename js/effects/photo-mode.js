@@ -16,6 +16,7 @@ const FADE_FALLBACK_MS = 400;
 let barEl = null;
 let _escHandler = null;
 let _unbindSave = null;
+let _prevFocus = null;
 
 function emit(type) {
   window.dispatchEvent(new CustomEvent("achievement", { detail: { type } }));
@@ -73,11 +74,19 @@ function buildBar() {
 
 export function enterPhotoMode() {
   if (barEl) return;
+  // Capture focus *before* making the page inert: inert ejects focus from any
+  // focused descendant (e.g. a nav link the keyboard user tabbed to), so
+  // reading activeElement afterward would see <body>, not what to restore.
+  _prevFocus = document.activeElement;
+  // The page fades out, but opacity alone leaves its controls in the tab order
+  // and the a11y tree — `inert` removes both so only the toolbar is reachable.
+  document.querySelector(".page")?.setAttribute("inert", "");
   document.body.classList.add("photo-mode");
   barEl = buildBar();
   document.body.appendChild(barEl);
   void barEl.offsetHeight;
   barEl.classList.add("visible");
+  barEl.querySelector("button")?.focus();
   playSfx("panelOpen", { ui: true });
   _escHandler = (e) => {
     if (e.key === "Escape") {
@@ -95,6 +104,9 @@ export function exitPhotoMode() {
   const el = barEl;
   barEl = null;
   document.body.classList.remove("photo-mode");
+  document.querySelector(".page")?.removeAttribute("inert");
+  if (_prevFocus && typeof _prevFocus.focus === "function") _prevFocus.focus();
+  _prevFocus = null;
   if (_escHandler) {
     document.removeEventListener("keydown", _escHandler);
     _escHandler = null;
@@ -125,5 +137,7 @@ export function _resetForTests() {
   }
   if (barEl && barEl.parentNode) barEl.remove();
   barEl = null;
+  _prevFocus = null;
   document.body.classList.remove("photo-mode");
+  document.querySelector(".page")?.removeAttribute("inert");
 }

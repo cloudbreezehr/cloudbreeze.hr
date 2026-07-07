@@ -35,6 +35,42 @@ describe("effects/photo-mode", () => {
     expect(events).toContain("photo-mode");
   });
 
+  it("makes the faded page inert on enter and restores it on exit", () => {
+    const page = document.createElement("div");
+    page.className = "page";
+    document.body.appendChild(page);
+
+    photo.enterPhotoMode();
+    expect(page.hasAttribute("inert")).toBe(true);
+
+    photo.exitPhotoMode();
+    expect(page.hasAttribute("inert")).toBe(false);
+  });
+
+  it("restores focus to the pre-photo-mode element, captured before inert", () => {
+    const page = document.createElement("div");
+    page.className = "page";
+    const link = document.createElement("button");
+    page.appendChild(link);
+    document.body.appendChild(page);
+    link.focus();
+    expect(document.activeElement).toBe(link);
+
+    // Real browsers eject focus from a subtree the moment it goes inert;
+    // happy-dom doesn't, so simulate it — this is what makes capture order
+    // observable (capturing after inert would record <body>, not the link).
+    const realSetAttribute = page.setAttribute.bind(page);
+    page.setAttribute = (name, value) => {
+      realSetAttribute(name, value);
+      if (name === "inert") document.activeElement?.blur();
+    };
+
+    photo.enterPhotoMode();
+    photo.exitPhotoMode();
+
+    expect(document.activeElement).toBe(link);
+  });
+
   it("Escape leaves photo mode and restores the page", () => {
     photo.enterPhotoMode();
     document.dispatchEvent(
