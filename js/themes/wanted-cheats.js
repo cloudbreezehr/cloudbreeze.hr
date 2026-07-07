@@ -197,7 +197,6 @@ export const CHEATS = [
         sound: "party",
       });
       screenShake({ amplitude: C.RIOT_SHAKE, sound: "quake" });
-      if (prefersReducedMotion()) return;
       const c = center();
       spawnRipple(c.x, c.y, {
         className: "incantation-ring",
