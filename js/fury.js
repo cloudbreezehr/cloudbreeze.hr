@@ -823,7 +823,7 @@ export function createFury() {
 
   return {
     // Draw fury effects: decay, lightning, aurora, meteors.
-    draw(ctx, canvas, pal, sp, dt, now) {
+    draw(ctx, canvas, pal, dt, now) {
       // Aurora and meteors step by this; lightning stays frame-counted below —
       // it's a sub-second flash whose flicker is indexed by exact frame number.
       const dTicks = Math.min(dt * FURY_TICK_HZ, FURY_MAX_DTICKS);

@@ -19,15 +19,15 @@ function inferMeta(key, value) {
     max = 10;
     step = isInt ? 1 : 0.01;
   } else if (abs <= 1) {
-    min = isInt ? -1 : -1;
+    min = -1;
     max = isInt ? 10 : 2;
     step = isInt ? 1 : 0.001;
   } else if (abs <= 10) {
-    min = isInt ? 0 : 0;
+    min = 0;
     max = isInt ? Math.ceil(abs * 5) : abs * 5;
     step = isInt ? 1 : 0.01;
   } else if (abs <= 100) {
-    min = isInt ? 0 : 0;
+    min = 0;
     max = isInt ? Math.ceil(abs * 3) : abs * 3;
     step = isInt ? 1 : 0.1;
   } else {

@@ -384,7 +384,7 @@ export function initCanvas(canvasEl, appearance, options) {
     }
 
     // Click fury — lightning, aurora, meteors.
-    if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);
+    if (!reducedMotion) fury.draw(ctx, canvas, pal, dt, now);
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
     // Decay on wall-clock time so gusts (which ride this velocity) don't fade

@@ -850,13 +850,6 @@ export const EDGE = defineConstants("interactions.edge", {
     step: 0.5,
     description: "Click impulse strength for undock release",
   },
-  IMPULSE_RADIUS: {
-    value: 300,
-    min: 50,
-    max: 600,
-    step: 10,
-    description: "Radius of dock impulse effect on existing particles",
-  },
   STAGGER_POINTS: {
     value: 5,
     min: 1,
