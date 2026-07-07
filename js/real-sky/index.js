@@ -53,6 +53,9 @@ function initWeatherBadge(getLocation, badge, pin) {
   let weatherLine = null;
   let revealed = false;
   let fetching = false;
+  // Set when a refresh is asked for mid-fetch: the in-flight fetch is against
+  // now-stale coordinates, so it's followed by one for the current location.
+  let refetchRequested = false;
 
   // The pin belongs with the expanded, weather-showing badge — it refines that
   // very weather, so it only appears once there's weather to refine.
@@ -61,13 +64,25 @@ function initWeatherBadge(getLocation, badge, pin) {
   }
 
   async function loadWeather() {
-    if (fetching) return;
+    if (fetching) {
+      // Coalesce: a request made now would be lost, so mark it and let the
+      // in-flight fetch trigger a follow-up when it settles.
+      refetchRequested = true;
+      return;
+    }
     fetching = true;
     // Read once so the fetched coordinates and the displayed city agree
     // even if the location upgrades mid-flight.
     const location = getLocation();
     const weather = await fetchWeather(location);
     fetching = false;
+    // A location upgrade landed mid-flight: this result is for the old
+    // coordinates, so discard it and fetch again for the current location.
+    if (refetchRequested) {
+      refetchRequested = false;
+      loadWeather();
+      return;
+    }
     // Offline or blocked: the moon still hangs, the text just stays plain.
     if (!weather) return;
     weatherLine = `${baseText} · ${Math.round(weather.tempC)}°C ${

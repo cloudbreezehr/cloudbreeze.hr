@@ -109,6 +109,52 @@ describe("real-sky/index", () => {
     await vi.waitFor(() => expect(badge.textContent).toContain("over Zagreb"));
   });
 
+  it("re-fetches for the new location when an upgrade lands mid-fetch", async () => {
+    let releaseFirstWeather;
+    let weatherCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        if (String(url).includes("ipwho.is")) {
+          return {
+            ok: true,
+            json: async () => ({
+              city: "Zagreb",
+              latitude: 45.81,
+              longitude: 15.98,
+            }),
+          };
+        }
+        weatherCalls += 1;
+        // Hold the first (home-town) fetch open so the upgrade lands in flight.
+        if (weatherCalls === 1) {
+          await new Promise((r) => {
+            releaseFirstWeather = r;
+          });
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            current: { temperature_2m: 16, weather_code: 0 },
+          }),
+        };
+      }),
+    );
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    const geo = await import("../../../js/real-sky/geolocate.js");
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+
+    badge.click(); // opens; the home-town weather fetch now hangs
+    await geo.locateVisitor(); // upgrade lands while that fetch is in flight
+    releaseFirstWeather(); // the stale home-town fetch finally settles
+
+    // Without coalescing, the mid-fetch refresh would be dropped and the badge
+    // would stick on the home-town result; instead it re-fetches the new city.
+    await vi.waitFor(() => expect(badge.textContent).toContain("over Zagreb"));
+    expect(weatherCalls).toBe(2);
+  });
+
   it("labels the weather with whatever location the getter returns", async () => {
     stubWeather({ current: { temperature_2m: 16.6, weather_code: 63 } });
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
