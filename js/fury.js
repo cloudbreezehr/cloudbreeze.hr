@@ -4,6 +4,14 @@ import { defineConstants, notifySectionActivate } from "./dev/registry.js";
 import { playSfx } from "./audio/sfx.js";
 import { prefersReducedMotion } from "./motion.js";
 
+// ── Frame-rate independence ──
+// Continuous fury motion — aurora ribbons and meteor arcs — advances by
+// wall-clock time, not frame count, so it runs at the same speed on a 120 Hz
+// display as a 60 Hz one. dt (seconds) is normalized to 60fps-equivalent ticks
+// and clamped so a single stalled frame can't fling a meteor across the sky.
+const FURY_TICK_HZ = 60;
+const FURY_MAX_DTICKS = 3;
+
 // ── Click Fury ──
 const FURY = defineConstants("fury.click", {
   MAX: {
@@ -816,6 +824,10 @@ export function createFury() {
   return {
     // Draw fury effects: decay, lightning, aurora, meteors.
     draw(ctx, canvas, pal, sp, dt, now) {
+      // Aurora and meteors step by this; lightning stays frame-counted below —
+      // it's a sub-second flash whose flicker is indexed by exact frame number.
+      const dTicks = Math.min(dt * FURY_TICK_HZ, FURY_MAX_DTICKS);
+
       // Detect fury tier activations (before decay)
       if (clickFury >= LN.TIER && !lightningActive) {
         lightningActive = true;
@@ -880,7 +892,9 @@ export function createFury() {
         clickFury >= AURORA.TIER
           ? Math.min((clickFury - AURORA.TIER) / AURORA.RAMP, 1)
           : 0;
-      auroraIntensity += (auroraTarget - auroraIntensity) * AURORA.EASE;
+      auroraIntensity +=
+        (auroraTarget - auroraIntensity) *
+        (1 - Math.pow(1 - AURORA.EASE, dTicks));
       if (auroraIntensity > 0.01) {
         while (auroraWaves.length < AURORA.WAVE_COUNT) {
           auroraWaves.push({
@@ -920,7 +934,7 @@ export function createFury() {
         };
 
         auroraWaves.forEach((w) => {
-          w.phase += w.speed;
+          w.phase += w.speed * dTicks;
           if (pal.auroraHueBase < 60 && w.hue > 60)
             w.hue = (w.hue - 120 + 360) % 360;
           if (pal.auroraHueBase >= 60 && w.hue < 60)
@@ -975,14 +989,14 @@ export function createFury() {
       // Tier 3: Meteor shower
       meteorPool.forEach((m) => {
         if (!m.active) return;
-        m.life++;
+        m.life += dTicks;
         if (m.life > m.maxLife) {
           m.active = false;
           return;
         }
         const p = m.life / m.maxLife;
-        m.x += Math.cos(m.angle) * m.speed;
-        m.y += Math.sin(m.angle) * m.speed;
+        m.x += Math.cos(m.angle) * m.speed * dTicks;
+        m.y += Math.sin(m.angle) * m.speed * dTicks;
         const fade =
           p < METEOR.FADE_IN_FRAC
             ? p / METEOR.FADE_IN_FRAC
