@@ -4,6 +4,7 @@
 // Uses Web Animations API and self-removes.
 
 import { defineConstants } from "../dev/registry.js";
+import { prefersReducedMotion } from "../motion.js";
 
 const SPARK = defineConstants("effects.navSparkle", {
   THROTTLE_MS: {
@@ -67,6 +68,7 @@ export function initNavSparkle() {
   document.addEventListener(
     "mousemove",
     (e) => {
+      if (prefersReducedMotion()) return;
       const link = e.target.closest(SELECTOR);
       if (!link) return;
 
