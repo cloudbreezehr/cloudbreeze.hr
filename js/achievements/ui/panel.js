@@ -8,7 +8,7 @@
 
 import {
   getReachableAchievements,
-  isBonus,
+  countCoreBonus,
   sumPoints,
   getAchievement,
 } from "../registry.js";
@@ -117,18 +117,9 @@ function totalPoints() {
 // completion — it pushes past it once core is done.
 function reachableCounts() {
   const unlockedIds = new Set(storage.getUnlocked().map((u) => u.id));
-  let coreTotal = 0;
-  let coreUnlocked = 0;
-  let bonusUnlocked = 0;
-  for (const a of getReachableAchievements()) {
-    if (isBonus(a)) {
-      if (unlockedIds.has(a.id)) bonusUnlocked++;
-    } else {
-      coreTotal++;
-      if (unlockedIds.has(a.id)) coreUnlocked++;
-    }
-  }
-  return { coreUnlocked, coreTotal, bonusUnlocked };
+  return countCoreBonus(getReachableAchievements(), (id) =>
+    unlockedIds.has(id),
+  );
 }
 
 // Completion percent. Core alone tops out at 100%; bonus counts only once core

@@ -1779,6 +1779,29 @@ export function isBonus(achievement) {
 }
 
 /**
+ * Tally a collection under the core-vs-bonus rule: core always counts toward
+ * the total; a bonus counts only once earned. Returns the raw parts
+ * { coreTotal, coreUnlocked, bonusUnlocked } so callers can shape them — a
+ * "N / M" that never overflows (`core + bonusUnlocked` on both sides), or a
+ * percent that may pass 100 once core is complete. `isUnlocked(id)` reports
+ * whether an entry is earned.
+ */
+export function countCoreBonus(achievements, isUnlocked) {
+  let coreTotal = 0;
+  let coreUnlocked = 0;
+  let bonusUnlocked = 0;
+  for (const a of achievements) {
+    if (isBonus(a)) {
+      if (isUnlocked(a.id)) bonusUnlocked++;
+    } else {
+      coreTotal++;
+      if (isUnlocked(a.id)) coreUnlocked++;
+    }
+  }
+  return { coreTotal, coreUnlocked, bonusUnlocked };
+}
+
+/**
  * Sum point values for a list of unlocked entries [{id, ts}, ...].
  */
 export function sumPoints(unlockedList) {

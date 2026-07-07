@@ -14,6 +14,7 @@ import {
   getAchievement,
   getReachableAchievements,
   isBonus,
+  countCoreBonus,
   isThemeSet,
 } from "../registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
@@ -260,21 +261,16 @@ function scheduleLiveRefresh() {
 // phantom gap when an unearned core remains (4 core + 1 bonus → 5 / 6).
 export function setCountForSet(setId) {
   const inSet = getReachableAchievements().filter((a) => a.set === setId);
-  let total = 0;
-  let unlocked = 0;
-  for (const a of inSet) {
-    const earned = storage.isUnlocked(a.id);
-    if (isBonus(a)) {
-      if (earned) {
-        total++;
-        unlocked++;
-      }
-    } else {
-      total++;
-      if (earned) unlocked++;
-    }
-  }
-  return { total, unlocked };
+  const { coreTotal, coreUnlocked, bonusUnlocked } = countCoreBonus(
+    inSet,
+    (id) => storage.isUnlocked(id),
+  );
+  // Earned bonus lifts both sides, so the pair grows in step (5/5 → 6/6) and
+  // never overflows or leaves a phantom gap.
+  return {
+    total: coreTotal + bonusUnlocked,
+    unlocked: coreUnlocked + bonusUnlocked,
+  };
 }
 
 function hasAnyInSet(setId) {
