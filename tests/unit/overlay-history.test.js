@@ -40,6 +40,18 @@ describe("overlay-history", () => {
     popstateTo({ overlay: true, seq });
   }
 
+  it("opts out of scroll restoration on the first overlay, not at import", async () => {
+    vi.resetModules();
+    history.scrollRestoration = "auto";
+    const fresh = await import("../../js/overlay-history.js");
+    // Importing the module must not touch it — a visitor who never opens an
+    // overlay keeps native scroll restoration on reload/Back.
+    expect(history.scrollRestoration).toBe("auto");
+    fresh.pushOverlay(() => {});
+    expect(history.scrollRestoration).toBe("manual");
+    fresh._resetForTests();
+  });
+
   describe("pushOverlay", () => {
     it("returns a handle with pop and dispose functions", () => {
       const handle = overlay.pushOverlay(() => {});

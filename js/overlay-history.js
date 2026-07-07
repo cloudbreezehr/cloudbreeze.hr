@@ -42,15 +42,12 @@
 // interpreted as overlay traversals; a future SPA router or analytics
 // state would need to coexist with this module explicitly.
 
-// Opt out of browser scroll restoration globally so history.back() never
-// animates or snaps the page to the position recorded at pushState time.
-// This module owns all pushState calls for the app, so the opt-out is safe.
-history.scrollRestoration = "manual";
-
 const entries = new Map();
 let currentSeq = null;
 let nextSeq = 0;
 let popstateListener = null;
+// Flips true when the first overlay opts out of browser scroll restoration.
+let scrollRestorationOptedOut = false;
 
 function seqOf(event) {
   const state = event.state;
@@ -113,6 +110,16 @@ function ensureListener() {
  *   scroll).  Idempotent: safe to call more than once per close.
  */
 export function pushOverlay(onClose, onReopen) {
+  // Opt out of browser scroll restoration before the first overlay entry is
+  // pushed, so history.back() never snaps the page to the pushState-time
+  // scroll position (a jump on some platforms). Deferred to here rather than
+  // module load, so visitors who never open an overlay keep native scroll
+  // restoration on ordinary reload/Back. This module owns all pushState calls,
+  // so the opt-out is safe.
+  if (!scrollRestorationOptedOut && typeof history !== "undefined") {
+    history.scrollRestoration = "manual";
+    scrollRestorationOptedOut = true;
+  }
   const seq = nextSeq++;
   const entry = { onClose, onReopen, alive: true };
   entries.set(seq, entry);
@@ -154,6 +161,7 @@ export function _resetForTests() {
   entries.clear();
   currentSeq = null;
   nextSeq = 0;
+  scrollRestorationOptedOut = false;
   if (popstateListener) {
     window.removeEventListener("popstate", popstateListener);
     popstateListener = null;
