@@ -1623,6 +1623,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    bonus: true,
   },
   // ── Terminal ──
   {
