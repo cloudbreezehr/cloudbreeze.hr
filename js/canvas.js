@@ -31,7 +31,7 @@ const SCROLL = defineConstants("canvas.scroll", {
     min: 0.5,
     max: 1,
     step: 0.01,
-    description: "Scroll velocity decay per frame",
+    description: "Scroll velocity decay per 60fps-frame",
   },
 });
 
@@ -80,6 +80,10 @@ const RENDER = defineConstants("canvas.render", {
     description: "Number of scroll motes",
   },
 });
+
+// Per-frame decays are tuned at 60fps; raising them to the power of
+// dt·this normalizes the bleed-off to wall-clock time on any refresh rate.
+const DECAY_REF_HZ = 60;
 
 let canvas, ctx;
 
@@ -383,7 +387,9 @@ export function initCanvas(canvasEl, appearance, options) {
     if (!reducedMotion) fury.draw(ctx, canvas, pal, sp, dt, now);
 
     // Atmosphere — streaks, clouds, wisps, horizon, gusts, motes.
-    scrollVelocity *= SCROLL.VEL_DECAY;
+    // Decay on wall-clock time so gusts (which ride this velocity) don't fade
+    // faster on a high-refresh display than they do at 60fps.
+    scrollVelocity *= Math.pow(SCROLL.VEL_DECAY, dt * DECAY_REF_HZ);
     const drawVelocity = scaled(scrollVelocity);
     interactions.updateHold(forces, now);
     if (!suppressAtmosphere) {
