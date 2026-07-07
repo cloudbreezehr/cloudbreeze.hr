@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 describe("audio/continuous", () => {
   let mod, dispose;
-  let soundOn, forces, calls, soundChangeCbs;
+  let soundOn, forces, calls, soundChangeCbs, reducedMotion;
   let ctxStub, audioContextSpy, gains, oscs, filters;
   let rafScheduled, rafCount, cancelCount;
 
@@ -31,6 +31,7 @@ describe("audio/continuous", () => {
   beforeEach(async () => {
     vi.resetModules();
     soundOn = false;
+    reducedMotion = false;
     forces = null;
     calls = [];
     dispose = null;
@@ -87,6 +88,9 @@ describe("audio/continuous", () => {
       playSfx: (n, opts) => calls.push({ name: n, opts }),
     }));
     vi.doMock("../../../js/canvas.js", () => ({ getForces: () => forces }));
+    vi.doMock("../../../js/motion.js", () => ({
+      prefersReducedMotion: () => reducedMotion,
+    }));
     vi.doMock("../../../js/dev/registry.js", () => ({
       defineConstants: (_ns, defs) =>
         Object.fromEntries(Object.entries(defs).map(([k, v]) => [k, v.value])),
@@ -183,6 +187,30 @@ describe("audio/continuous", () => {
     step(); // still 0 : no repeat
     // Fires once, carrying the charge it reached so the boom scales with it.
     expect(calls).toEqual([{ name: "wellRelease", opts: { strength: 0.5 } }]);
+  });
+
+  it("keeps the well hum and release silent under reduced motion", () => {
+    reducedMotion = true;
+    soundOn = true;
+    dispose = mod.initContinuous();
+    // A formed well held strongly, then released — which would normally hum
+    // and then boom; under reduced motion the gathered motes never move.
+    forces = {
+      isDragging: false,
+      dragPos: { x: 0, y: 0 },
+      holdStrength: 0.8,
+      wellStrength: 0.8,
+    };
+    step(); // builds voices; well master is gains[1] (drag, well, fifth)
+    expect(gains[1].gain.value).toBe(0); // hum never rises
+    forces = {
+      isDragging: false,
+      dragPos: { x: 0, y: 0 },
+      holdStrength: 0,
+      wellStrength: 0,
+    };
+    step(); // would-be collapse
+    expect(calls).toEqual([]); // no discharge boom
   });
 
   it("stops writing drag params once the drag ends, so an idle loop is silent", () => {

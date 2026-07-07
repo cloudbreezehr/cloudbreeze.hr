@@ -15,6 +15,7 @@ import { whiteNoise } from "./noise.js";
 import { playSfx } from "./sfx.js";
 import { getForces } from "../canvas.js";
 import { defineConstants } from "../dev/registry.js";
+import { prefersReducedMotion } from "../motion.js";
 
 const CONT = defineConstants("audio.continuous", {
   DRAG_GAIN: {
@@ -149,8 +150,12 @@ function tick() {
   // (holdStrength, which starts the moment you hold), then discharges when a
   // real well (wellStrength, the later ramp) collapses on release. A quick
   // click barely moves holdStrength and never forms a well, so it stays quiet.
-  const hold = f ? f.holdStrength : 0;
-  const w = f ? f.wellStrength : 0;
+  // The gravity well's whole payoff — gathered, orbiting, then flung motes —
+  // is frozen under reduced motion. With no visual to accompany, its hum and
+  // release fall silent too; the drag whoosh stays, since the cursor still moves.
+  const reduced = prefersReducedMotion();
+  const hold = reduced || !f ? 0 : f.holdStrength;
+  const w = reduced || !f ? 0 : f.wellStrength;
   if (hold > 0 || wellActive) {
     const freq = WELL_FREQ_BASE + hold * WELL_FREQ_RANGE;
     well.sub.frequency.setTargetAtTime(freq, t, GLIDE_S);
