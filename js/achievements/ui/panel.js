@@ -16,6 +16,7 @@ import * as storage from "../storage.js";
 import { exportBackup, importBackup } from "../backup.js";
 import * as activityLog from "../activity-log.js";
 import { paintRelativeTime } from "../../time-ago.js";
+import { downloadBlob } from "../../download.js";
 import { trapFocus } from "../focus-trap.js";
 import { pushOverlay } from "../../overlay-history.js";
 import { getAppearancePreference } from "../../appearance.js";
@@ -217,12 +218,7 @@ function paintLastUnlocked(el) {
 // Download the live Cloudlog state as a sealed JSON file.
 function exportCloudlog() {
   const blob = new Blob([exportBackup()], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = "cloudbreeze-cloudlog.json";
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, "cloudbreeze-cloudlog.json");
 }
 
 // Hidden file input that drives Import — clicked programmatically from the

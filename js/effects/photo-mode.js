@@ -6,6 +6,7 @@
 
 import { playSfx } from "../audio/sfx.js";
 import { onKey } from "../keyboard.js";
+import { downloadBlob } from "../download.js";
 
 const CANVAS_ID = "bg-canvas";
 const FILENAME = "cloudbreeze-sky.png";
@@ -39,12 +40,7 @@ export function saveSkyPhoto() {
   ctx.drawImage(src, 0, 0);
   out.toBlob((blob) => {
     if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = FILENAME;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, FILENAME);
   });
   playSfx("snap", { ui: true });
   emit("photo-saved");

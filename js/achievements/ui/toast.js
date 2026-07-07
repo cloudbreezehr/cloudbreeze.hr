@@ -11,6 +11,7 @@ import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import { getPref } from "../storage.js";
 import { formatRunTime, BEST_RUN_PREF } from "../../effects/speedrun.js";
 import { announce } from "../announcer.js";
+import { downloadBlob } from "../../download.js";
 import {
   burstFireworks,
   launchRocketFireworks,
@@ -585,12 +586,7 @@ function saveCompletionCard() {
   if (!canvas || typeof canvas.toBlob !== "function") return;
   canvas.toBlob((blob) => {
     if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "cloudbreeze-cloudlog.png";
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, "cloudbreeze-cloudlog.png");
   });
 }
 
