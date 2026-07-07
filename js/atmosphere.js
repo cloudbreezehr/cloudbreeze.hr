@@ -6,7 +6,7 @@ import {
   applyWellForce,
   HOLD,
 } from "./interactions.js";
-import { scaled } from "./motion.js";
+import { scaled, prefersReducedMotion } from "./motion.js";
 import { getQualityTier } from "./quality.js";
 import { createWorldMotes } from "./world/motes.js";
 import { createAnchorBlend } from "./world/anchor.js";
@@ -268,11 +268,15 @@ class ScrollMote {
         this.opacity + absSv * MOTE.OPACITY_GAIN,
       );
     }
-    this.vy += MOTE.GRAVITY;
+    // Gravity is an accelerating force and the position step is a per-frame
+    // delta, so both ride the motion budget (frozen under reduced motion);
+    // friction is damping, not motion, so it stays unwrapped and still bleeds
+    // off any velocity a force imparted.
+    this.vy += scaled(MOTE.GRAVITY);
     this.vx *= MOTE.FRICTION;
     this.vy *= MOTE.FRICTION;
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += scaled(this.vx);
+    this.y += scaled(this.vy);
     this.opacity *= MOTE.OPACITY_DECAY;
     if (
       this.y < -MOTE.BOUNDS ||
@@ -586,6 +590,7 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
       // world-anchored field takes over (present at any scroll depth, aligned
       // across the seam); the two crossfade on link/unlink.
       if (opts.motes) {
+        const reduced = prefersReducedMotion();
         // One halo opts object shared across every mote this frame — midColor
         // is palette-derived so it rebuilds per frame, but not per particle.
         const moteHaloOpts = {
@@ -603,6 +608,13 @@ export function createAtmosphere(canvasEl, ctxEl, opts) {
         const drawSoloMotes = (weight) => {
           motes.forEach((m) => {
             m.update(scrollVelocity);
+            // Under reduced motion the mote is frozen (its motion rides the
+            // budget) and stays invisible; the click/drag/well reactions would
+            // both move it and light it up, so skip them and just draw.
+            if (reduced) {
+              m.draw(pal, moteHaloOpts, weight);
+              return;
+            }
             if (forces.clickImpulse.strength > 0.05) {
               const dx = m.x - forces.clickImpulse.x;
               const dy = m.y - forces.clickImpulse.y;
