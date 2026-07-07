@@ -36,6 +36,9 @@
   /* Shared decelerate curve for entrances and scroll reveals — a fast start
      that settles softly, so content "arrives" rather than easing symmetrically. */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Overshoot/pop curve — springs a little past the target then settles back,
+     for chips, badges, and card reveals that should feel bouncy. */
+  --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* ── Reduced Motion ──

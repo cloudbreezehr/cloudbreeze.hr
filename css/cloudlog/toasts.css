@@ -16,8 +16,7 @@
    The 0.4s delay is the JS TOAST_SLIDE_IN_MS in seconds; if that
    constant moves, this value must follow. */
 .achievement-toast-relock.enter .achievement-toast-relock-icon {
-  animation: relock-key-turn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.4s
-    backwards;
+  animation: relock-key-turn 0.7s var(--ease-back) 0.4s backwards;
 }
 @keyframes relock-key-turn {
   0% {
@@ -132,7 +131,7 @@ body.light-appearance .achievement-toast-queue-counter {
   transform: translateY(0);
   opacity: 1;
   transition:
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.4s var(--ease-back),
     opacity 0.4s ease-out;
 }
 .achievement-toast.exit {
