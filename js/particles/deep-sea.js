@@ -165,12 +165,47 @@ const BUB = defineConstants(
       step: 1,
       description: "Burst count variation",
     },
+    BURST_CONE_FRAC: {
+      value: 0.6,
+      min: 0,
+      max: 1,
+      step: 0.05,
+      description: "Click-burst spread as a fraction of π (upward cone)",
+    },
+    BURST_SPEED_MIN: {
+      value: 1,
+      min: 0,
+      max: 10,
+      step: 0.5,
+      description: "Minimum click-burst bubble speed",
+    },
+    BURST_SPEED_RANGE: {
+      value: 2.5,
+      min: 0,
+      max: 10,
+      step: 0.5,
+      description: "Click-burst bubble speed variation",
+    },
     DRAG_RATE: {
       value: 0.3,
       min: 0,
       max: 1,
       step: 0.05,
       description: "Chance per trail segment to spawn bubble",
+    },
+    DRAG_SCATTER: {
+      value: 10,
+      min: 0,
+      max: 40,
+      step: 1,
+      description: "Drag-spawn bubble scatter around the pointer (px)",
+    },
+    DRAG_RADIUS_RANGE: {
+      value: 4,
+      min: 0,
+      max: 20,
+      step: 0.5,
+      description: "Drag-spawn bubble radius variation",
     },
     SPECULAR_THRESHOLD: {
       value: 5,
@@ -1228,8 +1263,10 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
         b.y = cy;
         b.active = true;
         // Spread in upward cone
-        const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * 0.6;
-        const speed = 1 + Math.random() * 2.5;
+        const angle =
+          -Math.PI / 2 + (Math.random() - 0.5) * Math.PI * BUB.BURST_CONE_FRAC;
+        const speed =
+          BUB.BURST_SPEED_MIN + Math.random() * BUB.BURST_SPEED_RANGE;
         b.vx = Math.cos(angle) * speed;
         b.vy = Math.sin(angle) * speed;
       }
@@ -1240,9 +1277,9 @@ export function createDeepSea(canvasEl, ctxEl, bubbleCount, jellyCount) {
       const b = bubbles.find((b) => !b.active);
       if (b) {
         b.reset(false);
-        b.x = x + (Math.random() - 0.5) * 10;
-        b.y = y + (Math.random() - 0.5) * 10;
-        b.baseR = BUB.RADIUS_MIN + Math.random() * 4;
+        b.x = x + (Math.random() - 0.5) * BUB.DRAG_SCATTER;
+        b.y = y + (Math.random() - 0.5) * BUB.DRAG_SCATTER;
+        b.baseR = BUB.RADIUS_MIN + Math.random() * BUB.DRAG_RADIUS_RANGE;
         b.r = b.baseR;
         b.active = true;
       }
