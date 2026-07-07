@@ -18,6 +18,7 @@ import { mirrorYWhenInverted, getViewportHeight } from "../viewport.js";
 import { getScrollY } from "../scroll-bus.js";
 import { starScreenInstances } from "../sky.js";
 import { UI_OVERLAY_SELECTOR } from "../selectors.js";
+import { INPUT_TAGS, letterFromKeyEvent } from "../keys.js";
 
 // ── Shared decay primitive ──
 // Most strategies share the same "idle decay" shape: after N ms of idle,
@@ -222,7 +223,6 @@ export function createHoldTrigger({
 // Tracks parallel word prefixes; a wrong letter resets all prefixes (but the
 // running force lingers until decay).  Force is max(currentPrefix/wordLength)
 // across all tracked words.
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 function createSequenceAccumulator(words, maxGapMs) {
   const state = words.map(() => ({ idx: 0, lastLetterAt: 0 }));
@@ -309,16 +309,8 @@ export function createKeySequenceTrigger({
 
       function onKeydown(e) {
         if (ctx.isTransitioning() || holding) return;
-        if (e.ctrlKey || e.metaKey || e.altKey) return;
-        const tag = document.activeElement?.tagName;
-        if (tag && INPUT_TAGS.has(tag)) return;
-        if (document.activeElement?.isContentEditable) return;
-        // Only single-letter keys advance the sequence.  Everything else
-        // (arrows, F-keys, Tab, Enter, Shift, etc.) is ignored — not counted
-        // as a wrong letter — so users can hit modifiers without resetting.
-        if (e.key.length !== 1) return;
-        const letter = e.key.toUpperCase();
-        if (letter < "A" || letter > "Z") return;
+        const letter = letterFromKeyEvent(e);
+        if (!letter) return;
 
         // Resync to the current direction if the theme was toggled by another
         // path (or by our own just-completed sequence) since the last keystroke.

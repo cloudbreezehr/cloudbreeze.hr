@@ -3,8 +3,7 @@
 // and focused input elements. All keyboard shortcuts should use this
 // so behavior is consistent across the site.
 
-// ── Input Guard ──
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+import { INPUT_TAGS } from "./keys.js";
 
 /**
  * Register a keyboard shortcut.

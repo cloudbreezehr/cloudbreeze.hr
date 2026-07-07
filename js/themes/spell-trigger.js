@@ -21,6 +21,7 @@ import { isHelpOpen } from "../effects/keyboard-help.js";
 import { revealSoundToggle } from "../audio/toggle.js";
 import { setSoundEnabled } from "../audio/engine.js";
 import { prefersReducedMotion } from "../motion.js";
+import { letterFromKeyEvent } from "../keys.js";
 
 // Spelled like an incantation, but it reveals the reference panel rather than
 // casting an effect — kept out of INCANTATIONS so it isn't a collectible spell.
@@ -36,7 +37,6 @@ const PHOTO_WORD = "PHOTO";
 // Arms the run clock — also a reveal word.
 const SPEEDRUN_WORD = "SPEEDRUN";
 
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 // Tapping a letter inside a link or control should do that control's job,
 // not feed the speller — only plain text counts as spell input.
 const INTERACTIVE_SELECTOR =
@@ -547,13 +547,8 @@ export function initSpellTrigger() {
 
   function onKeydown(e) {
     if (aModalIsOpen()) return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const tag = document.activeElement?.tagName;
-    if (tag && INPUT_TAGS.has(tag)) return;
-    if (document.activeElement?.isContentEditable) return;
-    if (e.key.length !== 1) return;
-    const letter = e.key.toUpperCase();
-    if (letter < "A" || letter > "Z") return;
+    const letter = letterFromKeyEvent(e);
+    if (!letter) return;
     runMatch(letter, null);
   }
 

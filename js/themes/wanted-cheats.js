@@ -20,8 +20,7 @@ import { ICONS } from "../effects/effect-icons.js";
 import { playSfx } from "../audio/sfx.js";
 import { prefersReducedMotion } from "../motion.js";
 import { defineConstants } from "../dev/registry.js";
-
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+import { letterFromKeyEvent } from "../keys.js";
 
 // Confetti / flash colours — pop-art inks reused across the cheats.
 const CASH_COLORS = ["#2fbf4e", "#7cfc00", "#f4ead3"]; // money green
@@ -317,13 +316,8 @@ export function initWantedCheats(deps) {
       matcher.reset();
       return;
     }
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const tag = document.activeElement?.tagName;
-    if (tag && INPUT_TAGS.has(tag)) return;
-    if (document.activeElement?.isContentEditable) return;
-    if (e.key.length !== 1) return;
-    const letter = e.key.toUpperCase();
-    if (letter < "A" || letter > "Z") return;
+    const letter = letterFromKeyEvent(e);
+    if (!letter) return;
 
     const code = matcher.feed(letter);
     if (!code) return;

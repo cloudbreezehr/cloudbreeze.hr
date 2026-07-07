@@ -4,8 +4,7 @@
 // by all other keyboard shortcuts on the site.
 
 import { getThemes, toggleTheme } from "./registry.js";
-
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
+import { INPUT_TAGS } from "../keys.js";
 
 // How close together two Escape presses must be to count as a double-tap.
 export const LIGHTS_OUT_WINDOW_MS = 400;

@@ -10,6 +10,7 @@ import { launchRocketFireworks } from "../effects/fireworks.js";
 import { hueSweep } from "../effects/hue-sweep.js";
 import { screenShake } from "../effects/screen-shake.js";
 import { prefersReducedMotion } from "../motion.js";
+import { INPUT_TAGS } from "../keys.js";
 
 // ── Chaos finale ──
 // When every theme snaps on at once, reward it with a spectacle. Uses the
@@ -34,7 +35,6 @@ const SEQUENCE = Object.freeze([
 ]);
 
 const CONFIRM_TIMEOUT_MS = 4000;
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "SELECT"]);
 
 export function initKonami() {
   let pos = 0;
