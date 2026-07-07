@@ -211,9 +211,10 @@ export function createConstellation(canvasEl) {
         DUST.ATTRACT_TANGENT,
       );
       applyWellForce(frame.forces, d);
-      // drawVelocity is already motion-scaled by the orchestrator; the
-      // dust would compound the scale if wrapped again.
-      d.vy += frame.drawVelocity * DUST.SPAWN_VELOCITY_SCALE;
+      // Feed the raw scroll velocity; update()'s single scaled() applies the
+      // motion budget once, as snow/rain/bubble do. (Adding the already-scaled
+      // drawVelocity here would double-scale it once budgets aren't just 0/1.)
+      d.vy += frame.scrollVelocity * DUST.SPAWN_VELOCITY_SCALE;
       d.draw(color);
     }
   }

@@ -456,9 +456,9 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
           blockFragments.splice(i, 1);
           continue;
         }
-        f.x += f.vx;
-        f.y += f.vy;
-        f.vy += FRAG.GRAVITY;
+        f.x += scaled(f.vx);
+        f.y += scaled(f.vy);
+        f.vy += scaled(FRAG.GRAVITY);
         // Hard 90° tumble
         if (f.life % FRAG.TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
         const c = f.color;
