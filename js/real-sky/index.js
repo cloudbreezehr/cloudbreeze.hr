@@ -77,10 +77,11 @@ function initWeatherBadge(getLocation, badge, pin) {
     const weather = await fetchWeather(location);
     fetching = false;
     // A location upgrade landed mid-flight: this result is for the old
-    // coordinates, so discard it and fetch again for the current location.
+    // coordinates, so discard it. Re-fetch now only if the badge is still
+    // open; otherwise leave weatherLine null so the next reveal fetches fresh.
     if (refetchRequested) {
       refetchRequested = false;
-      loadWeather();
+      if (revealed) loadWeather();
       return;
     }
     // Offline or blocked: the moon still hangs, the text just stays plain.
@@ -106,10 +107,14 @@ function initWeatherBadge(getLocation, badge, pin) {
   });
 
   return {
-    // A location upgrade invalidates the cached line — drop it and, if the
-    // badge is open, re-fetch against the new coordinates so text and sky agree.
+    // A location upgrade invalidates the cached line — drop it, mark any
+    // in-flight fetch stale so its result is discarded rather than cached
+    // (even when the badge is closed, which is otherwise the only case that
+    // doesn't re-arm the refetch), and, if the badge is open, re-fetch against
+    // the new coordinates so text and sky agree.
     refreshForNewLocation() {
       weatherLine = null;
+      if (fetching) refetchRequested = true;
       if (revealed) {
         textEl.textContent = baseText;
         loadWeather();

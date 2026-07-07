@@ -155,6 +155,52 @@ describe("real-sky/index", () => {
     expect(weatherCalls).toBe(2);
   });
 
+  it("does not strand stale weather when the badge closes during a fetch", async () => {
+    let releaseFirstWeather;
+    let weatherCalls = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url) => {
+        if (String(url).includes("ipwho.is")) {
+          return {
+            ok: true,
+            json: async () => ({
+              city: "Zagreb",
+              latitude: 45.81,
+              longitude: 15.98,
+            }),
+          };
+        }
+        weatherCalls += 1;
+        if (weatherCalls === 1) {
+          await new Promise((r) => {
+            releaseFirstWeather = r;
+          });
+        }
+        return {
+          ok: true,
+          json: async () => ({
+            current: { temperature_2m: 16, weather_code: 0 },
+          }),
+        };
+      }),
+    );
+    vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
+    const geo = await import("../../../js/real-sky/geolocate.js");
+    cleanup = realSky.initRealSky();
+    const badge = document.querySelector(".footer-badge");
+
+    badge.click(); // open — the home-town fetch hangs
+    badge.click(); // close while that fetch is still in flight
+    await geo.locateVisitor(); // upgrade lands while the badge is closed
+    releaseFirstWeather(); // the stale home-town fetch settles
+    await vi.advanceTimersByTimeAsync(0); // let its (discarded) settle run
+
+    badge.click(); // reopen — must fetch the new city, not show stale Pula
+    await vi.waitFor(() => expect(badge.textContent).toContain("over Zagreb"));
+    expect(badge.textContent).not.toContain("over Pula");
+  });
+
   it("labels the weather with whatever location the getter returns", async () => {
     stubWeather({ current: { temperature_2m: 16.6, weather_code: 63 } });
     vi.setSystemTime(new Date(2026, 5, 21, 12, 0));
