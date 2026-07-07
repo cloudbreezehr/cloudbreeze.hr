@@ -47,6 +47,8 @@ const FW = defineConstants("effects.fireworks", {
   PRIMARY_LIFE_RANGE: 25,
   PRIMARY_RADIUS_MIN: 1.5,
   PRIMARY_RADIUS_RANGE: 1.8,
+  // Angular jitter (radians) so the burst ring isn't a rigid fan.
+  PRIMARY_ANGLE_JITTER: 0.4,
 
   // ── Secondary sparkles ──
   SECONDARY_CHANCE: 0.25,
@@ -81,6 +83,12 @@ const FW = defineConstants("effects.fireworks", {
   ROCKET_COUNT_CELESTIAL: { value: 20, min: 0, max: 100, step: 1 },
   // Stagger between rockets in a multi-rocket launch (frames).
   ROCKET_STAGGER_FRAMES: 8,
+  // Ease exponent for the rocket's rise, and how firmly it converges on its
+  // target X while climbing.
+  ROCKET_EASE_EXP: 2,
+  ROCKET_CONVERGE: 0.2,
+  // Launch-point horizontal scatter around the target, as a fraction of width.
+  ROCKET_START_JITTER_FRAC: 0.15,
 
   // ── Rocket trail ──
   ROCKET_TRAIL_LENGTH: 16,
@@ -88,6 +96,9 @@ const FW = defineConstants("effects.fireworks", {
   ROCKET_TRAIL_RADIUS_SCALE: 0.65,
   ROCKET_TRAIL_JITTER: 0.8,
   ROCKET_TRAIL_EMBER_CHANCE: 0.4,
+  // Trail-particle radius scale: brighter embers vs. dimmer sparks.
+  EMBER_RADIUS_SCALE: 1.2,
+  SPARK_RADIUS_SCALE: 0.7,
 
   // ── Physics ──
   GRAVITY: 0.055,
@@ -436,10 +447,10 @@ class Rocket {
     // Ease-out motion: fast at launch, slow approaching the target
     this.life++;
     const t = this.life / this.maxLife;
-    const eased = 1 - Math.pow(1 - t, 2);
+    const eased = 1 - Math.pow(1 - t, FW.ROCKET_EASE_EXP);
     this.x =
       this.x +
-      (this.targetX - this.x) * eased * 0.2 +
+      (this.targetX - this.x) * eased * FW.ROCKET_CONVERGE +
       (Math.random() - 0.5) * FW.ROCKET_DRIFT;
     this.y = this.startY + (this.targetY - this.startY) * eased;
 
@@ -466,7 +477,9 @@ class Rocket {
       const op = Math.pow(FW.ROCKET_TRAIL_DECAY, age + 1);
       if (op < FW.DRAW_THRESHOLD) continue;
       const tr =
-        FW.ROCKET_RADIUS * FW.ROCKET_TRAIL_RADIUS_SCALE * (t.ember ? 1.2 : 0.7);
+        FW.ROCKET_RADIUS *
+        FW.ROCKET_TRAIL_RADIUS_SCALE *
+        (t.ember ? FW.EMBER_RADIUS_SCALE : FW.SPARK_RADIUS_SCALE);
       ctx.globalAlpha = op;
       ctx.fillStyle = t.ember
         ? `rgb(${bc[0]},${bc[1]},${bc[2]})`
@@ -541,7 +554,9 @@ function createRendererCore() {
     for (let i = 0; i < count; i++) {
       const p = acquireParticle();
       if (!p) break;
-      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      const angle =
+        (i / count) * Math.PI * 2 +
+        (Math.random() - 0.5) * FW.PRIMARY_ANGLE_JITTER;
       const speed =
         FW.PRIMARY_SPEED_MIN + Math.random() * FW.PRIMARY_SPEED_RANGE;
       p.spawnPrimary(x, y, palette[i], angle, speed);
@@ -578,7 +593,9 @@ function createRendererCore() {
       const targetY =
         viewportHeight *
         (FW.ROCKET_TARGET_Y_MIN + Math.random() * FW.ROCKET_TARGET_Y_RANGE);
-      const startX = targetX + (Math.random() - 0.5) * viewportWidth * 0.15;
+      const startX =
+        targetX +
+        (Math.random() - 0.5) * viewportWidth * FW.ROCKET_START_JITTER_FRAC;
       const startY = viewportHeight + FW.ROCKET_RADIUS;
       const delay = i * FW.ROCKET_STAGGER_FRAMES;
       r.spawn(startX, startY, targetX, targetY, rgb, delay);
