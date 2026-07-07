@@ -4,8 +4,8 @@
 // Contract:
 //   - track(name, props?) is the only mutation.  It's cheap — enqueue +
 //     schedule.  Bridges call this; source modules stay analytics-agnostic.
-//   - Consent is re-checked on every track() so a late opt-out takes
-//     effect without reload.
+//   - Consent is re-checked on every track() and every send, so a late
+//     opt-out *or* opt-in takes effect without a reload.
 //   - The queue flushes every FLUSH_INTERVAL_MS, whenever it hits
 //     MAX_BATCH_SIZE, and on pagehide / visibility-hidden.
 //   - Queue is capped at MAX_QUEUE so long offline periods can't grow
@@ -24,9 +24,33 @@ export const MAX_BATCH_SIZE = 20;
 const MAX_QUEUE = 200;
 
 let _adapter = noopAdapter;
+// The adapter to send through whenever consent allows (a vendor adapter, or
+// the console default). Kept separate from _adapter so consent can gate which
+// of the two is live at any moment — see resolveAdapter.
+let _realAdapter = noopAdapter;
+let _realInited = false;
 let _queue = [];
 let _flushTimer = null;
 let _started = false;
+
+// Consent can flip at runtime, so the adapter is resolved per send rather than
+// fixed at start(): opt-in promotes the real adapter (initialized once) and
+// opt-out falls back to the noop — both without a page reload.
+function resolveAdapter() {
+  if (!consent.allowed()) return noopAdapter;
+  if (_adapter === noopAdapter) {
+    _adapter = _realAdapter;
+    if (!_realInited && typeof _adapter.init === "function") {
+      _realInited = true;
+      try {
+        _adapter.init();
+      } catch (err) {
+        console.warn("[analytics] adapter.init failed:", err);
+      }
+    }
+  }
+  return _adapter;
+}
 
 // Run a flush during browser idle time when the API is available so
 // analytics never competes with a paint frame.  Falls back to a direct
@@ -85,7 +109,7 @@ export function flush() {
   const batch = _queue;
   _queue = [];
   try {
-    _adapter.send(batch);
+    resolveAdapter().send(batch);
   } catch (err) {
     console.warn("[analytics] adapter.send failed:", err);
   }
@@ -94,17 +118,11 @@ export function flush() {
 export function start({ adapter } = {}) {
   if (_started) return;
   _started = true;
-  // Respect consent by swapping to the noop adapter.  Bridges still
-  // subscribe (they're cheap and idempotent); track() short-circuits
-  // before it would ever hit the adapter.
-  _adapter = consent.allowed() ? adapter || consoleAdapter : noopAdapter;
-  if (typeof _adapter.init === "function") {
-    try {
-      _adapter.init();
-    } catch (err) {
-      console.warn("[analytics] adapter.init failed:", err);
-    }
-  }
+  // Remember the real adapter; resolveAdapter() promotes it the first time
+  // consent allows a send (initializing it once). Calling it now inits
+  // eagerly when consent is already granted, and is a harmless noop otherwise.
+  _realAdapter = adapter || consoleAdapter;
+  resolveAdapter();
 
   // Flush on visibility changes and pagehide so session_end, errors, and
   // the tail of session_heartbeat actually make it out.
@@ -125,6 +143,8 @@ export function _stopForTests() {
   }
   _queue = [];
   _adapter = noopAdapter;
+  _realAdapter = noopAdapter;
+  _realInited = false;
   _started = false;
 }
 

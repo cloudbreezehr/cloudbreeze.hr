@@ -84,6 +84,22 @@ describe("analytics/core", () => {
     expect(sent.length).toEqual(0);
   });
 
+  it("resumes sending to the real adapter when consent is granted at runtime", async () => {
+    const consent = await import("../../../js/analytics/consent.js");
+    consent.optOut();
+    core.start({ adapter });
+    core.track("while_opted_out", {});
+    core.flush();
+    expect(sent.length).toEqual(0); // nothing sent while opted out
+    expect(adapter.init).not.toHaveBeenCalled(); // real adapter untouched
+
+    consent.optIn();
+    core.track("after_opt_in", {});
+    core.flush();
+    expect(sent.map((e) => e.name)).toEqual(["after_opt_in"]);
+    expect(adapter.init).toHaveBeenCalledTimes(1); // promoted + initialized once
+  });
+
   it("caps the queue at MAX_QUEUE (200)", () => {
     core.start({ adapter });
     // Use an adapter that does not drain, so queue grows.
