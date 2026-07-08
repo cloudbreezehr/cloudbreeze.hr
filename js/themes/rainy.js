@@ -2,6 +2,7 @@ import { Z_THEME_FLASH } from "../layers.js";
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
+import { spawnRadialBurst } from "../effects/burst.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
 import { reducedDuration } from "../motion.js";
@@ -94,41 +95,20 @@ export function initRainy() {
 
   // ── Spawn rain splash particles from click ──
   function spawnSplash(cx, cy, clearing) {
-    const count =
-      RV.SPLASH_PARTICLE_COUNT_MIN +
-      Math.floor(Math.random() * RV.SPLASH_PARTICLE_COUNT_RANGE);
-    for (let i = 0; i < count; i++) {
-      const el = document.createElement("div");
-      el.className = "rain-splash" + (clearing ? " clearing" : "");
-      const size = RV.SPLASH_SIZE_MIN + Math.random() * RV.SPLASH_SIZE_RANGE;
-      el.style.width = size + "px";
-      el.style.height = size + "px";
-      el.style.left = cx + "px";
-      el.style.top = cy + "px";
-      document.body.appendChild(el);
-
-      const angle = Math.random() * Math.PI * 2;
-      const dist = RV.SPLASH_DIST_MIN + Math.random() * RV.SPLASH_DIST_RANGE;
-      const dx = Math.cos(angle) * dist;
-      const dy = Math.sin(angle) * dist;
-      const dur =
-        RV.SPLASH_DURATION_MIN + Math.random() * RV.SPLASH_DURATION_RANGE;
-
-      el.animate(
-        [
-          { transform: "translate(-50%,-50%) scale(1)", opacity: 0.7 },
-          {
-            transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`,
-            opacity: 0,
-          },
-        ],
-        {
-          duration: reducedDuration(dur),
-          easing: "ease-out",
-          fill: "forwards",
-        },
-      ).onfinish = () => el.remove();
-    }
+    spawnRadialBurst({
+      x: cx,
+      y: cy,
+      className: "rain-splash" + (clearing ? " clearing" : ""),
+      countMin: RV.SPLASH_PARTICLE_COUNT_MIN,
+      countRange: RV.SPLASH_PARTICLE_COUNT_RANGE,
+      sizeMin: RV.SPLASH_SIZE_MIN,
+      sizeRange: RV.SPLASH_SIZE_RANGE,
+      distMin: RV.SPLASH_DIST_MIN,
+      distRange: RV.SPLASH_DIST_RANGE,
+      durMin: RV.SPLASH_DURATION_MIN,
+      durRange: RV.SPLASH_DURATION_RANGE,
+      startOpacity: 0.7,
+    });
   }
 
   // ── Rumble flash effect at 70% / 90% thresholds ──

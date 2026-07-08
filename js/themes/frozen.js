@@ -1,9 +1,10 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
+import { spawnRadialBurst } from "../effects/burst.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createSnow } from "../particles/frozen.js";
-import { reducedDuration, prefersReducedMotion } from "../motion.js";
+import { prefersReducedMotion } from "../motion.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { playSfx } from "../audio/sfx.js";
 import {
@@ -131,40 +132,20 @@ export function initFrozen() {
   let lastClickY = 0;
 
   function spawnBreath(warm) {
-    const count =
-      FV.BREATH_COUNT_MIN + Math.floor(Math.random() * FV.BREATH_COUNT_RANGE);
-    for (let i = 0; i < count; i++) {
-      const el = document.createElement("div");
-      el.className = "frost-breath" + (warm ? " warm" : "");
-      const size = FV.BREATH_SIZE_MIN + Math.random() * FV.BREATH_SIZE_RANGE;
-      el.style.width = size + "px";
-      el.style.height = size + "px";
-      el.style.left = lastClickX + "px";
-      el.style.top = lastClickY + "px";
-      document.body.appendChild(el);
-
-      const angle = Math.random() * Math.PI * 2;
-      const dist = FV.BREATH_DIST_MIN + Math.random() * FV.BREATH_DIST_RANGE;
-      const dx = Math.cos(angle) * dist;
-      const dy = Math.sin(angle) * dist;
-      const dur =
-        FV.BREATH_DURATION_MIN + Math.random() * FV.BREATH_DURATION_RANGE;
-
-      el.animate(
-        [
-          { transform: "translate(-50%,-50%) scale(1)", opacity: 0.8 },
-          {
-            transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`,
-            opacity: 0,
-          },
-        ],
-        {
-          duration: reducedDuration(dur),
-          easing: "ease-out",
-          fill: "forwards",
-        },
-      ).onfinish = () => el.remove();
-    }
+    spawnRadialBurst({
+      x: lastClickX,
+      y: lastClickY,
+      className: "frost-breath" + (warm ? " warm" : ""),
+      countMin: FV.BREATH_COUNT_MIN,
+      countRange: FV.BREATH_COUNT_RANGE,
+      sizeMin: FV.BREATH_SIZE_MIN,
+      sizeRange: FV.BREATH_SIZE_RANGE,
+      distMin: FV.BREATH_DIST_MIN,
+      distRange: FV.BREATH_DIST_RANGE,
+      durMin: FV.BREATH_DURATION_MIN,
+      durRange: FV.BREATH_DURATION_RANGE,
+      startOpacity: 0.8,
+    });
   }
 
   // ── Card frost interactions ──
