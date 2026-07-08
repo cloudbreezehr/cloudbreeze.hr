@@ -172,6 +172,40 @@ function hideTooltip() {
   if (tooltipEl) tooltipEl.style.display = "none";
 }
 
+// ── Collapsible header a11y ──
+// Section and group headers toggle a `.collapsed` class on their container.
+// Make them real disclosure controls: focusable, operable with Enter/Space,
+// and announcing state via aria-expanded. A header that already holds a
+// control (the per-section reset button) stays a generic focusable region —
+// promoting it to role=button would nest one interactive inside another.
+export function wireCollapsibleHeader(collapsibleEl, headerEl) {
+  headerEl.setAttribute("tabindex", "0");
+  if (!headerEl.querySelector("button"))
+    headerEl.setAttribute("role", "button");
+  headerEl.addEventListener("keydown", (e) => {
+    // Only when the header itself is focused — ignore keydowns bubbling from a
+    // nested control (the reset button), so operating that with the keyboard
+    // doesn't also toggle the section.
+    if (e.target !== headerEl) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      headerEl.click();
+    }
+  });
+  syncCollapsedAria(collapsibleEl);
+}
+
+// Mirror the container's collapsed state onto its header (always the first
+// child) so aria-expanded stays truthful no matter which path toggled it.
+export function syncCollapsedAria(collapsibleEl) {
+  const headerEl = collapsibleEl.firstElementChild;
+  if (headerEl)
+    headerEl.setAttribute(
+      "aria-expanded",
+      String(!collapsibleEl.classList.contains("collapsed")),
+    );
+}
+
 // ── Build a single section element ──
 function buildSectionEl(category, registry, rowMap) {
   const entries = registry.get(category);
@@ -187,7 +221,7 @@ function buildSectionEl(category, registry, rowMap) {
   const sectionHeader = document.createElement("div");
   sectionHeader.className = "dc-section-header";
   const sectionLabel = SECTION_LABEL_MAP[category] || category;
-  sectionHeader.innerHTML = `<span class="dc-section-chevron">&#9660;</span>${sectionLabel}`;
+  sectionHeader.innerHTML = `<span class="dc-section-chevron" aria-hidden="true">&#9660;</span>${sectionLabel}`;
   const sectionResetBtn = document.createElement("button");
   sectionResetBtn.className = "dc-section-reset";
   sectionResetBtn.textContent = "reset";
@@ -206,8 +240,10 @@ function buildSectionEl(category, registry, rowMap) {
     if (e.target === sectionResetBtn) return;
     sectionEl.classList.toggle("collapsed");
     sectionEl.dataset.userToggled = "true";
+    syncCollapsedAria(sectionEl);
   });
   sectionEl.appendChild(sectionHeader);
+  wireCollapsibleHeader(sectionEl, sectionHeader);
 
   const sectionBody = document.createElement("div");
   sectionBody.className = "dc-section-body";
@@ -239,6 +275,7 @@ function buildSectionEl(category, registry, rowMap) {
     input.max = entry.max;
     input.step = entry.step;
     input.value = formatNum(entry.ref[key], entry.step);
+    input.setAttribute("aria-label", entry.label);
 
     const resetBtn = document.createElement("button");
     resetBtn.className = "dc-row-reset";
@@ -263,6 +300,7 @@ function buildSectionEl(category, registry, rowMap) {
     slider.max = entry.max;
     slider.step = entry.step;
     slider.value = entry.ref[key];
+    slider.setAttribute("aria-label", entry.label);
 
     slider.addEventListener("input", () => {
       const v = parseFloat(slider.value);
@@ -316,7 +354,7 @@ function buildPanel() {
   // ── Search ──
   const search = document.createElement("div");
   search.className = "dc-search";
-  search.innerHTML = `<input type="text" placeholder="Search constants..." spellcheck="false" />`;
+  search.innerHTML = `<input type="text" placeholder="Search constants..." spellcheck="false" aria-label="Search constants" />`;
   panel.appendChild(search);
 
   // ── Body ──
@@ -341,11 +379,13 @@ function buildPanel() {
     groupEl.className = "dc-group collapsed";
     const groupHeader = document.createElement("div");
     groupHeader.className = "dc-group-header";
-    groupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>${group.label}`;
+    groupHeader.innerHTML = `<span class="dc-group-chevron" aria-hidden="true">&#9660;</span>${group.label}`;
     groupHeader.addEventListener("click", () => {
       groupEl.classList.toggle("collapsed");
+      syncCollapsedAria(groupEl);
     });
     groupEl.appendChild(groupHeader);
+    wireCollapsibleHeader(groupEl, groupHeader);
 
     const groupBody = document.createElement("div");
     groupBody.className = "dc-group-body";
@@ -371,11 +411,13 @@ function buildPanel() {
     themesGroupEl.className = "dc-group collapsed";
     const themesGroupHeader = document.createElement("div");
     themesGroupHeader.className = "dc-group-header";
-    themesGroupHeader.innerHTML = `<span class="dc-group-chevron">&#9660;</span>Themes`;
+    themesGroupHeader.innerHTML = `<span class="dc-group-chevron" aria-hidden="true">&#9660;</span>Themes`;
     themesGroupHeader.addEventListener("click", () => {
       themesGroupEl.classList.toggle("collapsed");
+      syncCollapsedAria(themesGroupEl);
     });
     themesGroupEl.appendChild(themesGroupHeader);
+    wireCollapsibleHeader(themesGroupEl, themesGroupHeader);
 
     const themesGroupBody = document.createElement("div");
     themesGroupBody.className = "dc-group-body";
@@ -489,6 +531,8 @@ function buildPanel() {
         }
       });
       subHeaders.forEach((h) => (h.style.display = ""));
+      sections.forEach(syncCollapsedAria);
+      groups.forEach(syncCollapsedAria);
       savedCollapseStates.clear();
       return;
     }
@@ -528,6 +572,8 @@ function buildPanel() {
       g.style.display = visible.length > 0 ? "" : "none";
       if (visible.length > 0) g.classList.remove("collapsed");
     });
+    sections.forEach(syncCollapsedAria);
+    groups.forEach(syncCollapsedAria);
   });
 
   return { panel, searchInput };
@@ -1142,10 +1188,12 @@ function setupSectionActivateListener(panel) {
     if (!sectionEl) return;
 
     sectionEl.classList.remove("collapsed");
+    syncCollapsedAria(sectionEl);
 
     const parentGroup = sectionEl.closest(".dc-group");
     if (parentGroup && parentGroup.classList.contains("collapsed")) {
       parentGroup.classList.remove("collapsed");
+      syncCollapsedAria(parentGroup);
     }
 
     setTimeout(() => {
@@ -1163,8 +1211,14 @@ function setupSectionActivateListener(panel) {
 // ── Public: init dev console ──
 
 let panelInstance = null;
+// The control focused before the console opened, restored on close so keyboard
+// focus isn't stranded on the dismissed panel.
+let _prevFocus = null;
 
 export function openDevConsole() {
+  const wasHidden =
+    !panelInstance || panelInstance.panel.style.display === "none";
+  if (wasHidden) _prevFocus = document.activeElement;
   showFps();
   document.body.classList.add("dev-active");
   window.dispatchEvent(
@@ -1194,6 +1248,15 @@ export function openDevConsole() {
     closeDevConsole();
   });
 
+  // Escape dismisses the console from anywhere inside it; scoped to the panel
+  // (not the document) so it doesn't feed unrelated global key sequences.
+  panel.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      e.stopPropagation();
+      closeDevConsole();
+    }
+  });
+
   // Focus search on open
   setTimeout(() => searchInput.focus(), SEARCH_FOCUS_DELAY_MS);
 }
@@ -1207,6 +1270,10 @@ export function closeDevConsole() {
   if (panelInstance) {
     panelInstance.panel.style.display = "none";
   }
+  // Return focus to wherever it was before opening, if that element is still
+  // around; otherwise let the browser fall back to the body.
+  if (_prevFocus && _prevFocus.isConnected) _prevFocus.focus();
+  _prevFocus = null;
 }
 
 export function toggleDevConsole() {
