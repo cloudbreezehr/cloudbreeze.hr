@@ -17,8 +17,8 @@
 /* --rod-scale-y: ring's vertical scale factor when collapsed into a
    rod (pendulum, metronome, yo-yo). Registered so animations can
    interpolate it smoothly and the --rod-tip calc() cascades.
-   Inherited so a single keyframe on :root can drive both the ring
-   scaleY and the dot's derived translateY in lockstep. */
+   Inherited so a single keyframe on the cursor layer can drive both the
+   ring scaleY and the dot's derived translateY in lockstep. */
 @property --rod-scale-y {
   syntax: "<number>";
   inherits: true;
@@ -488,7 +488,7 @@ body.spell-kick #cursor-ring::after {
         --rod-tip encodes this so the dot's translateY matches.
      3. Dot's transform-origin is --cursor-pivot-top (ring top, for rods
         hanging below the cursor) or --cursor-pivot-bottom (for rods
-        rising above), both defined on :root.
+        rising above), both defined on the cursor layer.
 
    To add a new rod-style animation: set --rod-tip on the dot rule,
    choose a pivot, and write paired keyframes. No pixel math required. */
@@ -747,11 +747,13 @@ body.spell-kick #cursor-ring::after {
     forwards;
 }
 
-/* The yo-yo's scaleY timeline lives on :root as a single keyframes
-   block; :has() activates it only while the ring is animating. Ring
-   and dot then read --rod-scale-y and --rod-tip, keeping the string
-   bottom and dot center paired without duplicated timelines. */
-:root:has(#cursor.idle-yo-yo) {
+/* The yo-yo's scaleY timeline lives on the cursor layer as a single
+   keyframes block; :has() activates it only while the ring is animating.
+   Ring and dot then read --rod-scale-y and --rod-tip, keeping the string
+   bottom and dot center paired without duplicated timelines. It must hinge
+   on the layer, not :root — animating an inherited registered property
+   recomputes every element that inherits it, every frame. */
+#cursor-layer:has(#cursor.idle-yo-yo) {
   animation: cursor-idle-yo-yo-rod 1.6s linear infinite;
 }
 @keyframes cursor-idle-yo-yo-rod {
