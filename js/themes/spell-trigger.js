@@ -494,12 +494,16 @@ export function initSpellTrigger() {
   // the final letter) flips the overcharge pulse. Eases back to rest after a
   // pause. CSS renders it from the variables — see #cursor-ring::after.
   let settleTimer = null;
-  const root = document.documentElement;
+  // These vars only drive the cursor halo, which inherits them from the cursor
+  // layer — write them there, not the document root, so they can't become a
+  // document-wide style-recompute cost if a transition is ever added.
+  const cursorLayer =
+    document.getElementById("cursor-layer") || document.documentElement;
   function applyCharge(progress, liveCharge) {
     clearTimeout(settleTimer);
     const shown = progress >= CHARGE_MIN_PROGRESS ? progress : 0;
-    root.style.setProperty("--spell-charge", shown.toFixed(3));
-    root.style.setProperty("--spell-overcharge", String(liveCharge));
+    cursorLayer.style.setProperty("--spell-charge", shown.toFixed(3));
+    cursorLayer.style.setProperty("--spell-overcharge", String(liveCharge));
     document.body.classList.toggle("spell-overcharging", liveCharge > 0);
     // Drop the per-letter twitch class once the overcharge ends (completion or
     // a non-charge letter) so a finished kick doesn't linger on the body.
@@ -518,8 +522,8 @@ export function initSpellTrigger() {
   }
   function resetCharge() {
     clearTimeout(settleTimer);
-    root.style.setProperty("--spell-charge", "0");
-    root.style.setProperty("--spell-overcharge", "0");
+    cursorLayer.style.setProperty("--spell-charge", "0");
+    cursorLayer.style.setProperty("--spell-overcharge", "0");
     document.body.classList.remove("spell-overcharging");
     document.body.classList.remove("spell-kick");
   }
