@@ -116,7 +116,7 @@
   transition:
     transform 0.18s,
     box-shadow 0.3s;
-  box-shadow: var(--theme-btn-shadow, 0 0 30px rgba(var(--theme-glow), 0.35));
+  box-shadow: var(--theme-btn-shadow, 0 0 30px rgba(var(--theme-glow), 0.3));
 }
 .btn-primary::before {
   content: "";
@@ -133,7 +133,7 @@
   transform: translateY(-2px);
   box-shadow: var(
     --theme-btn-hover-shadow,
-    0 8px 40px rgba(var(--theme-glow), 0.5)
+    0 8px 40px rgba(var(--theme-glow), 0.45)
   );
 }
 .btn-primary:hover::before {

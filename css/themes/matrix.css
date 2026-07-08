@@ -97,8 +97,6 @@ body[data-active-theme="matrix"] {
   );
   --theme-btn-bg: linear-gradient(135deg, #0d4a24, #052e15);
   --theme-btn-before-bg: linear-gradient(135deg, #14693a, #0a3d1f);
-  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
-  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
   --theme-heading-em-bg: linear-gradient(
     135deg,
     #d8ffe4,

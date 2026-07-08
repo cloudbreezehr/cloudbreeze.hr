@@ -96,8 +96,6 @@ body[data-active-theme="constellation"] {
   );
   --theme-btn-bg: linear-gradient(135deg, #4858a8, #2a3270);
   --theme-btn-before-bg: linear-gradient(135deg, #5868c0, #3a4290);
-  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
-  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
   --theme-heading-em-bg: linear-gradient(
     135deg,
     #e8eeff,

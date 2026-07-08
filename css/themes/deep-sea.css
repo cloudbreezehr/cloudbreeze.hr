@@ -118,8 +118,6 @@ body[data-active-theme="deep-sea"] {
   );
   --theme-btn-bg: linear-gradient(135deg, #00806a, #005848);
   --theme-btn-before-bg: linear-gradient(135deg, #00a088, #00806a);
-  --theme-btn-shadow: 0 0 30px rgba(var(--theme-glow), 0.3);
-  --theme-btn-hover-shadow: 0 8px 40px rgba(var(--theme-glow), 0.45);
   --theme-heading-em-bg: linear-gradient(
     135deg,
     #80ffd4,
