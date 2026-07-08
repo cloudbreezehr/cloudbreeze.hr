@@ -9,6 +9,7 @@ import {
   createTheme,
   rampAbove,
   createCanvasFilterIndicator,
+  createFadeOverlayIndicator,
 } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
@@ -45,6 +46,7 @@ const RV = defineConstants(
     TAG_GLOW_ALPHA_RANGE: 0.5,
     DARKEN_SAT_RANGE: 0.4,
     DARKEN_BRI_RANGE: 0.25,
+    STORM_MAX_OPACITY: 0.8,
     SWAY_MAX_DEG: 2,
     LOGO_GLOW_SPREAD_MIN: 3,
     LOGO_GLOW_SPREAD_RANGE: 12,
@@ -241,20 +243,11 @@ export function initRainy() {
         },
       },
       // ── 3. Wind vignette creep ──
-      {
+      createFadeOverlayIndicator({
+        el: stormOverlay,
         threshold: RF.WIND_PICKUP_AT,
-        apply(progress) {
-          if (progress < RF.WIND_PICKUP_AT) {
-            stormOverlay.style.opacity = "0";
-            return;
-          }
-          const t = rampAbove(progress, RF.WIND_PICKUP_AT);
-          stormOverlay.style.opacity = String(t * 0.8);
-        },
-        clear() {
-          stormOverlay.style.opacity = "0";
-        },
-      },
+        maxOpacity: RV.STORM_MAX_OPACITY,
+      }),
       // ── 4. Hero-tag sway ──
       {
         threshold: RF.WIND_PICKUP_AT,

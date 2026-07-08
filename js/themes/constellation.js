@@ -6,6 +6,7 @@ import {
   createTheme,
   rampAbove,
   createCanvasFilterIndicator,
+  createFadeOverlayIndicator,
 } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createConstellationTrigger } from "./triggers.js";
@@ -182,20 +183,11 @@ export function initConstellation() {
     trigger,
     indicators: [
       // ── 1. Indigo nebula tint via CSS overlay ──
-      {
+      createFadeOverlayIndicator({
+        el: nebulaOverlay,
         threshold: CF.NEBULA_AT,
-        apply(progress) {
-          if (progress < CF.NEBULA_AT) {
-            nebulaOverlay.style.opacity = "0";
-            return;
-          }
-          const t = rampAbove(progress, CF.NEBULA_AT);
-          nebulaOverlay.style.opacity = String(t * CV.NEBULA_MAX_OPACITY);
-        },
-        clear() {
-          nebulaOverlay.style.opacity = "0";
-        },
-      },
+        maxOpacity: CV.NEBULA_MAX_OPACITY,
+      }),
       // ── 2. Hint-pulse on remaining candidate stars ──
       // Once a candidate constellation is locked (the user clicked a correct
       // star), its remaining stars get a faint ember immediately, ramping up
@@ -218,20 +210,11 @@ export function initConstellation() {
         },
       },
       // ── 3. Vignette darkens the periphery ──
-      {
+      createFadeOverlayIndicator({
+        el: vignetteOverlay,
         threshold: CF.VIGNETTE_AT,
-        apply(progress) {
-          if (progress < CF.VIGNETTE_AT) {
-            vignetteOverlay.style.opacity = "0";
-            return;
-          }
-          const t = rampAbove(progress, CF.VIGNETTE_AT);
-          vignetteOverlay.style.opacity = String(t * CV.VIGNETTE_MAX_OPACITY);
-        },
-        clear() {
-          vignetteOverlay.style.opacity = "0";
-        },
-      },
+        maxOpacity: CV.VIGNETTE_MAX_OPACITY,
+      }),
       // ── 4. Canvas filter — only when no other theme is stealing it ──
       createCanvasFilterIndicator({
         canvasEl,

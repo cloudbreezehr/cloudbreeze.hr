@@ -7,6 +7,7 @@ import {
   createTheme,
   rampAbove,
   createCanvasFilterIndicator,
+  createFadeOverlayIndicator,
 } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
@@ -259,20 +260,11 @@ export function initDeepSea() {
         },
       }),
       // ── 4. Pressure vignette ──
-      {
+      createFadeOverlayIndicator({
+        el: vignetteOverlay,
         threshold: DF.VIGNETTE_AT,
-        apply(progress) {
-          if (progress < DF.VIGNETTE_AT) {
-            vignetteOverlay.style.opacity = "0";
-            return;
-          }
-          const t = rampAbove(progress, DF.VIGNETTE_AT);
-          vignetteOverlay.style.opacity = String(t * DV.VIGNETTE_MAX_OPACITY);
-        },
-        clear() {
-          vignetteOverlay.style.opacity = "0";
-        },
-      },
+        maxOpacity: DV.VIGNETTE_MAX_OPACITY,
+      }),
     ],
     wipe: {
       className: "deep-sea-wipe",

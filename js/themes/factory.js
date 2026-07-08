@@ -116,6 +116,34 @@ export function createCanvasFilterIndicator({
 }
 
 /**
+ * Build a "fade an overlay element in as this theme's force ramps up"
+ * indicator: opacity 0 below the threshold, then `rampAbove(t) * maxOpacity`
+ * above it. For the plain-opacity overlays; ones that also drive a CSS var or
+ * a sibling filter keep their own bespoke apply().
+ *
+ * @param {object}  cfg
+ * @param {Element} cfg.el          overlay whose `style.opacity` this drives
+ * @param {number}  cfg.threshold   force at which the fade begins
+ * @param {number}  [cfg.maxOpacity=1] opacity at full ramp
+ */
+export function createFadeOverlayIndicator({ el, threshold, maxOpacity = 1 }) {
+  const clear = () => {
+    el.style.opacity = "0";
+  };
+  return {
+    threshold,
+    apply(progress) {
+      if (progress < threshold) {
+        clear();
+        return;
+      }
+      el.style.opacity = String(rampAbove(progress, threshold) * maxOpacity);
+    },
+    clear,
+  };
+}
+
+/**
  * Create and wire up a theme.
  * @param {ThemeDefinition} def
  * @returns {ThemeCtx} Live ctx (getter-backed) for callers that need ongoing
