@@ -789,68 +789,37 @@ describe("achievements/ui/cards", () => {
       panelOpen = false;
       storage.unlock("first-light");
       mod.refreshCard("first-light");
-      // Still in locked state; the first-light card didn't get
-      // the unlocked class promoted.
+      // Still locked, and no refresh was triggered while closed.
       const card = container.querySelector(
         '.achievement-card[data-id="first-light"]',
       );
       expect(card.classList.contains("unlocked")).toBe(false);
+      expect(refreshPanelStub).not.toHaveBeenCalled();
     });
 
-    it("promotes the card to unlocked in-place and calls refreshPanel", () => {
+    it("refreshes the panel, then shines the freshly-rendered card in place", () => {
+      // A prior close stamp means the rebuilt card would get the entrance
+      // reveal; refreshCard should strip it and play the shine instead.
+      storage.setPref(storage.LAST_PANEL_CLOSE_PREF, Date.now() - 1000);
       mod.renderSections(container);
-      const card = container.querySelector(
-        '.achievement-card[data-id="first-light"]',
-      );
-      expect(card.classList.contains("unlocked")).toBe(false);
+      // The rebuild is what promotes the card to unlocked; wire the stub to it.
+      refreshPanelStub.mockImplementation(() => mod.renderSections(container));
 
       storage.unlock("first-light");
       mod.refreshCard("first-light");
 
-      expect(card.classList.contains("unlocked")).toBe(true);
-      expect(card.classList.contains("unseen")).toBe(true);
       expect(refreshPanelStub).toHaveBeenCalled();
+      const card = container.querySelector(
+        '.achievement-card[data-id="first-light"]',
+      );
+      expect(card.classList.contains("unlocked")).toBe(true);
+      expect(card.classList.contains("shine")).toBe(true);
+      // Lit up in place rather than re-entering.
+      expect(card.classList.contains("just-unlocked")).toBe(false);
     });
 
-    it("renders the timestamp + inline progress identically to a fresh paint", async () => {
-      // Pick an achievement with a progressKey so the inline count
-      // path is exercised, and seed enough state that the count is
-      // non-zero.
-      const ach = "curious-mind"; // progressKey: unlocks-5
-      // unlock 3 unrelated achievements to populate countUnlocks
-      storage.unlock("first-light");
-      storage.unlock("cloud-reader");
-      storage.unlock("a-stillness");
-      mod.renderSections(container);
-
-      // Reference DOM from a fresh render, after unlocking the target.
-      storage.unlock(ach);
-      container.replaceChildren();
-      mod.renderSections(container);
-      const referenceTime = container
-        .querySelector(`.achievement-card[data-id="${ach}"]`)
-        .querySelector(".achievement-card-time").outerHTML;
-
-      // Now simulate the in-place refresh path: re-render in the locked
-      // state, then unlock and call refreshCard.
-      storage.reset();
-      storage.unlock("first-light");
-      storage.unlock("cloud-reader");
-      storage.unlock("a-stillness");
-      container.replaceChildren();
-      mod.renderSections(container);
-      storage.unlock(ach);
-      mod.refreshCard(ach);
-
-      const refreshedTime = container
-        .querySelector(`.achievement-card[data-id="${ach}"]`)
-        .querySelector(".achievement-card-time").outerHTML;
-      expect(refreshedTime).toEqual(referenceTime);
-    });
-
-    it("falls back to full panel refresh when the card isn't in the DOM", () => {
-      // Don't renderSections — card won't exist.  refreshCard should
-      // trigger refreshPanel and exit.
+    it("refreshes the panel even when the card isn't currently rendered", () => {
+      // Don't renderSections — the card won't exist; the counts still refresh.
       storage.unlock("first-light");
       mod.refreshCard("first-light");
       expect(refreshPanelStub).toHaveBeenCalled();

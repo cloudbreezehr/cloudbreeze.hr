@@ -878,64 +878,27 @@ function shakeCard(card) {
   });
 }
 
-// Refresh a single card in-place when it unlocks while panel is open
+// Refresh the panel when a card unlocks while it's open, then play the shine
+// on the freshly-rendered card. A full refresh rebuilds every card — so section
+// counts, completion, and the unlocked state are all current, and the card is
+// re-observed for seen-tracking — where mutating a card first would only shine
+// a node about to be detached and replaced.
 export function refreshCard(achievementId) {
   const panelEl = _getPanelEl();
   if (!panelEl || !_isPanelOpen()) return;
+  _refreshPanel();
   const card = panelEl.querySelector(
     `.achievement-card[data-id="${achievementId}"]`,
   );
-  if (!card) {
-    // Achievement might be in an invisible set — do full refresh
-    _refreshPanel();
-    return;
-  }
-  const ach = getAchievement(achievementId);
-  if (!ach) return;
-
-  const set = SETS.find((s) => s.id === ach.set);
-
-  card.classList.remove("locked", "hidden-ach");
-  card.classList.add("unlocked", "unseen");
-
-  // Update icon
-  const icon = card.querySelector(".achievement-icon");
-  if (icon) {
-    icon.innerHTML = CLOUD_CHECK_SVG;
-    if (set && set.color) icon.style.color = set.color;
-  }
-
-  // Update text
-  const title = card.querySelector(".achievement-card-title");
-  if (title) {
-    // textContent reset drops any prior tally span — re-apply from the count.
-    title.textContent = ach.title;
-    applyCardTally(title, achievementId);
-  }
-  const desc = card.querySelector(".achievement-card-desc");
-  if (desc) desc.textContent = ach.description;
-
-  // Replace any prior time-row (the locked-state progress line) so the
-  // unlocked-state timestamp + inline progress lands cleanly.
-  const textEl = card.querySelector(".achievement-text");
-  if (textEl) {
-    card.querySelector(".achievement-card-time")?.remove();
-    const timeEl = buildCardTimeBlock(ach);
-    if (timeEl) textEl.appendChild(timeEl);
-  }
-
-  // Newly unlocked card joins the rest in routing to its activity entry.
-  bindClickable(card, () => onCardClick(card, achievementId));
-
-  // Observe for seen tracking
-  if (_seenObserver) _seenObserver.observe(card);
-
-  // Shine animation
+  // Absent when the achievement sits in a set that isn't currently rendered:
+  // the counts still refreshed above, there's just nothing on screen to shine.
+  if (!card) return;
+  // This card was already on screen (locked) and lit up in place, so play the
+  // shine glow rather than the entrance reveal renderSections gives cards that
+  // were unlocked while the panel was closed.
+  card.classList.remove("just-unlocked");
   card.classList.add("shine");
   setTimeout(() => card.classList.remove("shine"), SHINE_DURATION_MS);
-
-  // Update section counts
-  _refreshPanel();
 }
 
 // Test hook — drop all card state including injected callbacks.
