@@ -40,26 +40,27 @@ body.light-appearance:where(:not(.theme-dark-only)) .service-card::before {
   );
 }
 body.light-appearance:where(:not(.theme-dark-only)) .service-num {
-  color: rgba(26, 95, 168, 0.5);
+  /* sky-5 (#1a5fa8) at this alpha clears WCAG AA on the near-white card. */
+  color: rgba(26, 95, 168, 0.85);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .service-title {
   color: var(--ink);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .service-desc {
-  color: rgba(var(--ink-rgb), 0.55);
+  color: rgba(var(--ink-rgb), 0.65);
 }
 
 body.light-appearance:where(:not(.theme-dark-only)) .about-heading {
   color: var(--ink);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .about-body {
-  color: rgba(var(--ink-rgb), 0.6);
+  color: rgba(var(--ink-rgb), 0.65);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .stat-num {
   color: var(--ink);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .stat-label {
-  color: rgba(var(--ink-rgb), 0.45);
+  color: rgba(var(--ink-rgb), 0.62);
 }
 
 body.light-appearance:where(:not(.theme-dark-only)) .contact-card {
@@ -81,7 +82,7 @@ body.light-appearance:where(:not(.theme-dark-only)) .contact-heading {
   color: var(--ink);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .contact-sub {
-  color: rgba(var(--ink-rgb), 0.5);
+  color: rgba(var(--ink-rgb), 0.62);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .contact-link {
   color: rgba(var(--ink-rgb), 0.65);
@@ -107,10 +108,10 @@ body.light-appearance:where(:not(.theme-dark-only)) .footer-col-title {
   color: var(--sky-5);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .footer-text {
-  color: rgba(var(--ink-rgb), 0.5);
+  color: rgba(var(--ink-rgb), 0.62);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .footer-link {
-  color: rgba(var(--ink-rgb), 0.5);
+  color: rgba(var(--ink-rgb), 0.62);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .footer-link:hover {
   color: var(--sky-5);
@@ -120,10 +121,13 @@ body.light-appearance:where(:not(.theme-dark-only)) footer {
   border-top-color: rgba(0, 0, 0, 0.05);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .footer-copy {
-  color: rgba(var(--ink-rgb), 0.3);
+  /* Raised from a near-invisible tint to clear WCAG AA on the light bg. */
+  color: rgba(var(--ink-rgb), 0.62);
 }
 body.light-appearance:where(:not(.theme-dark-only)) .footer-badge {
-  color: rgba(var(--theme-glow), 0.5);
+  /* The theme-glow blue can't reach AA even solid (~3.3:1); use the darker
+     link-blue (--sky-5, 5.99:1) that the other light-mode labels use. */
+  color: var(--sky-5);
 }
 
 body.light-appearance:where(:not(.theme-dark-only))::after {
