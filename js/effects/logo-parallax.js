@@ -18,6 +18,9 @@ const LP = defineConstants("effects.logoParallax", {
   ACHIEVEMENT_ACTIVE_FRAMES: 120,
   // Below this per-letter offset magnitude, the letter counts as "at rest".
   ACHIEVEMENT_MOTION_THRESHOLD_PX: 1,
+  // Sub-perceptible drift at which a homing letter snaps to zero, so the loop
+  // can idle instead of easing toward zero forever.
+  SETTLE_EPSILON_PX: 0.05,
 });
 
 // Cursor is tracked at document level so letters respond to the pointer
@@ -47,40 +50,59 @@ export function initLogoParallax() {
   const currentX = new Array(letters.length).fill(0);
   const currentY = new Array(letters.length).fill(0);
 
-  document.addEventListener(
-    "mousemove",
-    (e) => {
-      cursorX = e.clientX;
-      cursorY = e.clientY;
-      cursorKnown = true;
-    },
-    { passive: true },
-  );
+  // Cached geometry in viewport coordinates: the nav box (activation gate) and
+  // each letter's home center. Read only when stale — never per frame — so the
+  // eased loop does zero layout reads and can't thrash by interleaving reads
+  // with the per-letter translate writes. The sticky nav holds these steady
+  // across scroll; a resize (or the first use) invalidates them.
+  let metricsStale = true;
+  let navBox = null;
+  const homeX = new Array(letters.length).fill(0);
+  const homeY = new Array(letters.length).fill(0);
+
+  function measure() {
+    navBox = navEl.getBoundingClientRect();
+    for (let i = 0; i < letters.length; i++) {
+      const r = letters[i].getBoundingClientRect();
+      // Back out the offset we've applied so a mid-motion remeasure still
+      // yields the resting (untranslated) center.
+      homeX[i] = r.left + r.width / 2 - currentX[i];
+      homeY[i] = r.top + r.height / 2 - currentY[i];
+    }
+    metricsStale = false;
+  }
 
   let activeFrames = 0;
   let achievementFired = false;
 
+  // The loop self-suspends when there's nothing to animate and re-arms on the
+  // next pointer move or resize, so an idle logo costs no frames.
+  let rafId = null;
+  function schedule() {
+    if (rafId === null) rafId = requestAnimationFrame(tick);
+  }
+
   function tick() {
+    rafId = null;
+    let busy = false;
+
     if (cursorKnown) {
+      if (metricsStale) measure();
       // Activation gate: only pull letters when the cursor is inside the nav
-      // bounding rect.  Outside the nav, letters ease back to home — keeps
-      // the effect from triggering off nearby page content like the hero tag.
-      const navRect = navEl.getBoundingClientRect();
+      // box.  Outside it, letters ease back home — keeps the effect from
+      // triggering off nearby page content like the hero tag.
       const inNav =
-        cursorX >= navRect.left &&
-        cursorX <= navRect.right &&
-        cursorY >= navRect.top &&
-        cursorY <= navRect.bottom;
+        cursorX >= navBox.left &&
+        cursorX <= navBox.right &&
+        cursorY >= navBox.top &&
+        cursorY <= navBox.bottom;
 
       for (let i = 0; i < letters.length; i++) {
         let targetX = 0;
         let targetY = 0;
         if (inNav) {
-          const rect = letters[i].getBoundingClientRect();
-          const cx = rect.left + rect.width / 2;
-          const cy = rect.top + rect.height / 2;
-          const dx = cursorX - cx;
-          const dy = cursorY - cy;
+          const dx = cursorX - homeX[i];
+          const dy = cursorY - homeY[i];
           const dist = Math.hypot(dx, dy);
           const influence =
             dist < LP.INFLUENCE_PX ? 1 - dist / LP.INFLUENCE_PX : 0;
@@ -91,6 +113,17 @@ export function initLogoParallax() {
         }
         currentX[i] += (targetX - currentX[i]) * LP.EASE;
         currentY[i] += (targetY - currentY[i]) * LP.EASE;
+        if (
+          targetX === 0 &&
+          targetY === 0 &&
+          Math.abs(currentX[i]) < LP.SETTLE_EPSILON_PX &&
+          Math.abs(currentY[i]) < LP.SETTLE_EPSILON_PX
+        ) {
+          currentX[i] = 0;
+          currentY[i] = 0;
+        } else {
+          busy = true;
+        }
         letters[i].style.translate =
           `${currentX[i].toFixed(2)}px ${currentY[i].toFixed(2)}px`;
       }
@@ -121,10 +154,30 @@ export function initLogoParallax() {
       }
     }
 
-    requestAnimationFrame(tick);
+    if (busy) schedule();
   }
 
-  requestAnimationFrame(tick);
+  document.addEventListener(
+    "mousemove",
+    (e) => {
+      cursorX = e.clientX;
+      cursorY = e.clientY;
+      cursorKnown = true;
+      schedule();
+    },
+    { passive: true },
+  );
+
+  window.addEventListener(
+    "resize",
+    () => {
+      metricsStale = true;
+      schedule();
+    },
+    { passive: true },
+  );
+
+  schedule();
 }
 
 // Split a text element containing "Cloud<span>breeze</span>" into per-letter
