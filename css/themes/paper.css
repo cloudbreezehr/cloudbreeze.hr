@@ -2,9 +2,6 @@
 
 /* Wipe — ink brush sweep diagonally */
 .paper-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-theme-wipe);
   background: linear-gradient(
     115deg,
     transparent 0%,
@@ -15,9 +12,7 @@
   );
   background-size: 250% 100%;
   background-position: 100% 0;
-  opacity: 0;
   transition: opacity 0.4s ease-in-out;
-  pointer-events: none;
 }
 .paper-wipe.eraser {
   background: linear-gradient(

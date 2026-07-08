@@ -83,18 +83,13 @@
 
 /* Deep sea wipe transition */
 .deep-sea-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-theme-wipe);
   background: linear-gradient(
     180deg,
     rgba(0, 20, 40, 0.98),
     rgba(0, 40, 60, 0.95),
     rgba(0, 20, 40, 0.98)
   );
-  opacity: 0;
   transition: opacity 0.4s ease-in;
-  pointer-events: none;
 }
 .deep-sea-wipe.resurface {
   background: linear-gradient(

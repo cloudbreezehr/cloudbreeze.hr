@@ -151,17 +151,12 @@
 
 /* ── Pop-art wipe — bold diagonal hazard stripes ── */
 .wanted-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-theme-wipe);
   background: repeating-linear-gradient(
     45deg,
     #ff6a00 0 44px,
     #101010 44px 88px
   );
-  opacity: 0;
   transition: opacity 0.4s ease-in;
-  pointer-events: none;
 }
 
 /* ── Wanted — visual theme (only when active theme) ── */

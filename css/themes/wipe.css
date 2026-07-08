@@ -1,0 +1,22 @@
+/* ── Theme Wipe Spine ──
+   Every opacity-fade theme wipe overlay shares the same full-viewport frame:
+   fixed, inset 0, on the theme-wipe layer, hidden at rest, click-through. Each
+   theme's own partial adds only what differs — the background, the transition
+   timing, and any per-theme extras. (upside-down's wipe is transform-driven,
+   not opacity-based, so it isn't part of this set.) These declarations are
+   disjoint from what the per-theme rules set, so link order doesn't matter. */
+.blocky-wipe,
+.constellation-wipe,
+.paper-wipe,
+.deep-sea-wipe,
+.frost-wipe,
+.matrix-wipe,
+.storm-wipe,
+.wanted-wipe,
+.vhs-wipe {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-theme-wipe);
+  opacity: 0;
+  pointer-events: none;
+}

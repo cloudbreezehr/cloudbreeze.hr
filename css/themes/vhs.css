@@ -4,9 +4,6 @@
    so the static keeps moving for the entire cover+reveal window; without
    `infinite`, the keyframe finishes early and the wipe freezes mid-fade. */
 .vhs-wipe {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-theme-wipe);
   background:
     repeating-linear-gradient(
       to bottom,
@@ -25,8 +22,6 @@
     ),
     rgba(40, 50, 70, 0.7);
   background-size: 100% 24%;
-  opacity: 0;
-  pointer-events: none;
   transition: opacity 0.3s linear;
   animation: vhs-wipe-roll 0.4s linear infinite paused;
 }
