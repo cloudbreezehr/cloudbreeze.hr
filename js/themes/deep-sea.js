@@ -3,8 +3,11 @@ import { getCanvasCtx } from "../canvas-utils.js";
 import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createDeepSea } from "../particles/deep-sea.js";
-import { createTheme, rampAbove } from "./factory.js";
-import { hasActiveThemeExcept } from "./registry.js";
+import {
+  createTheme,
+  rampAbove,
+  createCanvasFilterIndicator,
+} from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createHoldTrigger } from "./triggers.js";
 import { prefersReducedMotion } from "../motion.js";
@@ -244,28 +247,17 @@ export function initDeepSea() {
         },
       },
       // ── 3. Color temperature shift (canvas filter) ──
-      {
+      createCanvasFilterIndicator({
+        canvasEl,
+        themeId: "deep-sea",
         threshold: DF.COLOR_SHIFT_AT,
-        apply(progress) {
-          // Don't fight other themes' own canvas filters
-          if (hasActiveThemeExcept("deep-sea")) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          if (progress < DF.COLOR_SHIFT_AT) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          const t = rampAbove(progress, DF.COLOR_SHIFT_AT);
+        filterFor: (t) => {
           const hue = 360 - t * DV.HUE_ROTATE;
           const sat = 1 + t * DV.SAT_BOOST;
           const bri = 1 - t * DV.BRI_DROP;
-          canvasEl.style.filter = `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+          return `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
         },
-        clear() {
-          canvasEl.style.filter = "";
-        },
-      },
+      }),
       // ── 4. Pressure vignette ──
       {
         threshold: DF.VIGNETTE_AT,

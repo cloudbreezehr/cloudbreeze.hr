@@ -5,8 +5,11 @@ import { spawnRipple } from "../effects/ripple.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
 import { reducedDuration } from "../motion.js";
-import { createTheme, rampAbove } from "./factory.js";
-import { hasActiveThemeExcept } from "./registry.js";
+import {
+  createTheme,
+  rampAbove,
+  createCanvasFilterIndicator,
+} from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
 
@@ -210,27 +213,16 @@ export function initRainy() {
     }),
     indicators: [
       // ── 1. Cloud darkening (canvas filter) ──
-      {
+      createCanvasFilterIndicator({
+        canvasEl,
+        themeId: "rainy",
         threshold: RF.CLOUD_DARKEN_AT,
-        apply(progress) {
-          // Don't fight other themes' own canvas filters
-          if (hasActiveThemeExcept("rainy")) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          if (progress < RF.CLOUD_DARKEN_AT) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          const t = rampAbove(progress, RF.CLOUD_DARKEN_AT);
+        filterFor: (t) => {
           const sat = 1 - t * RV.DARKEN_SAT_RANGE;
           const bri = 1 - t * RV.DARKEN_BRI_RANGE;
-          canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+          return `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
         },
-        clear() {
-          canvasEl.style.filter = "";
-        },
-      },
+      }),
       // ── 2. Hero-tag glow ──
       {
         threshold: RF.CLOUD_DARKEN_AT,

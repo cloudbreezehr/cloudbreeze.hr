@@ -5,8 +5,11 @@ import { prefersReducedMotion, scaled } from "../motion.js";
 import { playSfx } from "../audio/sfx.js";
 import { createPaper } from "../particles/paper.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
-import { createTheme, rampAbove } from "./factory.js";
-import { hasActiveThemeExcept } from "./registry.js";
+import {
+  createTheme,
+  rampAbove,
+  createCanvasFilterIndicator,
+} from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createKeySequenceTrigger } from "./triggers.js";
 
@@ -333,28 +336,17 @@ export function initPaper() {
         },
       },
       // ── 2. Desaturation on canvas ──
-      {
+      createCanvasFilterIndicator({
+        canvasEl,
+        themeId: "paper",
         threshold: PF.DESAT_AT,
-        apply(progress) {
-          // Don't fight other themes' own canvas filters
-          if (hasActiveThemeExcept("paper")) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          if (progress < PF.DESAT_AT) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          const t = rampAbove(progress, PF.DESAT_AT);
+        filterFor: (t) => {
           const sat = 1 - t * (1 - PV.DESAT_SAT_MIN);
           const contrast = 1 + t * PV.DESAT_CONTRAST_BOOST;
           const sepia = t * PV.DESAT_SEPIA_MAX;
-          canvasEl.style.filter = `saturate(${sat.toFixed(2)}) contrast(${contrast.toFixed(2)}) sepia(${sepia.toFixed(2)})`;
+          return `saturate(${sat.toFixed(2)}) contrast(${contrast.toFixed(2)}) sepia(${sepia.toFixed(2)})`;
         },
-        clear() {
-          canvasEl.style.filter = "";
-        },
-      },
+      }),
       // ── 3. Stroke seeping — overlay opacity ──
       {
         threshold: PF.STROKE_SEEP_AT,

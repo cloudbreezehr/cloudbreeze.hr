@@ -26,7 +26,7 @@
 // duplicating it locally.
 
 import { playWipe } from "../effects/wipe.js";
-import { registerToggle } from "./registry.js";
+import { registerToggle, hasActiveThemeExcept } from "./registry.js";
 
 /**
  * @typedef {Object} ThemeCtx
@@ -77,6 +77,43 @@ import { registerToggle } from "./registry.js";
  */
 export const rampAbove = (progress, threshold) =>
   Math.min(1, (progress - threshold) / (1 - threshold));
+
+/**
+ * Build the shared "tint #bg-canvas as this theme's force ramps up" indicator.
+ * It clears the filter whenever another theme owns the canvas filter, or below
+ * the threshold; above it, the filter is `filterFor(t)` for the 0→1 ramp value.
+ * Centralizing the back-off guard keeps that cross-theme invariant in one place
+ * rather than copied into every theme that tints the canvas.
+ *
+ * @param {object}   cfg
+ * @param {Element}  cfg.canvasEl   canvas whose `style.filter` this drives
+ * @param {string}   cfg.themeId    this theme's id (excluded from the back-off check)
+ * @param {number}   cfg.threshold  force at which the filter begins
+ * @param {(t: number) => string} cfg.filterFor  filter string for a 0→1 ramp value
+ */
+export function createCanvasFilterIndicator({
+  canvasEl,
+  themeId,
+  threshold,
+  filterFor,
+}) {
+  const clear = () => {
+    canvasEl.style.filter = "";
+  };
+  return {
+    threshold,
+    apply(progress) {
+      // Don't fight another theme's own canvas filter, and stay clear below
+      // the threshold.
+      if (hasActiveThemeExcept(themeId) || progress < threshold) {
+        clear();
+        return;
+      }
+      canvasEl.style.filter = filterFor(rampAbove(progress, threshold));
+    },
+    clear,
+  };
+}
 
 /**
  * Create and wire up a theme.

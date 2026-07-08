@@ -6,8 +6,11 @@ import { createSnow } from "../particles/frozen.js";
 import { reducedDuration, prefersReducedMotion } from "../motion.js";
 import { subscribe as subscribeScroll } from "../scroll-bus.js";
 import { playSfx } from "../audio/sfx.js";
-import { createTheme, rampAbove } from "./factory.js";
-import { hasActiveThemeExcept } from "./registry.js";
+import {
+  createTheme,
+  rampAbove,
+  createCanvasFilterIndicator,
+} from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createClickCountTrigger } from "./triggers.js";
 
@@ -295,27 +298,16 @@ export function initFrozen() {
         },
       },
       // ── 4. Temperature drop (canvas filter) ──
-      {
+      createCanvasFilterIndicator({
+        canvasEl,
+        themeId: "frozen",
         threshold: FF.TEMP_DROP_AT,
-        apply(progress) {
-          // Don't fight other themes' own canvas filters
-          if (hasActiveThemeExcept("frozen")) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          if (progress < FF.TEMP_DROP_AT) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          const t = rampAbove(progress, FF.TEMP_DROP_AT);
+        filterFor: (t) => {
           const sat = 1 - t * FV.TEMP_SAT_DROP;
           const bri = 1 + t * FV.TEMP_BRI_BOOST;
-          canvasEl.style.filter = `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+          return `saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
         },
-        clear() {
-          canvasEl.style.filter = "";
-        },
-      },
+      }),
       // ── 5. Logo frost-over (desaturate + brighten the whole logo) ──
       // Skipped while thawing — the logo returns to its natural look.
       {

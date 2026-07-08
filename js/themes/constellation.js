@@ -2,8 +2,11 @@ import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { getSkyStars } from "../sky.js";
 import { createConstellation } from "../particles/constellation.js";
-import { createTheme, rampAbove } from "./factory.js";
-import { hasActiveThemeExcept } from "./registry.js";
+import {
+  createTheme,
+  rampAbove,
+  createCanvasFilterIndicator,
+} from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
 import { createConstellationTrigger } from "./triggers.js";
 import { prefersReducedMotion } from "../motion.js";
@@ -230,27 +233,17 @@ export function initConstellation() {
         },
       },
       // ── 4. Canvas filter — only when no other theme is stealing it ──
-      {
+      createCanvasFilterIndicator({
+        canvasEl,
+        themeId: "constellation",
         threshold: CF.DIM_REST_AT,
-        apply(progress) {
-          if (hasActiveThemeExcept("constellation")) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          if (progress < CF.DIM_REST_AT) {
-            canvasEl.style.filter = "";
-            return;
-          }
-          const t = rampAbove(progress, CF.DIM_REST_AT);
+        filterFor: (t) => {
           const sat = 1 + t * CV.SAT_BOOST;
           const bri = 1 - t * CV.BRI_DROP;
           const hue = t * CV.HUE_ROTATE;
-          canvasEl.style.filter = `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
+          return `hue-rotate(${hue.toFixed(0)}deg) saturate(${sat.toFixed(2)}) brightness(${bri.toFixed(2)})`;
         },
-        clear() {
-          canvasEl.style.filter = "";
-        },
-      },
+      }),
     ],
     wipe: {
       className: "constellation-wipe",
