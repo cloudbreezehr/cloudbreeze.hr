@@ -90,6 +90,11 @@ export function initCursor(dotEl, ringEl) {
   let pressing = false;
   let overNativeCursor = false;
 
+  // The dot and ring inherit their size vars from this wrapper. Writing them
+  // here (not :root) confines the transition's per-frame recompute of these
+  // inherited registered properties to the cursor subtree.
+  const sizeHost = dotEl.parentElement || document.documentElement;
+
   function setPos(el, x, y) {
     el.style.translate = `calc(${x}px - 50%) calc(${y}px - 50%)`;
   }
@@ -144,14 +149,8 @@ export function initCursor(dotEl, ringEl) {
     // Publish via custom properties so idle animations that depend on
     // ring/dot geometry (pendulum, metronome, yo-yo) stay in sync as
     // sizes transition.
-    document.documentElement.style.setProperty(
-      "--cursor-dot-size",
-      `${dotSize}px`,
-    );
-    document.documentElement.style.setProperty(
-      "--cursor-ring-size",
-      `${ringSize}px`,
-    );
+    sizeHost.style.setProperty("--cursor-dot-size", `${dotSize}px`);
+    sizeHost.style.setProperty("--cursor-ring-size", `${ringSize}px`);
   }
 
   document.addEventListener("mouseover", (e) => {

@@ -24,7 +24,15 @@
   inherits: true;
   initial-value: 1;
 }
-:root {
+/* Inert wrapper holding the dot and ring. The sizes are inherited registered
+   properties with a transition, and transitioning an inherited registered
+   property recomputes it for every element that inherits it, every frame of
+   the transition — so it must be declared on the smallest possible subtree,
+   not :root, or a hover-driven size change costs O(whole document) per frame.
+   A static wrapper creates no stacking context or fixed-positioning
+   containing block, so the fixed dot/ring still resolve against the viewport
+   and keep their root-level z-index. */
+#cursor-layer {
   --cursor-dot-size: 12px;
   --cursor-ring-size: 36px;
   /* Pivot points on the cursor column where rod-style idle animations
@@ -40,7 +48,7 @@
     --cursor-dot-size 0.3s var(--ease-back),
     --cursor-ring-size 0.3s var(--ease-back);
 }
-:root:has(#cursor.pressing) {
+#cursor-layer:has(#cursor.pressing) {
   transition:
     --cursor-dot-size 0.15s ease-out,
     --cursor-ring-size 0.15s ease-out;
