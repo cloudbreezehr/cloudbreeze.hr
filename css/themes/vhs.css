@@ -445,8 +445,8 @@ body[data-active-theme="vhs"] .page {
   transition: translate 60ms linear;
 }
 
-/* Color-cast filter ramps via custom property as force grows.  Indicator
-   stages 2/4 set --vhs-buildup-cast on body to drive the effect. */
+/* Color-cast filter ramps via custom properties as force grows. The buildup
+   stage sets --vhs-buildup-saturate/-sepia on the canvas to drive it. */
 body.vhs[data-vhs-buildup="true"] #bg-canvas {
   filter: saturate(var(--vhs-buildup-saturate, 1))
     sepia(var(--vhs-buildup-sepia, 0)) contrast(1.1) brightness(0.92);

@@ -67,6 +67,9 @@ const TRIGGER_KEY = "Escape";
 
 export function initVhs() {
   const pageEl = document.querySelector(".page");
+  // The color-cast filter lives on the canvas, the only reader of these vars.
+  // Write them there rather than body so they stay scoped to their consumer.
+  const canvasEl = document.getElementById("bg-canvas");
 
   // ── Progressive overlay — buildup scanlines ──
   const scanlines = document.createElement("div");
@@ -353,19 +356,13 @@ export function initVhs() {
           const sat = 1 - t * (1 - VV.BUILDUP_SAT_MIN);
           const sepia = t * VV.BUILDUP_SEPIA_MAX;
           document.body.dataset.vhsBuildup = "true";
-          document.body.style.setProperty(
-            "--vhs-buildup-saturate",
-            sat.toFixed(3),
-          );
-          document.body.style.setProperty(
-            "--vhs-buildup-sepia",
-            sepia.toFixed(3),
-          );
+          canvasEl?.style.setProperty("--vhs-buildup-saturate", sat.toFixed(3));
+          canvasEl?.style.setProperty("--vhs-buildup-sepia", sepia.toFixed(3));
         },
         clear() {
           document.body.removeAttribute("data-vhs-buildup");
-          document.body.style.removeProperty("--vhs-buildup-saturate");
-          document.body.style.removeProperty("--vhs-buildup-sepia");
+          canvasEl?.style.removeProperty("--vhs-buildup-saturate");
+          canvasEl?.style.removeProperty("--vhs-buildup-sepia");
         },
       },
       // ── 3. Chromatic flash (one-shot at threshold crossing) ──
