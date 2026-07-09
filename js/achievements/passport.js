@@ -7,6 +7,7 @@
 
 import * as storage from "./storage.js";
 import { getAchievement } from "./registry.js";
+import { resolveLegacyId } from "./legacy-ids.js";
 import { hashString } from "../daily/seed.js";
 
 // Format: PREFIX.<base64 payload>.<checksum base36>. The version rides in
@@ -76,8 +77,9 @@ export function parsePassport(code) {
 
 /**
  * Merge a passport into local progress. Returns { added, total } — how many
- * new unlocks arrived — or null when the code doesn't validate. Unknown
- * achievement ids (a code from a newer site) are skipped, not errors.
+ * new unlocks arrived — or null when the code doesn't validate. Ids from
+ * before a rename resolve to their current form; unknown achievement ids
+ * (a code from a newer site) are skipped, not errors.
  */
 export function importPassport(code) {
   const payload = parsePassport(code);
@@ -87,11 +89,12 @@ export function importPassport(code) {
   let added = 0;
   for (const entry of payload.u) {
     if (!entry || typeof entry.id !== "string") continue;
-    if (!getAchievement(entry.id)) continue;
+    const id = resolveLegacyId(entry.id);
+    if (!getAchievement(id)) continue;
     const ts = typeof entry.ts === "number" ? entry.ts : Date.now();
-    const existing = state.unlocked.find((u) => u.id === entry.id);
+    const existing = state.unlocked.find((u) => u.id === id);
     if (!existing) {
-      state.unlocked.push({ id: entry.id, ts });
+      state.unlocked.push({ id, ts });
       added++;
     } else if (ts < existing.ts) {
       existing.ts = ts;

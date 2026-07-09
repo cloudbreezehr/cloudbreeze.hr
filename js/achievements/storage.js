@@ -4,6 +4,7 @@
 // Writes are debounced to max 1/second.
 
 import { dayKey } from "../daily/seed.js";
+import { resolveLegacyId } from "./legacy-ids.js";
 
 // ── Constants ──
 export const STORAGE_KEY = "achievements";
@@ -68,6 +69,8 @@ let _saveTimer = null;
 // Additive schema evolution lands here — only fields present and the
 // right type are copied, so a backup from an older shape still loads.
 // Field changes the merge can't absorb go through migrate() instead.
+// Stored achievement ids are brought to their current form on the way
+// in, so downstream code never sees a pre-rename id.
 function mergeIntoDefault(parsed) {
   const state = defaultState();
   state.active = !!parsed.active;
@@ -87,6 +90,32 @@ function mergeIntoDefault(parsed) {
   if (parsed.prefs && typeof parsed.prefs === "object") {
     Object.assign(state.prefs, parsed.prefs);
   }
+  return remapLegacyIds(state);
+}
+
+// Rewrite stored achievement ids that predate a rename (LEGACY_IDS in
+// legacy-ids.js) to their current form, so earned progress survives the
+// rename. Runs on every read — idempotent, and a pass-through when nothing
+// stored is legacy. Exported with an injectable resolver so tests can
+// exercise the remap against a fixture map.
+export function remapLegacyIds(state, resolve = resolveLegacyId) {
+  // An unlock earned under both its old and new id collapses to one entry
+  // keeping the earliest timestamp; insertion order is otherwise preserved.
+  const byId = new Map();
+  for (const u of state.unlocked) {
+    const entry = { ...u, id: resolve(u.id) };
+    const prior = byId.get(entry.id);
+    if (!prior || entry.ts < prior.ts) byId.set(entry.id, entry);
+  }
+  state.unlocked = [...byId.values()];
+  state.seen = [...new Set(state.seen.map(resolve))];
+  state.relocked = [...new Set(state.relocked.map(resolve))];
+  const triggers = {};
+  for (const [id, count] of Object.entries(state.triggers)) {
+    const current = resolve(id);
+    triggers[current] = Math.max(triggers[current] || 0, count);
+  }
+  state.triggers = triggers;
   return state;
 }
 

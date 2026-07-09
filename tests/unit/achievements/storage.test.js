@@ -411,4 +411,67 @@ describe("achievements/storage", () => {
       expect(raw.prefs.k).toEqual("v");
     });
   });
+
+  describe("remapLegacyIds", () => {
+    const resolve = (id) => (id === "old-id" ? "new-id" : id);
+
+    it("rewrites unlocked ids, collapsing duplicates to the earliest timestamp", () => {
+      const state = storage.remapLegacyIds(
+        {
+          unlocked: [
+            { id: "old-id", ts: 100 },
+            { id: "new-id", ts: 200 },
+            { id: "other", ts: 50 },
+          ],
+          seen: [],
+          relocked: [],
+          triggers: {},
+        },
+        resolve,
+      );
+      expect(state.unlocked).toEqual([
+        { id: "new-id", ts: 100 },
+        { id: "other", ts: 50 },
+      ]);
+    });
+
+    it("unions seen and relocked under the current id", () => {
+      const state = storage.remapLegacyIds(
+        {
+          unlocked: [],
+          seen: ["old-id", "new-id", "other"],
+          relocked: ["old-id"],
+          triggers: {},
+        },
+        resolve,
+      );
+      expect(state.seen).toEqual(["new-id", "other"]);
+      expect(state.relocked).toEqual(["new-id"]);
+    });
+
+    it("keeps the higher trigger tally when both ids carry one", () => {
+      const state = storage.remapLegacyIds(
+        {
+          unlocked: [],
+          seen: [],
+          relocked: [],
+          triggers: { "old-id": 3, "new-id": 1, other: 2 },
+        },
+        resolve,
+      );
+      expect(state.triggers).toEqual({ "new-id": 3, other: 2 });
+    });
+
+    it("passes a state with no legacy ids through unchanged", () => {
+      const state = storage.remapLegacyIds({
+        unlocked: [{ id: "first-light", ts: 1 }],
+        seen: ["first-light"],
+        relocked: [],
+        triggers: { "first-light": 2 },
+      });
+      expect(state.unlocked).toEqual([{ id: "first-light", ts: 1 }]);
+      expect(state.seen).toEqual(["first-light"]);
+      expect(state.triggers).toEqual({ "first-light": 2 });
+    });
+  });
 });
