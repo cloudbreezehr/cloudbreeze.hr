@@ -18,7 +18,15 @@
 // reduced-motion snap, etc.), keep the same no-allocations,
 // no-DOM-mutation discipline.
 
-const stored = localStorage.getItem("appearance");
+// Storage access can throw outright (blocked site data, some webviews);
+// pre-paint must degrade to the default appearance, never to an aborted
+// script.
+let stored = null;
+try {
+  stored = localStorage.getItem("appearance");
+} catch {
+  /* keep the default */
+}
 const isLight =
   stored === "light" ||
   (stored === "auto" &&

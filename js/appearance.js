@@ -10,10 +10,17 @@ const DEFAULT_PREFERENCE = "dark";
 
 /**
  * Read the user's appearance preference — one of "auto", "light", "dark".
- * Falls back to the default when no preference has been stored.
+ * Falls back to the default when no preference has been stored — or when
+ * storage access itself throws (blocked site data, some webviews). This
+ * runs in the boot-critical path, so a storage denial must degrade to the
+ * default appearance, not abort init.
  */
 export function getAppearancePreference() {
-  return localStorage.getItem(STORAGE_KEY) || DEFAULT_PREFERENCE;
+  try {
+    return localStorage.getItem(STORAGE_KEY) || DEFAULT_PREFERENCE;
+  } catch {
+    return DEFAULT_PREFERENCE;
+  }
 }
 
 export function initAppearance(toggleEl) {
@@ -44,7 +51,11 @@ export function initAppearance(toggleEl) {
   toggleEl.addEventListener("click", () => {
     const current = getAppearancePreference();
     const next = order[(order.indexOf(current) + 1) % order.length];
-    localStorage.setItem(STORAGE_KEY, next);
+    try {
+      localStorage.setItem(STORAGE_KEY, next);
+    } catch {
+      // Blocked storage: the choice still applies, it just won't persist.
+    }
     apply(next);
     window.dispatchEvent(
       new CustomEvent("achievement", {

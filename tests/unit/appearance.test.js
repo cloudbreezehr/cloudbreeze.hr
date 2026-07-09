@@ -50,6 +50,37 @@ describe("initAppearance", () => {
     expect(document.body.classList.contains("light-appearance")).toBe(true);
   });
 
+  it("falls back to the default when storage access throws", async () => {
+    // Blocked site data / storage-disabled webviews throw on access. This
+    // runs in the boot-critical path, so init must complete, not abort.
+    const spy = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new Error("storage disabled");
+      });
+    const { initAppearance, getAppearancePreference } =
+      await import("../../js/appearance.js");
+    expect(getAppearancePreference()).toBe("dark");
+    const appearance = initAppearance(makeToggle());
+    expect(appearance.isDark()).toBe(true);
+    spy.mockRestore();
+  });
+
+  it("still applies the cycled appearance when persisting it throws", async () => {
+    const spy = vi
+      .spyOn(Storage.prototype, "setItem")
+      .mockImplementation(() => {
+        throw new Error("storage disabled");
+      });
+    const { initAppearance } = await import("../../js/appearance.js");
+    const toggle = makeToggle();
+    initAppearance(toggle);
+    toggle.click();
+    // The cycle applied (dark → auto) even though persistence failed.
+    expect(toggle.getAttribute("data-appearance")).toBe("auto");
+    spy.mockRestore();
+  });
+
   it("respects the OS preference when auto is stored", async () => {
     localStorage.setItem("appearance", "auto");
     mqlMatches = true; // prefers-color-scheme: light → true = light
