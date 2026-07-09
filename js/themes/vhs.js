@@ -69,7 +69,7 @@ export function initVhs() {
   const pageEl = document.querySelector(".page");
   // The color-cast filter lives on the canvas, the only reader of these vars.
   // Write them there rather than body so they stay scoped to their consumer.
-  const canvasEl = document.getElementById("bg-canvas");
+  const { canvasEl } = getCanvasCtx();
 
   // ── Progressive overlay — buildup scanlines ──
   const scanlines = document.createElement("div");
@@ -248,7 +248,6 @@ export function initVhs() {
   // Canvas-side phosphor-decay layer.  Runs as drawPost so every other
   // layer is committed before the phosphor captures into its buffer —
   // anything painting after this would be lost from the trail.
-  const { canvasEl } = getCanvasCtx();
   const vhs = createVhs(canvasEl);
 
   // Idle static — while VHS is active and the pointer has been still for
