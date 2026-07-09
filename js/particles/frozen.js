@@ -192,6 +192,27 @@ const SNOW = defineConstants(
       step: 0.05,
       description: "Crystal branch angle in radians",
     },
+    BRANCH_POINT: {
+      value: 0.6,
+      min: 0.1,
+      max: 0.9,
+      step: 0.05,
+      description: "Where along the arm the branches sprout (fraction)",
+    },
+    ROT_SPEED_SPAN: {
+      value: 0.01,
+      min: 0,
+      max: 0.1,
+      step: 0.005,
+      description: "Full width of a flake's random spin rate (rad/frame)",
+    },
+    CRYSTAL_LINE_WIDTH: {
+      value: 0.6,
+      min: 0.2,
+      max: 3,
+      step: 0.1,
+      description: "Stroke width of the crystalline flake arms (px)",
+    },
   },
   { theme: "frozen" },
 );
@@ -369,7 +390,7 @@ class Snowflake {
     this.swayAmp = SNOW.SWAY_AMP_MIN + Math.random() * SNOW.SWAY_AMP_RANGE;
     this.opacity = SNOW.OPACITY_MIN + Math.random() * SNOW.OPACITY_RANGE;
     this.rotation = Math.random() * Math.PI * 2;
-    this.rotSpeed = (Math.random() - 0.5) * 0.01;
+    this.rotSpeed = (Math.random() - 0.5) * SNOW.ROT_SPEED_SPAN;
   }
   update() {
     this.sway += scaled(this.swaySpeed);
@@ -389,8 +410,8 @@ class Snowflake {
       // Crystalline snowflake — 6 arms with branches, slow rotation
       this.ctx.translate(this.x, this.y);
       this.ctx.rotate(this.rotation);
-      this.ctx.strokeStyle = "rgba(220,240,255,1)";
-      this.ctx.lineWidth = 0.6;
+      this.ctx.strokeStyle = rgbaStr(SNOW_DOT_RGB, 1);
+      this.ctx.lineWidth = SNOW.CRYSTAL_LINE_WIDTH;
       this.ctx.lineCap = "round";
       this.ctx.beginPath();
       const arm = this.r;
@@ -401,9 +422,9 @@ class Snowflake {
         const ay = Math.sin(a) * arm;
         this.ctx.moveTo(0, 0);
         this.ctx.lineTo(ax, ay);
-        // Two branches at 2/3 along the arm
-        const mx = Math.cos(a) * arm * 0.6;
-        const my = Math.sin(a) * arm * 0.6;
+        // Two branches sprout partway along the arm
+        const mx = Math.cos(a) * arm * SNOW.BRANCH_POINT;
+        const my = Math.sin(a) * arm * SNOW.BRANCH_POINT;
         this.ctx.moveTo(mx, my);
         this.ctx.lineTo(
           mx + Math.cos(a + SNOW.BRANCH_ANGLE) * branch,

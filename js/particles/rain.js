@@ -6,7 +6,7 @@ import {
 } from "../interactions.js";
 import { spawnBolt, renderBolt } from "../fury.js";
 import { drawHaloParticle } from "../canvas-utils.js";
-import { scaled, step, prefersReducedMotion } from "../motion.js";
+import { scaled, step, chance, prefersReducedMotion } from "../motion.js";
 import { RAIN, WIND, SPLASH, GLASS, THUNDER, EMBER } from "./rain.constants.js";
 
 // ── Layer config lookup ──
@@ -576,7 +576,7 @@ export function createRain(canvasEl, ctxEl) {
 
           // Ground hit — reset + optional splash
           if (d.y > canvas.height + d.len) {
-            if (li >= 1 && Math.random() < SPLASH.GROUND_CHANCE) {
+            if (li >= 1 && chance(SPLASH.GROUND_CHANCE)) {
               spawnGroundSplash(d.x, canvas.height);
             }
             d.reset(false);

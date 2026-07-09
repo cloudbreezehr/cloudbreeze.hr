@@ -228,6 +228,13 @@ const BUB = defineConstants(
       step: 1,
       description: "Animation frames for pop effect",
     },
+    POP_GROWTH: {
+      value: 0.5,
+      min: 0,
+      max: 2,
+      step: 0.05,
+      description: "How much a popping bubble swells (fraction of base radius)",
+    },
     // Alpha scalars are applied on top of `this.opacity` to layer ring,
     // fill, and highlights. Keeping them named makes the visual hierarchy
     // (rim brighter than fill, primary highlight brighter than secondary)
@@ -417,6 +424,13 @@ const JELLY = defineConstants(
       max: 3,
       step: 0.1,
       description: "Upward kick force on pulse peak",
+    },
+    PULSE_PEAK_THRESHOLD: {
+      value: 0.95,
+      min: 0.5,
+      max: 0.99,
+      step: 0.01,
+      description: "Sine level that counts as a pulse peak (kick fires here)",
     },
     DRIFT_VX: {
       value: 0.15,
@@ -814,7 +828,8 @@ class Bubble {
         this.active = false;
         return;
       }
-      this.r = this.baseR * (1 + (this.popFrame / BUB.POP_FRAMES) * 0.5);
+      this.r =
+        this.baseR * (1 + (this.popFrame / BUB.POP_FRAMES) * BUB.POP_GROWTH);
       this.opacity =
         (BUB.OPACITY_MIN + BUB.OPACITY_RANGE) *
         (1 - this.popFrame / BUB.POP_FRAMES);
@@ -902,6 +917,12 @@ class Bubble {
   }
 }
 
+// Off-screen wrap bounds, in bell radii: a jellyfish exits this far past an
+// edge and re-enters one radius inside the opposite exit bound, so the wrap
+// can't immediately re-trigger.
+const WRAP_EXIT_BELLS = 3;
+const WRAP_ENTRY_BELLS = 2;
+
 class Jellyfish {
   constructor(canvas, ctx) {
     this.canvas = canvas;
@@ -940,7 +961,7 @@ class Jellyfish {
 
     // Pulsing swim — sharp upward kick on pulse peak, slow drift down otherwise
     const pulseVal = Math.sin(this.pulse);
-    if (pulseVal > 0.95) {
+    if (pulseVal > JELLY.PULSE_PEAK_THRESHOLD) {
       this.vy -= scaled(JELLY.PULSE_STRENGTH);
       if (!this._pulsedThisCycle) {
         this._pulsedThisCycle = true;
@@ -966,11 +987,13 @@ class Jellyfish {
     this.y += scaled(this.vy);
 
     // Wrap around edges
-    if (this.y < -this.bellR * 3) this.y = this.canvas.height + this.bellR * 2;
-    if (this.y > this.canvas.height + this.bellR * 3) this.y = -this.bellR * 2;
-    if (this.x < -this.bellR * 3) this.x += this.canvas.width + this.bellR * 6;
-    if (this.x > this.canvas.width + this.bellR * 3)
-      this.x -= this.canvas.width + this.bellR * 6;
+    const wrapExit = this.bellR * WRAP_EXIT_BELLS;
+    const wrapEntry = this.bellR * WRAP_ENTRY_BELLS;
+    const wrapSpanX = this.canvas.width + wrapExit * 2;
+    if (this.y < -wrapExit) this.y = this.canvas.height + wrapEntry;
+    if (this.y > this.canvas.height + wrapExit) this.y = -wrapEntry;
+    if (this.x < -wrapExit) this.x += wrapSpanX;
+    if (this.x > this.canvas.width + wrapExit) this.x -= wrapSpanX;
 
     // Animate tentacle phases
     for (let i = 0; i < this.tentacles; i++) {
