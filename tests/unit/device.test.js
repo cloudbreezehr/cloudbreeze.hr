@@ -36,4 +36,27 @@ describe("device — input capabilities", () => {
     stubTouchOnly(true);
     expect(hasCapability("telepathy")).toBe(true);
   });
+
+  it("motion is available on a touch-only device that exposes DeviceMotionEvent", () => {
+    stubTouchOnly(true);
+    expect("DeviceMotionEvent" in window).toBe(true);
+    expect(hasCapability("motion")).toBe(true);
+  });
+
+  it("motion is unavailable on a touch-only device with no DeviceMotionEvent", () => {
+    // Kiosk-class hardware: (hover: none) but no accelerometer API at all.
+    stubTouchOnly(true);
+    const original = window.DeviceMotionEvent;
+    delete window.DeviceMotionEvent;
+    try {
+      expect(hasCapability("motion")).toBe(false);
+    } finally {
+      window.DeviceMotionEvent = original;
+    }
+  });
+
+  it("motion is unavailable on a hover-capable device", () => {
+    stubTouchOnly(false);
+    expect(hasCapability("motion")).toBe(false);
+  });
 });

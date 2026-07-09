@@ -32,8 +32,13 @@ const CAPABILITY_AVAILABLE = {
   // usable screen coordinates), so they can't exercise multi-window play.
   multiwindow: () => !isTouchOnly(),
   // Device motion (accelerometer) is the inverse of the others: touch-only
-  // phones and tablets have it, hover-capable desktops don't.
-  motion: () => isTouchOnly(),
+  // phones and tablets have it, hover-capable desktops don't. Being
+  // touch-only doesn't guarantee a sensor, though (kiosks, sensor-less
+  // tablets) — so also probe for the API the shake detector needs.
+  motion: () =>
+    isTouchOnly() &&
+    typeof window !== "undefined" &&
+    "DeviceMotionEvent" in window,
 };
 
 // True when the current device can exercise the named capability. Unknown

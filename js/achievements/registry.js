@@ -1552,6 +1552,9 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
     requires: "motion",
+    // Motion needs an OS permission grant on iOS — a visitor who declines
+    // the prompt can never earn this, so it must not gate completion.
+    bonus: true,
   },
   // ── Exploration: Photo Mode ──
   {
