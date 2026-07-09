@@ -885,6 +885,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "clean-sweep",
+    title: "Clean Sweep",
+    description: "One heavy drop gathered the pane on its way down.",
+    hint: "Watch a droplet on the glass grow until it sweeps up its neighbours",
+    set: "rainy",
+    points: RARE,
+    hidden: true,
+  },
+  {
     id: "storm-chaser",
     title: "Storm Chaser",
     description: "You danced through every drop.",

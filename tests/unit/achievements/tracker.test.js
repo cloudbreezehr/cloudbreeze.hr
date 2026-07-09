@@ -722,6 +722,14 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     }
   });
 
+  it("glass-cascade unlocks clean-sweep", async () => {
+    const { storage } = await startTracker();
+
+    dispatchAchievement("glass-cascade");
+
+    expect(storage.isUnlocked("clean-sweep")).toBe(true);
+  });
+
   it("orbit unlocks orbit-lock; deep-orbit inside deep-sea", async () => {
     const { storage } = await startTracker();
 

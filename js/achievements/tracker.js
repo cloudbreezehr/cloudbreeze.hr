@@ -552,6 +552,10 @@ export function createTracker(onUnlock, onRelock) {
       checkProgressiveState("jellyfish-pulses");
     },
 
+    "glass-cascade"() {
+      tryUnlock("clean-sweep");
+    },
+
     "paper-stroke"() {
       storage.incrementCounter("paperStrokes");
       checkProgressiveState("paper-strokes");

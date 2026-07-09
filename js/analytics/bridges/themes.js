@@ -154,6 +154,7 @@ export function initThemesBridge() {
       "jellyfish-pulse": "jellyfish_pulse",
       "paper-stroke": "paper_stroke",
       "snow-globe": "snow_globe",
+      "glass-cascade": "glass_cascade",
     };
     if (effectMap[d.type]) {
       track("theme_effect_used", {

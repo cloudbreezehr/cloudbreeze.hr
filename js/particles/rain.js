@@ -173,43 +173,93 @@ export class Ember {
 
 // ── Glass drop (canvas overlay) ──
 
-class GlassDrop {
+// Area-conserving coalescence: the projected wet area of the pair is
+// preserved, so repeated merges read as real growth. Capped — a drop can
+// only hold so much before it would fall off the pane in reality.
+export function mergedSize(a, b) {
+  return Math.min(GLASS.SIZE_MAX, Math.hypot(a, b));
+}
+
+// A droplet on the pane lives a little life: it condenses somewhere and
+// pins in place (surface tension beats gravity while it's light), fattens
+// by condensation and by merging with neighbours, and lets go once it
+// outgrows its grip. Sliding, it runs at a mass-dependent pace — light
+// drops in stick-slip jerks, heavy ones in a smooth run — meanders,
+// steers toward the wet droplets below it, swallows what it touches, and
+// sheds beads behind itself until it either escapes the pane or thins out
+// and pins again. Shed beads slowly dry off; the pane mists back up.
+export class GlassDrop {
   constructor() {
     this.x = 0;
     this.y = 0;
     this.size = 0;
+    this.grip = 0;
     this.speed = 0;
+    this.meander = 0;
+    this.steerX = null;
+    this.absorbed = 0;
+    this.sinceShed = 0;
     this.active = false;
     this.sliding = false;
-    this.idleTimer = 0;
-    this.wobblePhase = 0;
-    this.wobbleAmp = 0;
-    this.wobbleFreq = 0;
-    this.trail = []; // position history: [{x, y}]
+    this.bead = false;
+    this.trail = []; // wet neck behind a slider: [{x, y}]
     this.opacity = 0;
     this.fadeIn = true;
   }
 
-  spawn(x, y) {
+  spawn(x, y, size, { bead = false } = {}) {
     this.x = x;
     this.y = y;
-    this.size = GLASS.SIZE_MIN + Math.random() * GLASS.SIZE_RANGE;
-    this.speed =
-      GLASS.SLIDE_SPEED_MIN + Math.random() * GLASS.SLIDE_SPEED_RANGE;
+    this.size = size ?? GLASS.SIZE_MIN + Math.random() * GLASS.SIZE_RANGE;
+    // Pinning strength — the diameter this drop must outgrow before
+    // gravity wins. Randomized per drop: glass is dirty and imperfect.
+    this.grip = GLASS.GRIP_MIN + Math.random() * GLASS.GRIP_RANGE;
+    this.speed = 0;
+    this.meander = 0;
+    this.steerX = null;
+    this.absorbed = 0;
+    this.sinceShed = 0;
     this.active = true;
     this.sliding = false;
-    this.idleTimer = GLASS.IDLE_MIN + Math.random() * GLASS.IDLE_RANGE;
-    this.wobblePhase = Math.random() * Math.PI * 2;
-    this.wobbleAmp =
-      GLASS.WOBBLE_AMP_MIN + Math.random() * GLASS.WOBBLE_AMP_RANGE;
-    this.wobbleFreq =
-      GLASS.WOBBLE_FREQ_MIN + Math.random() * GLASS.WOBBLE_FREQ_RANGE;
-    this.trail = [{ x, y }];
-    this.opacity = 0;
-    this.fadeIn = true;
+    this.bead = bead;
+    this.trail = [];
+    // Shed beads are already-wet water left on the track — they appear at
+    // full strength so the trail never lags behind its head. Only fresh
+    // condensation fades in.
+    this.opacity = bead ? 1 : 0;
+    this.fadeIn = !bead;
   }
 
-  update(dt, scrollVel) {
+  startSliding() {
+    this.sliding = true;
+    this.bead = false;
+    this.speed = GLASS.SPEED_BASE;
+    this.absorbed = 0;
+    this.sinceShed = 0;
+    this.trail = [{ x: this.x, y: this.y }];
+  }
+
+  // Thinned out mid-run: surface tension wins again. The drop pins where
+  // it stands and needs a fresh feed before it can release once more.
+  stall() {
+    this.sliding = false;
+    this.trail = [];
+    this.grip = Math.max(this.grip, this.size + GLASS.STALL_GRIP_MARGIN);
+  }
+
+  // Water jumps to water: the head lurches toward what it swallowed,
+  // gains its area, and picks up pace from the released surface tension.
+  absorb(other) {
+    this.x += scaled((other.x - this.x) * GLASS.ABSORB_LURCH);
+    this.size = mergedSize(this.size, other.size);
+    if (this.sliding) {
+      this.speed += scaled(GLASS.ABSORB_KICK);
+      this.absorbed++;
+    }
+    other.remove();
+  }
+
+  update(dt, scrollVel, wind, depositBead) {
     if (!this.active) return;
 
     // Fade in
@@ -219,28 +269,116 @@ class GlassDrop {
     }
 
     if (!this.sliding) {
-      this.idleTimer -= dt;
-      if (this.idleTimer <= 0) this.sliding = true;
+      if (this.bead) {
+        // Shed beads only dry off; they wait to be swallowed, not to slide.
+        this.size -= scaled(GLASS.BEAD_EVAP_PER_FRAME);
+        if (this.size <= GLASS.MIN_VISIBLE_SIZE) this.active = false;
+        return;
+      }
+      // Condensation fattens a pinned drop until gravity outgrows its
+      // grip — or, rarely, a mid-weight drop shakes loose early.
+      this.size = Math.min(
+        GLASS.SIZE_MAX,
+        this.size + scaled(GLASS.CONDENSE_PER_FRAME),
+      );
+      if (
+        this.size > this.grip ||
+        (this.size > GLASS.RELEASE_MIN_SIZE && chance(GLASS.RELEASE_CHANCE))
+      ) {
+        this.startSliding();
+      }
       return;
     }
 
-    // Gravity accelerates the drop; scroll tilts the glass
-    this.speed = Math.min(GLASS.SPEED_MAX, this.speed + GLASS.ACCEL * dt);
-    const scrollPush = scrollVel * GLASS.SCROLL_FACTOR;
-    const frameSpeed = Math.max(0, this.speed + scrollPush);
+    // ── Sliding ──
+    // A thinned drop doesn't snap to a halt at speed — its pace follows its
+    // size down (the mass-set target below), and only once it has slowed to
+    // a creep can the glass catch it. The chance() keeps even that catch a
+    // dribbling-out rather than an instant stop.
+    if (
+      this.size <= GLASS.STALL_SIZE &&
+      this.speed <= GLASS.STALL_MAX_SPEED &&
+      chance(GLASS.STALL_CHANCE)
+    ) {
+      this.stall();
+      return;
+    }
 
-    // Wobble — organic lateral drift like real glass imperfections
-    this.wobblePhase += scaled(this.wobbleFreq * dt);
-    const wobble = Math.sin(this.wobblePhase) * this.wobbleAmp;
+    // Mass sets the pace, approached gradually; light drops catch on the
+    // glass and jerk free (stick-slip) instead of gliding.
+    const targetSpeed = Math.min(
+      GLASS.SPEED_MAX,
+      Math.max(
+        0,
+        GLASS.SPEED_BASE + (this.size - GLASS.GRIP_MIN) * GLASS.SPEED_PER_SIZE,
+      ),
+    );
+    this.speed += scaled((targetSpeed - this.speed) * GLASS.SPEED_LERP);
+    if (this.size < GLASS.STICK_MAX_SIZE && chance(GLASS.STICK_CHANCE)) {
+      this.speed *= GLASS.STICK_DAMP;
+    }
 
-    this.y += scaled(frameSpeed);
-    this.x += scaled(wobble);
+    // Meander: a damped random walk, pulled toward the nearest wet droplet
+    // below (water runs to water — the field writes steerX each frame) and
+    // pushed by the storm's wind. Scroll still tilts the glass vertically.
+    this.meander += scaled((Math.random() - 0.5) * GLASS.MEANDER_JITTER);
+    if (this.steerX != null) {
+      const pull = (this.steerX - this.x) * GLASS.STEER_GAIN;
+      this.meander += scaled(
+        Math.max(-GLASS.STEER_MAX, Math.min(GLASS.STEER_MAX, pull)),
+      );
+    }
+    this.meander *= GLASS.MEANDER_DAMP;
 
-    // Record position; cap history length
-    this.trail.push({ x: this.x, y: this.y });
-    if (this.trail.length > GLASS.TRAIL_POINTS) this.trail.shift();
+    // Gravity dominates a real run: the whole lateral step — meander,
+    // steering, and wind together — is capped to a fraction of the drop's
+    // own downward pace, so a crawling drop can only crawl sideways too.
+    const pace = Math.max(0, this.speed + scrollVel * GLASS.SCROLL_FACTOR);
+    const lateralCap = pace * GLASS.LATERAL_RATIO_MAX;
+    this.meander = Math.max(-lateralCap, Math.min(lateralCap, this.meander));
+    const lateral = Math.max(
+      -lateralCap,
+      Math.min(lateralCap, this.meander + wind * GLASS.WIND_FACTOR),
+    );
 
-    if (this.y > window.innerHeight + 20) {
+    const dy = scaled(pace);
+    this.x += scaled(lateral);
+    this.y += dy;
+
+    if (dy > 0) {
+      // Distance-sampled neck, so its on-screen length holds whatever the
+      // pace — a per-frame history would shrink to a stub on a slow drop.
+      const last = this.trail[this.trail.length - 1];
+      if (
+        !last ||
+        Math.hypot(this.x - last.x, this.y - last.y) >= GLASS.NECK_SPACING_PX
+      ) {
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > GLASS.NECK_POINTS) this.trail.shift();
+      }
+
+      // Shed a bead into the track. The head only pays a fraction of the
+      // bead's area — the wet film the run lays down feeds the rest — so a
+      // healthy drop outlives many sheds and crossing the pane is the norm;
+      // the stall check at the top of the slide catches the lean exceptions.
+      this.sinceShed += dy;
+      if (this.sinceShed >= GLASS.SHED_INTERVAL_PX) {
+        this.sinceShed = 0;
+        const beadSize = Math.max(
+          GLASS.BEAD_MIN,
+          Math.min(GLASS.BEAD_MAX, this.size * GLASS.BEAD_FRAC),
+        );
+        depositBead?.(this.x, this.y - this.size, beadSize);
+        this.size = Math.sqrt(
+          Math.max(
+            0,
+            this.size * this.size - beadSize * beadSize * GLASS.SHED_COST_FRAC,
+          ),
+        );
+      }
+    }
+
+    if (this.y > window.innerHeight + GLASS.EXIT_MARGIN) {
       this.active = false;
     }
   }
@@ -277,12 +415,27 @@ class GlassDrop {
       ctx.fill();
     }
 
-    // ── Drop body — filled circle with subtle gradient look ──
+    // ── Drop body — a circle at rest, a teardrop once it runs ──
     const r = this.size / 2;
+    const elong = this.sliding
+      ? Math.min(GLASS.ELONG_MAX, this.speed * GLASS.ELONG_PER_SPEED)
+      : 0;
     ctx.beginPath();
-    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.ellipse(
+      this.x,
+      this.y,
+      r / (1 + elong),
+      r * (1 + elong),
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.fillStyle = `rgba(${body[0]},${body[1]},${body[2]},${a * GLASS.TRAIL_BODY_ALPHA})`;
     ctx.fill();
+
+    // Specular and rim read as noise on the smallest droplets — skip
+    // (the same economy the gradient rule applies to faint particles).
+    if (this.size < GLASS.DETAIL_MIN_SIZE) return;
 
     // Specular highlight — offset circle
     ctx.beginPath();
@@ -298,7 +451,15 @@ class GlassDrop {
 
     // Rim outline
     ctx.beginPath();
-    ctx.arc(this.x, this.y, r, 0, Math.PI * 2);
+    ctx.ellipse(
+      this.x,
+      this.y,
+      r / (1 + elong),
+      r * (1 + elong),
+      0,
+      0,
+      Math.PI * 2,
+    );
     ctx.strokeStyle = `rgba(${rim[0]},${rim[1]},${rim[2]},${a * GLASS.RIM_ALPHA})`;
     ctx.lineWidth = GLASS.RIM_WIDTH;
     ctx.stroke();
@@ -411,24 +572,79 @@ export function createRain(canvasEl, ctxEl) {
     if (g) g.spawn(x, y);
   }
 
-  function checkGlassMerge() {
+  function depositBead(x, y, size) {
+    const g = glassDrops.find((g) => !g.active);
+    if (g) g.spawn(x, y, size, { bead: true });
+  }
+
+  // Point each slider at the nearest pinned droplet below it — water runs
+  // to water, so the run visibly hunts sideways toward its next meal.
+  function steerSliders() {
+    for (const a of glassDrops) {
+      if (!a.active || !a.sliding) continue;
+      a.steerX = null;
+      let nearest = Infinity;
+      for (const b of glassDrops) {
+        if (b === a || !b.active || b.sliding) continue;
+        const dy = b.y - a.y;
+        if (dy <= 0 || dy > GLASS.LOOKAHEAD_Y) continue;
+        if (Math.abs(b.x - a.x) > GLASS.LOOKAHEAD_X) continue;
+        if (dy < nearest) {
+          nearest = dy;
+          a.steerX = b.x;
+        }
+      }
+    }
+  }
+
+  // Coalescence pass: a slider swallows whatever it touches (a run of
+  // swallows is a cascade — worth an achievement event); two pinned
+  // droplets that grow into each other merge, the bigger drinking the
+  // smaller and jumping toward the pair's centre of mass — which is how
+  // most drops end up past their grip and start to run.
+  function settleGlassPane() {
+    // Every branch below repositions a drop — a discrete jump dampening
+    // can't soften — so the whole pass sits out under reduced motion.
+    if (prefersReducedMotion()) return;
     for (let i = 0; i < glassDrops.length; i++) {
       const a = glassDrops[i];
-      if (!a.active || !a.sliding) continue;
+      if (!a.active) continue;
       for (let j = i + 1; j < glassDrops.length; j++) {
         const b = glassDrops[j];
         if (!b.active) continue;
+        const anySliding = a.sliding || b.sliding;
+        const reach =
+          ((a.size + b.size) / 2) *
+          (anySliding ? GLASS.CAPTURE_FRAC : GLASS.MERGE_OVERLAP_FRAC);
         const dx = a.x - b.x;
+        if (dx > reach || dx < -reach) continue;
         const dy = a.y - b.y;
-        if (dx * dx + dy * dy < GLASS.MERGE_DIST * GLASS.MERGE_DIST) {
-          // Absorb b into a — grow size
-          a.size = Math.min(
-            a.size + b.size * GLASS.MERGE_ABSORB,
-            GLASS.SIZE_MIN + GLASS.SIZE_RANGE,
-          );
-          b.remove();
-          break;
+        if (dx * dx + dy * dy >= reach * reach) continue;
+
+        if (anySliding) {
+          // The slider eats; between two sliders, the heavier one wins.
+          const head = !b.sliding || (a.sliding && a.size >= b.size) ? a : b;
+          const food = head === a ? b : a;
+          head.absorb(food);
+          if (head.absorbed === GLASS.CASCADE_COUNT) {
+            window.dispatchEvent(
+              new CustomEvent("achievement", {
+                detail: { type: "glass-cascade" },
+              }),
+            );
+          }
+        } else {
+          const big = a.size >= b.size ? a : b;
+          const small = big === a ? b : a;
+          const merged = mergedSize(big.size, small.size);
+          // Centre-of-mass jump, weighted by the pair's areas.
+          const share = (small.size * small.size) / (merged * merged);
+          big.x += scaled((small.x - big.x) * share);
+          big.y += scaled((small.y - big.y) * share);
+          big.size = merged;
+          small.remove();
         }
+        if (!a.active) break;
       }
     }
   }
@@ -609,8 +825,9 @@ export function createRain(canvasEl, ctxEl) {
       }
       ctx.restore();
 
-      // Glass drops (overlay canvas) — spawn rate dampens with motion
-      // so no new drops appear under reduced motion.
+      // Glass droplets (overlay canvas) — condensation misting the pane.
+      // Spawn rate dampens with motion so no new drops appear under
+      // reduced motion.
       const spawnRate = isGusting ? GLASS.GUST_SPAWN_RATE : GLASS.SPAWN_RATE;
       glassSpawnAccum += scaled(spawnRate * dt);
       while (glassSpawnAccum >= 1) {
@@ -621,11 +838,12 @@ export function createRain(canvasEl, ctxEl) {
       }
 
       glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
+      steerSliders();
       for (let i = 0; i < glassDrops.length; i++) {
-        glassDrops[i].update(dtMs, scrollVelocity);
+        glassDrops[i].update(dtMs, scrollVelocity, windOffset, depositBead);
         glassDrops[i].draw(glassCtx, pal);
       }
-      checkGlassMerge();
+      settleGlassPane();
     },
 
     clickBurst(cx, cy) {
