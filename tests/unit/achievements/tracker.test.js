@@ -1241,6 +1241,13 @@ describe("tracker — moonlit", () => {
 
     expect(storage.isUnlocked("moonlit")).toBe(false);
   });
+
+  it("does not unlock moonlit once the clock reads the end hour", async () => {
+    vi.setSystemTime(new Date("2026-05-08T05:30:00"));
+    const { storage } = await startTracker();
+
+    expect(storage.isUnlocked("moonlit")).toBe(false);
+  });
 });
 
 describe("tracker — night-owl", () => {

@@ -889,7 +889,7 @@ export function createTracker(onUnlock, onRelock) {
 
     // Moonlit — visiting between midnight and 5am
     const hour = new Date().getHours();
-    if (hour >= MOONLIT_START_HOUR && hour <= MOONLIT_END_HOUR) {
+    if (hour >= MOONLIT_START_HOUR && hour < MOONLIT_END_HOUR) {
       tryUnlock("moonlit");
     }
 
