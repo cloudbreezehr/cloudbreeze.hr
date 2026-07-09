@@ -19,9 +19,9 @@ const PAST_INTRO_THRESHOLD_COUNT = INTRO_CARD_THRESHOLD + 1;
 const PAST_HIGHLIGHT_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 
 // Sample achievements the rendering tests key off — asserting against the
-// registry keeps the tests copy-agnostic. time-warp is the hidden sample (a
+// registry keeps the tests copy-agnostic. to-the-minute is the hidden sample (a
 // guard test pins that trait); first-light is the plain visible one.
-const TIME_WARP = ACHIEVEMENTS.find((a) => a.id === "time-warp");
+const TIME_WARP = ACHIEVEMENTS.find((a) => a.id === "to-the-minute");
 const FIRST_LIGHT = ACHIEVEMENTS.find((a) => a.id === "first-light");
 
 describe("achievements/ui/cards", () => {
@@ -417,7 +417,7 @@ describe("achievements/ui/cards", () => {
     it("locked hidden achievements show ??? title and hidden-ach class at the default help level", () => {
       mod.renderSections(container);
       const hidden = container.querySelector(
-        '.achievement-card.hidden-ach[data-id="time-warp"]',
+        '.achievement-card.hidden-ach[data-id="to-the-minute"]',
       );
       expect(hidden).not.toBeNull();
       expect(
@@ -544,7 +544,7 @@ describe("achievements/ui/cards", () => {
       // affordance should advertise otherwise.
       mod.renderSections(container);
       const card = container.querySelector(
-        '.achievement-card.hidden-ach[data-id="time-warp"]',
+        '.achievement-card.hidden-ach[data-id="to-the-minute"]',
       );
       expect(card.dataset.hasHint).toBeUndefined();
     });
@@ -666,7 +666,7 @@ describe("achievements/ui/cards", () => {
       container.replaceChildren();
       mod.renderSections(container);
       const hidden = container.querySelector(
-        '.achievement-card[data-id="time-warp"]',
+        '.achievement-card[data-id="to-the-minute"]',
       );
       expect(
         hidden.querySelector(".achievement-card-title").textContent,
@@ -1115,7 +1115,7 @@ describe("achievements/ui/cards", () => {
 
     function hoverHiddenTooltip() {
       const card = container.querySelector(
-        '.achievement-card[data-id="time-warp"]',
+        '.achievement-card[data-id="to-the-minute"]',
       );
       card.dispatchEvent(new MouseEvent("mouseenter"));
       return document.querySelector(".achievement-tooltip");
@@ -1125,7 +1125,7 @@ describe("achievements/ui/cards", () => {
       mod.setHelpLevel("clues");
       mod.renderSections(container);
       const card = container.querySelector(
-        '.achievement-card[data-id="time-warp"]',
+        '.achievement-card[data-id="to-the-minute"]',
       );
       expect(card.querySelector(".achievement-card-desc").textContent).toEqual(
         TIME_WARP.description,

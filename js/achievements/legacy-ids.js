@@ -10,6 +10,7 @@
 
 export const LEGACY_IDS = {
   // "current-id": ["former-id", "older-former-id"],
+  "to-the-minute": ["time-warp"],
 };
 
 const _legacyToCurrent = new Map();

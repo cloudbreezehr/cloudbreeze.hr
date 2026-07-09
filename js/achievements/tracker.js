@@ -726,7 +726,7 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "timestamp-toggle"() {
-      tryUnlock("time-warp");
+      tryUnlock("to-the-minute");
     },
 
     "cloudlog-shortcut"() {

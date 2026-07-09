@@ -462,6 +462,16 @@ describe("achievements/storage", () => {
       expect(state.triggers).toEqual({ "new-id": 3, other: 2 });
     });
 
+    it("converts a stored pre-rename unlock through the real read path", () => {
+      localStorage.setItem(
+        storage.STORAGE_KEY,
+        JSON.stringify({ version: 1, unlocked: [{ id: "time-warp", ts: 5 }] }),
+      );
+      expect(storage.isUnlocked("to-the-minute")).toBe(true);
+      expect(storage.getUnlockTime("to-the-minute")).toBe(5);
+      expect(storage.isUnlocked("time-warp")).toBe(false);
+    });
+
     it("passes a state with no legacy ids through unchanged", () => {
       const state = storage.remapLegacyIds({
         unlocked: [{ id: "first-light", ts: 1 }],

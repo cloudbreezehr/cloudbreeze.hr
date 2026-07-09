@@ -52,6 +52,18 @@ describe("achievements/passport", () => {
     expect(storage.getUnlockTime("first-light")).toBe(earlier);
   });
 
+  it("resolves pre-rename ids on import", () => {
+    const code = buildCode({
+      u: [{ id: "time-warp", ts: 9 }],
+      c: {},
+      p: {},
+    });
+    const result = passport.importPassport(code);
+    expect(result.added).toBe(1);
+    expect(storage.isUnlocked("to-the-minute")).toBe(true);
+    expect(storage.isUnlocked("time-warp")).toBe(false);
+  });
+
   it("counters merge by max, day lists by union", async () => {
     storage.setCounter("totalClicks", 500);
     storage.setCounter("sessionDays", ["2026-01-01", "2026-01-02"]);

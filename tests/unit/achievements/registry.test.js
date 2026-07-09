@@ -95,7 +95,7 @@ describe("Exploration-split sets", () => {
         "cloudlog-activated",
         "shortcut-master",
         "tab-tourist",
-        "time-warp",
+        "to-the-minute",
       ],
     },
     {
