@@ -496,8 +496,9 @@ export function createRain(canvasEl, ctxEl) {
       ctx.restore();
     }
 
-    // Screen rumble
-    if (pageEl && now < rumbleEnd) {
+    // Screen rumble — physical page motion, so reduced motion skips it
+    // entirely (the bolt and flash still render).
+    if (pageEl && now < rumbleEnd && !prefersReducedMotion()) {
       const dx = (Math.random() - 0.5) * THUNDER.RUMBLE_PX;
       const dy = (Math.random() - 0.5) * THUNDER.RUMBLE_PX;
       pageEl.style.translate = `${dx}px ${dy}px`;
@@ -684,6 +685,9 @@ export function createRain(canvasEl, ctxEl) {
       glassCtx.clearRect(0, 0, glassCanvas.width, glassCanvas.height);
       // Drop in-flight embers so they don't reappear when the theme returns
       for (const e of embers) e.active = false;
+      // A strike's rumble offset must not outlive the theme — draw() stops,
+      // so its own reset window can no longer clear it.
+      if (pageEl) pageEl.style.translate = "";
     },
   };
 }

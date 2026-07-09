@@ -1,5 +1,6 @@
 import { defineConstants } from "../dev/registry.js";
 import { enableCardEffects } from "../service-cards.js";
+import { prefersReducedMotion } from "../motion.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { createUpsideDown } from "../particles/upside-down.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -432,7 +433,7 @@ export function initUpsideDown() {
       {
         threshold: UD_VFX.SHAKE_THRESHOLD,
         apply(force) {
-          if (force > UD_VFX.SHAKE_THRESHOLD) {
+          if (force > UD_VFX.SHAKE_THRESHOLD && !prefersReducedMotion()) {
             const shake = force * UD_VFX.SHAKE_INTENSITY;
             const dx = (Math.random() - 0.5) * shake;
             const dy = (Math.random() - 0.5) * shake;

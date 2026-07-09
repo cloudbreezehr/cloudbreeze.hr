@@ -1,6 +1,7 @@
 import { defineConstants } from "../dev/registry.js";
 import { getCanvasCtx } from "../canvas-utils.js";
 import { enableCardEffects } from "../service-cards.js";
+import { prefersReducedMotion } from "../motion.js";
 import { createBlocky } from "../particles/blocky.js";
 import { createTheme, rampAbove } from "./factory.js";
 import { registerCanvasHooks } from "./canvas-hooks.js";
@@ -95,7 +96,9 @@ export function initBlocky(toggleEl) {
     const page = document.querySelector(".page");
     function jitterLoop() {
       const force = themeCtx.force;
-      if (!jitterRunning || force < BF.JITTER_AT) {
+      // Jitter translates the page and the static overlay flashes — both
+      // are skipped under reduced motion, not just dampened.
+      if (!jitterRunning || force < BF.JITTER_AT || prefersReducedMotion()) {
         if (page) page.style.translate = "";
         staticOverlay.style.opacity = "0";
         jitterRunning = false;

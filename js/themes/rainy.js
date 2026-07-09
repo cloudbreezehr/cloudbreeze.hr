@@ -5,7 +5,7 @@ import { spawnRipple } from "../effects/ripple.js";
 import { spawnRadialBurst } from "../effects/burst.js";
 import { enableCardEffects } from "../service-cards.js";
 import { createRain } from "../particles/rain.js";
-import { reducedDuration } from "../motion.js";
+import { reducedDuration, prefersReducedMotion } from "../motion.js";
 import {
   createTheme,
   rampAbove,
@@ -126,7 +126,7 @@ export function initRainy() {
     }).onfinish = () => flash.remove();
 
     const pageEl = document.querySelector(".page");
-    if (pageEl) {
+    if (pageEl && !prefersReducedMotion()) {
       let frames = 0;
       const shake = () => {
         frames++;
