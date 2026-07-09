@@ -1648,7 +1648,7 @@ export const ACHIEVEMENTS = [
   {
     id: "rain-check",
     title: "Rain Check",
-    description: "It was really raining over me.",
+    description: "It was really raining over you.",
     hint: "Check on the systems while rain falls on your location",
     set: "almanac",
     points: RARE,
