@@ -1115,7 +1115,7 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
-    id: "belt-of-orion",
+    id: "the-hunters-belt",
     title: "The Hunter's Belt",
     description: "Three stars clasped together.",
     hint: "Trace Orion's Belt by clicking the right stars",

@@ -580,7 +580,7 @@ export function createTracker(onUnlock, onRelock) {
     "constellation-formed"(data) {
       if (!data || !data.constellationId) return;
       const map = {
-        "orions-belt": "belt-of-orion",
+        "orions-belt": "the-hunters-belt",
         cassiopeia: "the-queens-chair",
         "ursa-major": "the-great-bear",
         lyra: "the-lyre",
