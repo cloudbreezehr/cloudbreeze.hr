@@ -2,8 +2,8 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
   RAPID_FIRE_WINDOW_MS,
   RAPID_FIRE_CLICKS,
-  NIGHT_OWL_MS,
-  NIGHT_OWL_CHECK_INTERVAL,
+  LOSING_TRACK_MS,
+  LOSING_TRACK_CHECK_INTERVAL,
   AFTERSHOCK_WINDOW_MS,
   STORM_FORECASTER_THEME_COUNT,
   LONG_WATCH_MS,
@@ -21,12 +21,13 @@ const SLACK_MS = 1000;
 const PAST_RAPID_FIRE_WINDOW_MS = RAPID_FIRE_WINDOW_MS + SLACK_MS;
 const WITHIN_AFTERSHOCK_MS = Math.floor(AFTERSHOCK_WINDOW_MS / 4);
 const PAST_AFTERSHOCK_WINDOW_MS = AFTERSHOCK_WINDOW_MS + SLACK_MS;
-// Push past NIGHT_OWL_MS by a full check-interval plus slack so the
+// Push past LOSING_TRACK_MS by a full check-interval plus slack so the
 // next interval tick is guaranteed to land after the threshold.
-const PAST_NIGHT_OWL_MS = NIGHT_OWL_MS + NIGHT_OWL_CHECK_INTERVAL + SLACK_MS;
-// Comfortably below NIGHT_OWL_MS for the "still hidden" branch.
-const SHORT_VISIBLE_MS = Math.floor(NIGHT_OWL_MS / 5);
-const LONG_HIDDEN_MS = 2 * NIGHT_OWL_MS;
+const PAST_LOSING_TRACK_MS =
+  LOSING_TRACK_MS + LOSING_TRACK_CHECK_INTERVAL + SLACK_MS;
+// Comfortably below LOSING_TRACK_MS for the "still hidden" branch.
+const SHORT_VISIBLE_MS = Math.floor(LOSING_TRACK_MS / 5);
+const LONG_HIDDEN_MS = 2 * LOSING_TRACK_MS;
 // The Long Watch — half-window for "still building," past-window for "fired."
 const HALF_LONG_WATCH_MS = LONG_WATCH_MS / 2;
 const PAST_LONG_WATCH_MS = LONG_WATCH_MS + SLACK_MS;
@@ -34,7 +35,7 @@ const PAST_LONG_WATCH_MS = LONG_WATCH_MS + SLACK_MS;
 const _activeTrackers = [];
 
 // Reset modules, wire a live tracker on the window, and register it for
-// cleanup. The tracker's setInterval for night-owl would otherwise leak
+// cleanup. The tracker's setInterval for losing-track-of-time would otherwise leak
 // between tests and cause one suite's advanceTimersByTime to trip another's
 // assertions.
 async function startTracker(onUnlock = () => {}, onRelock = () => {}) {
@@ -1250,7 +1251,7 @@ describe("tracker — moonlit", () => {
   });
 });
 
-describe("tracker — night-owl", () => {
+describe("tracker — losing-track-of-time", () => {
   beforeEach(() => {
     document.body.className = "";
     delete document.body.dataset.activeTheme;
@@ -1267,21 +1268,21 @@ describe("tracker — night-owl", () => {
     vi.useRealTimers();
   });
 
-  it("unlocks night-owl after the cumulative-visible threshold", async () => {
+  it("unlocks losing-track-of-time after the cumulative-visible threshold", async () => {
     const { storage } = await startTracker();
 
-    vi.advanceTimersByTime(PAST_NIGHT_OWL_MS);
+    vi.advanceTimersByTime(PAST_LOSING_TRACK_MS);
 
-    expect(storage.isUnlocked("night-owl")).toBe(true);
+    expect(storage.isUnlocked("losing-track-of-time")).toBe(true);
   });
 
   it("stops the poll on stop() so the window can't unlock after teardown", async () => {
     const { storage, tracker } = await startTracker();
 
     tracker.stop();
-    vi.advanceTimersByTime(PAST_NIGHT_OWL_MS);
+    vi.advanceTimersByTime(PAST_LOSING_TRACK_MS);
 
-    expect(storage.isUnlocked("night-owl")).toBe(false);
+    expect(storage.isUnlocked("losing-track-of-time")).toBe(false);
   });
 
   it("does not count time while the page is hidden", async () => {
@@ -1296,7 +1297,7 @@ describe("tracker — night-owl", () => {
     vi.advanceTimersByTime(LONG_HIDDEN_MS);
 
     // Only the visible portion accumulated — well below the threshold.
-    expect(storage.isUnlocked("night-owl")).toBe(false);
+    expect(storage.isUnlocked("losing-track-of-time")).toBe(false);
   });
 });
 

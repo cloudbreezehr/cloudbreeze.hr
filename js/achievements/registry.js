@@ -610,8 +610,8 @@ export const ACHIEVEMENTS = [
     requires: "hover",
   },
   {
-    id: "night-owl",
-    title: "Night Owl",
+    id: "losing-track-of-time",
+    title: "Losing Track of Time",
     description: "Still here? The sky notices.",
     hint: "Stay on the page for 10 minutes",
     set: "mastery",

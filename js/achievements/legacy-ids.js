@@ -14,6 +14,7 @@ export const LEGACY_IDS = {
   "light-reading": ["cartographers-almanac"],
   committed: ["persistent"],
   "frequent-flyer": ["persistent-explorer"],
+  "losing-track-of-time": ["night-owl"],
 };
 
 const _legacyToCurrent = new Map();

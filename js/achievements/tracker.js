@@ -37,11 +37,11 @@ export const RAPID_FIRE_WINDOW_MS = 3000;
 export const RAPID_FIRE_CLICKS = 10;
 // Consecutive-day visit streak for the "Regular" achievement.
 const REGULAR_STREAK_DAYS = 7;
-// Cumulative visible time for night-owl.  Counted via a setInterval
+// Cumulative visible time for losing-track-of-time.  Counted via a setInterval
 // poll so we accumulate per-tick rather than wall-clock — closing
 // the tab pauses progress.
-export const NIGHT_OWL_MS = 600000;
-export const NIGHT_OWL_CHECK_INTERVAL = 30000;
+export const LOSING_TRACK_MS = 600000;
+export const LOSING_TRACK_CHECK_INTERVAL = 30000;
 const SCROLL_STARGAZER = 0.25;
 const SCROLL_BOTTOM = 0.95;
 const SCROLL_TOP = 0.05;
@@ -99,7 +99,7 @@ export function createTracker(onUnlock, onRelock) {
     dragStartY: null,
     lastFuryTime: 0,
     longWatchTimer: null,
-    nightOwlInterval: null,
+    losingTrackInterval: null,
     // Rising-edge latches for onEdge, keyed by occurrence.
     edges: {},
     // Tracks which constellations have been formed in this session for
@@ -815,7 +815,7 @@ export function createTracker(onUnlock, onRelock) {
     },
   };
 
-  // ── Visibility tracking for night-owl ──
+  // ── Visibility tracking for losing-track-of-time ──
   function onVisibilityChange() {
     const now = Date.now();
     if (document.hidden) {
@@ -826,17 +826,19 @@ export function createTracker(onUnlock, onRelock) {
     } else {
       session.lastVisibleTime = now;
     }
-    checkNightOwl();
+    checkLosingTrack();
   }
 
-  function checkNightOwl() {
+  function checkLosingTrack() {
     let total = session.visibleMs;
     if (session.lastVisibleTime > 0) {
       total += Date.now() - session.lastVisibleTime;
     }
     // Checked on an interval, so gate on the rising edge — once the span is
     // reached, not every tick thereafter.
-    onEdge("night-owl", total >= NIGHT_OWL_MS, () => tryUnlock("night-owl"));
+    onEdge("losing-track-of-time", total >= LOSING_TRACK_MS, () =>
+      tryUnlock("losing-track-of-time"),
+    );
   }
 
   // ── Session-day tracking ──
@@ -870,10 +872,10 @@ export function createTracker(onUnlock, onRelock) {
     window.addEventListener("achievement", handleEvent);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
-    // Poll for the night-owl window while the tab is open
-    session.nightOwlInterval = setInterval(
-      checkNightOwl,
-      NIGHT_OWL_CHECK_INTERVAL,
+    // Poll for the losing-track-of-time window while the tab is open
+    session.losingTrackInterval = setInterval(
+      checkLosingTrack,
+      LOSING_TRACK_CHECK_INTERVAL,
     );
 
     trackSession();
@@ -904,9 +906,9 @@ export function createTracker(onUnlock, onRelock) {
     window.removeEventListener("achievement", handleEvent);
     document.removeEventListener("visibilitychange", onVisibilityChange);
     clearLongWatch();
-    if (session.nightOwlInterval != null) {
-      clearInterval(session.nightOwlInterval);
-      session.nightOwlInterval = null;
+    if (session.losingTrackInterval != null) {
+      clearInterval(session.losingTrackInterval);
+      session.losingTrackInterval = null;
     }
   }
 
