@@ -6,6 +6,11 @@
 // capability names) when it can only be earned with an input capability some
 // devices lack. Such achievements are filtered out of completion totals on
 // devices that lack the capability, so every device can still reach 100%.
+//
+// An entry may declare `patient: true` when only real elapsed time can earn
+// it (a streak of visit days, a time-of-day window). Patient entries still
+// gate normal completion, but the speedrun's finish line skips them — a run
+// is a single sitting.
 
 import { getTheme } from "../themes/registry.js";
 import { hasCapability } from "../device.js";
@@ -444,6 +449,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: UNCOMMON,
     hidden: true,
+    patient: true,
   },
   // ── Exploration: Dev ──
   {
@@ -636,6 +642,7 @@ export const ACHIEVEMENTS = [
     points: RARE,
     hidden: true,
     progressKey: "days-3",
+    patient: true,
   },
   {
     id: "elemental",
@@ -1384,6 +1391,7 @@ export const ACHIEVEMENTS = [
     points: EPIC,
     hidden: true,
     progressKey: "days-7",
+    patient: true,
   },
   {
     id: "halfway-there",
@@ -1435,6 +1443,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    patient: true,
   },
   {
     id: "committed",
@@ -1664,6 +1673,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
+    patient: true,
   },
   // ── Terminal ──
   {
@@ -1901,6 +1911,18 @@ export function getSetPrereqs(setId) {
 export function getAllNonMeta() {
   return ACHIEVEMENTS.filter(
     (a) => a.set !== "meta" && !a.bonus && isReachable(a),
+  ).map((a) => a.id);
+}
+
+/**
+ * Get the achievement ids a speedrun must re-earn to finish: the core
+ * completion set (as getAllNonMeta) minus `patient` entries — a run is a
+ * single sitting, so entries that only real elapsed time can earn don't
+ * gate it.
+ */
+export function getSpeedrunGoal() {
+  return ACHIEVEMENTS.filter(
+    (a) => a.set !== "meta" && !a.bonus && !a.patient && isReachable(a),
   ).map((a) => a.id);
 }
 

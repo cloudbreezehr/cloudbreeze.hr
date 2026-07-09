@@ -166,8 +166,9 @@ describe("effects/speedrun — run lifecycle", () => {
     confirmDialog();
     vi.advanceTimersByTime(90000);
 
-    // Rediscover every reachable non-milestone secret.
-    for (const id of registry.getAllNonMeta()) storage.unlock(id);
+    // Rediscover the whole speedrun goal — patient entries stay locked and
+    // must not be needed for the finish.
+    for (const id of registry.getSpeedrunGoal()) storage.unlock(id);
     vi.advanceTimersByTime(200); // let a tick observe completion
 
     expect(events).toContain("speedrun-finished");
@@ -182,6 +183,22 @@ describe("effects/speedrun — run lifecycle", () => {
     expect(btn.textContent).toBe("Close");
     btn.click();
     expect(hud()).toBeNull();
+  });
+
+  it("does not finish while a goal achievement is still locked", () => {
+    const events = [];
+    window.addEventListener("achievement", (e) => events.push(e.detail.type));
+    speedrun.requestSpeedrun();
+    confirmDialog();
+
+    const [holdout, ...rest] = registry.getSpeedrunGoal();
+    for (const id of rest) storage.unlock(id);
+    vi.advanceTimersByTime(200); // let a tick observe the near-complete state
+    expect(events).not.toContain("speedrun-finished");
+
+    storage.unlock(holdout);
+    vi.advanceTimersByTime(200); // let a tick observe completion
+    expect(events).toContain("speedrun-finished");
   });
 
   it("resumes an in-progress run after a reload", () => {

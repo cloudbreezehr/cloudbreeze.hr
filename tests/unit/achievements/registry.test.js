@@ -9,6 +9,7 @@ import {
   sumPoints,
   getSetPrereqs,
   getAllNonMeta,
+  getSpeedrunGoal,
   getReachableAchievements,
   isReachable,
   isBonus,
@@ -268,6 +269,34 @@ describe("getAllNonMeta", () => {
     const bonus = ACHIEVEMENTS.filter(isBonus);
     expect(bonus.length).toBeGreaterThan(0);
     for (const a of bonus) expect(nonMeta.has(a.id)).toBe(false);
+  });
+});
+
+describe("getSpeedrunGoal", () => {
+  it("holds exactly the reachable, non-meta, non-bonus, non-patient achievements", () => {
+    const goal = new Set(getSpeedrunGoal());
+    for (const a of ACHIEVEMENTS) {
+      const shouldCount =
+        a.set !== "meta" && !a.bonus && !a.patient && isReachable(a);
+      expect(goal.has(a.id), a.id).toBe(shouldCount);
+    }
+  });
+
+  it("skips patient entries while getAllNonMeta still gates completion on them", () => {
+    const goal = new Set(getSpeedrunGoal());
+    const nonMeta = new Set(getAllNonMeta());
+    const patient = ACHIEVEMENTS.filter((a) => a.patient === true);
+    expect(patient.length).toBeGreaterThan(0);
+    for (const a of patient) {
+      expect(goal.has(a.id), a.id).toBe(false);
+      expect(nonMeta.has(a.id), a.id).toBe(true);
+    }
+  });
+
+  it("marks no bonus entry patient — bonus already sits outside every goal", () => {
+    for (const a of ACHIEVEMENTS.filter((a) => a.patient === true)) {
+      expect(a.bonus, a.id).toBeUndefined();
+    }
   });
 });
 

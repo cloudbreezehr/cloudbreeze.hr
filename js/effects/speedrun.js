@@ -2,8 +2,9 @@
 // Race the Cloudlog from zero against a clock. Arming is a deliberate act:
 // a dialog spells out the rules, then the run backs up the visitor's real
 // progress, resets the Cloudlog to empty, and starts the clock. Every
-// secret must be rediscovered; the finish is 100% of the reachable
-// non-milestone achievements. Stopping — by finishing or by choosing
+// secret must be rediscovered; the finish is the speedrun goal — the
+// reachable non-milestone achievements minus `patient` ones, which only
+// real elapsed time can earn. Stopping — by finishing or by choosing
 // "end run" — restores the backed-up progress (merged, so anything
 // re-earned during the run is kept too), so the original Cloudlog is
 // never at risk.
@@ -13,11 +14,11 @@
 // reload, resuming the clock from where it left off.
 
 import * as storage from "../achievements/storage.js";
-import { SET_MASTERY_MAP, getAchievement } from "../achievements/registry.js";
 import {
-  resolveProgressCurrent,
-  resolveProgressTotal,
-} from "../achievements/progress.js";
+  SET_MASTERY_MAP,
+  getAchievement,
+  getSpeedrunGoal,
+} from "../achievements/registry.js";
 import { exportPassport, importPassport } from "../achievements/passport.js";
 import { trapFocus } from "../achievements/focus-trap.js";
 import { playSfx } from "../audio/sfx.js";
@@ -77,11 +78,11 @@ function announceBulkChange() {
   window.dispatchEvent(new CustomEvent("cloudlog-bulk-change"));
 }
 
-// The finish condition mirrors the completionist achievement: every
-// reachable non-milestone unlocked.
+// The finish is the completionist bar minus `patient` entries — a run is a
+// single sitting, so achievements that need real elapsed time can't gate it.
 function isRunComplete() {
-  const total = resolveProgressTotal("non-meta-all");
-  return total > 0 && resolveProgressCurrent("non-meta-all") >= total;
+  const goal = getSpeedrunGoal();
+  return goal.length > 0 && goal.every((id) => storage.isUnlocked(id));
 }
 
 function runActive() {
@@ -351,9 +352,10 @@ export function requestSpeedrun() {
     body:
       "Race the Cloudlog <strong>from zero</strong>: the clock starts now " +
       "and every secret in the sky must be rediscovered, as fast as you " +
-      "can.<br /><br />Your current progress is <strong>safely backed " +
-      "up</strong> and restored the moment you finish or stop — nothing " +
-      "is lost.",
+      "can. Secrets that need the calendar (day streaks, the small " +
+      "hours etc.) sit outside the run.<br /><br />Your current progress is " +
+      "<strong>safely backed up</strong> and restored the moment you " +
+      "finish or stop so nothing is lost.",
     confirmLabel: "Start the run",
     cancelLabel: "Not now",
     onConfirm: beginRun,
