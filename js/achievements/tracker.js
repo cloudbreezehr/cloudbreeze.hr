@@ -722,7 +722,7 @@ export function createTracker(onUnlock, onRelock) {
     },
 
     "distant-well"() {
-      tryUnlock("distant-well");
+      tryUnlock("distant-gravity");
     },
 
     "timestamp-toggle"() {

@@ -16,6 +16,7 @@ export const LEGACY_IDS = {
   "frequent-flyer": ["persistent-explorer"],
   "losing-track-of-time": ["night-owl"],
   "the-hunters-belt": ["belt-of-orion"],
+  "distant-gravity": ["distant-well"],
 };
 
 const _legacyToCurrent = new Map();

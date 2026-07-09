@@ -1754,7 +1754,7 @@ export const ACHIEVEMENTS = [
     requires: "multiwindow",
   },
   {
-    id: "distant-well",
+    id: "distant-gravity",
     title: "Distant Gravity",
     description: "A gravity well from the next window bloomed in yours.",
     hint: "While linked, charge a gravity well near the seam and watch the next window",

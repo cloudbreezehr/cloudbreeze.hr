@@ -154,7 +154,7 @@ describe("Exploration-split sets", () => {
       id: "linked-skies",
       label: "Linked Skies",
       ids: [
-        "distant-well",
+        "distant-gravity",
         "fixed-stars",
         "ghost-hand",
         "parallel-skies",
@@ -338,7 +338,7 @@ describe("device reachability", () => {
     "triptych",
     "fixed-stars",
     "ghost-hand",
-    "distant-well",
+    "distant-gravity",
   ];
   const GATED = [...KEYBOARD_ONLY, ...HOVER_ONLY, ...MULTIWINDOW_ONLY];
   // Motion is the inverse — reachable on touch, not on hover-capable desktops.
