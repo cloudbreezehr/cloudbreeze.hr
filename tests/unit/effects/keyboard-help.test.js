@@ -49,6 +49,20 @@ describe("effects/keyboard-help", () => {
     expect(mod.isHelpOpen()).toBe(false);
   });
 
+  it("does not stack on top of an open cheatsheet", async () => {
+    // Two aria-modal dialogs (and two focus traps) must never be open at
+    // once — ? yields while the cheatsheet owns the foreground.
+    const cheatsheet = await import("../../../js/effects/cheatsheet.js");
+    cheatsheet.openCheatsheet();
+    try {
+      pressQuestion();
+      expect(mod.isHelpOpen()).toBe(false);
+      expect(getOverlay()).toBeNull();
+    } finally {
+      cheatsheet._resetForTests();
+    }
+  });
+
   it("contains a focusable close button and moves focus into the dialog", () => {
     pressQuestion();
     const closeBtn = getOverlay().querySelector(".keyboard-help-close");

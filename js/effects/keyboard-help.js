@@ -10,6 +10,7 @@
 import { onKey } from "../keyboard.js";
 import { trapFocus } from "../achievements/focus-trap.js";
 import { playSfx } from "../audio/sfx.js";
+import { isCheatsheetOpen } from "./cheatsheet.js";
 
 // Fallback removal delay — generously past the overlay's CSS fade so the
 // node is still removed if transitionend never fires (e.g. detached early).
@@ -147,6 +148,9 @@ export function initKeyboardHelp() {
   _unbindToggle = onKey(
     "?",
     () => {
+      // The cheatsheet owns the foreground while open — opening help on
+      // top would stack two aria-modal dialogs and two focus traps.
+      if (isCheatsheetOpen()) return;
       if (overlayEl) closeHelp();
       else openHelp();
     },

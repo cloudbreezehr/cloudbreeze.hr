@@ -112,7 +112,12 @@ function buildDeps() {
       };
     },
     qualityTier: getQualityTier,
-    openCheatsheet,
+    // Hand off, don't stack: only one modal owns the foreground at a time,
+    // so the terminal closes before the cheatsheet takes over.
+    openCheatsheet: () => {
+      closeTerminal();
+      openCheatsheet();
+    },
     daily: () => ({
       seedKey: skySeedKey(),
       todayKey: dayKey(),

@@ -18,6 +18,7 @@ import {
   isCheatsheetOpen,
 } from "../effects/cheatsheet.js";
 import { isHelpOpen } from "../effects/keyboard-help.js";
+import { isTerminalOpen } from "../terminal/index.js";
 import { revealSoundToggle } from "../audio/toggle.js";
 import { setSoundEnabled } from "../audio/engine.js";
 import { prefersReducedMotion } from "../motion.js";
@@ -543,10 +544,13 @@ export function initSpellTrigger() {
     lastPointer = { x: e.clientX, y: e.clientY };
   }
 
-  // An open modal owns the foreground (and the cheatsheet literally lists the
-  // spellable words) — don't let letters cast or toggle through it.
+  // An open modal owns the foreground (and the cheatsheet and terminal
+  // literally list the spellable words) — don't let letters cast or toggle
+  // through it. The terminal matters for the tap path in particular: its
+  // scrollback is plain text, so clicked glyphs would otherwise feed the
+  // matcher.
   function aModalIsOpen() {
-    return isCheatsheetOpen() || isHelpOpen();
+    return isCheatsheetOpen() || isHelpOpen() || isTerminalOpen();
   }
 
   function onKeydown(e) {

@@ -5,4 +5,5 @@
 export const UI_OVERLAY_SELECTOR =
   "nav, .achievement-panel, .achievement-toast-container, .dev-console, " +
   ".terminal-overlay, .photo-mode-bar, .speedrun-hud, .speedrun-dialog-overlay, " +
+  ".cheatsheet-overlay, .keyboard-help-overlay, " +
   ".location-pin, .location-prompt";

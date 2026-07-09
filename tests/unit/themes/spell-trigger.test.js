@@ -215,6 +215,7 @@ describe("themes/spell-trigger", () => {
     let charges;
     let achievements;
     let soundRevealed;
+    let terminalOpen;
     let stop;
     let onAchievement;
 
@@ -256,6 +257,10 @@ describe("themes/spell-trigger", () => {
           soundRevealed++;
         },
       }));
+      terminalOpen = false;
+      vi.doMock("../../../js/terminal/index.js", () => ({
+        isTerminalOpen: () => terminalOpen,
+      }));
 
       achievements = [];
       onAchievement = (e) => achievements.push(e.detail);
@@ -273,6 +278,7 @@ describe("themes/spell-trigger", () => {
       vi.doUnmock("../../../js/effects/incantations.js");
       vi.doUnmock("../../../js/motion.js");
       vi.doUnmock("../../../js/audio/toggle.js");
+      vi.doUnmock("../../../js/terminal/index.js");
     });
 
     function type(word) {
@@ -286,6 +292,14 @@ describe("themes/spell-trigger", () => {
     it("toggles the theme when its name is typed", () => {
       type("PAPER");
       expect(toggled).toEqual(["paper"]);
+    });
+
+    it("ignores spelling while the terminal modal is open", () => {
+      // The terminal's scrollback lists theme and spell names as plain
+      // text, so the speller must treat it like the other open modals.
+      terminalOpen = true;
+      type("PAPER");
+      expect(toggled).toEqual([]);
     });
 
     it("dispatches a theme-spelled achievement event on completion", () => {
