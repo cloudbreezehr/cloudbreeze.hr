@@ -784,11 +784,16 @@ describe("achievements/ui/cards", () => {
   });
 
   describe("refreshCard", () => {
-    it("no-ops when the panel is closed", () => {
+    // The refresh coalesces a same-tick cascade behind a microtask; one
+    // checkpoint flushes it.
+    const flushRefresh = () => Promise.resolve();
+
+    it("no-ops when the panel is closed", async () => {
       mod.renderSections(container);
       panelOpen = false;
       storage.unlock("first-light");
       mod.refreshCard("first-light");
+      await flushRefresh();
       // Still locked, and no refresh was triggered while closed.
       const card = container.querySelector(
         '.achievement-card[data-id="first-light"]',
@@ -797,7 +802,7 @@ describe("achievements/ui/cards", () => {
       expect(refreshPanelStub).not.toHaveBeenCalled();
     });
 
-    it("refreshes the panel, then shines the freshly-rendered card in place", () => {
+    it("refreshes the panel, then shines the freshly-rendered card in place", async () => {
       // A prior close stamp means the rebuilt card would get the entrance
       // reveal; refreshCard should strip it and play the shine instead.
       storage.setPref(storage.LAST_PANEL_CLOSE_PREF, Date.now() - 1000);
@@ -807,6 +812,7 @@ describe("achievements/ui/cards", () => {
 
       storage.unlock("first-light");
       mod.refreshCard("first-light");
+      await flushRefresh();
 
       expect(refreshPanelStub).toHaveBeenCalled();
       const card = container.querySelector(
@@ -818,11 +824,31 @@ describe("achievements/ui/cards", () => {
       expect(card.classList.contains("just-unlocked")).toBe(false);
     });
 
-    it("refreshes the panel even when the card isn't currently rendered", () => {
+    it("refreshes the panel even when the card isn't currently rendered", async () => {
       // Don't renderSections — the card won't exist; the counts still refresh.
       storage.unlock("first-light");
       mod.refreshCard("first-light");
+      await flushRefresh();
       expect(refreshPanelStub).toHaveBeenCalled();
+    });
+
+    it("coalesces a same-tick unlock cascade into one rebuild, shining every card", async () => {
+      mod.renderSections(container);
+      refreshPanelStub.mockImplementation(() => mod.renderSections(container));
+
+      storage.unlock("first-light");
+      storage.unlock("stargazer");
+      mod.refreshCard("first-light");
+      mod.refreshCard("stargazer");
+      await flushRefresh();
+
+      expect(refreshPanelStub).toHaveBeenCalledOnce();
+      for (const id of ["first-light", "stargazer"]) {
+        const card = container.querySelector(
+          `.achievement-card[data-id="${id}"]`,
+        );
+        expect(card.classList.contains("shine")).toBe(true);
+      }
     });
   });
 

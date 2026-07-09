@@ -417,7 +417,11 @@ describe("achievements/ui/panel", () => {
   });
 
   describe("activity log subscription", () => {
-    it("re-renders the activity view when the log changes", () => {
+    // The subscription coalesces same-tick log bursts behind a microtask;
+    // one checkpoint flushes the rebuild.
+    const flushActivityRefresh = () => Promise.resolve();
+
+    it("re-renders the activity view when the log changes", async () => {
       mod.openPanel();
       // Before: empty state — no .activity-row entries, just the
       // empty-state placeholder.
@@ -425,6 +429,7 @@ describe("achievements/ui/panel", () => {
         document.querySelectorAll(".achievement-view-activity .activity-row"),
       ).toHaveLength(0);
       activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      await flushActivityRefresh();
       // After the log mutates, the subscription fires and re-renders;
       // one row now exists.
       expect(
@@ -432,7 +437,7 @@ describe("achievements/ui/panel", () => {
       ).toHaveLength(1);
     });
 
-    it("keeps the subscription alive across destroy → rebuild", () => {
+    it("keeps the subscription alive across destroy → rebuild", async () => {
       // The subscription lives at module-top — not inside buildPanel —
       // so a destroy+rebuild cycle doesn't need to re-subscribe, and
       // equally doesn't stack a second subscriber on the log.  This
@@ -443,6 +448,7 @@ describe("achievements/ui/panel", () => {
       mod.destroyPanel();
       mod.openPanel();
       activityLog.log("achievement-unlocked", { achievementId: "first-light" });
+      await flushActivityRefresh();
       expect(
         document.querySelectorAll(".achievement-view-activity .activity-row"),
       ).toHaveLength(1);

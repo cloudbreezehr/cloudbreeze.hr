@@ -368,6 +368,10 @@ export function destroySeenObserver() {
     _seenObserver.disconnect();
     _seenObserver = null;
   }
+  clearSeenDwellTimers();
+}
+
+function clearSeenDwellTimers() {
   for (const timer of _seenTimers.values()) clearTimeout(timer);
   _seenTimers.clear();
 }
@@ -549,6 +553,12 @@ export function renderSections(container) {
   // view, recreating the search input.  Capture focus + caret off the old
   // input before we replace it so typing isn't interrupted mid-keystroke.
   const caret = captureSearchCaret(container);
+  // The rebuild detaches every card: a hint tooltip pinned to a hovered card
+  // would strand mid-screen (no mouseleave fires for removed nodes), and a
+  // pending seen-dwell timer would mark its dead node while blocking the
+  // rebuilt card from re-arming under the same id.
+  hideHintTooltip();
+  clearSeenDwellTimers();
   container.innerHTML = "";
 
   if (storage.getUnlocked().length <= INTRO_CARD_THRESHOLD) {
@@ -883,11 +893,29 @@ function shakeCard(card) {
 // counts, completion, and the unlocked state are all current, and the card is
 // re-observed for seen-tracking — where mutating a card first would only shine
 // a node about to be detached and replaced.
+//
+// Unlocks arrive in synchronous cascades (a threshold meta lands in the same
+// tick as the unlock that crossed it), and each refresh rebuilds every card —
+// so queue the ids and rebuild once per cascade, shining all of them after.
+const _pendingShine = new Set();
+
 export function refreshCard(achievementId) {
   const panelEl = _getPanelEl();
   if (!panelEl || !_isPanelOpen()) return;
-  _refreshPanel();
-  const card = panelEl.querySelector(
+  const flushQueued = _pendingShine.size > 0;
+  _pendingShine.add(achievementId);
+  if (flushQueued) return;
+  queueMicrotask(() => {
+    const ids = [..._pendingShine];
+    _pendingShine.clear();
+    if (!_isPanelOpen()) return;
+    _refreshPanel();
+    for (const id of ids) shineCard(id);
+  });
+}
+
+function shineCard(achievementId) {
+  const card = _getPanelEl()?.querySelector(
     `.achievement-card[data-id="${achievementId}"]`,
   );
   // Absent when the achievement sits in a set that isn't currently rendered:
@@ -904,6 +932,7 @@ export function refreshCard(achievementId) {
 // Test hook — drop all card state including injected callbacks.
 export function _resetForTests() {
   destroySeenObserver();
+  _pendingShine.clear();
   helpLevel = "off";
   _getPanelEl = () => null;
   _isPanelOpen = () => false;

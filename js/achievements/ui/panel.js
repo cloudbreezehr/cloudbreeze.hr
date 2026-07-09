@@ -98,11 +98,19 @@ configureActivity({ getPanelEl: () => panelEl });
 // subscriber reads panelEl via the module-level let binding so it
 // stays correct across destroyPanel → rebuild cycles — no explicit
 // unsubscribe, just one subscription for the module's lifetime.
+// Rebuilding rows is wholesale, so a synchronous burst of log entries
+// (an unlock cascade) coalesces into one rebuild per tick.
+let activityRefreshQueued = false;
 activityLog.onChange(() => {
-  if (!panelEl) return;
-  const view = panelEl.querySelector(".achievement-view-activity");
-  if (view) renderActivity(view);
-  updateTabBadges();
+  if (activityRefreshQueued) return;
+  activityRefreshQueued = true;
+  queueMicrotask(() => {
+    activityRefreshQueued = false;
+    if (!panelEl) return;
+    const view = panelEl.querySelector(".achievement-view-activity");
+    if (view) renderActivity(view);
+    updateTabBadges();
+  });
 });
 
 // ── Helpers ──
