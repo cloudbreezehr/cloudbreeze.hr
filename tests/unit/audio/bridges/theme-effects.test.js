@@ -35,9 +35,10 @@ describe("audio/bridges/theme-effects", () => {
   it("maps the sky/constellation interactions", () => {
     fire("star-clicked");
     fire("shooting-star-clicked");
+    fire("moon-clicked");
     fire("constellation-formed");
     fire("constellation-wrong-hit");
-    expect(calls).toEqual(["twinkle", "starWhoosh", "chord", "dud"]);
+    expect(calls).toEqual(["twinkle", "starWhoosh", "lunar", "chord", "dud"]);
   });
 
   it("maps the matrix click surge and decode", () => {

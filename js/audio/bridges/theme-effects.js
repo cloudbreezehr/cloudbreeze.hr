@@ -1,9 +1,9 @@
 // ── Theme & Sky Effects Audio Bridge ──
 // Sounds the discrete, user-triggered effects of the themes and the sky —
 // frost breath, a paper stroke, a VHS glitch, and the star / shooting-star /
-// constellation interactions. Passive background animations (drifting clouds, a
-// jellyfish's pulse) are deliberately left silent — sounding them would be the
-// ambient texture we removed.
+// moon / constellation interactions. Passive background animations (drifting
+// clouds, a jellyfish's pulse) are deliberately left silent — sounding them
+// would be the ambient texture we removed.
 //
 // The snow-globe shake is intentionally absent: its `snow-globe` event fires on
 // any shake-scroll (so the achievement is reachable without frozen), but the
@@ -23,6 +23,7 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "vhs-glitch": "glitch",
   "star-clicked": "twinkle",
   "shooting-star-clicked": "starWhoosh",
+  "moon-clicked": "lunar",
   "constellation-formed": "chord",
   "constellation-wrong-hit": "dud",
   "matrix-click": "glyph",

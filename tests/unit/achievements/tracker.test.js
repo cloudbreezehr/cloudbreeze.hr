@@ -865,6 +865,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("wish-granted")).toBe(true);
   });
 
+  it("unlocks over-the-moon on a moon tap", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("moon-clicked", {});
+    expect(storage.isUnlocked("over-the-moon")).toBe(true);
+  });
+
   it("unlocks open-secrets when the cheatsheet is discovered", async () => {
     const { storage } = await startTracker();
     dispatchAchievement("cheatsheet-discovered", {});

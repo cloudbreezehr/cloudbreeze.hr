@@ -1637,6 +1637,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
     bonus: true,
   },
+  // Any clear night will do — schedulable, so it stays in the core 100%.
+  {
+    id: "over-the-moon",
+    title: "Over the Moon",
+    description: "You reached out and touched it.",
+    hint: "Reveal the real sky, then tap the moon",
+    set: "almanac",
+    points: RARE,
+    hidden: true,
+  },
   // ── Terminal ──
   {
     id: "shell-access",

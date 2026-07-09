@@ -88,4 +88,49 @@ describe("real-sky/moon", () => {
     layer.draw(ctx, canvas, 0, pal, 0);
     expect(calls.length).toBe(0);
   });
+
+  // The disc's resting anchor at the top of the page (no parallax at sp 0):
+  // X_FRACTION / Y_FRACTION of the canvas.
+  const discX = canvas.width * 0.8;
+  const discY = canvas.height * 0.16;
+
+  it("hit-tests taps against the drawn disc", () => {
+    drawAt(new Date(2026, 0, 1, 23, 30));
+    expect(layer.click(discX, discY)).toBe(true);
+    expect(layer.click(canvas.width * 0.2, canvas.height * 0.8)).toBe(false);
+  });
+
+  it("ignores taps when the moon isn't in the sky", () => {
+    // Before any draw there is nothing to hit.
+    expect(layer.click(discX, discY)).toBe(false);
+    // A midday draw paints nothing, so the disc stays untappable.
+    drawAt(new Date(2026, 5, 21, 12, 0));
+    expect(layer.click(discX, discY)).toBe(false);
+  });
+
+  it("acknowledges a tap with a ring on the next draw", () => {
+    const before = drawAt(new Date(2026, 0, 1, 23, 30));
+    expect(before.some(([name]) => name === "stroke")).toBe(false);
+    layer.click(discX, discY);
+    const after = drawAt(new Date(2026, 0, 1, 23, 30));
+    expect(after.some(([name]) => name === "stroke")).toBe(true);
+  });
+
+  it("reduced motion: the tap lands but the ring is skipped", async () => {
+    window.matchMedia = vi.fn(() => ({
+      matches: true,
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+    const mod = await import("../../../js/real-sky/moon.js");
+    const rmLayer = mod.createMoon();
+    vi.setSystemTime(new Date(2026, 0, 1, 23, 30));
+    let rec = makeRecordingCtx();
+    rmLayer.draw(rec.ctx, canvas, 0, pal);
+    expect(rmLayer.click(discX, discY)).toBe(true);
+    rec = makeRecordingCtx();
+    rmLayer.draw(rec.ctx, canvas, 0, pal);
+    expect(rec.calls.some(([name]) => name === "stroke")).toBe(false);
+  });
 });

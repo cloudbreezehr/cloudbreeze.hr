@@ -790,6 +790,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("wish-granted");
     },
 
+    "moon-clicked"() {
+      tryUnlock("over-the-moon");
+    },
+
     "cheatsheet-discovered"() {
       tryUnlock("open-secrets");
     },

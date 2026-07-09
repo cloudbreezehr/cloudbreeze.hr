@@ -537,6 +537,16 @@ export function initCanvas(canvasEl, appearance, options) {
       );
     }
 
+    // Tapping the real moon. Gated on the same conditions under which the
+    // frame loop lets the moon render, so a hidden or suppressed moon is
+    // never a ghost target.
+    const suppressSky = activeHooks.some(({ hooks }) => hooks.suppressSky);
+    if (sky && !suppressSky && moonReveal > 0 && moon.click(cx, cy)) {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "moon-clicked" } }),
+      );
+    }
+
     const ptr = {
       x: e.clientX,
       y: e.clientY,

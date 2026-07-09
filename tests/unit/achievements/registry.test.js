@@ -61,7 +61,7 @@ describe("Almanac set", () => {
     expect(SET_MASTERY_MAP.almanac).toBeUndefined();
   });
 
-  it("groups exactly the time-based achievements", () => {
+  it("groups exactly the real-sky and calendar achievements", () => {
     const ids = ACHIEVEMENTS.filter((a) => a.set === "almanac")
       .map((a) => a.id)
       .sort();
@@ -70,6 +70,7 @@ describe("Almanac set", () => {
         "equal-night",
         "moonlit",
         "moonstruck",
+        "over-the-moon",
         "persistent-explorer",
         "rain-check",
         "regular",

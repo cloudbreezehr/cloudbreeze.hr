@@ -8,6 +8,7 @@ import { moonPhase } from "./astro.js";
 import { localDayPhase } from "./local.js";
 import { currentLocation } from "./geolocate.js";
 import { getStarsFadeOpacity, starsParallaxShift } from "../sky.js";
+import { prefersReducedMotion } from "../motion.js";
 import { defineConstants } from "../dev/registry.js";
 
 const MOON = defineConstants("realSky.moon", {
@@ -81,10 +82,24 @@ const MIN_VISIBLE_ILLUMINATION = 0.04;
 // Astronomy changes on the scale of minutes; recompute on a coarse clock.
 const ASTRO_REFRESH_MS = 60000;
 
+// ── Tap pulse ──
+// Taps accept a reach beyond the disc edge — the moon is a small target.
+const HIT_RADIUS_MULT = 1.8;
+// A tap is acknowledged by one soft expanding ring, then the sky goes quiet.
+const PULSE_MS = 900;
+const PULSE_RADIUS_MULT = 2.4;
+const PULSE_ALPHA = 0.45;
+const PULSE_LINE_WIDTH = 1.5;
+
 export function createMoon(getLocation = currentLocation) {
   let cachedAt = -Infinity;
   let phase = "day";
   let moon = null;
+  // Disc geometry painted by the most recent draw(); null whenever that draw
+  // painted nothing (day, new moon, scrolled away). Keeps click() honest — a
+  // moon that isn't on screen is not a tap target.
+  let hit = null;
+  let pulseStart = -Infinity;
 
   function refresh(now) {
     if (now - cachedAt < ASTRO_REFRESH_MS) return;
@@ -121,6 +136,7 @@ export function createMoon(getLocation = currentLocation) {
     // `reveal` (0..1) is the caller's fade-in amount for showing/hiding the
     // moon; it scales the whole disc's opacity.
     draw(ctx, canvas, sp, pal, reveal = 1) {
+      hit = null;
       if (reveal <= 0) return;
       refresh(Date.now());
       if (phase === "day" || phase === "golden") return;
@@ -135,6 +151,7 @@ export function createMoon(getLocation = currentLocation) {
       const shift = starsParallaxShift(MOON.PARALLAX_DEPTH, sp, canvas.height);
       const x = canvas.width * MOON.X_FRACTION;
       const y = canvas.height * MOON.Y_FRACTION - shift;
+      hit = { x, y, r };
 
       const sc = pal.starColor;
 
@@ -164,6 +181,43 @@ export function createMoon(getLocation = currentLocation) {
       litPath(ctx, x, y, r);
       ctx.fill();
       ctx.restore();
+
+      // Tap acknowledgment — one ring easing outward, riding the disc's own
+      // fade so it dims with scroll and twilight like everything lunar.
+      const pulseT = (performance.now() - pulseStart) / PULSE_MS;
+      if (pulseT < 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha * PULSE_ALPHA * (1 - pulseT);
+        ctx.strokeStyle = `rgba(${sc},1)`;
+        ctx.lineWidth = PULSE_LINE_WIDTH;
+        ctx.beginPath();
+        ctx.arc(
+          x,
+          y,
+          r * (1 + pulseT * (PULSE_RADIUS_MULT - 1)),
+          0,
+          Math.PI * 2,
+        );
+        ctx.stroke();
+        ctx.restore();
+      }
+    },
+
+    // Hit-test a tap (canvas-pixel coords) against the disc painted by the
+    // most recent draw(). Returns true on a hit so the caller can reward it.
+    // The caller mirrors the gates under which draw() runs at all; the gates
+    // draw() applies itself (day, new moon, scroll fade) are covered here by
+    // the hitbox they cleared.
+    click(cx, cy) {
+      if (!hit) return false;
+      const reach = hit.r * HIT_RADIUS_MULT;
+      const dx = cx - hit.x;
+      const dy = cy - hit.y;
+      if (dx * dx + dy * dy > reach * reach) return false;
+      // The ring is a one-shot flash — skipped entirely under reduced
+      // motion. The hit itself still counts.
+      if (!prefersReducedMotion()) pulseStart = performance.now();
+      return true;
     },
   };
 }

@@ -1373,6 +1373,38 @@ const VOICES = {
       }),
     );
   },
+  // Tapping the moon — twinkle's hushed counterpart: the same struck-bell
+  // shape dropped low (D5 over a D4 undertone, a fifth on top), round and
+  // quiet as moonlight.
+  lunar(ctx, bus) {
+    const d = jitterCents();
+    tone(ctx, bus, {
+      freq: 587.33,
+      type: "sine",
+      attack: 0.01,
+      release: 0.7,
+      gain: 0.12,
+      detune: d,
+    });
+    tone(ctx, bus, {
+      freq: 880,
+      type: "sine",
+      attack: 0.02,
+      release: 0.55,
+      gain: 0.05,
+      delay: 0.03,
+      detune: d,
+    });
+    tone(ctx, bus, {
+      freq: 293.66,
+      type: "sine",
+      attack: 0.015,
+      release: 0.9,
+      gain: 0.06,
+      delay: 0.01,
+      detune: d,
+    });
+  },
   // Completing a constellation — a warm three-note chord.
   chord(ctx, bus) {
     // Completing a constellation — a warm C-major chord blooming with an

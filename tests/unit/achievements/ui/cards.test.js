@@ -4,6 +4,7 @@ import {
   INTRO_CARD_THRESHOLD,
 } from "../../../../js/achievements/ui/cards.js";
 import { POST_SETTLE_DELAY_MS } from "../../../../js/scroll-highlight.js";
+import { ACHIEVEMENTS } from "../../../../js/achievements/registry.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected
@@ -332,32 +333,34 @@ describe("achievements/ui/cards", () => {
     });
 
     describe("bonus achievements (Almanac)", () => {
-      // 4 core + 5 bonus in the Almanac set.
-      const CORE = ["moonlit", "persistent-explorer", "tenacious", "regular"];
-      const BONUS = "moonstruck";
+      // Core/bonus membership comes from the live registry so the set can
+      // grow without rewriting counts here.
+      const almanac = ACHIEVEMENTS.filter((a) => a.set === "almanac");
+      const CORE = almanac.filter((a) => !a.bonus).map((a) => a.id);
+      const BONUS = almanac.find((a) => a.bonus).id;
 
-      it("counts the set as core-complete before any bonus (4 / 4)", () => {
+      it("counts the set as core-complete before any bonus", () => {
         CORE.forEach((id) => storage.unlock(id));
         expect(mod.setCountForSet("almanac")).toEqual({
-          total: 4,
-          unlocked: 4,
+          total: CORE.length,
+          unlocked: CORE.length,
         });
       });
 
-      it("lifts both sides when a bonus is earned (5 / 5)", () => {
+      it("lifts both sides when a bonus is earned", () => {
         [...CORE, BONUS].forEach((id) => storage.unlock(id));
         expect(mod.setCountForSet("almanac")).toEqual({
-          total: 5,
-          unlocked: 5,
+          total: CORE.length + 1,
+          unlocked: CORE.length + 1,
         });
       });
 
-      it("shows a gap when a core is missing but a bonus is earned (4 / 5)", () => {
+      it("shows a gap when a core is missing but a bonus is earned", () => {
         // one core left unearned; a bonus earned lifts the total but not to full
         [...CORE.slice(0, -1), BONUS].forEach((id) => storage.unlock(id));
         expect(mod.setCountForSet("almanac")).toEqual({
-          total: 5,
-          unlocked: 4,
+          total: CORE.length + 1,
+          unlocked: CORE.length,
         });
       });
 
