@@ -187,8 +187,15 @@ function start() {
 function stop() {
   if (rafId != null) cancelAnimationFrame(rafId);
   rafId = null;
-  if (drag) drag.gain.gain.value = 0;
-  if (well) well.gain.gain.value = 0;
+  // Ease to silence like every per-frame write — a one-sample cut clicks,
+  // and the engine's deferred suspend leaves time for the tail to render.
+  // Voices existing implies the context does; audioContext() creates one
+  // lazily, and a teardown must not summon a context just to silence it.
+  if (drag || well) {
+    const t = audioContext().currentTime;
+    if (drag) drag.gain.gain.setTargetAtTime(0, t, GLIDE_S);
+    if (well) well.gain.gain.setTargetAtTime(0, t, GLIDE_S);
+  }
   prevX = prevY = null;
   prevWell = 0;
   dragActive = wellActive = false;
