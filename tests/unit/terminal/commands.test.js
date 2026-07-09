@@ -209,11 +209,12 @@ describe("terminal/commands", () => {
     expect(lines.join(" ")).toContain("Word of the day: METEOR");
   });
 
-  it("today points a time traveler back home", () => {
+  it("today points a link time-traveler back home via the link", () => {
     deps.daily = () => ({
       seedKey: "2025-12-24",
       todayKey: "2026-07-02",
       traveling: true,
+      viaLink: true,
       word: "METEOR",
       link: "https://cloudbreeze.hr/#sky=2025-12-24",
     });
@@ -221,6 +222,22 @@ describe("terminal/commands", () => {
     const { lines } = run("today");
     expect(lines[0]).toContain("past sky: 2025-12-24");
     expect(lines[1]).toContain("2026-07-02");
+    expect(lines[1]).toContain("drop the #sky link");
+  });
+
+  it("today tells a page left open past midnight to reload, not to drop a link", () => {
+    deps.daily = () => ({
+      seedKey: "2026-07-01",
+      todayKey: "2026-07-02",
+      traveling: true,
+      viaLink: false,
+      word: "METEOR",
+      link: "https://cloudbreeze.hr/#sky=2026-07-01",
+    });
+    commands = createCommands(deps);
+    const { lines } = run("today");
+    expect(lines[1]).toContain("reload");
+    expect(lines[1]).not.toContain("drop the #sky link");
   });
 
   it("history echoes the session's numbered commands", () => {

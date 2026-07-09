@@ -22,7 +22,7 @@ import { wordOfTheDay } from "../daily/word.js";
 import { trapFocus } from "../achievements/focus-trap.js";
 import { playSfx } from "../audio/sfx.js";
 import { onKey } from "../keyboard.js";
-import { buildUrl } from "../url-params.js";
+import { buildUrl, getParam } from "../url-params.js";
 
 // Fallback removal delay — generously past the overlay's CSS slide so the
 // node is still removed if transitionend never fires.
@@ -122,6 +122,10 @@ function buildDeps() {
       seedKey: skySeedKey(),
       todayKey: dayKey(),
       traveling: isTimeTraveling(),
+      // Traveling has two causes with different exits: a #sky link in the
+      // URL, or a page left open across local midnight (the seed is fixed
+      // at load). Only the first has a link to drop.
+      viaLink: getParam("sky") != null,
       word: wordOfTheDay(),
       link: buildUrl({ sky: skySeedKey() }),
     }),

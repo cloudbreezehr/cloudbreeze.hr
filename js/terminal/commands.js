@@ -333,7 +333,11 @@ export function createCommands(deps) {
         if (d.traveling) {
           lines.push(
             `You're standing under a past sky: ${d.seedKey}`,
-            `Today's is ${d.todayKey} — drop the #sky link to come home.`,
+            // Traveling via a shared link vs. a page left open past local
+            // midnight — only the former has a link to drop.
+            d.viaLink
+              ? `Today's is ${d.todayKey} — drop the #sky link to come home.`
+              : `Today's is ${d.todayKey} — this page predates midnight; reload to come home.`,
           );
         } else {
           lines.push(
