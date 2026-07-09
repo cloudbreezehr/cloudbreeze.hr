@@ -15,6 +15,13 @@ const C = defineConstants("cursor", {
     step: 0.01,
     description: "Ring easing when snapping straight to the pointer",
   },
+  RING_SETTLE_EPSILON_PX: {
+    value: 0.5,
+    min: 0.1,
+    max: 5,
+    step: 0.1,
+    description: "Remaining ring distance below which the follow loop rests",
+  },
   DOT_SIZE_DEFAULT: {
     value: 12,
     min: 2,
@@ -111,6 +118,7 @@ export function initCursor(dotEl, ringEl) {
       ringEl.classList.add("visible");
       document.body.classList.add("has-custom-cursor");
     }
+    armRing();
   });
 
   // Hide the custom cursor when the pointer leaves the window, so it exits
@@ -122,14 +130,31 @@ export function initCursor(dotEl, ringEl) {
     ringEl.classList.remove("visible");
   }
 
+  // The ring chases the pointer only while there's distance left to close.
+  // Below the settle epsilon it snaps and the loop suspends — a resting
+  // pointer costs no frames, and a touch-only device (which never fires
+  // mousemove) never starts the loop at all.
+  let ringRafId = null;
   function animRing() {
+    ringRafId = null;
     const ease = overNativeCursor ? C.RING_EASING_SNAP : C.RING_EASING;
     rx += (mx - rx) * ease;
     ry += (my - ry) * ease;
+    if (
+      Math.abs(mx - rx) < C.RING_SETTLE_EPSILON_PX &&
+      Math.abs(my - ry) < C.RING_SETTLE_EPSILON_PX
+    ) {
+      rx = mx;
+      ry = my;
+      setPos(ringEl, rx, ry);
+      return;
+    }
     setPos(ringEl, rx, ry);
-    requestAnimationFrame(animRing);
+    ringRafId = requestAnimationFrame(animRing);
   }
-  animRing();
+  function armRing() {
+    if (ringRafId == null) ringRafId = requestAnimationFrame(animRing);
+  }
 
   function applySizes() {
     const dotSize = pressing

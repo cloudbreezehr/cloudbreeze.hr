@@ -48,6 +48,20 @@ describe("cursor visibility", () => {
     expect(ring.classList.contains("visible")).toBe(true);
   });
 
+  it("does not run the ring-follow loop until the pointer moves", () => {
+    // Touch-only devices never fire mousemove, so init alone must not
+    // start a permanent rAF loop.
+    const raf = vi.fn(() => 0);
+    globalThis.requestAnimationFrame = raf;
+    const dot2 = document.createElement("div");
+    const ring2 = document.createElement("div");
+    document.body.append(dot2, ring2);
+    initCursor(dot2, ring2);
+    expect(raf).not.toHaveBeenCalled();
+    move();
+    expect(raf).toHaveBeenCalled();
+  });
+
   it("hides when the pointer leaves the window (null relatedTarget)", () => {
     move();
     leaveWindow();
