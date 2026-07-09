@@ -840,7 +840,7 @@ export function createTracker(onUnlock, onRelock) {
   }
 
   // ── Session-day tracking ──
-  // Persistent-explorer / tenacious read their totals from progress.js,
+  // Frequent-flyer / tenacious read their totals from progress.js,
   // which derives from counters.sessionDays. Just record today and let
   // checkProgressiveState pick them up.
   function trackSession() {

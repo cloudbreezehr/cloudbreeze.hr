@@ -13,6 +13,7 @@ export const LEGACY_IDS = {
   "to-the-minute": ["time-warp"],
   "light-reading": ["cartographers-almanac"],
   committed: ["persistent"],
+  "frequent-flyer": ["persistent-explorer"],
 };
 
 const _legacyToCurrent = new Map();

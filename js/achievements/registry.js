@@ -628,8 +628,8 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
-    id: "persistent-explorer",
-    title: "Persistent Explorer",
+    id: "frequent-flyer",
+    title: "Frequent Flyer",
     description: "You keep coming back.",
     hint: "Visit the site on 3 different days",
     set: "almanac",

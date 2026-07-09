@@ -68,10 +68,10 @@ describe("Almanac set", () => {
     expect(ids).toEqual(
       [
         "equal-night",
+        "frequent-flyer",
         "moonlit",
         "moonstruck",
         "over-the-moon",
-        "persistent-explorer",
         "rain-check",
         "regular",
         "star-shower",
