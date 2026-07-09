@@ -311,6 +311,16 @@ const BLOCK_FRAG_COLORS = [
   [60, 100, 180],
 ];
 
+// Rare firefly tints, ordered rarest first: each flake rolls a 0..1 variant
+// once at reset, the top slices tint green then orange, the rest keep the
+// warm default (FLY.COLOR).
+const FIREFLY_VARIANTS = [
+  { above: 0.92, color: [100, 255, 80] }, // green
+  { above: 0.85, color: [255, 180, 50] }, // orange
+];
+// Trail pixels below this alpha don't read on screen — skip the fill.
+const TRAIL_MIN_ALPHA = 0.02;
+
 export class Firefly {
   constructor(canvas) {
     this.canvas = canvas;
@@ -366,9 +376,12 @@ export class Firefly {
     const op = this.opacity * pulse;
     // Pick color: mostly warm yellow, rare green or orange
     let c = FLY.COLOR;
-    if (this.colorVariant > 0.92)
-      c = [100, 255, 80]; // green
-    else if (this.colorVariant > 0.85) c = [255, 180, 50]; // orange
+    for (const variant of FIREFLY_VARIANTS) {
+      if (this.colorVariant > variant.above) {
+        c = variant.color;
+        break;
+      }
+    }
 
     // Bright pixel core
     targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${op})`;
@@ -381,7 +394,7 @@ export class Firefly {
 
     // Trail — dim pixel at previous position
     const trailOp = op * FLY.TRAIL_ALPHA;
-    if (trailOp > 0.02) {
+    if (trailOp > TRAIL_MIN_ALPHA) {
       targetCtx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${trailOp})`;
       targetCtx.fillRect(
         Math.round(this.prevX) - 1,
