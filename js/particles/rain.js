@@ -45,7 +45,7 @@ const LAYER_CONFIGS = [
 
 // ── Raindrop ──
 
-class Raindrop {
+export class Raindrop {
   constructor(canvas, layer) {
     this.canvas = canvas;
     this.layer = layer;

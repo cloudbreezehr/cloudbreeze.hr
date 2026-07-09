@@ -311,7 +311,7 @@ const BLOCK_FRAG_COLORS = [
   [60, 100, 180],
 ];
 
-class Firefly {
+export class Firefly {
   constructor(canvas) {
     this.canvas = canvas;
     this.reset(true);

@@ -371,7 +371,7 @@ const CRACKLE = defineConstants(
   { theme: "frozen" },
 );
 
-class Snowflake {
+export class Snowflake {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;

@@ -89,3 +89,115 @@ describe("Plankton — reduced motion invariant", () => {
     expect(Math.abs(p.vy)).toBeLessThan(vy0);
   });
 });
+
+describe("Bubble — reduced motion invariant", () => {
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  const CANVAS = { width: 800, height: 600 };
+
+  it("position is invariant across update() when motion is reduced", async () => {
+    mqlMatches = true;
+    const { Bubble } = await import("../../../js/particles/deep-sea.js");
+    const b = new Bubble(CANVAS, {});
+    b.vx = 2;
+    b.vy = -1;
+    const x0 = b.x;
+    const y0 = b.y;
+    b.update();
+    expect(b.x).toBe(x0);
+    expect(b.y).toBe(y0);
+  });
+
+  it("rises under full motion", async () => {
+    mqlMatches = false;
+    const { Bubble } = await import("../../../js/particles/deep-sea.js");
+    const b = new Bubble(CANVAS, {});
+    const y0 = b.y;
+    b.update();
+    expect(b.y).toBeLessThan(y0);
+  });
+
+  it("friction decays impulse velocity even under reduced motion", async () => {
+    mqlMatches = true;
+    const { Bubble } = await import("../../../js/particles/deep-sea.js");
+    const b = new Bubble(CANVAS, {});
+    b.vx = 2;
+    b.vy = -1;
+    b.update();
+    expect(Math.abs(b.vx)).toBeLessThan(2);
+    expect(Math.abs(b.vy)).toBeLessThan(1);
+  });
+});
+
+describe("Jellyfish — reduced motion invariant", () => {
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  const CANVAS = { width: 800, height: 600 };
+
+  it("position and pulse are invariant across update() when motion is reduced", async () => {
+    mqlMatches = true;
+    const { Jellyfish } = await import("../../../js/particles/deep-sea.js");
+    const j = new Jellyfish(CANVAS, {});
+    j.vx = 1.5;
+    j.vy = -2;
+    const x0 = j.x;
+    const y0 = j.y;
+    const pulse0 = j.pulse;
+    j.update();
+    expect(j.x).toBe(x0);
+    expect(j.y).toBe(y0);
+    expect(j.pulse).toBe(pulse0);
+  });
+
+  it("pulses and drifts under full motion", async () => {
+    mqlMatches = false;
+    const { Jellyfish } = await import("../../../js/particles/deep-sea.js");
+    const j = new Jellyfish(CANVAS, {});
+    const pulse0 = j.pulse;
+    j.update();
+    expect(j.pulse).not.toBe(pulse0);
+  });
+
+  it("friction decays impulse velocity even under reduced motion", async () => {
+    mqlMatches = true;
+    const { Jellyfish } = await import("../../../js/particles/deep-sea.js");
+    const j = new Jellyfish(CANVAS, {});
+    j.vx = 1.5;
+    j.vy = -2;
+    j.update();
+    expect(Math.abs(j.vx)).toBeLessThan(1.5);
+    expect(Math.abs(j.vy)).toBeLessThan(2);
+  });
+});

@@ -793,7 +793,7 @@ const PLANKTON = defineConstants(
   { theme: "deep-sea" },
 );
 
-class Bubble {
+export class Bubble {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;
@@ -923,7 +923,7 @@ class Bubble {
 const WRAP_EXIT_BELLS = 3;
 const WRAP_ENTRY_BELLS = 2;
 
-class Jellyfish {
+export class Jellyfish {
   constructor(canvas, ctx) {
     this.canvas = canvas;
     this.ctx = ctx;

@@ -117,3 +117,64 @@ describe("Crackle — reduced motion invariant", () => {
     expect(coolFill).not.toBe(warmFill);
   });
 });
+
+describe("Snowflake — reduced motion invariant", () => {
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener() {},
+      removeEventListener() {},
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  const CANVAS = { width: 800, height: 600 };
+
+  it("position, sway, and rotation are invariant when motion is reduced", async () => {
+    mqlMatches = true;
+    const { Snowflake } = await import("../../../js/particles/frozen.js");
+    const s = new Snowflake(CANVAS, {});
+    s.vx = 3;
+    s.vy = 2;
+    const x0 = s.x;
+    const y0 = s.y;
+    const sway0 = s.sway;
+    const rot0 = s.rotation;
+    s.update();
+    expect(s.x).toBe(x0);
+    expect(s.y).toBe(y0);
+    expect(s.sway).toBe(sway0);
+    expect(s.rotation).toBe(rot0);
+  });
+
+  it("friction decays impulse velocity even under reduced motion", async () => {
+    mqlMatches = true;
+    const { Snowflake } = await import("../../../js/particles/frozen.js");
+    const s = new Snowflake(CANVAS, {});
+    s.vx = 3;
+    s.vy = 2;
+    s.update();
+    expect(Math.abs(s.vx)).toBeLessThan(3);
+    expect(Math.abs(s.vy)).toBeLessThan(2);
+  });
+
+  it("falls and sways under full motion", async () => {
+    mqlMatches = false;
+    const { Snowflake } = await import("../../../js/particles/frozen.js");
+    const s = new Snowflake(CANVAS, {});
+    const y0 = s.y;
+    const sway0 = s.sway;
+    s.update();
+    expect(s.y).toBeGreaterThan(y0);
+    expect(s.sway).not.toBe(sway0);
+  });
+});
