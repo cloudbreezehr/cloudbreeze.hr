@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { ANNOUNCE_CLEAR_DELAY_MS } from "../../../js/achievements/announcer.js";
+import {
+  ANNOUNCE_CLEAR_DELAY_MS,
+  ANNOUNCE_GAP_MS,
+} from "../../../js/achievements/announcer.js";
 
 // announcer.js owns a module-level live region element and a clear
 // timer.  Reset modules per test so the element and timer start fresh.
@@ -65,6 +68,23 @@ describe("achievements/announcer", () => {
     announcer.announce(null);
     announcer.announce(undefined);
     expect(getLiveEl()).toBeNull();
+  });
+
+  it("reads out every message of a same-tick cascade, in order", () => {
+    // An unlock cascade announces several achievements synchronously;
+    // each must land, spaced by the inter-message gap.
+    announcer.announce("first");
+    announcer.announce("second");
+    announcer.announce("third");
+
+    vi.advanceTimersByTime(PAST_CLEAR_DELAY_MS);
+    expect(getLiveEl().textContent).toEqual("first");
+
+    vi.advanceTimersByTime(ANNOUNCE_GAP_MS + PAST_CLEAR_DELAY_MS);
+    expect(getLiveEl().textContent).toEqual("second");
+
+    vi.advanceTimersByTime(ANNOUNCE_GAP_MS + PAST_CLEAR_DELAY_MS);
+    expect(getLiveEl().textContent).toEqual("third");
   });
 
   it("coerces non-string values to strings", () => {
