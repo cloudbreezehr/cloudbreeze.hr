@@ -40,11 +40,13 @@ export function saveSkyPhoto() {
   if (filter && filter !== "none" && "filter" in ctx) ctx.filter = filter;
   ctx.drawImage(src, 0, 0);
   out.toBlob((blob) => {
+    // Encoding can fail (null blob) — no file means no shutter and no
+    // achievement, so both live inside the success branch.
     if (!blob) return;
     downloadBlob(blob, FILENAME);
+    playSfx("snap", { ui: true });
+    emit("photo-saved");
   });
-  playSfx("snap", { ui: true });
-  emit("photo-saved");
   return true;
 }
 

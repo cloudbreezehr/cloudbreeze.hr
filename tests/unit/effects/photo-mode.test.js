@@ -125,4 +125,29 @@ describe("effects/photo-mode", () => {
     document.getElementById("bg-canvas").remove();
     expect(photo.saveSkyPhoto()).toBe(false);
   });
+
+  it("withholds the achievement when encoding yields no blob", () => {
+    // No file saved → no keepsake to report (and no shutter to hear).
+    const events = [];
+    window.addEventListener("achievement", (e) => events.push(e.detail.type));
+
+    const src = document.getElementById("bg-canvas");
+    src.toBlob = () => {};
+    vi.spyOn(document, "createElement").mockImplementation(function fake(tag) {
+      if (tag === "canvas") {
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({ drawImage: () => {} }),
+          toBlob: (cb) => cb(null),
+        };
+      }
+      return Document.prototype.createElement.call(document, tag);
+    });
+
+    photo.saveSkyPhoto();
+    expect(events).not.toContain("photo-saved");
+
+    vi.restoreAllMocks();
+  });
 });
