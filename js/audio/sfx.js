@@ -65,6 +65,31 @@ function freeOnEnd(node, ...nodes) {
   };
 }
 
+// Per-call wrapper teardown. playSfx wires each voice through a fresh gain
+// (and optional panner); those must leave the graph once the voice finishes,
+// or every click/hover/unlock permanently grows the bus fan-in. Sources
+// register against the wrapper they play through at start (synchronously,
+// before any onended can fire), and the last one to end releases it. The
+// shared master/effects buses are never registered, so primitives playing
+// through them are unaffected.
+const wrapperRefs = new WeakMap();
+
+function registerWrapper(node, release) {
+  wrapperRefs.set(node, { count: 0, release });
+}
+
+function releaseWrapperOnEnd(source, bus) {
+  const ref = wrapperRefs.get(bus);
+  if (!ref) return;
+  ref.count++;
+  const prev = source.onended;
+  source.onended = (e) => {
+    if (prev) prev.call(source, e);
+    ref.count--;
+    if (ref.count === 0) ref.release();
+  };
+}
+
 // A pitched voice: oscillator → gain → bus, with an optional pitch slide and an
 // optional start `delay` (seconds) so a voice can sequence tones in time rather
 // than blooming them all at once.
@@ -101,6 +126,7 @@ function tone(
   osc.start(t);
   osc.stop(end + TAIL_S);
   freeOnEnd(osc, g);
+  releaseWrapperOnEnd(osc, bus);
 }
 
 // A breath of filtered noise: source → biquad → gain → bus, with an optional
@@ -136,6 +162,7 @@ function breath(
   src.start(t);
   src.stop(t + dur + TAIL_S);
   freeOnEnd(src, filter, g);
+  releaseWrapperOnEnd(src, bus);
 }
 
 // ── Voice catalogue ──
@@ -1645,8 +1672,13 @@ export function playSfx(name, { ui = false, pan, ...opts } = {}) {
     panner.pan.value = Math.max(-1, Math.min(1, pan));
     sfxGain.connect(panner);
     panner.connect(bus);
+    registerWrapper(sfxGain, () => {
+      sfxGain.disconnect();
+      panner.disconnect();
+    });
   } else {
     sfxGain.connect(bus);
+    registerWrapper(sfxGain, () => sfxGain.disconnect());
   }
   voice(ctx, sfxGain, opts);
 }

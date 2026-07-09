@@ -11,7 +11,11 @@ function stubAudioContext(created) {
     setValueAtTime() {},
     exponentialRampToValueAtTime() {},
   });
-  const node = (extra = {}) => ({ connect() {}, disconnect() {}, ...extra });
+  const node = (extra = {}) => ({
+    connect() {},
+    disconnect: vi.fn(),
+    ...extra,
+  });
   return vi.fn(function () {
     this.currentTime = 0;
     this.sampleRate = 44100;
@@ -23,7 +27,11 @@ function stubAudioContext(created) {
     this.suspend = () => {
       this.state = "suspended";
     };
-    this.createGain = () => node({ gain: param() });
+    this.createGain = () => {
+      const g = node({ gain: param() });
+      if (created.gainNodes) created.gainNodes.push(g);
+      return g;
+    };
     this.createDynamicsCompressor = () =>
       node({ threshold: param(), knee: param(), ratio: param() });
     this.createBiquadFilter = () =>
@@ -43,7 +51,9 @@ function stubAudioContext(created) {
     };
     this.createBufferSource = () => {
       created.sources++;
-      return node({ buffer: null, start() {}, stop() {}, onended: null });
+      const src = node({ buffer: null, start() {}, stop() {}, onended: null });
+      if (created.sourceNodes) created.sourceNodes.push(src);
+      return src;
     };
     this.createStereoPanner = () => {
       const p = node({ pan: param() });
@@ -62,7 +72,14 @@ describe("audio/sfx", () => {
   beforeEach(async () => {
     vi.resetModules();
     localStorage.clear();
-    created = { oscillators: 0, sources: 0, oscNodes: [], panners: [] };
+    created = {
+      oscillators: 0,
+      sources: 0,
+      oscNodes: [],
+      sourceNodes: [],
+      gainNodes: [],
+      panners: [],
+    };
     window.AudioContext = stubAudioContext(created);
     engine = await import("../../../js/audio/engine.js");
     sfx = await import("../../../js/audio/sfx.js");
@@ -82,6 +99,45 @@ describe("audio/sfx", () => {
     engine.setSoundEnabled(true);
     expect(() => sfx.playSfx("burst")).not.toThrow();
     expect(created.oscillators + created.sources).toBeGreaterThan(0);
+  });
+
+  // The wrapper is the first gain playSfx creates for a call — but the
+  // engine builds its shared buses lazily inside the first call, so prime
+  // that once and snapshot the node tallies before the play under test.
+  function playTracked(name, opts) {
+    sfx.playSfx("uiTick");
+    const gainsBefore = created.gainNodes.length;
+    const oscBefore = created.oscNodes.length;
+    const srcsBefore = created.sourceNodes.length;
+    sfx.playSfx(name, opts);
+    return {
+      wrapper: created.gainNodes[gainsBefore],
+      sources: [
+        ...created.oscNodes.slice(oscBefore),
+        ...created.sourceNodes.slice(srcsBefore),
+      ],
+    };
+  }
+
+  it("frees the per-call wrapper gain and panner once every source ends", () => {
+    engine.setSoundEnabled(true);
+    const { wrapper, sources } = playTracked("burst", { pan: 0.5 });
+    const panner = created.panners[0];
+    expect(wrapper.disconnect).not.toHaveBeenCalled();
+
+    expect(sources.length).toBeGreaterThan(0);
+    for (const src of sources) src.onended?.();
+
+    expect(wrapper.disconnect).toHaveBeenCalled();
+    expect(panner.disconnect).toHaveBeenCalled();
+  });
+
+  it("keeps the wrapper connected while any source is still playing", () => {
+    engine.setSoundEnabled(true);
+    const { wrapper, sources } = playTracked("burst", { pan: 0.5 });
+    // All but one source end — the wrapper must stay in the graph.
+    for (const src of sources.slice(1)) src.onended?.();
+    expect(wrapper.disconnect).not.toHaveBeenCalled();
   });
 
   it("ignores an unknown voice", () => {
