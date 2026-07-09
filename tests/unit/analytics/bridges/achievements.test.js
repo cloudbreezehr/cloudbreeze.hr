@@ -221,4 +221,28 @@ describe("analytics/bridges/achievements", () => {
     core.flush();
     expect(eventsNamed("set_completed").length).toEqual(0);
   });
+
+  it("persists no first-visit timestamp while opted out", async () => {
+    // Re-init from a clean slate, opted out before the bridge runs.
+    localStorage.clear();
+    sessionStorage.clear();
+    vi.resetModules();
+    captured = [];
+    const consent = await import("../../../../js/analytics/consent.js");
+    core = await import("../../../../js/analytics/core.js");
+    bridge = await import("../../../../js/analytics/bridges/achievements.js");
+    registry = await import("../../../../js/achievements/registry.js");
+    storage = await import("../../../../js/achievements/storage.js");
+    storage.load();
+    consent.optOut();
+    core.start({
+      adapter: { name: "capture", send: (batch) => captured.push(...batch) },
+    });
+    bridge.initAchievementsBridge();
+
+    dispatchUnlock("first-light");
+
+    const { KEYS } = await import("../../../../js/analytics/storage.js");
+    expect(localStorage.getItem(KEYS.FIRST_VISIT_TS)).toBeNull();
+  });
 });

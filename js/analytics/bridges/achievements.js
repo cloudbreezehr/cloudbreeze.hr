@@ -25,6 +25,7 @@ import {
 } from "../../achievements/registry.js";
 import * as storage from "../../achievements/storage.js";
 import * as identity from "../identity.js";
+import * as consent from "../consent.js";
 
 const PROGRESS_MILESTONES = [10, 25, 50, 75, 100];
 
@@ -36,7 +37,17 @@ const CLOUDLOG_METHOD_BY_TYPE = {
 
 export function initAchievementsBridge() {
   const sessionStartedAt = Date.now();
-  const firstVisitTs = Date.parse(identity.firstVisitTs());
+  // First-visit timestamp, materialized lazily and only under consent —
+  // identity.firstVisitTs() writes the key on first read, and an opted-out
+  // visit must leave no analytics keys behind. Null while consent is denied
+  // (track() drops the event then anyway).
+  let firstVisitTs = null;
+  function sinceFirstVisitMs(now) {
+    if (firstVisitTs == null && consent.allowed()) {
+      firstVisitTs = Date.parse(identity.firstVisitTs());
+    }
+    return firstVisitTs == null ? null : now - firstVisitTs;
+  }
   let unlockOrder = 0;
   const firedMilestones = new Set();
   const completedSets = new Set();
@@ -64,7 +75,7 @@ export function initAchievementsBridge() {
           cloudlogActivatedAt = Date.now();
           track("cloudlog_activated", {
             method: CLOUDLOG_METHOD_BY_TYPE[d.type] || "unknown",
-            time_since_first_visit_ms: Date.now() - firstVisitTs,
+            time_since_first_visit_ms: sinceFirstVisitMs(Date.now()),
             session_elapsed_ms: Date.now() - sessionStartedAt,
             // trigger coords / quadrant only meaningful for the triple-
             // click path; shortcut-based activations leave them null.
@@ -109,7 +120,7 @@ export function initAchievementsBridge() {
       progressive: !!ach.progressKey,
       session_unlock_order: unlockOrder,
       time_since_session_start_ms: Date.now() - sessionStartedAt,
-      time_since_first_visit_ms: Date.now() - firstVisitTs,
+      time_since_first_visit_ms: sinceFirstVisitMs(Date.now()),
       time_since_cloudlog_activated_ms:
         cloudlogActivatedAt != null ? Date.now() - cloudlogActivatedAt : null,
       unlocks_after: unlocksAfter,
@@ -125,7 +136,7 @@ export function initAchievementsBridge() {
         completedSets.add(setId);
         track("set_completed", {
           set_id: setId,
-          time_to_complete_ms: Date.now() - firstVisitTs,
+          time_to_complete_ms: sinceFirstVisitMs(Date.now()),
           unlocks_at_completion: unlocksAfter,
         });
       }

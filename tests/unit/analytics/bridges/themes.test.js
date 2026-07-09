@@ -271,4 +271,31 @@ describe("analytics/bridges/themes", () => {
       expect(eventsNamed("theme_warning_shown").length).toEqual(0);
     });
   });
+
+  describe("consent", () => {
+    it("persists no first-visit or per-theme timestamps while opted out", async () => {
+      // Re-init from a clean slate, opted out before the bridge runs.
+      localStorage.clear();
+      sessionStorage.clear();
+      vi.resetModules();
+      captured = [];
+      const consent = await import("../../../../js/analytics/consent.js");
+      core = await import("../../../../js/analytics/core.js");
+      session = await import("../../../../js/analytics/bridges/session.js");
+      bridge = await import("../../../../js/analytics/bridges/themes.js");
+      consent.optOut();
+      core.start({
+        adapter: { name: "capture", send: (batch) => captured.push(...batch) },
+      });
+      bridge.initThemesBridge();
+
+      dispatch({ type: "theme-activate", theme: "frozen" });
+
+      const { KEYS } = await import("../../../../js/analytics/storage.js");
+      expect(localStorage.getItem(KEYS.FIRST_VISIT_TS)).toBeNull();
+      expect(
+        localStorage.getItem("cb_analytics_theme_first_frozen_ts"),
+      ).toBeNull();
+    });
+  });
 });

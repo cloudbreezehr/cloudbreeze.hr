@@ -12,6 +12,7 @@
 import { track } from "../core.js";
 import { sessionCounters } from "./session.js";
 import * as identity from "../identity.js";
+import * as consent from "../consent.js";
 
 const FIRST_THEME_TS_KEYS = {}; // per-theme localStorage key for first activation
 function firstTsKey(themeId) {
@@ -27,25 +28,40 @@ export function initThemesBridge() {
   const firedBuildup = new Set(); // key = `${theme}:${threshold}:${phase}`
   const abandonedPeaks = new Map(); // theme_id -> { peak, startedAt, phase }
 
-  const firstVisitTs = Date.parse(identity.firstVisitTs());
+  // First-visit timestamp, materialized lazily and only under consent —
+  // identity.firstVisitTs() writes the key on first read, and an opted-out
+  // visit must leave no analytics keys behind. Null while consent is denied
+  // (track() drops the event then anyway).
+  let firstVisitTs = null;
+  function sinceFirstVisitMs(now) {
+    if (firstVisitTs == null && consent.allowed()) {
+      firstVisitTs = Date.parse(identity.firstVisitTs());
+    }
+    return firstVisitTs == null ? null : now - firstVisitTs;
+  }
 
   window.addEventListener("achievement", (e) => {
     const d = e.detail || {};
 
     if (d.type === "theme-activate" && d.theme) {
       const now = Date.now();
-      let firstTs = null;
-      try {
-        firstTs = localStorage.getItem(firstTsKey(d.theme));
-      } catch {
-        /* ignore */
-      }
-      const isFirstEver = !firstTs;
-      if (isFirstEver) {
+      // First-ever detection persists a timestamp, so it only runs under
+      // consent — same no-keys-while-opted-out contract as above.
+      let isFirstEver = false;
+      if (consent.allowed()) {
+        let firstTs = null;
         try {
-          localStorage.setItem(firstTsKey(d.theme), new Date().toISOString());
+          firstTs = localStorage.getItem(firstTsKey(d.theme));
         } catch {
           /* ignore */
+        }
+        isFirstEver = !firstTs;
+        if (isFirstEver) {
+          try {
+            localStorage.setItem(firstTsKey(d.theme), new Date().toISOString());
+          } catch {
+            /* ignore */
+          }
         }
       }
 
@@ -70,7 +86,9 @@ export function initThemesBridge() {
         theme_id: d.theme,
         method: d.silent ? "hud" : "organic",
         is_first_ever_for_visitor: isFirstEver,
-        time_to_first_activation_ms: isFirstEver ? now - firstVisitTs : null,
+        time_to_first_activation_ms: isFirstEver
+          ? sinceFirstVisitMs(now)
+          : null,
         prior_active_theme: priorActive,
       });
     }
