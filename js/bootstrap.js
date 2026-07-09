@@ -152,6 +152,7 @@ const MODULES = [
     path: "./effects/first-paint-mote.js",
     init: (m) => m.initFirstPaintMote(),
   },
+  { path: "./effects/copy-sparkle.js", init: (m) => m.initCopySparkle() },
   {
     path: "./effects/theme-history-hud.js",
     init: (m) => m.initThemeHistoryHud(),

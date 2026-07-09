@@ -358,6 +358,15 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  {
+    id: "light-fingered",
+    title: "Light Fingers",
+    description: "You took a piece of the sky with you.",
+    hint: "Copy something from the page",
+    set: "interaction",
+    points: UNCOMMON,
+    hidden: true,
+  },
   // ── Appearance ──
   {
     id: "daybreak",

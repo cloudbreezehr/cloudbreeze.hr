@@ -877,6 +877,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("night-music")).toBe(true);
   });
 
+  it("unlocks light-fingered when text is copied", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("text-copied", {});
+    expect(storage.isUnlocked("light-fingered")).toBe(true);
+  });
+
   it("unlocks open-secrets when the cheatsheet is discovered", async () => {
     const { storage } = await startTracker();
     dispatchAchievement("cheatsheet-discovered", {});

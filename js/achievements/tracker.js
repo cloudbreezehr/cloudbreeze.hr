@@ -798,6 +798,10 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("over-the-moon");
     },
 
+    "text-copied"() {
+      tryUnlock("light-fingered");
+    },
+
     "cheatsheet-discovered"() {
       tryUnlock("open-secrets");
     },

@@ -115,6 +115,7 @@ describe("Exploration-split sets", () => {
       ids: [
         "down-to-earth",
         "first-light",
+        "light-fingered",
         "magnetic-letters",
         "scroll-surge",
         "spark",
