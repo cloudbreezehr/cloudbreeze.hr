@@ -18,6 +18,12 @@ const HALF_DWELL_MS = Math.floor(SEEN_DWELL_MS / 2);
 const PAST_INTRO_THRESHOLD_COUNT = INTRO_CARD_THRESHOLD + 1;
 const PAST_HIGHLIGHT_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 
+// Sample achievements the rendering tests key off — asserting against the
+// registry keeps the tests copy-agnostic. time-warp is the hidden sample (a
+// guard test pins that trait); first-light is the plain visible one.
+const TIME_WARP = ACHIEVEMENTS.find((a) => a.id === "time-warp");
+const FIRST_LIGHT = ACHIEVEMENTS.find((a) => a.id === "first-light");
+
 describe("achievements/ui/cards", () => {
   let mod;
   let storage;
@@ -427,7 +433,7 @@ describe("achievements/ui/cards", () => {
       );
       expect(card.classList.contains("unlocked")).toBe(true);
       expect(card.querySelector(".achievement-card-title").textContent).toEqual(
-        "First Light",
+        FIRST_LIGHT.title,
       );
     });
 
@@ -664,7 +670,7 @@ describe("achievements/ui/cards", () => {
       );
       expect(
         hidden.querySelector(".achievement-card-title").textContent,
-      ).toEqual("Time Warp");
+      ).toEqual(TIME_WARP.title);
     });
   });
 
@@ -1088,6 +1094,10 @@ describe("achievements/ui/cards", () => {
   });
 
   describe("help level", () => {
+    it("keys the hidden-gating tests off a genuinely hidden achievement", () => {
+      expect(TIME_WARP.hidden).toBe(true);
+    });
+
     it("getHelpLevel defaults to off", () => {
       expect(mod.getHelpLevel()).toBe("off");
     });
@@ -1103,8 +1113,6 @@ describe("achievements/ui/cards", () => {
       expect(mod.getHelpLevel()).toBe("off");
     });
 
-    // time-warp is hidden with description "Time stands still when you look
-    // closely." and hint "Click a relative timestamp to see absolute time".
     function hoverHiddenTooltip() {
       const card = container.querySelector(
         '.achievement-card[data-id="time-warp"]',
@@ -1120,7 +1128,7 @@ describe("achievements/ui/cards", () => {
         '.achievement-card[data-id="time-warp"]',
       );
       expect(card.querySelector(".achievement-card-desc").textContent).toEqual(
-        "Time stands still when you look closely.",
+        TIME_WARP.description,
       );
       // Hovering surfaces only the placeholder, never the instruction.
       expect(hoverHiddenTooltip().textContent).toEqual(
@@ -1131,9 +1139,7 @@ describe("achievements/ui/cards", () => {
     it("'hints' surfaces the how-to hint on a hidden achievement", () => {
       mod.setHelpLevel("hints");
       mod.renderSections(container);
-      expect(hoverHiddenTooltip().textContent).toEqual(
-        "Click a relative timestamp to see absolute time",
-      );
+      expect(hoverHiddenTooltip().textContent).toEqual(TIME_WARP.hint);
     });
   });
 });

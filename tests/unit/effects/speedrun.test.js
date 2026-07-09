@@ -121,10 +121,11 @@ describe("effects/speedrun — run lifecycle", () => {
     for (const id of registry.getSetPrereqs("frozen")) storage.unlock(id);
     storage.unlock("glacial-mastery");
     vi.advanceTimersByTime(200);
+    const masteryTitle = registry.getAchievement("glacial-mastery").title;
     const splits = [...document.querySelectorAll(".speedrun-split")];
-    expect(
-      splits.some((el) => el.textContent.includes("Glacial Mastery")),
-    ).toBe(true);
+    expect(splits.some((el) => el.textContent.includes(masteryTitle))).toBe(
+      true,
+    );
   });
 
   it("ending mid-run restores the original Cloudlog and clears the run", () => {
