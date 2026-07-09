@@ -83,6 +83,12 @@ export function createPeerRegistry(ttlMs) {
     visiblePeers() {
       return [...peers.values()].filter((p) => p.visible);
     },
+    /** True when any known peer currently reports itself visible.
+     *  Allocation-free, for per-frame "is anyone listening" guards. */
+    anyVisible() {
+      for (const peer of peers.values()) if (peer.visible) return true;
+      return false;
+    },
     count() {
       return peers.size;
     },

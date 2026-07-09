@@ -82,6 +82,18 @@ describe("sky-link/peers — visibility", () => {
     const reg = createPeerRegistry(TTL_MS);
     expect(reg.hasVisible("ghost")).toBe(false);
   });
+
+  it("anyVisible is true only while some peer reports itself visible", () => {
+    const reg = createPeerRegistry(TTL_MS);
+    expect(reg.anyVisible()).toBe(false);
+    // A registry holding only backgrounded tabs has nobody listening.
+    reg.upsert("a", rect(0, 0), 0, false);
+    expect(reg.anyVisible()).toBe(false);
+    reg.upsert("b", rect(1000, 0), 0, true);
+    expect(reg.anyVisible()).toBe(true);
+    reg.upsert("b", rect(1000, 0), 1, false);
+    expect(reg.anyVisible()).toBe(false);
+  });
 });
 
 describe("sky-link/peers — registry expiry", () => {

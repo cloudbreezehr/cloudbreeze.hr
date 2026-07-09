@@ -235,7 +235,10 @@ export function initSkyLink() {
   // cursor is physically over a neighbouring window — that's the moment
   // the whole feature exists for.
   function announcePointer(now) {
-    if (document.hidden || registry.count() === 0) return;
+    // Gate on a *visible* peer: every receiver drops input from hidden
+    // windows, so a registry holding only backgrounded tabs has nobody
+    // listening and the stream is pure channel noise.
+    if (document.hidden || !registry.anyVisible()) return;
     const state = localPointerState();
     if (!state) return;
     const engaged = state.active || state.isDragging;
@@ -309,7 +312,7 @@ export function initSkyLink() {
   function onLocalEffect(e) {
     const d = e.detail || {};
     if (d.x == null || d.y == null) return;
-    if (registry.count() === 0) return;
+    if (!registry.anyVisible()) return;
     channel.postMessage({
       kind: "effect",
       id,
@@ -327,7 +330,7 @@ export function initSkyLink() {
   function onLocalCast(e) {
     const d = e.detail || {};
     if (d.word == null || d.x == null || d.y == null) return;
-    if (registry.count() === 0) return;
+    if (!registry.anyVisible()) return;
     channel.postMessage({
       kind: "cast",
       id,
