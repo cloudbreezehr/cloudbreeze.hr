@@ -207,7 +207,11 @@ export function createLocationPin({ onUpgrade } = {}) {
     el,
     // Show only while it can still act (before a successful grant retires it).
     setVisible(show) {
-      if (!done) el.hidden = !show;
+      if (done) return;
+      el.hidden = !show;
+      // Hiding the pin (the badge folding) must take its anchored card
+      // along — the card floating alone has nothing to point at.
+      if (!show) closePopover();
     },
     // Drop the pin for good — precise location is already in effect.
     retire,

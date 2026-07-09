@@ -73,6 +73,20 @@ describe("real-sky/location-pin", () => {
       );
     });
 
+    it("closes an open card when the pin is hidden", async () => {
+      // Folding the badge hides the pin — its anchored card must go too,
+      // not float over the page on its own.
+      stubNavigator();
+      const { createLocationPin } = await load();
+      const pin = createLocationPin({ onUpgrade: () => {} });
+      document.body.appendChild(pin.el);
+      pin.setVisible(true);
+      pin.el.click();
+      expect(card()).toBeTruthy();
+      pin.setVisible(false);
+      expect(card()).toBeNull();
+    });
+
     it("Enable upgrades, fires the achievement, retires the pin, and closes", async () => {
       stubNavigator({ permission: "prompt" });
       const onUpgrade = vi.fn();
