@@ -607,8 +607,8 @@ export function createTracker(onUnlock, onRelock) {
         session.panelOpened = true;
         tryUnlock("cloud-reader");
       }
-      // Cartographer's Almanac — record the active appearance each time
-      // the panel opens; collected across (auto, light, dark) over any
+      // Light Reading — record the active appearance each time the
+      // panel opens; collected across (auto, light, dark) over any
       // number of sessions.
       if (data && data.appearance)
         tryProgressItem("almanac-appearances", data.appearance);

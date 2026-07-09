@@ -1546,7 +1546,7 @@ describe("tracker — tab-tourist", () => {
   });
 });
 
-describe("tracker — cartographers-almanac", () => {
+describe("tracker — light-reading", () => {
   beforeEach(() => {
     document.body.className = "";
     delete document.body.dataset.activeTheme;
@@ -1563,13 +1563,13 @@ describe("tracker — cartographers-almanac", () => {
     const { storage } = await startTracker();
 
     dispatchAchievement("panel-open", { appearance: "dark" });
-    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+    expect(storage.isUnlocked("light-reading")).toBe(false);
 
     dispatchAchievement("panel-open", { appearance: "light" });
-    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+    expect(storage.isUnlocked("light-reading")).toBe(false);
 
     dispatchAchievement("panel-open", { appearance: "auto" });
-    expect(storage.isUnlocked("cartographers-almanac")).toBe(true);
+    expect(storage.isUnlocked("light-reading")).toBe(true);
   });
 
   it("repeating the same appearance does not advance progress", async () => {
@@ -1579,7 +1579,7 @@ describe("tracker — cartographers-almanac", () => {
       dispatchAchievement("panel-open", { appearance: "dark" });
     }
 
-    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+    expect(storage.isUnlocked("light-reading")).toBe(false);
   });
 
   it("ignores panel-open without an appearance field", async () => {
@@ -1590,7 +1590,7 @@ describe("tracker — cartographers-almanac", () => {
     dispatchAchievement("panel-open", { appearance: "auto" });
 
     // Only two appearances credited.
-    expect(storage.isUnlocked("cartographers-almanac")).toBe(false);
+    expect(storage.isUnlocked("light-reading")).toBe(false);
   });
 });
 

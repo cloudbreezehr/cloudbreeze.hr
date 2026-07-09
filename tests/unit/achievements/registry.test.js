@@ -102,10 +102,10 @@ describe("Exploration-split sets", () => {
       id: "appearance",
       label: "Appearance",
       ids: [
-        "cartographers-almanac",
         "daybreak",
         "dusk-and-dawn",
         "full-spectrum",
+        "light-reading",
         "nightfall",
       ],
     },

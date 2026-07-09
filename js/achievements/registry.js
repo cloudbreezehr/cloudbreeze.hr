@@ -407,8 +407,8 @@ export const ACHIEVEMENTS = [
     progressKey: "appearances-used",
   },
   {
-    id: "cartographers-almanac",
-    title: "Cartographer's Almanac",
+    id: "light-reading",
+    title: "Light Reading",
     description: "The same logbook, every shade of sky.",
     hint: "Open the Cloudlog panel under each appearance",
     set: "appearance",

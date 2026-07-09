@@ -11,6 +11,7 @@
 export const LEGACY_IDS = {
   // "current-id": ["former-id", "older-former-id"],
   "to-the-minute": ["time-warp"],
+  "light-reading": ["cartographers-almanac"],
 };
 
 const _legacyToCurrent = new Map();

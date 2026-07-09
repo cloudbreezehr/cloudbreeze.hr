@@ -371,8 +371,8 @@ function openPanelUI(onHide) {
   panelOpen = true;
   setNavActive(true);
 
-  // Appearance preference feeds the cartographers-almanac achievement
-  // which collects each appearance the panel is opened under. Initial
+  // The active appearance rides along for the achievement that collects
+  // each appearance the panel is opened under. Initial
   // tab credits Tab Tourist for the default view so the user only
   // needs to click the other tab to complete the pair.
   window.dispatchEvent(
