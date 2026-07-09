@@ -19,11 +19,10 @@ function isTouchOnly() {
   );
 }
 
-// Capabilities an achievement may require to be reachable. Both currently
-// resolve to "this isn't a touch-only device" — kept as named capabilities so
-// each achievement documents *why* it's gated, and so detection can be refined
-// per-capability later (e.g. sniffing a connected keyboard) without touching
-// the registry.
+// Capabilities an achievement may require to be reachable. Named capabilities
+// rather than one "touch device" flag so each achievement documents *why* it's
+// gated, and so detection can be refined per-capability later (e.g. sniffing a
+// connected keyboard) without touching the registry.
 const CAPABILITY_AVAILABLE = {
   keyboard: () => !isTouchOnly(),
   hover: () => !isTouchOnly(),

@@ -2,10 +2,10 @@
 // All achievement definitions as pure data. No logic, no conditions —
 // detection lives elsewhere where event state is available.
 //
-// An entry may declare `requires: "keyboard" | "hover"` when it can only be
-// earned with that input capability (a keyboard shortcut, a hover-resting
-// cursor). Such achievements are filtered out of completion totals on devices
-// that lack the capability, so a touch-only device can still reach 100%.
+// An entry may declare `requires: <capability>` (see device.js for the
+// capability names) when it can only be earned with an input capability some
+// devices lack. Such achievements are filtered out of completion totals on
+// devices that lack the capability, so every device can still reach 100%.
 
 import { getTheme } from "../themes/registry.js";
 import { hasCapability } from "../device.js";
@@ -1793,9 +1793,9 @@ export function getAchievement(id) {
 
 /**
  * Whether an achievement can be earned on the current device — true unless it
- * requires an input capability this device lacks (a keyboard, a hover cursor).
- * Completion math and the panel listing both filter through this so a
- * touch-only device isn't blocked from 100% by keyboard/hover-only entries.
+ * requires a capability this device lacks. Completion math and the panel
+ * listing both filter through this so no device is blocked from 100% by
+ * entries it can't earn.
  */
 export function isReachable(achievement) {
   return !achievement.requires || hasCapability(achievement.requires);
