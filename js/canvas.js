@@ -468,9 +468,10 @@ export function initCanvas(canvasEl, appearance, options) {
   }
 
   // Live FPS guard — sustained low frame rate flips a body class that
-  // CSS uses to shed the most expensive always-on decorative cost
-  // (grain overlay, backdrop blurs).  Reverts with hysteresis when
-  // frames recover, so one bad stretch doesn't lock the page down.
+  // CSS uses to shed decorative cost that can drop without a visible pop:
+  // the grain overlay and the Cloudlog chrome's backdrop blurs.  Reverts
+  // with hysteresis when frames recover, so one bad stretch doesn't lock
+  // the page down.
   observeFps((factor) => {
     document.body.classList.toggle("perf-reduced", factor < 1);
   });

@@ -1,7 +1,10 @@
 /* ── Live performance fallback ── */
 /* Toggled by the canvas FPS guard after a sustained frame-rate dip.
-   Sheds the costliest always-on decorative work — the animated grain
-   overlay and the glassy backdrop blurs — until frames recover. */
+   Sheds decoration that can drop without a visible pop — the grain
+   overlay and the Cloudlog chrome's backdrop blurs — until frames
+   recover.  The always-mounted blurs (nav, service cards) are kept on
+   purpose: de-blurring surfaces the visitor is looking at mid-session
+   trades a frame dip for a jarring restyle. */
 body.perf-reduced::after {
   display: none;
 }
