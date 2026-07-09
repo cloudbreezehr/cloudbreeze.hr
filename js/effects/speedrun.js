@@ -3,10 +3,10 @@
 // a dialog spells out the rules, then the run backs up the visitor's real
 // progress, resets the Cloudlog to empty, and starts the clock. Every
 // secret must be rediscovered; the finish is 100% of the reachable
-// non-milestone achievements. Stopping — by finishing, by choosing "end
-// run", or on the next visit — always restores the backed-up progress
-// (merged, so anything re-earned during the run is kept too), so the
-// original Cloudlog is never at risk.
+// non-milestone achievements. Stopping — by finishing or by choosing
+// "end run" — restores the backed-up progress (merged, so anything
+// re-earned during the run is kept too), so the original Cloudlog is
+// never at risk.
 //
 // The backup is a passport code (see achievements/passport.js) held in the
 // prefs bag, which survives the reset; a run therefore also survives a
