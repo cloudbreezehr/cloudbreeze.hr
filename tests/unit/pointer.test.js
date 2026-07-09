@@ -4,12 +4,13 @@ import { bindPointer } from "../../js/pointer.js";
 // happy-dom provides Pointer/TouchEvent constructors; synthesize events
 // directly rather than going through a helper so the Event type is accurate.
 
-function pointerEvent(type, { x, y }) {
+function pointerEvent(type, { x, y, pointerType = "mouse" }) {
   // happy-dom doesn't currently construct PointerEvent with clientX/Y via
   // the standard constructor — use a plain Event with the props we need.
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.defineProperty(event, "clientX", { value: x });
   Object.defineProperty(event, "clientY", { value: y });
+  Object.defineProperty(event, "pointerType", { value: pointerType });
   // bindPointer only reads the target for a return-false check; default is fine.
   return event;
 }
@@ -87,9 +88,15 @@ describe("bindPointer", () => {
 
   it("falls back to touch events when pointer events stop firing (mobile scroll capture)", () => {
     bindPointer(target, handlers);
-    target.dispatchEvent(pointerEvent("pointerdown", { x: 0, y: 0 }));
-    // Simulate the browser capturing the pointer for scrolling:
-    // touchmove still fires, pointermove does not.
+    target.dispatchEvent(
+      pointerEvent("pointerdown", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    // The browser captures the pointer for scrolling: pointercancel fires,
+    // pointer events stop, touch events keep coming.
+    target.dispatchEvent(
+      pointerEvent("pointercancel", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    expect(handlers.onUp).not.toHaveBeenCalled();
     target.dispatchEvent(
       touchEvent("touchmove", [{ clientX: 42, clientY: 43 }]),
     );
@@ -98,9 +105,49 @@ describe("bindPointer", () => {
     expect(handlers.onUp).toHaveBeenCalledOnce();
   });
 
+  it("ignores touchmove while pointer events are still alive (no double-drive)", () => {
+    bindPointer(target, handlers);
+    target.dispatchEvent(
+      pointerEvent("pointerdown", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    // Touch browsers fire both streams for the same finger movement; only
+    // the pointer stream may drive onMove until a pointercancel hands off.
+    target.dispatchEvent(pointerEvent("pointermove", { x: 5, y: 6 }));
+    target.dispatchEvent(touchEvent("touchmove", [{ clientX: 5, clientY: 6 }]));
+    expect(handlers.onMove).toHaveBeenCalledOnce();
+  });
+
+  it("releases on touchcancel so an interrupted touch cannot strand the drag", () => {
+    bindPointer(target, handlers);
+    target.dispatchEvent(
+      pointerEvent("pointerdown", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    target.dispatchEvent(
+      pointerEvent("pointercancel", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    target.dispatchEvent(touchEvent("touchcancel", []));
+    expect(handlers.onUp).toHaveBeenCalledOnce();
+  });
+
+  it("releases on a non-touch pointercancel, which has no touch fallback", () => {
+    bindPointer(target, handlers);
+    target.dispatchEvent(
+      pointerEvent("pointerdown", { x: 0, y: 0, pointerType: "mouse" }),
+    );
+    target.dispatchEvent(
+      pointerEvent("pointercancel", { x: 0, y: 0, pointerType: "mouse" }),
+    );
+    expect(handlers.onUp).toHaveBeenCalledOnce();
+  });
+
   it("ignores touchmove with no touches", () => {
     bindPointer(target, handlers);
-    target.dispatchEvent(pointerEvent("pointerdown", { x: 0, y: 0 }));
+    target.dispatchEvent(
+      pointerEvent("pointerdown", { x: 0, y: 0, pointerType: "touch" }),
+    );
+    target.dispatchEvent(
+      pointerEvent("pointercancel", { x: 0, y: 0, pointerType: "touch" }),
+    );
     target.dispatchEvent(touchEvent("touchmove", []));
     expect(handlers.onMove).not.toHaveBeenCalled();
   });

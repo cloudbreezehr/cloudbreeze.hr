@@ -15,16 +15,25 @@
  *        Called on pointerdown with (clientX, clientY, event).
  *        Return `false` to ignore the event (tracking won't start).
  * @param {function(number, number): void} handlers.onMove
- *        Called on pointermove *and* touchmove while tracking is active.
+ *        Called on pointermove — or on touchmove once the browser has
+ *        cancelled pointer events for the gesture.
  * @param {function(): void} handlers.onUp
- *        Called once when the pointer is released (pointerup or touchend).
+ *        Called once when the gesture ends, whatever ends it (pointerup,
+ *        touchend, touchcancel, or a non-touch pointercancel).
  */
 export function bindPointer(target, { onDown, onMove, onUp }) {
   let active = false;
+  // True once the browser has cancelled pointer events for the current
+  // gesture — from then on the touch events below are the only live stream.
+  // While pointer events are alive, touchmove is ignored: touch browsers
+  // fire both streams concurrently, and forwarding both would drive onMove
+  // twice per finger movement.
+  let touchFallback = false;
 
   target.addEventListener("pointerdown", (e) => {
     if (onDown(e.clientX, e.clientY, e) === false) return;
     active = true;
+    touchFallback = false;
   });
 
   target.addEventListener("pointermove", (e) => {
@@ -40,17 +49,27 @@ export function bindPointer(target, { onDown, onMove, onUp }) {
 
   target.addEventListener("pointerup", release);
 
-  // No pointercancel handler — touch events take over instead.
-  // After the browser captures the pointer for scrolling, pointer events stop
-  // but touch events keep firing.
+  // A touch pointercancel means the browser captured the gesture (scrolling,
+  // pull-to-refresh): pointer events stop but touch events keep firing, so
+  // tracking hands off to the touch listeners below. A non-touch pointercancel
+  // has no fallback stream — release, or the gesture stays active forever.
+  target.addEventListener("pointercancel", (e) => {
+    if (!active) return;
+    if (e.pointerType === "touch") touchFallback = true;
+    else release();
+  });
+
   target.addEventListener(
     "touchmove",
     (e) => {
-      if (!active || !e.touches.length) return;
+      if (!active || !touchFallback || !e.touches.length) return;
       onMove(e.touches[0].clientX, e.touches[0].clientY);
     },
     { passive: true },
   );
 
   target.addEventListener("touchend", release);
+  // An interrupted touch (system gesture, incoming call, app switch) ends in
+  // touchcancel instead of touchend — same release, or the gesture never ends.
+  target.addEventListener("touchcancel", release);
 }
