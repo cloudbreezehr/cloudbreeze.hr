@@ -29,8 +29,7 @@ describe("audio/bridges/theme-effects", () => {
     fire("frost-breath");
     fire("paper-stroke");
     fire("vhs-glitch");
-    fire("rain-thunder");
-    expect(calls).toEqual(["ice", "pencil", "glitch", "thunder"]);
+    expect(calls).toEqual(["ice", "pencil", "glitch"]);
   });
 
   it("maps the sky/constellation interactions", () => {
@@ -55,6 +54,8 @@ describe("audio/bridges/theme-effects", () => {
   it("leaves passive background animations silent", () => {
     fire("jellyfish-pulse"); // a periodic animation, not a triggered effect
     fire("scroll");
+    // Thunder strikes fire on a timer, not on user input — ambient, silent.
+    fire("rain-thunder");
     expect(calls).toEqual([]);
   });
 

@@ -9,6 +9,11 @@
 // any shake-scroll (so the achievement is reachable without frozen), but the
 // rattle is the sound of the flakes bursting — so frozen.js plays it at the
 // source only when that visual actually renders, not from this event.
+//
+// Rain's ambient thunder is likewise absent: strikes fire on a wall-clock
+// timer, not on user input, and unprompted ambient sound is exactly what
+// this site omits. The `rain-thunder` event keeps firing — it's an
+// achievement signal, not an audio cue.
 
 import { eventVoiceBridge } from "./event-voice.js";
 
@@ -16,7 +21,6 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "frost-breath": "ice",
   "paper-stroke": "pencil",
   "vhs-glitch": "glitch",
-  "rain-thunder": "thunder",
   "star-clicked": "twinkle",
   "shooting-star-clicked": "starWhoosh",
   "constellation-formed": "chord",
