@@ -9,6 +9,7 @@ import {
   LONG_WATCH_MS,
 } from "../../../js/achievements/tracker.js";
 import { INCANTATION_WORDS } from "../../../js/effects/incantations.js";
+import { STORAGE_KEY as THEME_HISTORY_STORAGE_KEY } from "../../../js/effects/theme-history-hud.js";
 
 // tracker.js collaborates with storage.js (module-level state) and reads
 // registry/progress at runtime. Each test resets modules + localStorage so
@@ -1143,6 +1144,36 @@ describe("tracker — lifecycle (start / stop)", () => {
 
     const days = storage.getState().counters.sessionDays;
     expect(days).toContain("2026-05-08");
+  });
+
+  it("start reconciles historian from a discovery that predates tracking", async () => {
+    // The HUD's reveal event fires exactly once ever — on the device's first
+    // theme discovery. Seed its persisted set before the modules load, as a
+    // visitor who found a theme before activating the Cloudlog would have.
+    vi.resetModules();
+    localStorage.clear();
+    localStorage.setItem(
+      THEME_HISTORY_STORAGE_KEY,
+      JSON.stringify({ frozen: Date.now() }),
+    );
+    const storage = await import("../../../js/achievements/storage.js");
+    const { createTracker } =
+      await import("../../../js/achievements/tracker.js");
+    storage.activate();
+    const tracker = createTracker(
+      () => {},
+      () => {},
+    );
+    tracker.start();
+    _activeTrackers.push(tracker);
+
+    expect(storage.isUnlocked("historian")).toBe(true);
+  });
+
+  it("start leaves historian locked when no theme was ever discovered", async () => {
+    const { storage } = await startTracker();
+
+    expect(storage.isUnlocked("historian")).toBe(false);
   });
 
   it("does not duplicate today's session day across repeated starts", async () => {

@@ -65,6 +65,11 @@ export function initThemeHistoryHud() {
   if (discovered.size > 0) ensureHud();
 }
 
+/** True once any theme has ever been discovered on this device. */
+export function hasDiscoveredAnyTheme() {
+  return discovered.size > 0;
+}
+
 // ── Discovery tracking ──
 
 function onThemeActivate(themeId) {

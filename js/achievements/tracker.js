@@ -15,6 +15,7 @@ import {
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { getThemeIds } from "../themes/registry.js";
+import { hasDiscoveredAnyTheme } from "../effects/theme-history-hud.js";
 import { wordOfTheDay } from "../daily/word.js";
 import { isTimeTraveling } from "../daily/random.js";
 import {
@@ -857,6 +858,11 @@ export function createTracker(onUnlock, onRelock) {
     );
 
     trackSession();
+
+    // The theme-history reveal fires exactly once ever — on the device's
+    // first theme discovery — so when it predates tracking, the event is
+    // missed for good. Reconcile from the HUD's persisted state instead.
+    if (hasDiscoveredAnyTheme()) tryUnlock("historian");
 
     // Sync progressive achievement totals, prune stale items, check state
     syncProgressTotals();
