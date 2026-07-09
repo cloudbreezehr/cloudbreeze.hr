@@ -113,14 +113,15 @@ export function initLogoParallax() {
         }
         currentX[i] += (targetX - currentX[i]) * LP.EASE;
         currentY[i] += (targetY - currentY[i]) * LP.EASE;
+        // Settled means converged on the target — zero or not. A cursor
+        // resting inside the nav pins letters at a non-zero offset, and the
+        // loop must suspend there too instead of easing forever.
         if (
-          targetX === 0 &&
-          targetY === 0 &&
-          Math.abs(currentX[i]) < LP.SETTLE_EPSILON_PX &&
-          Math.abs(currentY[i]) < LP.SETTLE_EPSILON_PX
+          Math.abs(targetX - currentX[i]) < LP.SETTLE_EPSILON_PX &&
+          Math.abs(targetY - currentY[i]) < LP.SETTLE_EPSILON_PX
         ) {
-          currentX[i] = 0;
-          currentY[i] = 0;
+          currentX[i] = targetX;
+          currentY[i] = targetY;
         } else {
           busy = true;
         }
