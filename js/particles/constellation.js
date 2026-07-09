@@ -10,7 +10,7 @@ import {
   applyAttraction,
   applyWellForce,
 } from "../interactions.js";
-import { scaled } from "../motion.js";
+import { scaled, prefersReducedMotion } from "../motion.js";
 
 // ── Chain Drawing ──
 const CHAIN = defineConstants(
@@ -35,6 +35,45 @@ const CHAIN = defineConstants(
   },
   { theme: "constellation" },
 );
+
+// ── Strum ──
+// A formed constellation's chain is an instrument — a drag swept through a
+// segment plucks that string. The cooldown keeps a wiggling pointer from
+// machine-gunning one string; shimmers are the pluck's visible ripple.
+const STRUM = defineConstants(
+  "particles.constellation.strum",
+  {
+    COOLDOWN_MS: 260,
+    SHIMMER_MS: 550,
+    SHIMMER_MAX: 12,
+    SHIMMER_RADIUS: 5,
+    SHIMMER_OPACITY: 0.9,
+    FLASH_OPACITY: 0.5,
+  },
+  { theme: "constellation" },
+);
+
+// Signed parallelogram area — which side of a→b the point c falls on.
+function orient(a, b, c) {
+  return (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
+}
+
+// Proper segment crossing (shared endpoints and collinear grazes don't
+// count — a strum is a sweep through the string, not a touch on it).
+function segmentsCross(p, q, a, b) {
+  const d1 = orient(p, q, a);
+  const d2 = orient(p, q, b);
+  const d3 = orient(a, b, p);
+  const d4 = orient(a, b, q);
+  return d1 * d2 < 0 && d3 * d4 < 0;
+}
+
+// Where along a→b the swipe crossed, 0..1.
+function crossingParam(p, q, a, b) {
+  const d1 = orient(p, q, a);
+  const d2 = orient(p, q, b);
+  return d1 / (d1 - d2);
+}
 
 // ── Cosmic Dust ──
 const DUST = defineConstants(
@@ -117,8 +156,19 @@ export function createConstellation(canvasEl) {
   // as stars shift on scroll parallax or canvas resize.
   let chainState = { chain: [], candidateId: null, isActive: false };
 
+  // Live shimmer ripples and per-string pluck times; scroll progress from the
+  // most recent frame so strum() projects strings exactly where they render.
+  const shimmers = [];
+  const lastStrumAt = new Map();
+  let lastSp = 0;
+
   function setChain(state) {
     chainState = state || { chain: [], candidateId: null, isActive: false };
+    // A dissolved or re-traced chain invalidates its strings.
+    if (!chainState.isActive) {
+      shimmers.length = 0;
+      lastStrumAt.clear();
+    }
   }
 
   // Invariant: same projection as the star renderer — any divergence
@@ -128,6 +178,27 @@ export function createConstellation(canvasEl) {
   function starScreenPos(star, sp) {
     const inst = starScreenInstances(star, sp, canvas);
     return inst.length > 0 ? inst[0] : null;
+  }
+
+  // Resolve the chain into its valid on-screen segments this frame. One
+  // place owns the wrap-skip rules so the renderer and the strum hit-test
+  // agree on what a "string" is.
+  function chainSegments(stars, sp) {
+    const out = [];
+    const wrapLimitY = canvas.height * CHAIN.WRAP_SKIP_RATIO;
+    const wrapLimitX = canvas.width * CHAIN.WRAP_SKIP_RATIO;
+    for (let i = 1; i < chainState.chain.length; i++) {
+      const prev = stars[chainState.chain[i - 1].index];
+      const cur = stars[chainState.chain[i].index];
+      if (!prev || !cur) continue;
+      const a = starScreenPos(prev, sp);
+      const b = starScreenPos(cur, sp);
+      if (!a || !b) continue;
+      if (Math.abs(a.y - b.y) > wrapLimitY) continue;
+      if (Math.abs(a.x - b.x) > wrapLimitX) continue;
+      out.push({ seg: i, a, b });
+    }
+    return out;
   }
 
   function drawChain(pal, sp) {
@@ -140,10 +211,7 @@ export function createConstellation(canvasEl) {
     const glowColor = pal.constellationGlow;
     if (!lineColor || !glowColor) return;
 
-    const w = canvas.width;
-    const h = canvas.height;
-    const wrapLimitY = h * CHAIN.WRAP_SKIP_RATIO;
-    const wrapLimitX = w * CHAIN.WRAP_SKIP_RATIO;
+    const segments = chainSegments(stars, sp);
     const lineOpacity =
       (chainState.isActive
         ? CHAIN.LINE_OPACITY_ACTIVE
@@ -155,20 +223,14 @@ export function createConstellation(canvasEl) {
     ctx.lineWidth = CHAIN.LINE_WIDTH;
     ctx.lineCap = "round";
     ctx.beginPath();
-    for (let i = 1; i < chainState.chain.length; i++) {
-      const prev = stars[chainState.chain[i - 1].index];
-      const cur = stars[chainState.chain[i].index];
-      if (!prev || !cur) continue;
-      const a = starScreenPos(prev, sp);
-      const b = starScreenPos(cur, sp);
-      if (!a || !b) continue;
-      if (Math.abs(a.y - b.y) > wrapLimitY) continue;
-      if (Math.abs(a.x - b.x) > wrapLimitX) continue;
+    for (const { a, b } of segments) {
       ctx.moveTo(a.x, a.y);
       ctx.lineTo(b.x, b.y);
     }
     ctx.stroke();
     ctx.restore();
+
+    drawShimmers(segments, lineColor, glowColor, fade);
 
     // Halos
     ctx.save();
@@ -191,6 +253,54 @@ export function createConstellation(canvasEl) {
         glowColor,
         haloOpts,
       );
+    }
+    ctx.restore();
+  }
+
+  // The pluck's ripple: a brief re-brightening of the plucked string with a
+  // pair of glints running outward from the crossing point to both stars.
+  function drawShimmers(segments, lineColor, glowColor, fade) {
+    if (shimmers.length === 0) return;
+    const byIndex = new Map(segments.map((s) => [s.seg, s]));
+    const now = performance.now();
+    const haloOpts = {
+      midStop: CHAIN.GLOW_MID_STOP,
+      midAlpha: CHAIN.GLOW_MID_ALPHA,
+    };
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.lineWidth = CHAIN.LINE_WIDTH;
+    ctx.lineCap = "round";
+    for (let k = shimmers.length - 1; k >= 0; k--) {
+      const sh = shimmers[k];
+      const t = (now - sh.start) / STRUM.SHIMMER_MS;
+      if (t >= 1) {
+        shimmers.splice(k, 1);
+        continue;
+      }
+      // The string may have left the screen mid-ripple; let it expire quietly.
+      const segment = byIndex.get(sh.seg);
+      if (!segment) continue;
+      const { a, b } = segment;
+      const alpha = (1 - t) * fade;
+      ctx.strokeStyle = rgbaStr(lineColor, STRUM.FLASH_OPACITY * alpha);
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+      const crossX = a.x + (b.x - a.x) * sh.u;
+      const crossY = a.y + (b.y - a.y) * sh.u;
+      for (const end of [a, b]) {
+        drawHaloParticle(
+          ctx,
+          crossX + (end.x - crossX) * t,
+          crossY + (end.y - crossY) * t,
+          STRUM.SHIMMER_RADIUS,
+          STRUM.SHIMMER_OPACITY * alpha,
+          glowColor,
+          haloOpts,
+        );
+      }
     }
     ctx.restore();
   }
@@ -221,10 +331,42 @@ export function createConstellation(canvasEl) {
 
   return {
     draw(frame) {
+      lastSp = frame.sp;
       const pal = frame.palFor("constellation");
       drawChain(pal, frame.sp);
       drawDust(frame);
     },
     setChain,
+
+    // Hit-test a pointer swipe (previous → current drag point, canvas
+    // coords) against the formed chain's strings, at the projection of the
+    // most recent frame. Each crossed string plucks at most once per
+    // cooldown: its shimmer spawns here (a one-shot flash, skipped entirely
+    // under reduced motion) and one entry per pluck is returned so the
+    // caller can sound and reward it. Pitch rides how high the string hangs.
+    strum(px, py, qx, qy) {
+      if (!chainState.isActive || chainState.chain.length < 2) return [];
+      if (getStarsFadeOpacity(lastSp) <= 0) return [];
+      const stars = getSkyStars();
+      if (!stars) return [];
+      const now = performance.now();
+      const p = { x: px, y: py };
+      const q = { x: qx, y: qy };
+      const plucks = [];
+      for (const { seg, a, b } of chainSegments(stars, lastSp)) {
+        if (!segmentsCross(p, q, a, b)) continue;
+        const last = lastStrumAt.get(seg) ?? -Infinity;
+        if (now - last < STRUM.COOLDOWN_MS) continue;
+        lastStrumAt.set(seg, now);
+        if (!prefersReducedMotion() && shimmers.length < STRUM.SHIMMER_MAX) {
+          shimmers.push({ seg, u: crossingParam(p, q, a, b), start: now });
+        }
+        const midY = (a.y + b.y) / 2;
+        plucks.push({
+          pitch: Math.min(1, Math.max(0, 1 - midY / canvas.height)),
+        });
+      }
+      return plucks;
+    },
   };
 }

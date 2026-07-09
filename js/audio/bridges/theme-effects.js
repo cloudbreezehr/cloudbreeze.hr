@@ -26,6 +26,7 @@ export const initThemeEffectsAudioBridge = eventVoiceBridge({
   "moon-clicked": "lunar",
   "constellation-formed": "chord",
   "constellation-wrong-hit": "dud",
+  "constellation-strummed": (detail) => ["pluck", { pitch: detail.pitch }],
   "matrix-click": "glyph",
   "matrix-decode": "decode",
   "upside-down-click": "wobble",

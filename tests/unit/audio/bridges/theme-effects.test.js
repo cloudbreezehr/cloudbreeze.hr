@@ -11,7 +11,10 @@ describe("audio/bridges/theme-effects", () => {
     vi.resetModules();
     calls = [];
     vi.doMock("../../../../js/audio/sfx.js", () => ({
-      playSfx: (name) => calls.push(name),
+      // Opts-less voices record as bare names (most assertions), voices fed
+      // event data as [name, opts] tuples.
+      playSfx: (name, opts) =>
+        calls.push(opts === undefined ? name : [name, opts]),
     }));
     const mod = await import("../../../../js/audio/bridges/theme-effects.js");
     stop = mod.initThemeEffectsAudioBridge();
@@ -39,6 +42,15 @@ describe("audio/bridges/theme-effects", () => {
     fire("constellation-formed");
     fire("constellation-wrong-hit");
     expect(calls).toEqual(["twinkle", "starWhoosh", "lunar", "chord", "dud"]);
+  });
+
+  it("hands the strummed string its pitch", () => {
+    window.dispatchEvent(
+      new CustomEvent("achievement", {
+        detail: { type: "constellation-strummed", pitch: 0.75 },
+      }),
+    );
+    expect(calls).toEqual([["pluck", { pitch: 0.75 }]]);
   });
 
   it("maps the matrix click surge and decode", () => {

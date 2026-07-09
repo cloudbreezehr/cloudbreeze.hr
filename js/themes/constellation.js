@@ -271,10 +271,39 @@ export function initConstellation() {
 
   // Hooks run every frame so chain lines render during buildup; dust
   // and lines both self-gate inside particles.draw.
+  //
+  // A formed constellation is an instrument: a drag swept across its lines
+  // plucks them. The geometry, gating, and shimmer live with the chain
+  // renderer — this layer only turns plucks into events.
+  let lastDragPoint = null;
   registerCanvasHooks("constellation", {
     alwaysActive: true,
     drawAmbient(frame) {
       particles.draw(frame);
+    },
+    onDragStart(ptr) {
+      lastDragPoint = { x: ptr.cx, y: ptr.cy };
+    },
+    onDragMove(ptr) {
+      if (lastDragPoint) {
+        const plucks = particles.strum(
+          lastDragPoint.x,
+          lastDragPoint.y,
+          ptr.cx,
+          ptr.cy,
+        );
+        for (const { pitch } of plucks) {
+          window.dispatchEvent(
+            new CustomEvent("achievement", {
+              detail: { type: "constellation-strummed", pitch },
+            }),
+          );
+        }
+      }
+      lastDragPoint = { x: ptr.cx, y: ptr.cy };
+    },
+    onDragEnd() {
+      lastDragPoint = null;
     },
   });
 

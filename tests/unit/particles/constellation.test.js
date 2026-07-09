@@ -180,6 +180,25 @@ describe("createConstellation — chain rendering gating", () => {
     expect(ctx.fill).not.toHaveBeenCalled();
   });
 
+  it("strums are inert while the chain is a trace, not an instrument", async () => {
+    const { createConstellation } =
+      await import("../../../js/particles/constellation.js");
+    const { createSky, getSkyStars } = await import("../../../js/sky.js");
+    createSky(30);
+    const stars = getSkyStars();
+    stars[0] = { x: 100, y: 100, depth: 0, r: 1, constellationId: "x" };
+    stars[1] = { x: 300, y: 100, depth: 0, r: 1, constellationId: "x" };
+    const canvas = makeStubCanvas();
+    const particles = createConstellation(canvas);
+    particles.setChain({
+      chain: [{ index: 0 }, { index: 1 }],
+      candidateId: "x",
+      isActive: false,
+    });
+    particles.draw(makeFrame(0, canvas.getContext("2d"), canvas));
+    expect(particles.strum(200, 50, 200, 150)).toEqual([]);
+  });
+
   it("skips segments where the parallax wrap puts endpoints on opposite vertical edges", async () => {
     // Reproduces the actual bug: with shared depth and a scroll progress
     // where shift > one star's raw y but < the other's, the modulo wrap
@@ -214,5 +233,154 @@ describe("createConstellation — chain rendering gating", () => {
     particles.draw(makeFrame(0.3, ctx, canvas));
     expect(ctx.moveTo).not.toHaveBeenCalled();
     expect(ctx.lineTo).not.toHaveBeenCalled();
+  });
+});
+
+describe("createConstellation — strumming a formed chain", () => {
+  let mqlMatches;
+
+  beforeEach(() => {
+    mqlMatches = false;
+    window.matchMedia = vi.fn(() => ({
+      get matches() {
+        return mqlMatches;
+      },
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+    }));
+    vi.resetModules();
+  });
+
+  afterEach(() => {
+    delete window.matchMedia;
+  });
+
+  // One horizontal string between two stars; swipes cross it vertically.
+  const STRING_Y = 100;
+  const STAR_A_X = 100;
+  const STAR_B_X = 300;
+  const SWIPE_X = 200;
+
+  function makeFrame(sp, ctx, canvas) {
+    return {
+      sp,
+      dt: 0.016,
+      scrollVelocity: 0,
+      drawVelocity: 0,
+      palFor: () => ({
+        constellationLine: [150, 180, 255],
+        constellationGlow: [180, 200, 255],
+        cosmicDust: [200, 215, 250],
+      }),
+      forces: {
+        clickImpulse: { x: 0, y: 0, strength: 0 },
+        isDragging: false,
+        dragPos: { x: 0, y: 0 },
+        holdStrength: 0,
+        wellStrength: 0,
+        hover: { x: 0, y: 0, active: false },
+      },
+      ctx,
+      canvas,
+    };
+  }
+
+  async function formedChain() {
+    const { createConstellation } =
+      await import("../../../js/particles/constellation.js");
+    const { createSky, getSkyStars } = await import("../../../js/sky.js");
+    createSky(30);
+    const stars = getSkyStars();
+    stars[0] = {
+      x: STAR_A_X,
+      y: STRING_Y,
+      depth: 0,
+      r: 1,
+      constellationId: "x",
+    };
+    stars[1] = {
+      x: STAR_B_X,
+      y: STRING_Y,
+      depth: 0,
+      r: 1,
+      constellationId: "x",
+    };
+    const canvas = makeStubCanvas();
+    const particles = createConstellation(canvas);
+    particles.setChain({
+      chain: [{ index: 0 }, { index: 1 }],
+      candidateId: "x",
+      isActive: true,
+    });
+    const ctx = canvas.getContext("2d");
+    // A first frame projects the strings at the current scroll position.
+    particles.draw(makeFrame(0, ctx, canvas));
+    return { particles, canvas, ctx };
+  }
+
+  it("plucks a crossed string, pitched by its height in the sky", async () => {
+    const { particles, canvas } = await formedChain();
+    const plucks = particles.strum(
+      SWIPE_X,
+      STRING_Y - 50,
+      SWIPE_X,
+      STRING_Y + 50,
+    );
+    expect(plucks).toHaveLength(1);
+    expect(plucks[0].pitch).toBeCloseTo(1 - STRING_Y / canvas.height);
+  });
+
+  it("ignores a swipe that doesn't cross any string", async () => {
+    const { particles } = await formedChain();
+    expect(
+      particles.strum(SWIPE_X, STRING_Y - 50, SWIPE_X, STRING_Y - 10),
+    ).toEqual([]);
+  });
+
+  it("cooldown: an immediate re-pluck of the same string is silent", async () => {
+    const { particles } = await formedChain();
+    const first = particles.strum(
+      SWIPE_X,
+      STRING_Y - 50,
+      SWIPE_X,
+      STRING_Y + 50,
+    );
+    expect(first).toHaveLength(1);
+    const again = particles.strum(
+      SWIPE_X,
+      STRING_Y + 50,
+      SWIPE_X,
+      STRING_Y - 50,
+    );
+    expect(again).toEqual([]);
+  });
+
+  it("a pluck shimmers on the next frame", async () => {
+    const { particles, canvas, ctx } = await formedChain();
+    ctx.stroke.mockClear();
+    particles.draw(makeFrame(0, ctx, canvas));
+    const baseStrokes = ctx.stroke.mock.calls.length;
+    particles.strum(SWIPE_X, STRING_Y - 50, SWIPE_X, STRING_Y + 50);
+    ctx.stroke.mockClear();
+    particles.draw(makeFrame(0, ctx, canvas));
+    expect(ctx.stroke.mock.calls.length).toBeGreaterThan(baseStrokes);
+  });
+
+  it("reduced motion: the pluck still lands but its shimmer is skipped", async () => {
+    mqlMatches = true;
+    const { particles, canvas, ctx } = await formedChain();
+    ctx.stroke.mockClear();
+    particles.draw(makeFrame(0, ctx, canvas));
+    const baseStrokes = ctx.stroke.mock.calls.length;
+    const plucks = particles.strum(
+      SWIPE_X,
+      STRING_Y - 50,
+      SWIPE_X,
+      STRING_Y + 50,
+    );
+    expect(plucks).toHaveLength(1);
+    ctx.stroke.mockClear();
+    particles.draw(makeFrame(0, ctx, canvas));
+    expect(ctx.stroke.mock.calls.length).toBe(baseStrokes);
   });
 });

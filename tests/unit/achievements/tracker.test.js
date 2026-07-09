@@ -871,6 +871,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("over-the-moon")).toBe(true);
   });
 
+  it("unlocks night-music on a constellation strum", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("constellation-strummed", { pitch: 0.5 });
+    expect(storage.isUnlocked("night-music")).toBe(true);
+  });
+
   it("unlocks open-secrets when the cheatsheet is discovered", async () => {
     const { storage } = await startTracker();
     dispatchAchievement("cheatsheet-discovered", {});

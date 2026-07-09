@@ -598,6 +598,10 @@ export function createTracker(onUnlock, onRelock) {
       }
     },
 
+    "constellation-strummed"() {
+      tryUnlock("night-music");
+    },
+
     "panel-open"(data) {
       if (!session.panelOpened) {
         session.panelOpened = true;

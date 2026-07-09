@@ -1430,6 +1430,31 @@ const VOICES = {
       delay: 0.32,
     });
   },
+  // Strumming a constellation line — a plucked string. `pitch` (0..1, how
+  // high the string hangs in the sky) snaps to a two-octave C-major
+  // pentatonic run, so any sweep across a chain comes out as melody. No
+  // repeat jitter: exact scale degrees are the voice's whole point.
+  pluck(ctx, bus, { pitch = 0.5 } = {}) {
+    const scale = [
+      261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99, 880,
+    ];
+    const clamped = Math.min(1, Math.max(0, pitch));
+    const freq = scale[Math.round(clamped * (scale.length - 1))];
+    tone(ctx, bus, {
+      freq,
+      type: "triangle",
+      attack: 0.002,
+      release: 0.4,
+      gain: 0.14,
+    });
+    tone(ctx, bus, {
+      freq: freq * 2,
+      type: "sine",
+      attack: 0.002,
+      release: 0.18,
+      gain: 0.05,
+    });
+  },
   // Tapping the wrong star while tracing — a soft low dud.
   dud(ctx, bus) {
     tone(ctx, bus, {

@@ -1160,6 +1160,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
+    id: "night-music",
+    title: "Night Music",
+    description: "You played the sky like a harp.",
+    hint: "Form a constellation, then sweep a drag across its lines",
+    set: "constellation",
+    points: UNCOMMON,
+    hidden: true,
+  },
+  {
     id: "dark-skies",
     title: "Dark Skies",
     description: "Every constellation honored.",
