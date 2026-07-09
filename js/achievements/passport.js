@@ -29,10 +29,10 @@ function fromBase64(b64) {
   return new TextDecoder().decode(bytes);
 }
 
-// The subset of state a passport carries: unlocks (u), counters (c), and
-// progress-collection items (p). Takes an explicit snapshot rather than reading
-// storage, so the same derivation runs over any state — live or parsed back
-// from a saved file.
+// The subset of state a passport carries: unlocks (u), counters (c),
+// progress-collection items (p), and seen marks (s). Takes an explicit
+// snapshot rather than reading storage, so the same derivation runs over
+// any state — live or parsed back from a saved file.
 export function payloadFromState(state) {
   return {
     u: state.unlocked,
@@ -40,6 +40,7 @@ export function payloadFromState(state) {
     p: Object.fromEntries(
       Object.entries(state.progress).map(([key, entry]) => [key, entry.items]),
     ),
+    s: state.seen,
   };
 }
 
@@ -118,6 +119,12 @@ export function importPassport(code) {
   for (const [key, items] of Object.entries(payload.p || {})) {
     if (!Array.isArray(items)) continue;
     for (const item of items) storage.addProgressItem(key, item);
+  }
+
+  for (const id of Array.isArray(payload.s) ? payload.s : []) {
+    if (typeof id !== "string") continue;
+    const current = resolveLegacyId(id);
+    if (!state.seen.includes(current)) state.seen.push(current);
   }
 
   storage.saveNow();

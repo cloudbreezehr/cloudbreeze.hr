@@ -157,6 +157,18 @@ describe("effects/speedrun — run lifecycle", () => {
     expect(storage.isUnlocked("stargazer")).toBe(true); // run's
   });
 
+  it("restores seen marks so returned unlocks aren't re-badged as new", () => {
+    storage.unlock("first-light");
+    storage.markSeen("first-light");
+    speedrun.requestSpeedrun();
+    confirmDialog(); // arm: back up, then reset to zero
+    speedrun.requestSpeedrun();
+    confirmDialog(); // end: restore the backup
+
+    expect(storage.isSeen("first-light")).toBe(true);
+    expect(storage.getUnseenCount()).toBe(0);
+  });
+
   it("finishing banks a PB, restores progress, and freezes the HUD", () => {
     storage.unlock("first-light"); // an original to restore
     const events = [];

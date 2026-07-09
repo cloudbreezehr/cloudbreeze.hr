@@ -57,11 +57,31 @@ describe("achievements/passport", () => {
       u: [{ id: "time-warp", ts: 9 }],
       c: {},
       p: {},
+      s: ["time-warp"],
     });
     const result = passport.importPassport(code);
     expect(result.added).toBe(1);
     expect(storage.isUnlocked("to-the-minute")).toBe(true);
     expect(storage.isUnlocked("time-warp")).toBe(false);
+    expect(storage.isSeen("to-the-minute")).toBe(true);
+  });
+
+  it("carries seen marks so an import doesn't re-badge old unlocks", async () => {
+    storage.unlock("first-light");
+    storage.markSeen("first-light");
+    storage.unlock("stargazer"); // unlocked but never seen
+    const code = passport.exportPassport();
+
+    vi.resetModules();
+    localStorage.clear();
+    const storage2 = await import("../../../js/achievements/storage.js");
+    const passport2 = await import("../../../js/achievements/passport.js");
+    storage2.activate();
+
+    passport2.importPassport(code);
+    expect(storage2.isSeen("first-light")).toBe(true);
+    expect(storage2.isSeen("stargazer")).toBe(false);
+    expect(storage2.getUnseenCount()).toBe(1);
   });
 
   it("counters merge by max, day lists by union", async () => {
@@ -109,17 +129,19 @@ describe("achievements/passport", () => {
     expect(storage.isUnlocked("first-light")).toBe(true);
   });
 
-  it("derives the {u,c,p} payload from an explicit state snapshot", () => {
+  it("derives the {u,c,p,s} payload from an explicit state snapshot", () => {
     // Pure — reads the argument, not storage.
     const payload = passport.payloadFromState({
       unlocked: [{ id: "first-light", ts: 1 }],
       counters: { totalClicks: 7 },
       progress: { "appearances-used": { items: ["dark"] } },
+      seen: ["first-light"],
     });
     expect(payload).toEqual({
       u: [{ id: "first-light", ts: 1 }],
       c: { totalClicks: 7 },
       p: { "appearances-used": ["dark"] },
+      s: ["first-light"],
     });
   });
 });
