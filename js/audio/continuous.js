@@ -6,10 +6,17 @@
 // these are persistent nodes whose gain/cutoff/pitch are eased toward per-frame
 // targets
 // (setTargetAtTime, so no zipper). The polling loop runs only while sound is
-// enabled, and the nodes are built lazily the first time it ticks — so a muted
-// visitor never spins up a context or a rAF.
+// enabled, and the nodes are built lazily the first time it ticks after a
+// gesture has unlocked audio — so a muted visitor never spins up a context
+// or a rAF, and a remembered-on visitor doesn't start sources on a context
+// the browser hasn't allowed yet (each attempt logs an autoplay warning).
 
-import { audioContext, isSoundEnabled, onSoundChange } from "./engine.js";
+import {
+  audioContext,
+  isSoundEnabled,
+  isAudioUnlocked,
+  onSoundChange,
+} from "./engine.js";
 import { effectsBus } from "./bus.js";
 import { whiteNoise } from "./noise.js";
 import { playSfx } from "./sfx.js";
@@ -113,6 +120,7 @@ function buildVoices(ctx, bus) {
 function tick() {
   rafId = requestAnimationFrame(tick);
   if (!isSoundEnabled()) return;
+  if (!isAudioUnlocked()) return;
   const ctx = audioContext();
   const bus = effectsBus();
   if (!ctx || !bus) return;

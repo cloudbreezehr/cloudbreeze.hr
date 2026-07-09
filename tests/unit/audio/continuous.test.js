@@ -9,7 +9,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 describe("audio/continuous", () => {
   let mod, dispose;
-  let soundOn, forces, calls, soundChangeCbs, reducedMotion;
+  let soundOn, audioUnlocked, forces, calls, soundChangeCbs, reducedMotion;
   let ctxStub, audioContextSpy, gains, oscs, filters;
   let rafScheduled, rafCount, cancelCount;
 
@@ -31,6 +31,8 @@ describe("audio/continuous", () => {
   beforeEach(async () => {
     vi.resetModules();
     soundOn = false;
+    // Most tests model a session where a gesture already unlocked audio.
+    audioUnlocked = true;
     reducedMotion = false;
     forces = null;
     calls = [];
@@ -72,6 +74,7 @@ describe("audio/continuous", () => {
     vi.doMock("../../../js/audio/engine.js", () => ({
       audioContext: audioContextSpy,
       isSoundEnabled: () => soundOn,
+      isAudioUnlocked: () => audioUnlocked,
       onSoundChange: (cb) => {
         soundChangeCbs.push(cb);
         return () => {
@@ -143,6 +146,23 @@ describe("audio/continuous", () => {
     expect(gains).toHaveLength(0); // scheduled, not yet ticked
     step();
     expect(gains).toHaveLength(3); // drag + well master + well fifth
+  });
+
+  it("touches no context until a gesture has unlocked audio", () => {
+    // A remembered-on preference starts the loop at load, before any
+    // gesture — starting sources then would log an autoplay warning per
+    // node. The loop must idle until the engine reports audio unlocked.
+    soundOn = true;
+    audioUnlocked = false;
+    dispose = mod.initContinuous();
+    step();
+    step();
+    expect(audioContextSpy).not.toHaveBeenCalled();
+    expect(gains).toHaveLength(0);
+
+    audioUnlocked = true; // first gesture landed
+    step();
+    expect(gains).toHaveLength(3); // voices build on the next tick
   });
 
   it("maps drag speed to level, clamping at the speed reference", () => {
