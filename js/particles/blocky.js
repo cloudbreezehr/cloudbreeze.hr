@@ -4,7 +4,7 @@ import {
   applyWellForce,
 } from "../interactions.js";
 import { defineConstants } from "../dev/registry.js";
-import { scaled } from "../motion.js";
+import { scaled, prefersReducedMotion } from "../motion.js";
 
 // ── Blocky Pixelation ──
 const PIXEL = defineConstants(
@@ -459,8 +459,11 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
         f.x += scaled(f.vx);
         f.y += scaled(f.vy);
         f.vy += scaled(FRAG.GRAVITY);
-        // Hard 90° tumble
-        if (f.life % FRAG.TUMBLE_INTERVAL === 0) f.rot = (f.rot + 1) % 4;
+        // Hard 90° tumble — a discrete rotation scaled() can't dampen, so
+        // it gates like other motion instead.
+        if (!prefersReducedMotion() && f.life % FRAG.TUMBLE_INTERVAL === 0) {
+          f.rot = (f.rot + 1) % 4;
+        }
         const c = f.color;
         ctx.save();
         ctx.translate(f.x, f.y);
@@ -485,6 +488,9 @@ export function createBlocky(canvasEl, ctxEl, fireflyCount) {
         if (Math.abs(scrollVelocity) > FLY.SCROLL_THRESHOLD) {
           f.vx += scrollVelocity * FLY.SCROLL_VX;
         }
+        // Species swap, not a color branch: fireflies at night, butterflies
+        // by day. Colors still come from the palette — a shape can't live
+        // there, so this is the one place appearance picks the drawing.
         if (isDark) {
           f.drawFirefly(ctx);
         } else {
