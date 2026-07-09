@@ -850,12 +850,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.isUnlocked("theme-hopper")).toBe(true);
   });
 
-  it("unlocks persistent after 1000 lifetime clicks", async () => {
+  it("unlocks committed after 1000 lifetime clicks", async () => {
     const { storage } = await startTracker();
     // Seed the counter near the threshold to avoid 1000 dispatches.
     storage.setCounter("totalClicks", 999);
     dispatchAchievement("click", {});
-    expect(storage.isUnlocked("persistent")).toBe(true);
+    expect(storage.isUnlocked("committed")).toBe(true);
     expect(storage.isUnlocked("devoted")).toBe(false);
   });
 
@@ -1940,20 +1940,20 @@ describe("tracker — re-earn tally accounting", () => {
     vi.useRealTimers();
   });
 
-  it("counts persistent once per thousand-click milestone, jump-proof", async () => {
+  it("counts committed once per thousand-click milestone, jump-proof", async () => {
     const { storage } = await startTracker();
     storage.setCounter("totalClicks", 999);
     dispatchAchievement("click"); // 1000 → first milestone
-    expect(storage.getTriggerCount("persistent")).toBe(1);
+    expect(storage.getTriggerCount("committed")).toBe(1);
 
     // A slow run of clicks past 1000 must not each re-count.
     for (let i = 0; i < 50; i++) dispatchAchievement("click");
-    expect(storage.getTriggerCount("persistent")).toBe(1);
+    expect(storage.getTriggerCount("committed")).toBe(1);
 
     // A jump straight past 2000 (batched clicks) still lands exactly one more.
     storage.setCounter("totalClicks", 1999);
     dispatchAchievement("click"); // 2000
-    expect(storage.getTriggerCount("persistent")).toBe(2);
+    expect(storage.getTriggerCount("committed")).toBe(2);
   });
 
   it("counts the-long-drag once per drag, not per move past the threshold", async () => {

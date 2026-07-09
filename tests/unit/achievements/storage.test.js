@@ -248,10 +248,10 @@ describe("achievements/storage", () => {
     });
 
     it("setTriggerCount overrides the tally regardless of prior bumps", () => {
-      storage.bumpTrigger("persistent");
-      storage.bumpTrigger("persistent"); // 2 from an incidental unlock path
-      storage.setTriggerCount("persistent", 1); // derived milestone value wins
-      expect(storage.getTriggerCount("persistent")).toBe(1);
+      storage.bumpTrigger("committed");
+      storage.bumpTrigger("committed"); // 2 from an incidental unlock path
+      storage.setTriggerCount("committed", 1); // derived milestone value wins
+      expect(storage.getTriggerCount("committed")).toBe(1);
     });
   });
 

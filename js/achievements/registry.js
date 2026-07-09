@@ -1437,8 +1437,8 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   {
-    id: "persistent",
-    title: "Persistent",
+    id: "committed",
+    title: "Committed",
     description: "A thousand clicks deep.",
     hint: "Click 1,000 times",
     set: "mastery",

@@ -37,7 +37,7 @@ const JELLYFISH_PULSES_TOTAL = 5;
 const PAPER_STROKES_TOTAL = 10;
 // Lifetime-click milestones. Exported so the unlock and the progress bar
 // fill to the same threshold — one source for both.
-export const PERSISTENT_CLICKS = 1000;
+export const COMMITTED_CLICKS = 1000;
 export const DEVOTED_CLICKS = 10000;
 
 export const PROGRESS_ITEMS = {
@@ -109,7 +109,7 @@ export const PROGRESS_COUNTS = {
   },
   "clicks-1000": {
     current: () => storage.getCounter("totalClicks"),
-    total: () => PERSISTENT_CLICKS,
+    total: () => COMMITTED_CLICKS,
   },
   "clicks-10000": {
     current: () => storage.getCounter("totalClicks"),

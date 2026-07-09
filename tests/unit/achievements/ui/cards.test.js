@@ -256,7 +256,7 @@ describe("achievements/ui/cards", () => {
       storage.setCounter("totalClicks", 250);
       mod.renderSections(container);
       const card = container.querySelector(
-        '.achievement-card[data-id="persistent"]',
+        '.achievement-card[data-id="committed"]',
       );
       const line = () => card.querySelector(".achievement-card-progress-text");
       const fill = () =>

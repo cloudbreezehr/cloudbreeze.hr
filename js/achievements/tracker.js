@@ -9,7 +9,7 @@ import {
   PROGRESS_ITEMS,
   resolveProgressCurrent,
   resolveProgressTotal,
-  PERSISTENT_CLICKS,
+  COMMITTED_CLICKS,
   DEVOTED_CLICKS,
 } from "./progress.js";
 import * as storage from "./storage.js";
@@ -237,7 +237,7 @@ export function createTracker(onUnlock, onRelock) {
 
       // Lifetime click milestones — persistent counters, so these tick over
       // across sessions and re-earn once per thousand/ten-thousand.
-      tryMilestone("persistent", totalClicks, PERSISTENT_CLICKS);
+      tryMilestone("committed", totalClicks, COMMITTED_CLICKS);
       tryMilestone("devoted", totalClicks, DEVOTED_CLICKS);
 
       // Rapid fire — a burst of clicks within a short window

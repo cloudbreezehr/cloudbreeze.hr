@@ -93,7 +93,7 @@ describe("achievements/progress", () => {
       storage.setCounter("totalClicks", 750);
       expect(progress.resolveProgressCurrent("clicks-1000")).toBe(750);
       expect(progress.resolveProgressTotal("clicks-1000")).toBe(
-        progress.PERSISTENT_CLICKS,
+        progress.COMMITTED_CLICKS,
       );
       expect(progress.resolveProgressCurrent("clicks-10000")).toBe(750);
       expect(progress.resolveProgressTotal("clicks-10000")).toBe(
