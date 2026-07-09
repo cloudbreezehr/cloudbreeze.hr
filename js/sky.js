@@ -906,6 +906,10 @@ export function createSky(starCount) {
   // Fixed-timestep anchor: phase advances scale by elapsed world ticks, so
   // animation runs at the same world speed on every display refresh rate.
   let lastTickTime = worldTickTime();
+  // Ticks a single frame may integrate. A hidden tab's backlog must not be
+  // replayed on resume — an unclamped delta would roll a flash chance per
+  // backlogged tick into one frame and pop the whole star field at once.
+  const MAX_FRAME_DTICKS = 3;
 
   // Link/unlink crossfade tracker for the star layout — shared crossfade
   // timing with the other world-anchored layers.
@@ -929,9 +933,13 @@ export function createSky(starCount) {
   return {
     draw(ctx, canvas, sp, pal, forces, scrollVelocity = 0) {
       // Elapsed world ticks since the last frame — clamped at zero because
-      // the wall clock can step backwards under NTP adjustment.
+      // the wall clock can step backwards under NTP adjustment, and clamped
+      // above so a paused tab's backlog isn't integrated as one giant frame.
       const tickTime = worldTickTime();
-      const dTicks = Math.max(0, tickTime - lastTickTime);
+      const dTicks = Math.min(
+        MAX_FRAME_DTICKS,
+        Math.max(0, tickTime - lastTickTime),
+      );
       lastTickTime = tickTime;
       // Nothing is visible (or clickable) until this frame draws it.
       drawnArcs.length = 0;
