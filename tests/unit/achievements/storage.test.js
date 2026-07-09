@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { dayKey } from "../../../js/daily/seed.js";
 
 // storage.js maintains module-level state.  Each test resets modules to
 // start from a clean in-memory state, and clears localStorage between runs
@@ -185,29 +186,34 @@ describe("achievements/storage", () => {
   });
 
   describe("currentStreak", () => {
-    function isoDaysAgo(n) {
-      return new Date(Date.now() - n * 86400000).toISOString().slice(0, 10);
+    // Keys are local calendar dates; build them the same way the source
+    // does (calendar stepping from a noon anchor).
+    function localDaysAgo(n) {
+      const d = new Date();
+      d.setHours(12, 0, 0, 0);
+      d.setDate(d.getDate() - n);
+      return dayKey(d);
     }
 
     it("returns 0 when today isn't recorded", () => {
-      storage.getState().counters.sessionDays = [isoDaysAgo(3)];
+      storage.getState().counters.sessionDays = [localDaysAgo(3)];
       expect(storage.currentStreak()).toBe(0);
     });
 
     it("counts consecutive days ending today", () => {
       storage.getState().counters.sessionDays = [
-        isoDaysAgo(2),
-        isoDaysAgo(1),
-        isoDaysAgo(0),
+        localDaysAgo(2),
+        localDaysAgo(1),
+        localDaysAgo(0),
       ];
       expect(storage.currentStreak()).toBe(3);
     });
 
     it("stops at the first gap", () => {
       storage.getState().counters.sessionDays = [
-        isoDaysAgo(5),
-        isoDaysAgo(1),
-        isoDaysAgo(0),
+        localDaysAgo(5),
+        localDaysAgo(1),
+        localDaysAgo(0),
       ];
       expect(storage.currentStreak()).toBe(2);
     });

@@ -18,6 +18,7 @@ import { getThemeIds } from "../themes/registry.js";
 import { hasDiscoveredAnyTheme } from "../effects/theme-history-hud.js";
 import { wordOfTheDay } from "../daily/word.js";
 import { isTimeTraveling } from "../daily/random.js";
+import { dayKey } from "../daily/seed.js";
 import {
   themeEnterLine,
   themeExitLine,
@@ -827,7 +828,9 @@ export function createTracker(onUnlock, onRelock) {
   // which derives from counters.sessionDays. Just record today and let
   // checkProgressiveState pick them up.
   function trackSession() {
-    const today = new Date().toISOString().slice(0, 10);
+    // The visitor's local calendar date — the same "day" the daily sky and
+    // moonlit use, rolling at their own midnight rather than UTC's.
+    const today = dayKey();
     const state = storage.getState();
     const days = state.counters.sessionDays || [];
     if (!days.includes(today)) {

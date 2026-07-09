@@ -3,6 +3,8 @@
 // Reads once on load; in-memory state is authoritative thereafter.
 // Writes are debounced to max 1/second.
 
+import { dayKey } from "../daily/seed.js";
+
 // ── Constants ──
 export const STORAGE_KEY = "achievements";
 // Sidecar key holding the last corrupt payload, kept for diagnosis so a
@@ -319,22 +321,22 @@ export function currentStreak() {
   const days = getState().counters.sessionDays || [];
   if (days.length === 0) return 0;
   const present = new Set(days);
-  const DAY_MS = 86400000;
-  // Day keys are UTC (trackSession uses toISOString().slice(0,10)), so
-  // step in UTC to match — slicing the ISO string yields the UTC date.
-  let cursor = Date.now();
-  const isoOf = (ms) => new Date(ms).toISOString().slice(0, 10);
-  if (!present.has(isoOf(cursor))) return 0;
+  // Day keys are the visitor's local calendar dates (dayKey), matching the
+  // site-wide "day" notion that rolls at the visitor's own midnight. Step
+  // by calendar day from a noon anchor so DST-length days can't skip or
+  // repeat a date.
+  const cursor = new Date();
+  cursor.setHours(12, 0, 0, 0);
   let streak = 0;
-  while (present.has(isoOf(cursor))) {
+  while (present.has(dayKey(cursor))) {
     streak++;
-    cursor -= DAY_MS;
+    cursor.setDate(cursor.getDate() - 1);
   }
   return streak;
 }
 
-// Distinct UTC days the visitor has been recorded on (the session-day set the
-// tracker maintains). Two or more means they've returned on a later day.
+// Distinct local days the visitor has been recorded on (the session-day set
+// the tracker maintains). Two or more means they've returned on a later day.
 export function visitedDayCount() {
   return (getState().counters.sessionDays || []).length;
 }
