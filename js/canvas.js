@@ -139,9 +139,20 @@ export function initCanvas(canvasEl, appearance, options) {
     isDark = dark;
   });
 
+  // The backing store renders at CSS-pixel resolution deliberately — no
+  // devicePixelRatio scaling. The sky is soft gradients and glows, where 1×
+  // fill rate reads fine, and DPR scaling would multiply the pixel work of
+  // the most expensive layer on exactly the devices least able to afford it.
+  //
+  // Skip identical dimensions: any assignment to canvas width/height wipes
+  // the bitmap mid-frame, and mobile toolbar show/hide fires resize bursts
+  // whose stable-viewport height (and width) haven't actually changed.
   function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = getViewportHeight();
+    const width = window.innerWidth;
+    const height = getViewportHeight();
+    if (canvas.width === width && canvas.height === height) return;
+    canvas.width = width;
+    canvas.height = height;
   }
 
   function updateScroll(snapshot) {
