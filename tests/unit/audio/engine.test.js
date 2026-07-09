@@ -91,6 +91,17 @@ describe("audio/engine", () => {
       expect(resume).toHaveBeenCalled();
     });
 
+    it("resumes a context parked in WebKit's interrupted state", () => {
+      mod.setSoundEnabled(true);
+      expect(resume).toHaveBeenCalledOnce();
+      // Audio focus lost mid-session (phone call, Siri): iOS moves the
+      // context to the non-standard "interrupted" state, which needs the
+      // same resume() as "suspended".
+      mod.audioContext().state = "interrupted";
+      mod.setSoundEnabled(true);
+      expect(resume).toHaveBeenCalledTimes(2);
+    });
+
     it("suspends the context a grace period after turning off", () => {
       vi.useFakeTimers();
       mod.setSoundEnabled(true);

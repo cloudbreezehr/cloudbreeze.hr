@@ -112,6 +112,13 @@ export function onSoundChange(cb) {
   };
 }
 
+// iOS/WebKit parks the context in a non-standard "interrupted" state when
+// audio focus is lost (phone call, Siri); it needs the same resume() nudge
+// as "suspended", or sound stays dead for the rest of the session.
+function needsResume(c) {
+  return c.state === "suspended" || c.state === "interrupted";
+}
+
 export function setSoundEnabled(on) {
   const next = !!on;
   const was = enabled;
@@ -123,7 +130,7 @@ export function setSoundEnabled(on) {
   }
   if (next) {
     const c = audioContext();
-    if (c && c.state === "suspended") c.resume();
+    if (c && needsResume(c)) c.resume();
     audioUnlocked = true; // enabling is a deliberate gesture
     // First-ever enable is the discovery moment; tryUnlock dedupes repeats.
     if (!was) {
@@ -155,7 +162,7 @@ export function initEngine() {
   const resumeOnGesture = () => {
     if (!enabled) return;
     const c = audioContext();
-    if (c && c.state === "suspended") c.resume();
+    if (c && needsResume(c)) c.resume();
     audioUnlocked = true;
   };
   for (const ev of ["pointerdown", "keydown", "touchstart"]) {
@@ -165,7 +172,7 @@ export function initEngine() {
     if (!ctx) return;
     if (document.hidden) {
       if (ctx.state === "running") ctx.suspend();
-    } else if (enabled && ctx.state === "suspended") {
+    } else if (enabled && needsResume(ctx)) {
       ctx.resume();
     }
   });
