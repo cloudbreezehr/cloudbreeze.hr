@@ -906,6 +906,18 @@ describe("achievements/ui/cards", () => {
       // scroll-to-activity must NOT fire from the same click.
       expect(scrollToActivityEntryForStub).not.toHaveBeenCalled();
     });
+
+    it("keeps the timestamp out of the tab order and role-free inside the card button", () => {
+      // ARIA forbids interactive descendants inside role="button" — the
+      // timestamp stays a plain pointer affordance.
+      storage.unlock("first-light");
+      mod.renderSections(container);
+      const timeEl = container.querySelector(
+        '.achievement-card[data-id="first-light"] .achievement-card-time',
+      );
+      expect(timeEl.getAttribute("role")).toBeNull();
+      expect(timeEl.hasAttribute("tabindex")).toBe(false);
+    });
   });
 
   describe("scrollToCard", () => {

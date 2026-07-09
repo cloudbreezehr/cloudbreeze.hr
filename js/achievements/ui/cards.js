@@ -485,7 +485,12 @@ function buildCardTimeBlock(ach) {
   timeEl.className = "achievement-card-time";
   timeEl.dataset.ts = String(ts);
   timeEl.textContent = formatTimestamp(ts);
-  bindClickable(timeEl, (e) => {
+  // A plain pointer affordance, deliberately not a nested control: the
+  // unlocked card is itself role="button", and ARIA forbids interactive
+  // descendants inside a button (they'd also double the tab stops per
+  // card). The card's activation stays the keyboard action; the format
+  // toggle is a click/tap extra.
+  timeEl.addEventListener("click", (e) => {
     // Card itself is also clickable (scroll-to-activity); stop the
     // bubble so toggling the timestamp doesn't also jump tabs.
     e.stopPropagation();
