@@ -263,7 +263,7 @@ describe("getAllNonMeta", () => {
   it("holds exactly the reachable, non-meta, non-bonus achievements", () => {
     const nonMeta = new Set(getAllNonMeta());
     for (const a of ACHIEVEMENTS) {
-      const shouldCount = a.set !== "meta" && !a.bonus && isReachable(a);
+      const shouldCount = a.set !== "meta" && !isBonus(a) && isReachable(a);
       expect(nonMeta.has(a.id)).toBe(shouldCount);
     }
   });
@@ -281,7 +281,7 @@ describe("getSpeedrunGoal", () => {
     const goal = new Set(getSpeedrunGoal());
     for (const a of ACHIEVEMENTS) {
       const shouldCount =
-        a.set !== "meta" && !a.bonus && !a.patient && isReachable(a);
+        a.set !== "meta" && !isBonus(a) && !a.patient && isReachable(a);
       expect(goal.has(a.id), a.id).toBe(shouldCount);
     }
   });

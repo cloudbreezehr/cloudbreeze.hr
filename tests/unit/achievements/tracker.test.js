@@ -1970,13 +1970,13 @@ describe("tracker — completion capstones", () => {
 
   it("overachiever lands the moment a bonus tips completion past 100%", async () => {
     const { storage } = await startTracker();
-    const { getReachableAchievements } =
+    const { getReachableAchievements, isBonus } =
       await import("../../../js/achievements/registry.js");
     await seedFullProgress(storage);
 
     // The whole core except one last secret; no bonuses found yet.
     for (const a of getReachableAchievements()) {
-      if (!a.bonus && a.id !== "first-light") storage.unlock(a.id);
+      if (!isBonus(a) && a.id !== "first-light") storage.unlock(a.id);
     }
 
     // The final core earn completes 100% — but nothing tips past it yet.

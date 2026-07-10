@@ -1981,7 +1981,7 @@ export function getSetPrereqs(setId) {
  */
 export function getAllNonMeta() {
   return ACHIEVEMENTS.filter(
-    (a) => a.set !== "meta" && !a.bonus && isReachable(a),
+    (a) => a.set !== "meta" && !isBonus(a) && isReachable(a),
   ).map((a) => a.id);
 }
 
@@ -1993,7 +1993,7 @@ export function getAllNonMeta() {
  */
 export function getSpeedrunGoal() {
   return ACHIEVEMENTS.filter(
-    (a) => a.set !== "meta" && !a.bonus && !a.patient && isReachable(a),
+    (a) => a.set !== "meta" && !isBonus(a) && !a.patient && isReachable(a),
   ).map((a) => a.id);
 }
 

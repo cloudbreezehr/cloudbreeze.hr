@@ -4,7 +4,7 @@ import {
   INTRO_CARD_THRESHOLD,
 } from "../../../../js/achievements/ui/cards.js";
 import { POST_SETTLE_DELAY_MS } from "../../../../js/scroll-highlight.js";
-import { ACHIEVEMENTS } from "../../../../js/achievements/registry.js";
+import { ACHIEVEMENTS, isBonus } from "../../../../js/achievements/registry.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected
@@ -342,8 +342,8 @@ describe("achievements/ui/cards", () => {
       // Core/bonus membership comes from the live registry so the set can
       // grow without rewriting counts here.
       const almanac = ACHIEVEMENTS.filter((a) => a.set === "almanac");
-      const CORE = almanac.filter((a) => !a.bonus).map((a) => a.id);
-      const BONUS = almanac.find((a) => a.bonus).id;
+      const CORE = almanac.filter((a) => !isBonus(a)).map((a) => a.id);
+      const BONUS = almanac.find((a) => isBonus(a)).id;
 
       it("counts the set as core-complete before any bonus", () => {
         CORE.forEach((id) => storage.unlock(id));

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   THEME_SETS,
   getReachableAchievements,
+  isBonus,
 } from "../../../js/achievements/registry.js";
 
 // progress.js computes "current / total" for each progressive achievement.
@@ -105,7 +106,7 @@ describe("achievements/progress", () => {
     });
 
     it("beyond-100 spans the core plus a single bonus slot", () => {
-      const core = getReachableAchievements().filter((a) => !a.bonus);
+      const core = getReachableAchievements().filter((a) => !isBonus(a));
       expect(progress.resolveProgressTotal("beyond-100")).toBe(core.length + 1);
       // Core unlocks fill the bar one by one…
       storage.unlock("first-light");
@@ -123,7 +124,7 @@ describe("achievements/progress", () => {
 
     it("beyond-100 completes at full core plus any one bonus", () => {
       for (const a of getReachableAchievements()) {
-        if (!a.bonus) storage.unlock(a.id);
+        if (!isBonus(a)) storage.unlock(a.id);
       }
       expect(progress.resolveProgressCurrent("beyond-100")).toBe(
         progress.resolveProgressTotal("beyond-100") - 1,
