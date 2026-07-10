@@ -89,7 +89,11 @@ function initWeatherBadge(getLocation, badge, pin) {
     weatherLine = `${baseText} · ${Math.round(weather.tempC)}°C ${
       weather.label
     } over ${location.label}`;
-    emit("real-weather", { code: weather.code, raining: weather.raining });
+    emit("real-weather", {
+      code: weather.code,
+      raining: weather.raining,
+      snowing: weather.snowing,
+    });
     // Still the active view when the answer arrives? Paint it in.
     if (revealed) {
       textEl.textContent = weatherLine;

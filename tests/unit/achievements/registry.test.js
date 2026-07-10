@@ -76,6 +76,7 @@ describe("Almanac set", () => {
         "over-the-moon",
         "rain-check",
         "regular",
+        "snow-day",
         "star-shower",
         "sun-stands-still",
         "tenacious",

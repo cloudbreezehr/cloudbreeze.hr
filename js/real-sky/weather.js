@@ -30,6 +30,12 @@ const RAIN_BANDS = [
   [95, 99],
 ];
 
+// Codes that mean snow is falling right now.
+const SNOW_BANDS = [
+  [71, 77],
+  [85, 86],
+];
+
 export function weatherLabel(code) {
   const band = WMO_BANDS.find((b) => code <= b.max);
   return band ? band.label : "sky";
@@ -39,10 +45,14 @@ export function isRaining(code) {
   return RAIN_BANDS.some(([lo, hi]) => code >= lo && code <= hi);
 }
 
+export function isSnowing(code) {
+  return SNOW_BANDS.some(([lo, hi]) => code >= lo && code <= hi);
+}
+
 /**
  * Current conditions at `location` (default: the home town):
- * { tempC, code, label, raining }, or null on any failure (offline, blocked,
- * slow, malformed).
+ * { tempC, code, label, raining, snowing }, or null on any failure (offline,
+ * blocked, slow, malformed).
  */
 export async function fetchWeather(location = HOME_LOCATION) {
   const controller = new AbortController();
@@ -57,7 +67,13 @@ export async function fetchWeather(location = HOME_LOCATION) {
     const tempC = data?.current?.temperature_2m;
     const code = data?.current?.weather_code;
     if (typeof tempC !== "number" || typeof code !== "number") return null;
-    return { tempC, code, label: weatherLabel(code), raining: isRaining(code) };
+    return {
+      tempC,
+      code,
+      label: weatherLabel(code),
+      raining: isRaining(code),
+      snowing: isSnowing(code),
+    };
   } catch {
     return null;
   } finally {

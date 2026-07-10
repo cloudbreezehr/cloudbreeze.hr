@@ -1683,6 +1683,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
     bonus: true,
   },
+  {
+    id: "snow-day",
+    title: "Snow Day",
+    description: "It was really snowing over you.",
+    hint: "Check on the systems while snow falls on your location",
+    set: "almanac",
+    points: RARE,
+    hidden: true,
+    bonus: true,
+  },
   // Any clear night will do — schedulable, so it stays in the core 100%.
   {
     id: "over-the-moon",

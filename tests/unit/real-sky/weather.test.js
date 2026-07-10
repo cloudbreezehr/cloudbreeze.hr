@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from "vitest";
 import {
   weatherLabel,
   isRaining,
+  isSnowing,
   fetchWeather,
 } from "../../../js/real-sky/weather.js";
 
@@ -26,6 +27,15 @@ describe("real-sky/weather — WMO interpretation", () => {
       expect(isRaining(code), String(code)).toBe(false);
     }
   });
+
+  it("recognizes snowfall, snow grains, and snow showers as snowing", () => {
+    for (const code of [71, 73, 75, 77, 85, 86]) {
+      expect(isSnowing(code), String(code)).toBe(true);
+    }
+    for (const code of [0, 2, 3, 45, 63, 80, 95]) {
+      expect(isSnowing(code), String(code)).toBe(false);
+    }
+  });
 });
 
 describe("real-sky/weather — fetch", () => {
@@ -48,6 +58,7 @@ describe("real-sky/weather — fetch", () => {
       code: 61,
       label: "rain",
       raining: true,
+      snowing: false,
     });
   });
 

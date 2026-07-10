@@ -1765,6 +1765,14 @@ describe("tracker — real-sky handlers", () => {
     expect(storage.isUnlocked("rain-check")).toBe(true);
   });
 
+  it("unlocks snow-day only when it is actually snowing", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("real-weather", { code: 63, snowing: false });
+    expect(storage.isUnlocked("snow-day")).toBe(false);
+    dispatchAchievement("real-weather", { code: 73, snowing: true });
+    expect(storage.isUnlocked("snow-day")).toBe(true);
+  });
+
   it("unlocks you-are-here when precise location is enabled", async () => {
     const { storage } = await startTracker();
     dispatchAchievement("precise-location");

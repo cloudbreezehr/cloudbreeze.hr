@@ -686,6 +686,7 @@ export function createTracker(onUnlock, onRelock) {
 
     "real-weather"(data) {
       if (data && data.raining) tryUnlock("rain-check");
+      if (data && data.snowing) tryUnlock("snow-day");
     },
 
     "precise-location"() {

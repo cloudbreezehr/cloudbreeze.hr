@@ -71,7 +71,11 @@ describe("real-sky/index", () => {
       expect(badge.textContent).toBe("Systems online · 17°C rain over Pula");
     });
     expect(events).toContainEqual(
-      expect.objectContaining({ type: "real-weather", raining: true }),
+      expect.objectContaining({
+        type: "real-weather",
+        raining: true,
+        snowing: false,
+      }),
     );
   });
 
