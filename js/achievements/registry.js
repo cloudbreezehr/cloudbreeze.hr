@@ -1663,8 +1663,8 @@ export const ACHIEVEMENTS = [
     hidden: true,
   },
   // ── Exploration: Real Sky ──
-  // Ones tied to a real-world moment no one can schedule carry `bonus: true`
-  // (see isBonus) — outside the core 100%, pushing completion past it.
+  // Ones tied to a real-world moment no one can schedule carry `calendar: true`
+  // — a bonus (see isBonus) outside the core 100%, pushing completion past it.
   {
     id: "moonstruck",
     title: "Moonstruck",
@@ -1673,7 +1673,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   {
     id: "star-shower",
@@ -1683,7 +1683,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   {
     id: "sun-stands-still",
@@ -1693,7 +1693,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   {
     id: "equal-night",
@@ -1703,7 +1703,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   {
     id: "rain-check",
@@ -1713,7 +1713,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   {
     id: "snow-day",
@@ -1723,7 +1723,7 @@ export const ACHIEVEMENTS = [
     set: "almanac",
     points: RARE,
     hidden: true,
-    bonus: true,
+    calendar: true,
   },
   // Any clear night will do — schedulable, so it stays in the core 100%.
   {
@@ -1896,7 +1896,30 @@ export function getReachableAchievements() {
  * core denominator (completionist, the completion strip, the speedrun finish).
  */
 export function isBonus(achievement) {
-  return achievement.bonus === true;
+  return achievement.bonus === true || achievement.calendar === true;
+}
+
+// ── Achievement traits ──
+// A closed, ordered vocabulary naming *why* an entry is special, so a single
+// player-facing badge can be derived from it. Ordered most- to least-specific.
+export const ACHIEVEMENT_TRAITS = ["calendar", "patient", "bonus"];
+
+const TRAIT_PREDICATES = {
+  /** A real-world moment that can't be scheduled. */
+  calendar: (a) => a.calendar === true,
+  /** Only real elapsed time earns it. */
+  patient: (a) => a.patient === true,
+  /** An extra beyond the core 100%. */
+  bonus: isBonus,
+};
+
+/**
+ * The one trait an achievement carries, or null.
+ */
+export function traitOf(achievement) {
+  return (
+    ACHIEVEMENT_TRAITS.find((t) => TRAIT_PREDICATES[t](achievement)) ?? null
+  );
 }
 
 /**

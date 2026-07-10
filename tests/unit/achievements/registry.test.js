@@ -13,6 +13,8 @@ import {
   getReachableAchievements,
   isReachable,
   isBonus,
+  traitOf,
+  ACHIEVEMENT_TRAITS,
   isThemeSet,
   getProgressiveAchievements,
 } from "../../../js/achievements/registry.js";
@@ -299,21 +301,79 @@ describe("getSpeedrunGoal", () => {
 
   it("marks no bonus entry patient — bonus already sits outside every goal", () => {
     for (const a of ACHIEVEMENTS.filter((a) => a.patient === true)) {
-      expect(a.bonus, a.id).toBeUndefined();
+      expect(isBonus(a), a.id).toBe(false);
     }
   });
 });
 
 describe("isBonus", () => {
-  it("flags only achievements with the bonus field", () => {
+  it("flags achievements with the bonus or calendar field", () => {
     for (const a of ACHIEVEMENTS) {
-      expect(isBonus(a)).toBe(a.bonus === true);
+      expect(isBonus(a)).toBe(a.bonus === true || a.calendar === true);
     }
   });
 
   it("every bonus achievement is hidden until earned", () => {
     for (const a of ACHIEVEMENTS.filter(isBonus)) {
       expect(a.hidden, a.id).toBe(true);
+    }
+  });
+});
+
+describe("calendar achievements", () => {
+  it("are exactly the un-schedulable real-sky moments", () => {
+    const ids = ACHIEVEMENTS.filter((a) => a.calendar === true)
+      .map((a) => a.id)
+      .sort();
+    expect(ids).toEqual(
+      [
+        "equal-night",
+        "moonstruck",
+        "rain-check",
+        "snow-day",
+        "star-shower",
+        "sun-stands-still",
+      ].sort(),
+    );
+  });
+
+  it("count as bonus and stay hidden, carrying calendar alone", () => {
+    const calendar = ACHIEVEMENTS.filter((a) => a.calendar === true);
+    expect(calendar.length).toBeGreaterThan(0);
+    for (const a of calendar) {
+      expect(isBonus(a), a.id).toBe(true);
+      expect(a.hidden, a.id).toBe(true);
+      // Calendar implies bonus, so the entry carries neither a redundant
+      // bonus field nor the elapsed-time patient flag.
+      expect(a.bonus, a.id).toBeUndefined();
+      expect(a.patient, a.id).toBeUndefined();
+    }
+  });
+});
+
+describe("traitOf", () => {
+  it("returns the most-specific trait, matching the flags", () => {
+    for (const a of ACHIEVEMENTS) {
+      let expected = null;
+      if (a.calendar === true) expected = "calendar";
+      else if (a.patient === true) expected = "patient";
+      else if (isBonus(a)) expected = "bonus";
+      expect(traitOf(a), a.id).toBe(expected);
+    }
+  });
+
+  it("prefers calendar over the generic bonus a calendar entry also is", () => {
+    const calendar = ACHIEVEMENTS.filter((a) => a.calendar === true);
+    for (const a of calendar) {
+      expect(isBonus(a), a.id).toBe(true);
+      expect(traitOf(a), a.id).toBe("calendar");
+    }
+  });
+
+  it("only ever resolves to a value in ACHIEVEMENT_TRAITS", () => {
+    for (const a of ACHIEVEMENTS) {
+      const t = traitOf(a);
+      if (t !== null) expect(ACHIEVEMENT_TRAITS).toContain(t);
     }
   });
 });
