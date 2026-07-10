@@ -833,6 +833,13 @@ function buildSearchBar(container) {
   input.setAttribute("aria-label", "Search achievements");
   input.value = _searchState.query;
   input.addEventListener("input", () => {
+    // Announce once per search begun — the empty → non-empty edge, not
+    // every keystroke.
+    if (_searchState.query.trim() === "" && input.value.trim() !== "") {
+      window.dispatchEvent(
+        new CustomEvent("achievement", { detail: { type: "panel-search" } }),
+      );
+    }
     _searchState.query = input.value;
     applySearchFilter(container);
   });

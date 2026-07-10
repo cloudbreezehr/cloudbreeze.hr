@@ -233,6 +233,15 @@ export const ACHIEVEMENTS = [
     hidden: true,
     requires: "keyboard",
   },
+  {
+    id: "fine-print",
+    title: "Fine Print",
+    description: "You asked the logbook a question.",
+    hint: "Search the achievements",
+    set: "cloudlog",
+    points: COMMON,
+    hidden: true,
+  },
   // ── Incantations ──
   {
     id: "wordsmith",

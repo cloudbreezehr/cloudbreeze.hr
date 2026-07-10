@@ -631,6 +631,10 @@ export function createTracker(onUnlock, onRelock) {
       if (data && data.tab) tryProgressItem("panel-tabs-visited", data.tab);
     },
 
+    "panel-search"() {
+      tryUnlock("fine-print");
+    },
+
     "contact-click"() {
       tryUnlock("landfall");
     },

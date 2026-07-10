@@ -762,6 +762,7 @@ describe("tracker — hold / well / fury / misc handlers", () => {
     { event: "theme-history-reveal", unlock: "historian" },
     { event: "cloudlog-activate", unlock: "cloudlog-activated" },
     { event: "timestamp-toggle", unlock: "to-the-minute" },
+    { event: "panel-search", unlock: "fine-print" },
     { event: "cloudlog-shortcut", unlock: "shortcut-master" },
     { event: "cursor-idle", unlock: "idle-hands" },
   ])("$event unlocks $unlock", async ({ event, unlock }) => {

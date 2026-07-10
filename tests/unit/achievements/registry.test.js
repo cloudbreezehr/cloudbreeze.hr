@@ -95,6 +95,7 @@ describe("Exploration-split sets", () => {
       ids: [
         "cloud-reader",
         "cloudlog-activated",
+        "fine-print",
         "shortcut-master",
         "tab-tourist",
         "to-the-minute",

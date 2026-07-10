@@ -466,6 +466,34 @@ describe("achievements/ui/cards", () => {
       expect(restored.length).toBeGreaterThan(0);
     });
 
+    it("dispatches panel-search once per query begun, not per keystroke", () => {
+      mod.renderSections(container);
+      const events = [];
+      const listener = (e) => events.push(e.detail.type);
+      window.addEventListener("achievement", listener);
+      const input = container.querySelector(".achievement-search-input");
+
+      const type = (value) => {
+        input.value = value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      };
+      type("sk");
+      type("sky");
+      expect(events.filter((t) => t === "panel-search")).toHaveLength(1);
+
+      // Clearing and typing again begins a new search.
+      type("");
+      type("moon");
+      expect(events.filter((t) => t === "panel-search")).toHaveLength(2);
+
+      // Whitespace alone is not a query.
+      type("");
+      type("   ");
+      expect(events.filter((t) => t === "panel-search")).toHaveLength(2);
+
+      window.removeEventListener("achievement", listener);
+    });
+
     it("keeps search focus and caret across an unlock-driven rebuild", () => {
       document.body.appendChild(container);
       mod.renderSections(container);
