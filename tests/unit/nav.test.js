@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { initNav } from "../../js/nav.js";
 import { _resetForTests as resetScrollBus } from "../../js/scroll-bus.js";
 

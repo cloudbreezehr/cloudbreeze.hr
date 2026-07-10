@@ -72,7 +72,7 @@ function staticContext() {
 
   const nav = typeof navigator !== "undefined" ? navigator : {};
   const lang = nav.language || null;
-  let tz = null;
+  let tz;
   try {
     tz = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
   } catch {

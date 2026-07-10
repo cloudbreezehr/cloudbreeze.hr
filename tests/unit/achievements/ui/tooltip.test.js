@@ -115,9 +115,7 @@ describe("achievements/ui/tooltip", () => {
     // centered position is at anchor mid (innerWidth - 25); a tip
     // TIP_WIDTH wide spans (anchor mid - TIP_WIDTH/2) to (anchor mid
     // + TIP_WIDTH/2), with the right edge past innerWidth.
-    let measureCall = 0;
     tip.getBoundingClientRect = () => {
-      measureCall++;
       const center = window.innerWidth - 25;
       return {
         left: center - TIP_WIDTH / 2,

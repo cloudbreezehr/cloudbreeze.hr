@@ -647,14 +647,6 @@ const JELLY = defineConstants(
       step: 1,
       description: "Tentacle anchor lag per unit vertical velocity",
     },
-    TRAIL_BASE_FRAC: {
-      value: 0.5,
-      min: 0,
-      max: 1,
-      step: 0.05,
-      description:
-        "Initial trail anchor offset for a tentacle base, as fraction of TRAIL_VX_MUL",
-    },
   },
   { theme: "deep-sea" },
 );
@@ -1094,8 +1086,7 @@ export class Jellyfish {
       const baseX = this.x - bellW + spacing * (i + 1);
       this.ctx.beginPath();
       this.ctx.moveTo(baseX, this.y);
-      let tx = baseX + trailX * JELLY.TRAIL_BASE_FRAC;
-      let ty = this.y;
+      let tx, ty;
       for (let s = 1; s <= segs; s++) {
         const t = s / segs;
         const wave =
