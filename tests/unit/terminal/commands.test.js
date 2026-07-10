@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { createCommands, executeLine } from "../../../js/terminal/commands.js";
+import {
+  createCommands,
+  executeLine,
+  commandNames,
+} from "../../../js/terminal/commands.js";
 
 // Commands are pure over injected deps; each test builds a small fake world
 // and reads back the printed lines and the calls the command routed out.
@@ -70,6 +74,21 @@ describe("terminal/commands", () => {
   it("unknown commands get the classic scolding", () => {
     const { lines } = run("frobnicate --hard");
     expect(lines).toEqual(["sky: command not found: frobnicate"]);
+  });
+
+  describe("commandNames", () => {
+    it("lists each catalogue command exactly once", () => {
+      const names = commandNames();
+      expect(names.length).toBeGreaterThan(0);
+      expect(new Set(names).size).toBe(names.length);
+    });
+
+    it("every listed name executes as a real command", () => {
+      for (const name of commandNames()) {
+        const { lines } = run(name);
+        expect(lines.join("\n"), name).not.toContain("command not found");
+      }
+    });
   });
 
   it("empty input prints nothing", () => {

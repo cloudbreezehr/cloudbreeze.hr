@@ -1712,6 +1712,16 @@ export const ACHIEVEMENTS = [
     points: UNCOMMON,
     hidden: true,
   },
+  {
+    id: "terminal-velocity",
+    title: "Terminal Velocity",
+    description: "Fluent in the sky's shell.",
+    hint: "Run every terminal command",
+    set: "terminal",
+    points: RARE,
+    hidden: true,
+    progressKey: "terminal-commands-run",
+  },
   // ── Linked Skies ──
   {
     id: "parallel-skies",

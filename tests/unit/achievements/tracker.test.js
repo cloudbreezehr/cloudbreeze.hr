@@ -1217,6 +1217,29 @@ describe("tracker — lifecycle (start / stop)", () => {
   });
 });
 
+describe("tracker — terminal-velocity", () => {
+  it("collects every catalogue command into the unlock", async () => {
+    const { storage } = await startTracker();
+    const { commandNames } = await import("../../../js/terminal/commands.js");
+    for (const name of commandNames()) {
+      dispatchAchievement("terminal-command", { command: name });
+    }
+    expect(storage.isUnlocked("terminal-velocity")).toBe(true);
+  });
+
+  it("counts a command regardless of typed case", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("terminal-command", { command: "HELP" });
+    expect(storage.getProgressItems("terminal-commands-run")).toEqual(["help"]);
+  });
+
+  it("does not count input that isn't in the catalogue", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("terminal-command", { command: "frobnicate" });
+    expect(storage.getProgressItems("terminal-commands-run")).toEqual([]);
+  });
+});
+
 describe("tracker — moonlit", () => {
   beforeEach(() => {
     document.body.className = "";

@@ -15,6 +15,7 @@ import {
 import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { getThemeIds } from "../themes/registry.js";
+import { commandNames } from "../terminal/commands.js";
 import { hasDiscoveredAnyTheme } from "../effects/theme-history-hud.js";
 import { wordOfTheDay } from "../daily/word.js";
 import { isTimeTraveling } from "../daily/random.js";
@@ -29,6 +30,10 @@ import {
 // Themes that count toward "all themes active" stacking achievements.
 const STACKABLE_THEME_COUNT = getThemeIds().length;
 const TRIPLE_STACK_COUNT = 3;
+
+// The terminal-command event carries whatever token was typed; only names
+// from the command catalogue count toward the collection.
+const TERMINAL_COMMANDS = new Set(commandNames());
 
 // ── Timing Constants ──
 // Window for the rapid-fire achievement — N clicks must land inside
@@ -699,6 +704,14 @@ export function createTracker(onUnlock, onRelock) {
 
     "terminal-kubectl"() {
       tryUnlock("cloud-native");
+    },
+
+    "terminal-command"(data) {
+      if (!data || typeof data.command !== "string") return;
+      const command = data.command.toLowerCase();
+      if (TERMINAL_COMMANDS.has(command)) {
+        tryProgressItem("terminal-commands-run", command);
+      }
     },
 
     "sky-link"(data) {

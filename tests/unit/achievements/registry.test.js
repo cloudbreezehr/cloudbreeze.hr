@@ -149,6 +149,7 @@ describe("Exploration-split sets", () => {
         "passport-stamped",
         "scorched-earth",
         "shell-access",
+        "terminal-velocity",
       ],
     },
     {

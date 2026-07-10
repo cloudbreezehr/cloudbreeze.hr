@@ -19,6 +19,7 @@ import { IDLE_ANIMATION_NAMES } from "../effects/cursor-idle.js";
 import { INCANTATION_WORDS } from "../effects/incantations.js";
 import { CHEAT_CODES } from "../themes/wanted-cheats.js";
 import { COMBO_IDS } from "../themes/alchemy.js";
+import { commandNames } from "../terminal/commands.js";
 
 export const APPEARANCES = ["dark", "light", "auto"];
 export const QUADRANTS = ["tl", "tr", "bl", "br"];
@@ -51,6 +52,7 @@ export const PROGRESS_ITEMS = {
   "themes-heard": () => THEME_SETS,
   "wanted-cheats-entered": () => CHEAT_CODES,
   "combos-discovered": () => COMBO_IDS,
+  "terminal-commands-run": () => commandNames(),
 };
 
 function countNonMetaUnlocked() {

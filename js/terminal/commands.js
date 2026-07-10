@@ -433,3 +433,8 @@ export function executeLine(line, commands, ctx) {
   }
   return command.run(args, ctx);
 }
+
+/** The catalogue's command names, without wiring a live terminal. */
+export function commandNames() {
+  return createCommands({}).map((c) => c.name);
+}
