@@ -147,6 +147,12 @@ Run prettier on staged files before every commit, so the commit doesn't drag in 
 
 Never run `npx prettier --write "**/*.{js,css,html}"` as part of a normal commit — that reformats the whole tree and can silently pick up drift outside your change. Whole-tree formatting belongs in its own dedicated commit (e.g., "Run formatter over all files").
 
+## Linting
+
+Run `npm run lint` before committing — it's the same whole-tree `eslint .` that CI runs, so a clean local run means a green CI lint job. This catches the class of latent breakage a no-build-step site can't surface otherwise: a duplicate declaration or dead branch inside some path stays invisible until that path runs.
+
+If lint flags a file you didn't directly edit, your change caused it transitively — fix the cause rather than reaching for an inline `eslint-disable`.
+
 ## Testing
 
 ### Manual verification
