@@ -1946,6 +1946,51 @@ describe("tracker — speedrun handlers", () => {
   });
 });
 
+describe("tracker — completion capstones", () => {
+  // A fully-earned Cloudlog carries full progress stores alongside its
+  // unlocks — seed both, or the re-evaluation would relock collections.
+  async function seedFullProgress(storage) {
+    const progress = await import("../../../js/achievements/progress.js");
+    for (const [key, resolver] of Object.entries(progress.PROGRESS_ITEMS)) {
+      for (const item of resolver()) storage.addProgressItem(key, item);
+    }
+    for (const [key, counter] of Object.entries({
+      "appearance-toggles-3": "appearanceToggles",
+      "jellyfish-pulses": "jellyfishPulses",
+      "paper-strokes": "paperStrokes",
+      "clicks-10000": "totalClicks",
+    })) {
+      storage.setCounter(counter, progress.resolveProgressTotal(key));
+    }
+    storage.getState().counters.sessionDays = Array.from(
+      { length: progress.resolveProgressTotal("days-7") },
+      (_, i) => `2026-07-0${i + 1}`,
+    );
+  }
+
+  it("overachiever lands the moment a bonus tips completion past 100%", async () => {
+    const { storage } = await startTracker();
+    const { getReachableAchievements } =
+      await import("../../../js/achievements/registry.js");
+    await seedFullProgress(storage);
+
+    // The whole core except one last secret; no bonuses found yet.
+    for (const a of getReachableAchievements()) {
+      if (!a.bonus && a.id !== "first-light") storage.unlock(a.id);
+    }
+
+    // The final core earn completes 100% — but nothing tips past it yet.
+    dispatchAchievement("click", { x: 1, y: 1 });
+    expect(storage.isUnlocked("first-light")).toBe(true);
+    expect(storage.isUnlocked("overachiever")).toBe(false);
+
+    // The first bonus arrives — completion crosses 100.
+    dispatchAchievement("real-weather", { code: 63, raining: true });
+    expect(storage.isUnlocked("rain-check")).toBe(true);
+    expect(storage.isUnlocked("overachiever")).toBe(true);
+  });
+});
+
 describe("tracker — sky-link handlers", () => {
   beforeEach(() => {
     document.body.className = "";

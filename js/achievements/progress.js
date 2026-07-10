@@ -10,7 +10,9 @@
 
 import * as storage from "./storage.js";
 import {
+  countCoreBonus,
   getAllNonMeta,
+  getReachableAchievements,
   getSetPrereqs,
   sumPoints,
   THEME_SETS,
@@ -55,6 +57,19 @@ export const PROGRESS_ITEMS = {
   "terminal-commands-run": () => commandNames(),
 };
 
+// Overachiever mirrors the completion percent's crossing past 100%, in bar
+// form: every core slot, then a single extra slot that any bonus (except the
+// capstone itself) can fill. The core/bonus split comes from countCoreBonus,
+// so the crossing has one definition however it is displayed.
+const OVERACHIEVER_ID = "overachiever";
+
+function overachieverCounts() {
+  const targets = getReachableAchievements().filter(
+    (a) => a.id !== OVERACHIEVER_ID,
+  );
+  return countCoreBonus(targets, (id) => storage.isUnlocked(id));
+}
+
 function countNonMetaUnlocked() {
   const ids = new Set(getAllNonMeta());
   return storage.getUnlocked().filter((u) => ids.has(u.id)).length;
@@ -95,6 +110,13 @@ export const PROGRESS_COUNTS = {
   "non-meta-all": {
     current: countNonMetaUnlocked,
     total: () => getAllNonMeta().length,
+  },
+  "beyond-100": {
+    current: () => {
+      const { coreUnlocked, bonusUnlocked } = overachieverCounts();
+      return coreUnlocked + Math.min(bonusUnlocked, 1);
+    },
+    total: () => overachieverCounts().coreTotal + 1,
   },
   "points-100": { current: countPoints, total: () => HUNDRED_POINTS },
   "points-500": { current: countPoints, total: () => FIVEHUNDRED_POINTS },

@@ -79,9 +79,9 @@ const APPEARANCE_ICON =
 
 // ── Point Tiers ──
 // The ladder lives in tiers.js; re-export the map and unpack the names the
-// definitions below reference. (MYTHIC has no holder yet, so it isn't unpacked.)
+// definitions below reference.
 export { POINT_TIERS };
-const { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, CELESTIAL } =
+const { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC, CELESTIAL } =
   POINT_TIERS;
 
 // ── Achievement Sets ──
@@ -1343,6 +1343,17 @@ export const ACHIEVEMENTS = [
     points: LEGENDARY,
     hidden: true,
     progressKey: "non-meta-all",
+  },
+  {
+    id: "overachiever",
+    title: "Overachiever",
+    description: "Everything, and then some.",
+    hint: "Push completion past 100% — find a bonus secret too",
+    set: "meta",
+    points: MYTHIC,
+    hidden: true,
+    bonus: true,
+    progressKey: "beyond-100",
   },
   {
     id: "historian",

@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { THEME_SETS } from "../../../js/achievements/registry.js";
+import {
+  THEME_SETS,
+  getReachableAchievements,
+} from "../../../js/achievements/registry.js";
 
 // progress.js computes "current / total" for each progressive achievement.
 // These tests poke the underlying storage through the same module imports
@@ -98,6 +101,36 @@ describe("achievements/progress", () => {
       expect(progress.resolveProgressCurrent("clicks-10000")).toBe(750);
       expect(progress.resolveProgressTotal("clicks-10000")).toBe(
         progress.DEVOTED_CLICKS,
+      );
+    });
+
+    it("beyond-100 spans the core plus a single bonus slot", () => {
+      const core = getReachableAchievements().filter((a) => !a.bonus);
+      expect(progress.resolveProgressTotal("beyond-100")).toBe(core.length + 1);
+      // Core unlocks fill the bar one by one…
+      storage.unlock("first-light");
+      expect(progress.resolveProgressCurrent("beyond-100")).toBe(1);
+      // …while every bonus found fills the same single extra slot.
+      storage.unlock("moonstruck");
+      storage.unlock("star-shower");
+      expect(progress.resolveProgressCurrent("beyond-100")).toBe(2);
+    });
+
+    it("beyond-100's bonus slot ignores overachiever itself", () => {
+      storage.unlock("overachiever");
+      expect(progress.resolveProgressCurrent("beyond-100")).toBe(0);
+    });
+
+    it("beyond-100 completes at full core plus any one bonus", () => {
+      for (const a of getReachableAchievements()) {
+        if (!a.bonus) storage.unlock(a.id);
+      }
+      expect(progress.resolveProgressCurrent("beyond-100")).toBe(
+        progress.resolveProgressTotal("beyond-100") - 1,
+      );
+      storage.unlock("moonstruck");
+      expect(progress.resolveProgressCurrent("beyond-100")).toBe(
+        progress.resolveProgressTotal("beyond-100"),
       );
     });
   });
