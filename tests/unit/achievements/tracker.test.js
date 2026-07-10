@@ -1936,6 +1936,14 @@ describe("tracker — speedrun handlers", () => {
     dispatchAchievement("speedrun-finished", { ms: 754321 });
     expect(storage.isUnlocked("any-percent")).toBe(true);
   });
+
+  it("unlocks personal-best only when a finish beats the previous best", async () => {
+    const { storage } = await startTracker();
+    dispatchAchievement("speedrun-finished", { ms: 90000, pb: false });
+    expect(storage.isUnlocked("personal-best")).toBe(false);
+    dispatchAchievement("speedrun-finished", { ms: 30000, pb: true });
+    expect(storage.isUnlocked("personal-best")).toBe(true);
+  });
 });
 
 describe("tracker — sky-link handlers", () => {

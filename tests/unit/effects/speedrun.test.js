@@ -197,6 +197,32 @@ describe("effects/speedrun — run lifecycle", () => {
     expect(hud()).toBeNull();
   });
 
+  it("flags a finish as a pb only when it beats the banked best", () => {
+    const events = [];
+    window.addEventListener("achievement", (e) => events.push(e.detail));
+
+    // First finish sets the bar.
+    speedrun.requestSpeedrun();
+    confirmDialog();
+    vi.advanceTimersByTime(90000);
+    for (const id of registry.getSpeedrunGoal()) storage.unlock(id);
+    vi.advanceTimersByTime(200); // let a tick observe completion
+
+    // A faster second run beats it.
+    speedrun.requestSpeedrun();
+    confirmDialog();
+    vi.advanceTimersByTime(30000);
+    for (const id of registry.getSpeedrunGoal()) storage.unlock(id);
+    vi.advanceTimersByTime(200); // let a tick observe completion
+
+    const finishes = events.filter((d) => d.type === "speedrun-finished");
+    expect(finishes).toHaveLength(2);
+    expect(finishes[0].pb).toBe(false);
+    expect(finishes[1].pb).toBe(true);
+    // The faster time replaced the banked best.
+    expect(storage.getPref(BEST_RUN_PREF())).toBeLessThan(90000);
+  });
+
   it("does not finish while a goal achievement is still locked", () => {
     const events = [];
     window.addEventListener("achievement", (e) => events.push(e.detail.type));

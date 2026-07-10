@@ -795,8 +795,9 @@ export function createTracker(onUnlock, onRelock) {
       tryUnlock("on-the-clock");
     },
 
-    "speedrun-finished"() {
+    "speedrun-finished"(data) {
       tryUnlock("any-percent");
+      if (data && data.pb) tryUnlock("personal-best");
     },
 
     "passport-import"() {

@@ -161,10 +161,12 @@ function finalizeRun(elapsed) {
   hudEl.classList.add("finished");
   addSplit("Every secret", elapsed);
   const best = storage.getPref(BEST_RUN_PREF);
-  if (typeof best !== "number" || elapsed < best) {
+  // A first finish only sets the bar; beating an existing one is a PB.
+  const pb = typeof best === "number" && elapsed < best;
+  if (pb || typeof best !== "number") {
     storage.setPref(BEST_RUN_PREF, elapsed);
   }
-  emit("speedrun-finished", { ms: elapsed });
+  emit("speedrun-finished", { ms: elapsed, pb });
   playSfx("fanfare", { ui: true });
   restoreBackup();
   if (endBtnEl) endBtnEl.textContent = "Close";

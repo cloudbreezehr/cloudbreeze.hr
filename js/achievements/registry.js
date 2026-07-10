@@ -1445,6 +1445,16 @@ export const ACHIEVEMENTS = [
     bonus: true,
   },
   {
+    id: "personal-best",
+    title: "Personal Best",
+    description: "The clock blinked first.",
+    hint: "Finish a speedrun faster than your best",
+    set: "meta",
+    points: EPIC,
+    hidden: true,
+    bonus: true,
+  },
+  {
     id: "cheat-code",
     title: "Cheat Code",
     description: "Up, up, down, down...",
