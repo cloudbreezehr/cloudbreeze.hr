@@ -23,6 +23,7 @@ let overlayEl = null;
 let toggleBtn = null;
 let _escHandler = null;
 let _releaseFocusTrap = null;
+let _onClose = null;
 
 const CLOSE_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M4 4l8 8M4 12l8-8"/></svg>`;
 const BOOK_ICON = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="2" width="10" height="12" rx="1.5"/><path d="M5.5 5.5h5M5.5 8h5M5.5 10.5h3"/></svg>`;
@@ -200,8 +201,12 @@ export function markCheatsheetDiscovered() {
   return firstTime;
 }
 
-export function openCheatsheet() {
+// Optional one-shot hand-back: callers that suspend themselves to let the
+// cheatsheet take the foreground can pass a callback here to resume once the
+// sheet closes, however it closes (Esc, the close button, or a backdrop click).
+export function openCheatsheet(onClose) {
   if (overlayEl) return;
+  _onClose = onClose || null;
   overlayEl = buildOverlay();
   document.body.appendChild(overlayEl);
   void overlayEl.offsetHeight;
@@ -240,6 +245,11 @@ export function closeCheatsheet() {
   el.addEventListener("transitionend", () => el.remove(), { once: true });
   // Belt-and-suspenders: remove even if transitionend doesn't fire.
   setTimeout(() => el.remove(), FADE_FALLBACK_MS);
+  if (_onClose) {
+    const onClose = _onClose;
+    _onClose = null;
+    onClose();
+  }
 }
 
 export function toggleCheatsheet() {
@@ -267,6 +277,7 @@ export function _resetForTests() {
   }
   if (overlayEl && overlayEl.parentNode) overlayEl.remove();
   overlayEl = null;
+  _onClose = null;
   if (toggleBtn && toggleBtn.parentNode) toggleBtn.remove();
   toggleBtn = null;
 }

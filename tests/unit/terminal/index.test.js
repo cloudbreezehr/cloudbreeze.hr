@@ -114,6 +114,18 @@ describe("terminal/index", () => {
     expect(terminal.isTerminalOpen()).toBe(false);
   });
 
+  it("man hands off to the cheatsheet, then hands back on close", () => {
+    terminal.openTerminal();
+    type("man cloudbreeze");
+    expect(terminal.isTerminalOpen()).toBe(false);
+    const overlay = document.querySelector(".cheatsheet-overlay");
+    expect(overlay).not.toBeNull();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "Escape", cancelable: true }),
+    );
+    expect(terminal.isTerminalOpen()).toBe(true);
+  });
+
   it("kubectl reaches the real theme registry", () => {
     terminal.openTerminal();
     type("kubectl get themes");

@@ -112,11 +112,12 @@ function buildDeps() {
       };
     },
     qualityTier: getQualityTier,
-    // Hand off, don't stack: only one modal owns the foreground at a time,
-    // so the terminal closes before the cheatsheet takes over.
+    // Hand off, don't stack: only one modal owns the foreground at a time, so
+    // the terminal closes before the cheatsheet takes over — and reopens once
+    // the cheatsheet closes, so the visitor lands back in the shell.
     openCheatsheet: () => {
       closeTerminal();
-      openCheatsheet();
+      openCheatsheet(openTerminal);
     },
     daily: () => ({
       seedKey: skySeedKey(),
@@ -138,6 +139,9 @@ function buildDeps() {
 }
 
 function print(lines, className) {
+  // A command's own side effect (e.g. man handing off to the cheatsheet) can
+  // close the terminal before its result is printed — nowhere left to print to.
+  if (!scrollbackEl) return;
   for (const text of lines) {
     const line = document.createElement("div");
     line.className = className ? `terminal-line ${className}` : "terminal-line";

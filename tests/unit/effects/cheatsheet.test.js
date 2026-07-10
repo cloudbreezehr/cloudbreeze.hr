@@ -92,6 +92,23 @@ describe("effects/cheatsheet", () => {
     expect(mod.isCheatsheetOpen()).toBe(false);
   });
 
+  it("calls the onClose hand-back once when closed, however it closes", () => {
+    const onClose = vi.fn();
+    mod.openCheatsheet(onClose);
+    mod.closeCheatsheet();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not call onClose from a later open that passes none", () => {
+    const onClose = vi.fn();
+    mod.openCheatsheet(onClose);
+    mod.closeCheatsheet();
+    onClose.mockClear();
+    mod.openCheatsheet();
+    mod.closeCheatsheet();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
   it("closes on a backdrop click but not a panel click", () => {
     mod.openCheatsheet();
     const overlay = getOverlay();
