@@ -193,8 +193,15 @@ describe("Exploration-split sets", () => {
 });
 
 describe("THEME_SETS", () => {
-  it("matches the themes registry one-for-one", () => {
-    expect([...THEME_SETS].sort()).toEqual([...getThemeIds()].sort());
+  it("inherits the theme registry's order one-for-one", () => {
+    expect([...THEME_SETS]).toEqual([...getThemeIds()]);
+  });
+
+  it("orders theme sets in SETS by the theme registry's order", () => {
+    const themeSetIds = SETS.map((s) => s.id).filter((id) =>
+      getThemeIds().includes(id),
+    );
+    expect(themeSetIds).toEqual([...getThemeIds()]);
   });
 
   it("SET_MASTERY_MAP has an entry per theme set", () => {

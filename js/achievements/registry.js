@@ -12,7 +12,7 @@
 // gate normal completion, but the speedrun's finish line skips them — a run
 // is a single sitting.
 
-import { getTheme } from "../themes/registry.js";
+import { getThemes, getThemeIds } from "../themes/registry.js";
 import { hasCapability } from "../device.js";
 import { POINT_TIERS } from "./tiers.js";
 
@@ -85,10 +85,17 @@ const { TRIVIAL, COMMON, UNCOMMON, RARE, EPIC, LEGENDARY, MYTHIC, CELESTIAL } =
   POINT_TIERS;
 
 // ── Achievement Sets ──
-// Theme sets pull their icon from the theme registry so there's one source of
-// truth per theme.  Non-theme sets declare their icon inline above.  Theme
-// descriptors are static data in themes/registry.js, so `getTheme(id)` is
-// safe to call at module load time — no init order dependency.
+// Theme sets are generated from the theme registry so id, label, color, and
+// icon have a single source of truth — and, crucially, their *order* inherits
+// the registry's declaration order.  Reordering themes there reorders them
+// here with no edit to this file.
+const THEME_SET_DESCRIPTORS = getThemes().map((t) => ({
+  id: t.id,
+  label: t.label,
+  color: t.color,
+  icon: t.icon,
+}));
+
 export const SETS = [
   { id: "cloudlog", label: "Cloudlog", color: null, icon: CLOUDLOG_ICON },
   {
@@ -119,66 +126,7 @@ export const SETS = [
   },
   { id: "almanac", label: "Almanac", color: null, icon: ALMANAC_ICON },
   { id: "mastery", label: "Mastery", color: null, icon: MASTERY_ICON },
-  {
-    id: "deep-sea",
-    label: "Deep Sea",
-    color: "#00ffc8",
-    icon: getTheme("deep-sea")?.icon,
-  },
-  {
-    id: "frozen",
-    label: "Frozen",
-    color: "#88d4f7",
-    icon: getTheme("frozen")?.icon,
-  },
-  {
-    id: "blocky",
-    label: "Blocky",
-    color: "#ffa040",
-    icon: getTheme("blocky")?.icon,
-  },
-  {
-    id: "rainy",
-    label: "Rainy",
-    color: "#6a9fc0",
-    icon: getTheme("rainy")?.icon,
-  },
-  {
-    id: "paper",
-    label: "Paper",
-    color: "#a89580",
-    icon: getTheme("paper")?.icon,
-  },
-  {
-    id: "vhs",
-    label: "VHS",
-    color: "#b4f0b4",
-    icon: getTheme("vhs")?.icon,
-  },
-  {
-    id: "upside-down",
-    label: "Upside Down",
-    color: "#e04050",
-    icon: getTheme("upside-down")?.icon,
-  },
-  {
-    id: "constellation",
-    label: "Constellation",
-    color: "#c0c8ff",
-    icon: getTheme("constellation")?.icon,
-  },
-  {
-    id: "matrix",
-    label: "Matrix",
-    color: "#33d96a",
-    icon: getTheme("matrix")?.icon,
-  },
-  {
-    id: "wanted",
-    label: "Wanted",
-    color: "#ff6a00",
-    icon: getTheme("wanted")?.icon,
-  },
+  ...THEME_SET_DESCRIPTORS,
   { id: "meta", label: "Milestones", color: null, icon: META_ICON },
 ];
 
@@ -1958,23 +1906,12 @@ export function sumPoints(unlockedList) {
 }
 
 // Theme set IDs for "unlock all in set" meta-achievements
-export const THEME_SETS = [
-  "deep-sea",
-  "frozen",
-  "blocky",
-  "rainy",
-  "paper",
-  "vhs",
-  "upside-down",
-  "constellation",
-  "matrix",
-  "wanted",
-];
+export const THEME_SETS = getThemeIds();
 
 // Map from theme set id to its "unlock all" achievement id
 export const SET_MASTERY_MAP = {
-  "deep-sea": "abyssal-explorer",
   frozen: "glacial-mastery",
+  "deep-sea": "abyssal-explorer",
   blocky: "voxel-master",
   rainy: "storm-chaser",
   paper: "sketchbook-full",
