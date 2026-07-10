@@ -70,6 +70,7 @@ describe("Almanac set", () => {
       [
         "equal-night",
         "frequent-flyer",
+        "golden-hour",
         "moonlit",
         "moonstruck",
         "over-the-moon",

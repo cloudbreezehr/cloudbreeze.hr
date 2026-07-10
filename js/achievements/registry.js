@@ -451,6 +451,16 @@ export const ACHIEVEMENTS = [
     hidden: true,
     patient: true,
   },
+  {
+    id: "golden-hour",
+    title: "Golden Hour",
+    description: "You caught the sky changing its mind.",
+    hint: "Visit in the hour after sunrise or before sunset",
+    set: "almanac",
+    points: UNCOMMON,
+    hidden: true,
+    patient: true,
+  },
   // ── Exploration: Dev ──
   {
     id: "reverse-engineer",

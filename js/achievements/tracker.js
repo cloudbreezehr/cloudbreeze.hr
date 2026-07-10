@@ -16,6 +16,8 @@ import * as storage from "./storage.js";
 import { announce } from "./announcer.js";
 import { getThemeIds } from "../themes/registry.js";
 import { commandNames } from "../terminal/commands.js";
+import { localDayPhase } from "../real-sky/local.js";
+import { currentLocation } from "../real-sky/geolocate.js";
 import { hasDiscoveredAnyTheme } from "../effects/theme-history-hud.js";
 import { wordOfTheDay } from "../daily/word.js";
 import { isTimeTraveling } from "../daily/random.js";
@@ -906,6 +908,11 @@ export function createTracker(onUnlock, onRelock) {
     const hour = new Date().getHours();
     if (hour >= MOONLIT_START_HOUR && hour < MOONLIT_END_HOUR) {
       tryUnlock("moonlit");
+    }
+
+    // Golden hour — arriving while the sun hangs low
+    if (localDayPhase(new Date(), currentLocation()) === "golden") {
+      tryUnlock("golden-hour");
     }
 
     // Time Traveler — arriving under a shared sky seeded from another day.

@@ -17,6 +17,15 @@ import { STORAGE_KEY as THEME_HISTORY_STORAGE_KEY } from "../../../js/effects/th
 // are left real — they're data, not behavior, and mocking them would couple
 // tests to an implementation seam that doesn't exist.
 
+// The day phase depends on the machine's clock *and* timezone, so the real
+// solar math can't be pinned with fake timers alone — stub it with a
+// settable value ("day" keeps the boot check quiet for unrelated tests).
+const mockDayPhase = vi.hoisted(() => ({ value: "day" }));
+vi.mock("../../../js/real-sky/local.js", () => ({
+  localDayPhase: () => mockDayPhase.value,
+  HOME_LOCATION: { latDeg: 44, lonDeg: 13, label: "test" },
+}));
+
 const SLACK_MS = 1000;
 const PAST_RAPID_FIRE_WINDOW_MS = RAPID_FIRE_WINDOW_MS + SLACK_MS;
 const WITHIN_AFTERSHOCK_MS = Math.floor(AFTERSHOCK_WINDOW_MS / 4);
@@ -1237,6 +1246,26 @@ describe("tracker — terminal-velocity", () => {
     const { storage } = await startTracker();
     dispatchAchievement("terminal-command", { command: "frobnicate" });
     expect(storage.getProgressItems("terminal-commands-run")).toEqual([]);
+  });
+});
+
+describe("tracker — golden-hour", () => {
+  afterEach(() => {
+    mockDayPhase.value = "day";
+  });
+
+  it("unlocks when start() runs during the golden phase", async () => {
+    mockDayPhase.value = "golden";
+    const { storage } = await startTracker();
+    expect(storage.isUnlocked("golden-hour")).toBe(true);
+  });
+
+  it("stays locked in every other phase", async () => {
+    for (const phase of ["day", "twilight", "night"]) {
+      mockDayPhase.value = phase;
+      const { storage } = await startTracker();
+      expect(storage.isUnlocked("golden-hour"), phase).toBe(false);
+    }
   });
 });
 
