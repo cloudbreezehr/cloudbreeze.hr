@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { rocketCountForTier } from "../../../js/effects/fireworks.js";
 
 // rocketCountForTier is a pure function; the only runtime dependency is

@@ -120,7 +120,7 @@ export function remapLegacyIds(state, resolve = resolveLegacyId) {
 }
 
 function read() {
-  let raw = null;
+  let raw;
   try {
     raw = localStorage.getItem(STORAGE_KEY);
   } catch {

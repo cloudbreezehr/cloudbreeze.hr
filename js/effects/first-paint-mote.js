@@ -25,7 +25,7 @@ export function initFirstPaintMote() {
   // instant flash via the duration clamp.
   if (prefersReducedMotion()) return;
 
-  let shown = false;
+  let shown;
   try {
     shown = !!window.sessionStorage.getItem(SESSION_FLAG_KEY);
   } catch {

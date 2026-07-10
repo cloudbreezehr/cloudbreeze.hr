@@ -15,11 +15,9 @@ import {
   importConfig,
   onSectionActivate,
 } from "./registry.js";
-import { getTheme, getThemes, getThemeIds } from "../themes/registry.js";
+import { getTheme, getThemeIds } from "../themes/registry.js";
 
 // ── Layout Constants ──
-const PANEL_WIDTH = 340;
-const PANEL_MIN_HEIGHT = 200;
 const COLLAPSED_SIZE = 36;
 // ── Auto-scroll suppression ──
 const INTERACTION_QUIET_MS = 400;
@@ -32,11 +30,7 @@ const DOCK_UNDOCK_PULL_PX = 6;
 const DOCK_ANIM_MS = 260;
 const DOCK_ANIM_EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const DOCK_GLOW_COLOR = "100, 180, 255";
-const DOCK_GLOW_OPACITY = 0.6;
-const DOCK_GLOW_SPREAD = 12;
-const DOCK_GLOW_WIDTH = 3;
 const WALL_GLOW_THICKNESS = 4;
-const WALL_GLOW_SPREAD = 18;
 // ── Dock Snap Effect ──
 const SNAP_FLASH_DURATION_MS = 350;
 const SNAP_FLASH_SPREAD = 24;

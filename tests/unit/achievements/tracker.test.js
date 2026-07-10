@@ -64,7 +64,9 @@ function stopAllTrackers() {
     const t = _activeTrackers.pop();
     try {
       t.stop();
-    } catch {}
+    } catch {
+      // best-effort teardown — a tracker that already stopped is fine
+    }
   }
 }
 

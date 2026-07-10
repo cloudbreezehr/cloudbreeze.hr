@@ -68,7 +68,7 @@ function nearestProgress() {
 export function maybeShowWelcomeBack(showActivationToast) {
   if (typeof showActivationToast !== "function") return;
 
-  let session = null;
+  let session;
   try {
     session = window.sessionStorage;
   } catch {

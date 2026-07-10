@@ -386,7 +386,7 @@ export function initUpsideDown() {
         showWarning();
       }
     },
-    canComplete({ force }) {
+    canComplete() {
       // Only complete once the warning has been up long enough
       return (
         warningVisible &&

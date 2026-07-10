@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { initReveal } from "../../js/reveal.js";
 
 // happy-dom's IntersectionObserver is a stub that never actually fires.
