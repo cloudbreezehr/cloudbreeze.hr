@@ -701,12 +701,19 @@ export function renderSections(container) {
         icon.innerHTML = CLOUD_LOCK_SVG;
       }
 
-      // Nature badge — a corner glyph naming why the achievement is special.
-      // Held back on an anonymous card so a hidden entry's trait isn't a spoiler.
+      // Nature badge — revealed on hover, off anonymous cards (no spoiler).
       const trait = traitOf(ach);
       if (trait && flavorVisible) {
         const badge = buildTraitBadge(trait);
-        if (badge) icon.appendChild(badge);
+        if (badge) {
+          icon.appendChild(badge);
+          card.addEventListener("mouseenter", () =>
+            card.classList.add("trait-shown"),
+          );
+          card.addEventListener("mouseleave", () =>
+            card.classList.remove("trait-shown"),
+          );
+        }
       }
 
       // Text

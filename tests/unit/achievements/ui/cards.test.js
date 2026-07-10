@@ -758,6 +758,19 @@ describe("achievements/ui/cards", () => {
         mod.renderSections(container);
         expect(badge("first-light")).toBeNull();
       });
+
+      it("reveals the badge on hover and hides it on leave", () => {
+        storage.unlock(CALENDAR_ACH.id);
+        mod.renderSections(container);
+        const card = container.querySelector(
+          `.achievement-card[data-id="${CALENDAR_ACH.id}"]`,
+        );
+        expect(card.classList.contains("trait-shown")).toBe(false);
+        card.dispatchEvent(new MouseEvent("mouseenter"));
+        expect(card.classList.contains("trait-shown")).toBe(true);
+        card.dispatchEvent(new MouseEvent("mouseleave"));
+        expect(card.classList.contains("trait-shown")).toBe(false);
+      });
     });
   });
 
