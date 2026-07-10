@@ -133,5 +133,23 @@ describe("achievements/progress", () => {
         progress.resolveProgressTotal("beyond-100"),
       );
     });
+
+    it("whole-sky spans every reachable achievement except itself", () => {
+      expect(progress.resolveProgressTotal("whole-sky")).toBe(
+        getReachableAchievements().length - 1,
+      );
+      storage.unlock("first-light");
+      storage.unlock("the-whole-sky");
+      expect(progress.resolveProgressCurrent("whole-sky")).toBe(1);
+    });
+
+    it("whole-sky completes once everything else reachable is unlocked", () => {
+      for (const a of getReachableAchievements()) {
+        if (a.id !== "the-whole-sky") storage.unlock(a.id);
+      }
+      expect(progress.resolveProgressCurrent("whole-sky")).toBe(
+        progress.resolveProgressTotal("whole-sky"),
+      );
+    });
   });
 });

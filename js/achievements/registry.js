@@ -1356,6 +1356,17 @@ export const ACHIEVEMENTS = [
     progressKey: "beyond-100",
   },
   {
+    id: "the-whole-sky",
+    title: "The Whole Sky",
+    description: "Every secret, every season.",
+    hint: "Earn every achievement — bonus ones included",
+    set: "meta",
+    points: CELESTIAL,
+    hidden: true,
+    bonus: true,
+    progressKey: "whole-sky",
+  },
+  {
     id: "historian",
     title: "Historian",
     description: "Your path becomes visible.",

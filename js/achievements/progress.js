@@ -70,6 +70,19 @@ function overachieverCounts() {
   return countCoreBonus(targets, (id) => storage.isUnlocked(id));
 }
 
+// The Whole Sky spans everything the device can earn — core and bonus alike —
+// except the capstone itself.
+const WHOLE_SKY_ID = "the-whole-sky";
+
+function wholeSkyTargets() {
+  return getReachableAchievements().filter((a) => a.id !== WHOLE_SKY_ID);
+}
+
+function countWholeSkyUnlocked() {
+  const ids = new Set(wholeSkyTargets().map((a) => a.id));
+  return storage.getUnlocked().filter((u) => ids.has(u.id)).length;
+}
+
 function countNonMetaUnlocked() {
   const ids = new Set(getAllNonMeta());
   return storage.getUnlocked().filter((u) => ids.has(u.id)).length;
@@ -117,6 +130,10 @@ export const PROGRESS_COUNTS = {
       return coreUnlocked + Math.min(bonusUnlocked, 1);
     },
     total: () => overachieverCounts().coreTotal + 1,
+  },
+  "whole-sky": {
+    current: countWholeSkyUnlocked,
+    total: () => wholeSkyTargets().length,
   },
   "points-100": { current: countPoints, total: () => HUNDRED_POINTS },
   "points-500": { current: countPoints, total: () => FIVEHUNDRED_POINTS },

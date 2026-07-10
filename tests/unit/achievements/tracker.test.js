@@ -1989,6 +1989,25 @@ describe("tracker — completion capstones", () => {
     expect(storage.isUnlocked("rain-check")).toBe(true);
     expect(storage.isUnlocked("overachiever")).toBe(true);
   });
+
+  it("the whole sky lands when the final achievement of all is earned", async () => {
+    const { storage } = await startTracker();
+    const { getReachableAchievements } =
+      await import("../../../js/achievements/registry.js");
+    await seedFullProgress(storage);
+
+    // Everything — core, bonus, capstones — except one last secret.
+    for (const a of getReachableAchievements()) {
+      if (a.id !== "the-whole-sky" && a.id !== "first-light") {
+        storage.unlock(a.id);
+      }
+    }
+    expect(storage.isUnlocked("the-whole-sky")).toBe(false);
+
+    // The final earn arrives through the tracker and re-evaluates everything.
+    dispatchAchievement("click", { x: 1, y: 1 });
+    expect(storage.isUnlocked("the-whole-sky")).toBe(true);
+  });
 });
 
 describe("tracker — sky-link handlers", () => {
