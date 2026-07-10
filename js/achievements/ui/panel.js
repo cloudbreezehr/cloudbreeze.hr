@@ -133,10 +133,16 @@ function reachableCounts() {
 // Completion percent. Core alone tops out at 100%; bonus counts only once core
 // is complete, so those un-schedulable secrets push the number past 100 (each
 // worth the same slice a core one would) rather than masking missing core.
+// The integer display reserves its boundary values for their true states: it
+// shows 0 only before the first earn, reaches 100 only when core is done, and
+// always exceeds 100 once a bonus tips past — everything in between floors.
 export function completionPercent({ coreUnlocked, coreTotal, bonusUnlocked }) {
   if (coreTotal <= 0) return 0;
   const earned = coreUnlocked + (coreUnlocked >= coreTotal ? bonusUnlocked : 0);
-  return Math.round((earned / coreTotal) * 100);
+  const pct = (earned / coreTotal) * 100;
+  if (pct > 100) return Math.ceil(pct);
+  if (pct > 0 && pct < 1) return 1;
+  return Math.floor(pct);
 }
 
 // Footer "N / M" count. Mirrors the per-set rule: earned bonus lifts both

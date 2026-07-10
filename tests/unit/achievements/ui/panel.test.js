@@ -560,6 +560,36 @@ describe("achievements/ui/panel", () => {
       ).toBe(108);
     });
 
+    it("never collapses a started log back to 0%", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 1,
+          coreTotal: 201,
+          bonusUnlocked: 0,
+        }),
+      ).toBe(1);
+    });
+
+    it("floors on the way up — one short of a large core is 99, not 100", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 200,
+          coreTotal: 201,
+          bonusUnlocked: 0,
+        }),
+      ).toBe(99);
+    });
+
+    it("ceils past the line — the first bonus tips the display to 101", () => {
+      expect(
+        mod.completionPercent({
+          coreUnlocked: 201,
+          coreTotal: 201,
+          bonusUnlocked: 1,
+        }),
+      ).toBe(101);
+    });
+
     it("is zero when there is nothing to complete", () => {
       expect(
         mod.completionPercent({
