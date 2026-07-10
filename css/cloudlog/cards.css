@@ -360,6 +360,7 @@ body.light-appearance .achievement-search-input {
   align-items: center;
   justify-content: center;
   color: rgba(255, 255, 255, 0.5);
+  position: relative;
 }
 .achievement-icon svg {
   width: 18px;
@@ -436,10 +437,8 @@ body.light-appearance .achievement-search-input {
 /* Tiny "?" badge over the icon's corner for cards whose hover *would*
    surface a hint.  Scoped to non-unlocked cards — once a card is
    unlocked the user already discovered the achievement, and the
-   shimmer ::after on .unlocked already occupies the layering tier. */
-.achievement-card[data-has-hint]:not(.unlocked) .achievement-icon {
-  position: relative;
-}
+   shimmer ::after on .unlocked already occupies the layering tier.
+   The icon is the positioned containing block (see .achievement-icon). */
 .achievement-card[data-has-hint]:not(.unlocked) .achievement-icon::after {
   content: "?";
   position: absolute;
@@ -466,6 +465,37 @@ body.light-appearance .achievement-search-input {
 .achievement-card[data-has-hint]:not(.unlocked):hover .achievement-icon::after {
   opacity: 1;
   color: rgba(255, 255, 255, 0.85);
+}
+
+/* ── Trait badge ── */
+/* A corner chip on the icon naming an achievement's nature. Sits top-left. */
+.achievement-trait-badge {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 13px;
+  height: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(var(--ink-rgb), 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.achievement-trait-badge svg {
+  width: 9px;
+  height: 9px;
+}
+.achievement-trait-badge--calendar {
+  color: #8ec5ee;
+}
+.achievement-trait-badge--patient {
+  color: #e7c98c;
+}
+.achievement-trait-badge--bonus {
+  color: #f2d675;
 }
 
 /* ── Unseen Indicator ── */

@@ -45,3 +45,26 @@ export const HIDE_NAVBAR_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="cur
   <path d="M11.5 12H5C3.3 12 2 10.7 2 9c0-1.5 1-2.7 2.4-3C4.7 4.4 6.2 3 8 3c1.3 0 2.4.6 3.1 1.6.3-.1.6-.1.9-.1 1.7 0 3 1.3 3 3 0 1.5-1.1 2.8-2.5 3"/>
   <path d="M3 13.5 13 3.5"/>
 </svg>`;
+
+// ── Trait badges ──
+// The small corner glyphs marking an achievement's nature.  Legibility at a
+// ~9px render drives the heavier stroke and sparser detail versus the set icons.
+
+// Calendar — a real-world moment: a page with binding posts and a header rule.
+export const CALENDAR_BADGE_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <rect x="2.5" y="3.5" width="11" height="10" rx="1.6"/>
+  <path d="M2.5 6.5h11"/>
+  <path d="M5.5 2v2.2M10.5 2v2.2"/>
+</svg>`;
+
+// Patient — comes with time: an hourglass funnelling to the waist.
+export const PATIENT_BADGE_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M4 2.5h8M4 13.5h8"/>
+  <path d="M4.7 3 8 8l3.3-5"/>
+  <path d="M4.7 13 8 8l3.3 5"/>
+</svg>`;
+
+// Bonus — beyond 100%: a plus, the "and then some".
+export const BONUS_BADGE_SVG = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round">
+  <path d="M8 3.5v9M3.5 8h9"/>
+</svg>`;

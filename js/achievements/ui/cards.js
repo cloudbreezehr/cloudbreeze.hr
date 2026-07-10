@@ -14,6 +14,7 @@ import {
   getAchievement,
   getReachableAchievements,
   isBonus,
+  traitOf,
   countCoreBonus,
   isThemeSet,
 } from "../registry.js";
@@ -25,6 +26,7 @@ import { showActivationToast } from "./toast.js";
 import { setActiveTab } from "./tabs.js";
 import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
+import { buildTraitBadge } from "./traits.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
 import { bindClickable } from "../../clickable.js";
 
@@ -661,6 +663,10 @@ export function renderSections(container) {
 
       const isUnseen = isUnlocked && !storage.isSeen(ach.id);
       const isRelocked = !isUnlocked && storage.isRelocked(ach.id);
+      // Whether the card shows its real flavor (title/description) rather than
+      // an anonymous "???" — the same gate the nature badge rides on.
+      const flavorVisible =
+        isUnlocked || isRelocked || !ach.hidden || showsClues();
 
       if (isUnlocked) {
         card.classList.add("unlocked");
@@ -693,6 +699,14 @@ export function renderSections(container) {
         icon.innerHTML = CLOUD_HIDDEN_SVG;
       } else {
         icon.innerHTML = CLOUD_LOCK_SVG;
+      }
+
+      // Nature badge — a corner glyph naming why the achievement is special.
+      // Held back on an anonymous card so a hidden entry's trait isn't a spoiler.
+      const trait = traitOf(ach);
+      if (trait && flavorVisible) {
+        const badge = buildTraitBadge(trait);
+        if (badge) icon.appendChild(badge);
       }
 
       // Text

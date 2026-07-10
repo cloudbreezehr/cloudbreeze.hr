@@ -4,7 +4,11 @@ import {
   INTRO_CARD_THRESHOLD,
 } from "../../../../js/achievements/ui/cards.js";
 import { POST_SETTLE_DELAY_MS } from "../../../../js/scroll-highlight.js";
-import { ACHIEVEMENTS, isBonus } from "../../../../js/achievements/registry.js";
+import {
+  ACHIEVEMENTS,
+  isBonus,
+  traitOf,
+} from "../../../../js/achievements/registry.js";
 
 // cards.js owns the grouped-by-set achievement grid plus the seen-
 // observer dwell tracking.  It reads live panel state via injected
@@ -23,6 +27,17 @@ const PAST_HIGHLIGHT_DELAY_MS = POST_SETTLE_DELAY_MS + SLACK_MS;
 // guard test pins that trait); first-light is the plain visible one.
 const TIME_WARP = ACHIEVEMENTS.find((a) => a.id === "to-the-minute");
 const FIRST_LIGHT = ACHIEVEMENTS.find((a) => a.id === "first-light");
+
+// Trait-badge samples, derived from the registry so they follow whichever
+// achievements carry each nature rather than pinning specific ids. The bonus
+// sample skips capability-gated entries so it always renders in the test env.
+const CALENDAR_ACH = ACHIEVEMENTS.find((a) => traitOf(a) === "calendar");
+const PATIENT_HIDDEN_ACH = ACHIEVEMENTS.find(
+  (a) => traitOf(a) === "patient" && a.hidden,
+);
+const BONUS_ACH = ACHIEVEMENTS.find(
+  (a) => traitOf(a) === "bonus" && !a.requires,
+);
 
 describe("achievements/ui/cards", () => {
   let mod;
@@ -699,6 +714,50 @@ describe("achievements/ui/cards", () => {
       expect(
         hidden.querySelector(".achievement-card-title").textContent,
       ).toEqual(TIME_WARP.title);
+    });
+
+    describe("nature badge", () => {
+      const badge = (id, sel = ".achievement-trait-badge") =>
+        container
+          .querySelector(`.achievement-card[data-id="${id}"]`)
+          ?.querySelector(sel);
+
+      it("marks an unlocked calendar achievement", () => {
+        storage.unlock(CALENDAR_ACH.id);
+        mod.renderSections(container);
+        expect(
+          badge(CALENDAR_ACH.id, ".achievement-trait-badge--calendar"),
+        ).not.toBeNull();
+      });
+
+      it("marks an unlocked bonus achievement", () => {
+        storage.unlock(BONUS_ACH.id);
+        mod.renderSections(container);
+        expect(
+          badge(BONUS_ACH.id, ".achievement-trait-badge--bonus"),
+        ).not.toBeNull();
+      });
+
+      it("keeps a patient achievement's badge off an anonymous card, on once revealed", () => {
+        // Hidden + patient: at the default help level its card is a "???" and
+        // must not leak its nature.
+        mod.renderSections(container);
+        expect(badge(PATIENT_HIDDEN_ACH.id)).toBeNull();
+
+        // Revealing the flavor surfaces the badge even while still locked.
+        mod.setHelpLevel("clues");
+        container.replaceChildren();
+        mod.renderSections(container);
+        expect(
+          badge(PATIENT_HIDDEN_ACH.id, ".achievement-trait-badge--patient"),
+        ).not.toBeNull();
+      });
+
+      it("leaves a plain achievement unbadged", () => {
+        storage.unlock("first-light");
+        mod.renderSections(container);
+        expect(badge("first-light")).toBeNull();
+      });
     });
   });
 
