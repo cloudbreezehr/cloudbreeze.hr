@@ -169,6 +169,19 @@ function submit() {
   if (result.close) closeTerminal();
 }
 
+// Select every output line so the visitor can copy the whole buffer. Focus
+// moves to the scrollback so the copy acts on this selection, not the prompt.
+function selectScrollback() {
+  if (!scrollbackEl || !scrollbackEl.textContent) return;
+  scrollbackEl.focus();
+  const sel = document.getSelection();
+  if (!sel) return;
+  const range = document.createRange();
+  range.selectNodeContents(scrollbackEl);
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 function recallHistory(step) {
   if (history.length === 0) return;
   if (historyIndex === -1 && step < 0) historyIndex = history.length;
@@ -185,6 +198,10 @@ function buildOverlay() {
 
   scrollbackEl = document.createElement("div");
   scrollbackEl.className = "terminal-scrollback";
+  // Focusable but out of the Tab cycle: a drag-select or select-all hands
+  // focus here so the copy target is the scrollback's selection rather than
+  // the always-present prompt input.
+  scrollbackEl.tabIndex = -1;
   // Polite live region: command output reads out without stealing focus.
   scrollbackEl.setAttribute("aria-live", "polite");
   overlay.appendChild(scrollbackEl);
@@ -218,9 +235,23 @@ function buildOverlay() {
   });
   overlay.appendChild(form);
 
-  // A click anywhere in the console refocuses the prompt.
-  overlay.addEventListener("pointerdown", () => {
-    requestAnimationFrame(() => inputEl.focus());
+  // Pressing down in the scrollback hands focus off the prompt so a drag owns
+  // the copy target; a click that leaves no selection hands focus back so the
+  // visitor can keep typing (refocusing the prompt would clear a selection).
+  overlay.addEventListener("pointerdown", (e) => {
+    if (scrollbackEl.contains(e.target)) scrollbackEl.focus();
+  });
+  overlay.addEventListener("click", () => {
+    const sel = document.getSelection();
+    if (sel && !sel.isCollapsed) return;
+    inputEl.focus();
+  });
+  // Ctrl/Cmd+A selects the whole buffer instead of the prompt's one line.
+  overlay.addEventListener("keydown", (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+      e.preventDefault();
+      selectScrollback();
+    }
   });
   return overlay;
 }

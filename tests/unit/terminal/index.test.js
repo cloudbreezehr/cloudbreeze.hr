@@ -133,4 +133,66 @@ describe("terminal/index", () => {
     expect(lines.find((l) => l.startsWith("frozen"))).toBeTruthy();
     expect(lines.find((l) => l.startsWith("matrix"))).toBeTruthy();
   });
+
+  it("a plain click in the scrollback returns focus to the prompt", () => {
+    terminal.openTerminal();
+    type("echo hi");
+    const scrollback = document.querySelector(".terminal-scrollback");
+    const input = document.querySelector(".terminal-input");
+    document.getSelection = vi.fn(() => ({ isCollapsed: true }));
+
+    scrollback.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    scrollback.dispatchEvent(new Event("click", { bubbles: true }));
+    expect(document.activeElement).toBe(input);
+
+    delete document.getSelection;
+  });
+
+  it("a click that selected text keeps the selection's focus, not the prompt", () => {
+    terminal.openTerminal();
+    type("echo hi");
+    const scrollback = document.querySelector(".terminal-scrollback");
+    document.getSelection = vi.fn(() => ({ isCollapsed: false }));
+
+    // Pressing down in the buffer starts a drag by moving focus off the prompt.
+    scrollback.dispatchEvent(new Event("pointerdown", { bubbles: true }));
+    expect(document.activeElement).toBe(scrollback);
+    // The click ending the drag must not reclaim the prompt — that clears it.
+    scrollback.dispatchEvent(new Event("click", { bubbles: true }));
+    expect(document.activeElement).toBe(scrollback);
+
+    delete document.getSelection;
+  });
+
+  it("Ctrl/Cmd+A selects the whole buffer instead of the prompt line", () => {
+    terminal.openTerminal();
+    type("echo copy me");
+    const scrollback = document.querySelector(".terminal-scrollback");
+
+    const added = [];
+    const sel = {
+      isCollapsed: true,
+      removeAllRanges: vi.fn(),
+      addRange: vi.fn((r) => added.push(r)),
+    };
+    document.getSelection = vi.fn(() => sel);
+
+    const ev = new KeyboardEvent("keydown", {
+      key: "a",
+      ctrlKey: true,
+      bubbles: true,
+      cancelable: true,
+    });
+    scrollback.dispatchEvent(ev);
+
+    expect(ev.defaultPrevented).toBe(true);
+    expect(sel.removeAllRanges).toHaveBeenCalled();
+    expect(added).toHaveLength(1);
+    // The range spans every output line, not the prompt's single row.
+    expect(added[0].startContainer).toBe(scrollback);
+    expect(added[0].endOffset).toBe(scrollback.childNodes.length);
+    expect(document.activeElement).toBe(scrollback);
+
+    delete document.getSelection;
+  });
 });
