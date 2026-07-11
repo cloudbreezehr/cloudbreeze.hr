@@ -195,4 +195,61 @@ describe("terminal/index", () => {
 
     delete document.getSelection;
   });
+
+  // A selection parks focus on the scrollback; an edit keystroke should return
+  // to the prompt so it starts (or edits) a command instead of being lost.
+  it.each(["l", "Backspace", "Delete"])(
+    "editing (%s) after a selection hands focus to the prompt",
+    (key) => {
+      terminal.openTerminal();
+      type("echo hi");
+      const scrollback = document.querySelector(".terminal-scrollback");
+      const input = document.querySelector(".terminal-input");
+
+      scrollback.focus();
+      scrollback.dispatchEvent(
+        new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }),
+      );
+      expect(document.activeElement).toBe(input);
+    },
+  );
+
+  it("typing a character over a selection inserts it into the prompt", () => {
+    terminal.openTerminal();
+    type("echo hi");
+    const scrollback = document.querySelector(".terminal-scrollback");
+    const input = document.querySelector(".terminal-input");
+
+    // Focus parked on the scrollback (a selection); the keystroke must both
+    // return focus and land the character, not just move focus and drop it.
+    scrollback.focus();
+    const ev = new KeyboardEvent("keydown", {
+      key: "x",
+      bubbles: true,
+      cancelable: true,
+    });
+    scrollback.dispatchEvent(ev);
+    expect(document.activeElement).toBe(input);
+    expect(input.value).toBe("x");
+    expect(ev.defaultPrevented).toBe(true);
+  });
+
+  it("a copy shortcut over a selection doesn't steal focus to the prompt", () => {
+    terminal.openTerminal();
+    type("echo hi");
+    const scrollback = document.querySelector(".terminal-scrollback");
+
+    // Ctrl/Cmd+C must leave focus on the scrollback — grabbing the prompt
+    // would collapse the selection before the copy runs.
+    scrollback.focus();
+    scrollback.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "c",
+        metaKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    expect(document.activeElement).toBe(scrollback);
+  });
 });

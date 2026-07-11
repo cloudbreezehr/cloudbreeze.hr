@@ -246,11 +246,32 @@ function buildOverlay() {
     if (sel && !sel.isCollapsed) return;
     inputEl.focus();
   });
-  // Ctrl/Cmd+A selects the whole buffer instead of the prompt's one line.
   overlay.addEventListener("keydown", (e) => {
+    // Ctrl/Cmd+A selects the whole buffer instead of the prompt's one line.
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
       e.preventDefault();
       selectScrollback();
+      return;
+    }
+    // Editing after a selection returns to the prompt (a character, or delete).
+    const edit =
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.altKey &&
+      (e.key.length === 1 || e.key === "Backspace" || e.key === "Delete");
+    if (!edit || document.activeElement === inputEl) return;
+    inputEl.focus();
+    // Insert a printable key ourselves: a browser that doesn't redirect the
+    // character to the just-focused input would otherwise drop this first
+    // keystroke. Backspace/Delete stay browser-handled — a dropped one costs
+    // only a focus move, not data, and self-corrects on the next press.
+    if (e.key.length === 1) {
+      e.preventDefault();
+      const { value, selectionStart, selectionEnd } = inputEl;
+      const start = selectionStart ?? value.length;
+      const end = selectionEnd ?? value.length;
+      inputEl.value = value.slice(0, start) + e.key + value.slice(end);
+      inputEl.selectionStart = inputEl.selectionEnd = start + 1;
     }
   });
   return overlay;
