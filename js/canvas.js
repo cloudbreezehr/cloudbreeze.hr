@@ -6,7 +6,11 @@ import { createMoon } from "./real-sky/moon.js";
 import { createFury } from "./fury.js";
 import { createAtmosphere } from "./atmosphere.js";
 import { subscribe as subscribeScroll } from "./scroll-bus.js";
-import { mirrorYWhenInverted, getViewportHeight } from "./viewport.js";
+import {
+  mirrorYWhenInverted,
+  getViewportHeight,
+  getScrollProgress,
+} from "./viewport.js";
 import { getActiveHooks, dispatchTransitions } from "./themes/canvas-hooks.js";
 import { createInteractions, HOLD } from "./interactions.js";
 import { createCursorGhosts } from "./sky-link/ghosts.js";
@@ -159,10 +163,7 @@ export function initCanvas(canvasEl, appearance, options) {
     const scrollY =
       snapshot?.scrollY ?? window.scrollY ?? document.documentElement.scrollTop;
     const deltaY = snapshot?.deltaY ?? 0;
-    const docHeight =
-      document.documentElement.scrollHeight - getViewportHeight();
-    scrollProgress =
-      docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
+    scrollProgress = getScrollProgress(scrollY);
     // Fold this delta into the velocity before dispatching, so the event
     // carries the velocity this scroll produced rather than the prior frame's
     // already-decayed value — a flick from rest must not report zero.

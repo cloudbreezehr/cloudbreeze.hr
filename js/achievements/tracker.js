@@ -867,6 +867,8 @@ export function createTracker(onUnlock, onRelock) {
   // which derives from counters.sessionDays. Just record today and let
   // checkProgressiveState pick them up.
   function trackSession() {
+    // Raw count of tracked sessions — one per start.
+    storage.incrementCounter("sessions");
     // The visitor's local calendar date — the same "day" the daily sky and
     // moonlit use, rolling at their own midnight rather than UTC's.
     const today = dayKey();
@@ -926,6 +928,12 @@ export function createTracker(onUnlock, onRelock) {
     // condition present at load (like moonlit), so a boot-time dispatch would
     // race this listener's registration and be lost.
     if (isTimeTraveling()) tryUnlock("time-traveler");
+
+    // A theme already active when tracking begins missed its theme-activate
+    // event; seed the watch from now so uninterrupted time still counts (a
+    // no-op on a fresh load, where no theme is active yet). Conservative by
+    // construction — the watch counts from here, never earlier.
+    if (activeTheme() && session.longWatchTimer == null) restartLongWatch();
   }
 
   function stop() {
@@ -938,36 +946,5 @@ export function createTracker(onUnlock, onRelock) {
     }
   }
 
-  /**
-   * Check for achievements whose conditions are already met.
-   * Called after activation to retroactively unlock.
-   */
-  function catchUp() {
-    // If user has already clicked before activation
-    if (session.clicks > 0) tryUnlock("first-light");
-    if (session.hasScrolled25) tryUnlock("stargazer");
-    if (session.hasScrolledBottom) tryUnlock("down-to-earth");
-    if (session.hasDragged) tryUnlock("trail-blazer");
-    if (session.lightningTriggered) tryUnlock("fury-unleashed");
-    if (session.auroraTriggered) tryUnlock("northern-lights");
-    if (session.snowGlobeTriggered) tryUnlock("snow-globe");
-    if (session.wellActivated) tryUnlock("event-horizon");
-    if (session.wellFull) tryUnlock("singularity");
-    if (session.lightningCount >= CHAIN_LIGHTNING_COUNT)
-      tryUnlock("chain-lightning");
-    if (session.lightningThemes.size >= STORM_FORECASTER_THEME_COUNT)
-      tryUnlock("storm-forecaster");
-    if (session.wellCount >= VOID_CALLER_COUNT) tryUnlock("void-caller");
-    if (session.vhsGlitchCount >= CHANNEL_SURFER_COUNT)
-      tryUnlock("channel-surfer");
-    // If a theme is already active when Cloudlog activates, the
-    // theme-activate event has already been dispatched and missed —
-    // start the watch now from the catch-up moment. The achievement
-    // measures uninterrupted time from this point forward, which is
-    // strictly conservative (the user gets less credit, never more).
-    if (activeTheme() && session.longWatchTimer == null) restartLongWatch();
-    checkProgressiveState();
-  }
-
-  return { start, stop, catchUp, record: handleEvent };
+  return { start, stop, record: handleEvent };
 }

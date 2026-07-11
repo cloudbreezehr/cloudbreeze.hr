@@ -991,6 +991,12 @@ describe("tracker — theme-activate / theme-deactivate", () => {
     expect(storage.getCounter("totalThemeActivations")).toBe(2);
   });
 
+  it("increments the sessions counter once per start", async () => {
+    const { storage } = await startTracker();
+
+    expect(storage.getCounter("sessions")).toBe(1);
+  });
+
   it("ignores theme-activate without a theme field", async () => {
     const { storage } = await startTracker();
 
@@ -1078,73 +1084,6 @@ describe("tracker — progressive re-evaluation", () => {
     expect(storage.isUnlocked("dusk-and-dawn")).toBe(false);
     const ids = onRelock.mock.calls.map((c) => c[0].id);
     expect(ids).toContain("dusk-and-dawn");
-  });
-});
-
-describe("tracker — catchUp", () => {
-  beforeEach(() => {
-    document.body.className = "";
-    delete document.body.dataset.activeTheme;
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date("2026-05-08T12:00:00"));
-  });
-
-  afterEach(() => {
-    stopAllTrackers();
-    vi.useRealTimers();
-  });
-
-  it("retroactively unlocks session-derived achievements", async () => {
-    const { storage, tracker } = await startTracker();
-
-    dispatchAchievement("click");
-    dispatchAchievement("scroll", { progress: 0.3 });
-    dispatchAchievement("scroll", { progress: 0.96 });
-    dispatchAchievement("drag", { x: 1, y: 1 });
-    dispatchAchievement("fury-lightning");
-    dispatchAchievement("fury-aurora");
-    dispatchAchievement("snow-globe");
-    dispatchAchievement("well-activate");
-    dispatchAchievement("well-full");
-
-    // Relock everything (simulates activation-after-the-fact).
-    const ids = [
-      "first-light",
-      "stargazer",
-      "down-to-earth",
-      "trail-blazer",
-      "fury-unleashed",
-      "northern-lights",
-      "snow-globe",
-      "event-horizon",
-      "singularity",
-    ];
-    for (const id of ids) {
-      storage.relock(id);
-      expect(storage.isUnlocked(id)).toBe(false);
-    }
-
-    tracker.catchUp();
-
-    for (const id of ids) {
-      expect(storage.isUnlocked(id)).toBe(true);
-    }
-  });
-
-  it("retroactively unlocks chain-lightning / void-caller when session counts are high", async () => {
-    const { storage, tracker } = await startTracker();
-
-    for (let i = 0; i < 5; i++) dispatchAchievement("fury-lightning");
-    for (let i = 0; i < 3; i++) dispatchAchievement("well-activate");
-    storage.relock("chain-lightning");
-    storage.relock("void-caller");
-    expect(storage.isUnlocked("chain-lightning")).toBe(false);
-    expect(storage.isUnlocked("void-caller")).toBe(false);
-
-    tracker.catchUp();
-
-    expect(storage.isUnlocked("chain-lightning")).toBe(true);
-    expect(storage.isUnlocked("void-caller")).toBe(true);
   });
 });
 
@@ -1435,22 +1374,20 @@ describe("tracker — the-long-watch", () => {
     expect(storage.isUnlocked("the-long-watch")).toBe(true);
   });
 
-  it("catchUp starts the watch when a theme is already active", async () => {
-    // Simulates Cloudlog-after-the-fact: the user entered a theme, then
-    // triple-clicked to activate the achievement system.
-    const { storage, tracker } = await startTracker();
-
+  it("start() seeds the watch when a theme is already active", async () => {
+    // Cloudlog-after-the-fact: the user entered a theme, then triple-clicked
+    // to activate the achievement system, so tracking begins mid-theme.
     setTheme("frozen");
-    tracker.catchUp();
+    const { storage } = await startTracker();
+
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(true);
   });
 
-  it("catchUp does not start the watch when no theme is active", async () => {
-    const { storage, tracker } = await startTracker();
+  it("start() does not seed the watch when no theme is active", async () => {
+    const { storage } = await startTracker();
 
-    tracker.catchUp();
     vi.advanceTimersByTime(PAST_LONG_WATCH_MS);
 
     expect(storage.isUnlocked("the-long-watch")).toBe(false);
@@ -1527,22 +1464,6 @@ describe("tracker — storm-forecaster", () => {
       setTheme(theme);
       dispatchAchievement("fury-lightning");
     }
-    expect(storage.isUnlocked("storm-forecaster")).toBe(true);
-  });
-
-  it("catchUp retroactively unlocks when the threshold is already met", async () => {
-    const { storage, tracker } = await startTracker();
-
-    const themes = ["frozen", "deep-sea", "rainy"];
-    for (const theme of themes) {
-      setTheme(theme);
-      dispatchAchievement("fury-lightning");
-    }
-    storage.relock("storm-forecaster");
-    expect(storage.isUnlocked("storm-forecaster")).toBe(false);
-
-    tracker.catchUp();
-
     expect(storage.isUnlocked("storm-forecaster")).toBe(true);
   });
 });

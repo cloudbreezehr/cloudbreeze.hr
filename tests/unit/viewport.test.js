@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { isFlipped, mirrorYWhenInverted } from "../../js/viewport.js";
+import {
+  isFlipped,
+  mirrorYWhenInverted,
+  getScrollProgress,
+} from "../../js/viewport.js";
 
 describe("isFlipped", () => {
   beforeEach(() => {
@@ -72,5 +76,58 @@ describe("mirrorYWhenInverted", () => {
     expect(mirrorYWhenInverted(100, 800)).toBe(700);
     document.body.classList.remove("upside-down");
     expect(mirrorYWhenInverted(100, 800)).toBe(100);
+  });
+});
+
+describe("getScrollProgress", () => {
+  // getViewportHeight falls back to innerHeight in happy-dom (the lvh probe
+  // has no layout), so stub innerHeight/scrollHeight/scrollY directly.
+  function setGeometry({ scrollY, scrollHeight, innerHeight }) {
+    Object.defineProperty(window, "innerHeight", {
+      configurable: true,
+      value: innerHeight,
+    });
+    Object.defineProperty(document.documentElement, "scrollHeight", {
+      configurable: true,
+      value: scrollHeight,
+    });
+    Object.defineProperty(window, "scrollY", {
+      configurable: true,
+      value: scrollY,
+    });
+  }
+
+  afterEach(() => {
+    Object.defineProperty(window, "scrollY", { configurable: true, value: 0 });
+    delete document.documentElement.scrollHeight;
+  });
+
+  it("is 0 at the top and 1 at the bottom", () => {
+    setGeometry({ scrollY: 0, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(0);
+    setGeometry({ scrollY: 1000, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(1);
+  });
+
+  it("reports the fraction scrolled partway down", () => {
+    setGeometry({ scrollY: 250, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(0.25);
+  });
+
+  it("clamps out-of-range scroll positions to [0, 1]", () => {
+    setGeometry({ scrollY: -50, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(0);
+    setGeometry({ scrollY: 5000, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(1);
+  });
+
+  it("is 0 when the document is shorter than the viewport", () => {
+    setGeometry({ scrollY: 0, scrollHeight: 500, innerHeight: 1000 });
+    expect(getScrollProgress()).toBe(0);
+  });
+
+  it("honors an explicit scrollY over the live position", () => {
+    setGeometry({ scrollY: 0, scrollHeight: 2000, innerHeight: 1000 });
+    expect(getScrollProgress(500)).toBe(0.5);
   });
 });

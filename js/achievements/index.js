@@ -143,13 +143,12 @@ export function initAchievements() {
     const sel = window.getSelection();
     if (sel) sel.removeAllRanges();
 
-    // Unlock the activation achievement and catch up on session state
+    // Unlock the activation achievement
     window.dispatchEvent(
       new CustomEvent("achievement", {
         detail: { type: "cloudlog-activate", x, y },
       }),
     );
-    tracker.catchUp();
   }
 
   // If already active from a previous session, start immediately

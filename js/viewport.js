@@ -69,3 +69,19 @@ function ensureLvhProbe() {
 export function getViewportHeight() {
   return ensureLvhProbe().offsetHeight || window.innerHeight;
 }
+
+/**
+ * Fraction scrolled through the document, 0 (top) → 1 (bottom), clamped to
+ * that range. Raw page-space progress — a caller that needs upside-down
+ * inversion applies it itself. Reads the live scroll position by default;
+ * pass an explicit `scrollY` to sample a synced value instead.
+ *
+ * @param {number} [scrollY]
+ * @returns {number}
+ */
+export function getScrollProgress(
+  scrollY = window.scrollY ?? document.documentElement.scrollTop,
+) {
+  const docHeight = document.documentElement.scrollHeight - getViewportHeight();
+  return docHeight > 0 ? Math.min(1, Math.max(0, scrollY / docHeight)) : 0;
+}
