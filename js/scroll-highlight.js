@@ -5,6 +5,8 @@
 // regardless of how far the element had to travel — without this, a long
 // smooth scroll burns the animation off-screen before the user can see it.
 
+import { flashClass } from "./flash-class.js";
+
 const HIGHLIGHT_CLASS = "shine";
 
 // Number of consecutive frames `scrollTop` must hold steady for us to
@@ -40,12 +42,12 @@ export function scrollAndHighlight(el) {
   el.scrollIntoView({ behavior: "smooth", block: "center" });
 
   if (!scroller) {
-    setTimeout(() => applyHighlight(el), POST_SETTLE_DELAY_MS);
+    setTimeout(() => flashClass(el, HIGHLIGHT_CLASS), POST_SETTLE_DELAY_MS);
     return;
   }
 
   waitForScrollSettle(scroller, () => {
-    setTimeout(() => applyHighlight(el), POST_SETTLE_DELAY_MS);
+    setTimeout(() => flashClass(el, HIGHLIGHT_CLASS), POST_SETTLE_DELAY_MS);
   });
 }
 
@@ -98,35 +100,6 @@ function waitForScrollSettle(scroller, done) {
     requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
-}
-
-function applyHighlight(el) {
-  el.classList.remove(HIGHLIGHT_CLASS);
-  // Force a reflow so the browser commits the class removal before the
-  // re-add — otherwise the animation doesn't restart on consecutive calls.
-  void el.offsetHeight;
-
-  // animationend bubbles, and the highlight animation may run on `el`
-  // itself or on a descendant (some highlight targets shine an inner
-  // element). Tearing down on *any* animationend would let an unrelated
-  // child animation cut the highlight short. Learn the highlight's own
-  // animation from the animationstart the class triggers, then clean up only
-  // when that same animation ends, so no keyframe name is baked into this
-  // generic helper.
-  el.addEventListener(
-    "animationstart",
-    (start) => {
-      const highlightAnim = start.animationName;
-      el.addEventListener("animationend", function onEnd(end) {
-        if (end.animationName !== highlightAnim) return;
-        el.classList.remove(HIGHLIGHT_CLASS);
-        el.removeEventListener("animationend", onEnd);
-      });
-    },
-    { once: true },
-  );
-
-  el.classList.add(HIGHLIGHT_CLASS);
 }
 
 function findScrollableAncestor(el) {

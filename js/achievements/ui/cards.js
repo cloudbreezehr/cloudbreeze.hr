@@ -28,6 +28,7 @@ import { updateBadge } from "./nav-button.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
 import { buildTraitBadge } from "./traits.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
+import { flashClass } from "../../flash-class.js";
 import { bindClickable } from "../../clickable.js";
 import { isDevActive } from "../../dev/active.js";
 
@@ -894,29 +895,14 @@ function applySearchFilter(container) {
 }
 
 function onCardClick(card, achievementId) {
-  card.classList.remove("clicked");
-  void card.offsetHeight;
-  card.classList.add("clicked");
-  card.addEventListener(
-    "animationend",
-    () => card.classList.remove("clicked"),
-    {
-      once: true,
-    },
-  );
+  flashClass(card, "clicked");
   _scrollToActivityEntryFor(achievementId, "achievement-unlocked");
 }
 
 // One-shot horizontal shake for a click on a locked card — input
-// acknowledgment, not navigation.  Strip-then-add restarts the
-// keyframe on rapid repeat clicks.
+// acknowledgment, not navigation.
 function shakeCard(card) {
-  card.classList.remove("shake");
-  void card.offsetHeight;
-  card.classList.add("shake");
-  card.addEventListener("animationend", () => card.classList.remove("shake"), {
-    once: true,
-  });
+  flashClass(card, "shake");
 }
 
 // Refresh the panel when a card unlocks while it's open, then play the shine

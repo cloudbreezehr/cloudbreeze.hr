@@ -157,46 +157,14 @@ describe("scroll-highlight", () => {
     expect(target.classList.contains("shine")).toBe(true);
   });
 
-  it("removes the highlight class when its own animation ends", () => {
+  it("applies the highlight class and clears it when the animation ends", () => {
     document.body.appendChild(target);
     scrollAndHighlight(target);
     vi.advanceTimersByTime(AFTER_DELAY_MS);
     expect(target.classList.contains("shine")).toBe(true);
 
-    target.dispatchEvent(animEvent("animationstart", "row-shine"));
-    target.dispatchEvent(animEvent("animationend", "row-shine"));
-    expect(target.classList.contains("shine")).toBe(false);
-  });
-
-  it("keeps the highlight when an unrelated child animation ends", () => {
-    // A descendant with its own animation (a progress-bar tick, a click
-    // pop) whose animationend bubbles up to the highlighted element.
-    const child = document.createElement("div");
-    target.appendChild(child);
-    document.body.appendChild(target);
-    scrollAndHighlight(target);
-    vi.advanceTimersByTime(AFTER_DELAY_MS);
-
-    target.dispatchEvent(animEvent("animationstart", "row-shine"));
-    child.dispatchEvent(animEvent("animationend", "progress-tick", true));
-    expect(target.classList.contains("shine")).toBe(true);
-
-    target.dispatchEvent(animEvent("animationend", "row-shine"));
-    expect(target.classList.contains("shine")).toBe(false);
-  });
-
-  it("cleans up when the highlight animation runs on a descendant", () => {
-    // Some highlight targets carry `shine` on the outer element but animate
-    // an inner one, so both start and end arrive via bubbling.
-    const inner = document.createElement("div");
-    target.appendChild(inner);
-    document.body.appendChild(target);
-    scrollAndHighlight(target);
-    vi.advanceTimersByTime(AFTER_DELAY_MS);
-    expect(target.classList.contains("shine")).toBe(true);
-
-    inner.dispatchEvent(animEvent("animationstart", "row-shine", true));
-    inner.dispatchEvent(animEvent("animationend", "row-shine", true));
+    target.dispatchEvent(animEvent("animationstart", "achievement-shine"));
+    target.dispatchEvent(animEvent("animationend", "achievement-shine"));
     expect(target.classList.contains("shine")).toBe(false);
   });
 

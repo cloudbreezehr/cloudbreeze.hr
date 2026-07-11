@@ -21,6 +21,7 @@ import { confettiBurst } from "../../effects/confetti.js";
 import { showHintTooltip, hideHintTooltip } from "./tooltip.js";
 import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG } from "./icons.js";
 import { bindClickable } from "../../clickable.js";
+import { flashClass } from "../../flash-class.js";
 import { playSfx } from "../../audio/sfx.js";
 import { prefersReducedMotion } from "../../motion.js";
 
@@ -279,16 +280,7 @@ export function wireToastClick(toast, achievement) {
   // Pulse fires on pointerdown so the toast visually depresses the
   // moment the user presses — no wait for the release event.
   toast.addEventListener("pointerdown", () => {
-    toast.classList.remove("clicked");
-    void toast.offsetHeight;
-    toast.classList.add("clicked");
-    toast.addEventListener(
-      "animationend",
-      () => toast.classList.remove("clicked"),
-      {
-        once: true,
-      },
-    );
+    flashClass(toast, "clicked");
   });
 
   // Navigation fires on the full click so a drag (pointerdown without
