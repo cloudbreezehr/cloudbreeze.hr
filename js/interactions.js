@@ -14,12 +14,12 @@ import {
 } from "./interactions.constants.js";
 
 // ── Force Helpers ──
-// Each helper applies its force for the local pointer, then for every
-// entry in `forces.remotePointers` (pointers of linked windows, in local
-// coordinates; absent or empty solo). A remote pointer carries the same
-// interaction state as the local one, so a neighbour's drag, hold, or
-// well moves this window's particles through exactly the same math —
-// remote pointers are force sources, not events.
+// Each helper applies its force for the local pointer, then for every entry in
+// `forces.remotePointers` — additional pointer sources supplied in local
+// coordinates, empty when there are none. Such a pointer carries the same
+// interaction state as the local one, so its drag, hold, or well moves the
+// particles through exactly the same math — extra pointer sources are force
+// sources, not events.
 
 function attractToward(p, x, y, hold, radius, force, tangentFactor) {
   const dx = x - p.x;
@@ -137,18 +137,18 @@ export function applyHoverDrift(forces, p, radius, strength) {
 
 export { HOLD, WELL };
 
-// A linked peer's well charged past this, rendered in this window, is the
-// "distant well" discovery — a neighbour's gravity well blooming in your sky.
+// A remote pointer's well charged past this, rendered here, counts as the
+// "distant well" discovery.
 const DISTANT_WELL_MIN_STRENGTH = 0.2;
 
 // ── Well Visuals ──
 // Render one pointer source's well: the orbit swarm circling it and the pulsing
 // aura while it charges, into `pool` (that source's own orbit particles). The
-// local pointer and every linked peer go through here, so a neighbour's well
-// blooms in this window exactly as the local one does. `source` is
+// local pointer and every additional pointer source go through here, so each
+// blooms a well identically. `source` is
 // {x, y, holdStrength, wellStrength, isDragging}. Orbits fade out when the
-// source stops charging — a released local well clears its pool via a burst; a
-// remote's simply eases away.
+// source stops charging — a released local well clears its pool via a burst;
+// another source's simply eases away.
 function drawWell(ctx, pal, source, pool, orbitOpts, auraOpts) {
   const charging =
     source.isDragging && source.holdStrength > HOLD.WARMUP_THRESHOLD;
@@ -236,15 +236,52 @@ function drawWell(ctx, pal, source, pool, orbitOpts, auraOpts) {
   }
 }
 
+// ── Drag Trail ──
+// Advance and render one drag trail's segments — a soft breeze wake swaying and
+// fading behind the drag. The local pointer and every additional pointer source
+// go through here, so each lays down a trail identically.
+function drawTrail(ctx, pal, segments) {
+  for (let i = segments.length - 1; i >= 0; i--) {
+    const s = segments[i];
+    s.life++;
+    if (s.life > s.maxLife) {
+      segments.splice(i, 1);
+      continue;
+    }
+    s.x += Math.sin(s.life * TRAIL.SWAY_FREQ_X + s.phase) * TRAIL.SWAY_AMP_X;
+    s.y += Math.cos(s.life * TRAIL.SWAY_FREQ_Y + s.phase) * TRAIL.SWAY_AMP_Y;
+    const fade = 1 - s.life / s.maxLife;
+    const op = s.opacity * fade;
+    if (op < CLICK.DRAW_THRESHOLD || !s.prev) continue;
+    const c = pal.trailColor;
+    ctx.save();
+    ctx.globalAlpha = op;
+    ctx.strokeStyle = rgbaStr(c, 1);
+    ctx.lineWidth = s.width * fade;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(s.prev.x, s.prev.y);
+    ctx.quadraticCurveTo(
+      (s.prev.x + s.x) / 2 + Math.sin(s.phase) * TRAIL.CURVE_JITTER,
+      (s.prev.y + s.y) / 2 + Math.cos(s.phase) * TRAIL.CURVE_JITTER,
+      s.x,
+      s.y,
+    );
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // ── Factory ──
 
 export function createInteractions() {
   const clickParticles = [];
   const orbitParticles = [];
-  const trailSegments = [];
+  // Drag trail as { segments, last, dist }: `last`/`dist` track distance since
+  // the last segment so spacing stays even. Each remote pointer's trail uses
+  // the same shape (remoteViz), so both spawn and draw the same way.
+  const localTrail = { segments: [], last: { x: 0, y: 0 }, dist: 0 };
   let holdStart = 0;
-  let lastTrail = { x: 0, y: 0 };
-  let trailDist = 0;
 
   // Drop oldest entries until below cap so bursts spawned mid-frame still land.
   function pushCapped(arr, item, max) {
@@ -252,10 +289,39 @@ export function createInteractions() {
     arr.push(item);
   }
 
-  // Orbit pools for linked peers' wells, keyed by pointer id and pruned when a
-  // pointer leaves the live list. The local pointer keeps its own orbitParticles.
-  const remoteWells = new Map();
-  // A neighbour's well blooming here is a once-per-load discovery.
+  // Push a trail segment once the drag has moved past the spacing since the
+  // last one. Returns true when a segment was added.
+  function spawnTrailSegment(t, x, y) {
+    const dx = x - t.last.x;
+    const dy = y - t.last.y;
+    t.dist += Math.sqrt(dx * dx + dy * dy);
+    if (t.dist <= TRAIL.SPACING) return false;
+    pushCapped(
+      t.segments,
+      {
+        x,
+        y,
+        prev: { x: t.last.x, y: t.last.y },
+        width: TRAIL.WIDTH_MIN + Math.random() * TRAIL.WIDTH_RANGE,
+        opacity: TRAIL.OPACITY_MIN + Math.random() * TRAIL.OPACITY_RANGE,
+        life: 0,
+        maxLife: TRAIL.LIFE_MIN + Math.random() * TRAIL.LIFE_RANGE,
+        phase: Math.random() * Math.PI * 2,
+      },
+      TRAIL.MAX,
+    );
+    t.last = { x, y };
+    t.dist = 0;
+    return true;
+  }
+
+  // Per-source pointer visuals — orbit pool + drag trail — for each remote
+  // pointer, keyed by pointer id and pruned when a pointer leaves the live list.
+  // The local pointer keeps its own orbitParticles / localTrail. A remote
+  // pointer renders through the same well and trail paths as the local one, so
+  // it needs no bespoke mirror.
+  const remoteViz = new Map();
+  // A remote pointer's well blooming here is a once-per-load discovery.
   let distantWellFired = false;
 
   // Scatter a ring of click-burst particles at (x, y).
@@ -367,9 +433,9 @@ export function createInteractions() {
         );
       }
 
-      // Well visuals for the local pointer and every charging linked peer.
+      // Well visuals for the local pointer and every charging remote pointer.
       // Local uses the persistent orbit pool (converted to a burst on release);
-      // each remote keeps its own pool, so a neighbour's well blooms here too.
+      // each remote keeps its own pool, so every source's well blooms.
       drawWell(
         ctx,
         pal,
@@ -388,17 +454,31 @@ export function createInteractions() {
       if (remotes && remotes.length) {
         const cw = ctx.canvas.width;
         const ch = ctx.canvas.height;
+        const reduced = prefersReducedMotion();
         const live = new Set();
         for (const rp of remotes) {
           live.add(rp.id);
-          let pool = remoteWells.get(rp.id);
-          if (!pool) {
-            pool = [];
-            remoteWells.set(rp.id, pool);
+          let viz = remoteViz.get(rp.id);
+          if (!viz) {
+            viz = {
+              orbit: [],
+              trail: { segments: [], last: { x: rp.x, y: rp.y }, dist: 0 },
+            };
+            remoteViz.set(rp.id, viz);
           }
-          drawWell(ctx, pal, rp, pool, orbitOpts, auraOpts);
+          drawWell(ctx, pal, rp, viz.orbit, orbitOpts, auraOpts);
+          // Mirror this source's drag whoosh. While it isn't dragging (or under
+          // RM), keep the trail origin pinned to the pointer so the next drag
+          // starts clean rather than the first segment spanning the gap since
+          // it last moved.
+          if (rp.isDragging && !reduced)
+            spawnTrailSegment(viz.trail, rp.x, rp.y);
+          else {
+            viz.trail.last = { x: rp.x, y: rp.y };
+            viz.trail.dist = 0;
+          }
           // Only celebrate a well the player can actually see bloom — its
-          // source must land on this window's slice, not off-canvas.
+          // source must land on the visible canvas, not off it.
           if (
             !distantWellFired &&
             rp.wellStrength > DISTANT_WELL_MIN_STRENGTH &&
@@ -415,46 +495,19 @@ export function createInteractions() {
             );
           }
         }
-        // Drop pools whose pointer has left the live list.
-        for (const id of remoteWells.keys()) {
-          if (!live.has(id)) remoteWells.delete(id);
+        // Drop visuals whose pointer has left the live list.
+        for (const id of remoteViz.keys()) {
+          if (!live.has(id)) remoteViz.delete(id);
         }
-      } else if (remoteWells.size) {
-        remoteWells.clear();
+      } else if (remoteViz.size) {
+        remoteViz.clear();
       }
 
-      // Drag breeze trail
-      for (let i = trailSegments.length - 1; i >= 0; i--) {
-        const s = trailSegments[i];
-        s.life++;
-        if (s.life > s.maxLife) {
-          trailSegments.splice(i, 1);
-          continue;
-        }
-        s.x +=
-          Math.sin(s.life * TRAIL.SWAY_FREQ_X + s.phase) * TRAIL.SWAY_AMP_X;
-        s.y +=
-          Math.cos(s.life * TRAIL.SWAY_FREQ_Y + s.phase) * TRAIL.SWAY_AMP_Y;
-        const fade = 1 - s.life / s.maxLife;
-        const op = s.opacity * fade;
-        if (op < CLICK.DRAW_THRESHOLD || !s.prev) continue;
-        const c = pal.trailColor;
-        ctx.save();
-        ctx.globalAlpha = op;
-        ctx.strokeStyle = rgbaStr(c, 1);
-        ctx.lineWidth = s.width * fade;
-        ctx.lineCap = "round";
-        ctx.beginPath();
-        ctx.moveTo(s.prev.x, s.prev.y);
-        ctx.quadraticCurveTo(
-          (s.prev.x + s.x) / 2 + Math.sin(s.phase) * TRAIL.CURVE_JITTER,
-          (s.prev.y + s.y) / 2 + Math.cos(s.phase) * TRAIL.CURVE_JITTER,
-          s.x,
-          s.y,
-        );
-        ctx.stroke();
-        ctx.restore();
-      }
+      // Drag breeze trail — the local pointer's, plus every remote pointer's,
+      // all advanced and drawn the same way.
+      drawTrail(ctx, pal, localTrail.segments);
+      for (const viz of remoteViz.values())
+        drawTrail(ctx, pal, viz.trail.segments);
     },
 
     // Spawn click burst particles at (x, y).
@@ -463,7 +516,7 @@ export function createInteractions() {
       spawnClickBurst(x, y, pal.clickColor);
     },
 
-    // Mirror a burst arriving from a linked window — a click scatter, plus a
+    // Replay an externally-triggered burst — a click scatter, plus a
     // well-release explosion when `well` (0..1) is set. Silent under reduced
     // motion, like the local click burst it mirrors.
     burst(x, y, pal, { strength = HOLD.BLAST_BASE, well = 0 } = {}) {
@@ -610,8 +663,8 @@ export function createInteractions() {
     },
 
     // End the drag: convert orbits to burst, apply well blast, reset state.
-    // Returns a { x, y, strength, well } blast descriptor to mirror into linked
-    // windows, or null when there's nothing to mirror.
+    // Returns a { x, y, strength, well } blast descriptor the caller may replay
+    // elsewhere, or null when there's nothing to replay.
     releaseDrag(forces, pal) {
       if (!forces.isDragging) return null;
       if (prefersReducedMotion()) {
@@ -719,7 +772,7 @@ export function createInteractions() {
         cursorRing?.style.removeProperty("--well-strength");
       }
 
-      // Hand the blast back so the caller can mirror it into linked windows.
+      // Hand the blast back for the caller to replay elsewhere.
       const releasedWell = forces.wellStrength;
       forces.isDragging = false;
       forces.holdStrength = 0;
@@ -738,8 +791,8 @@ export function createInteractions() {
       holdStart = performance.now();
       forces.dragPos.x = x;
       forces.dragPos.y = y;
-      lastTrail = { x, y };
-      trailDist = 0;
+      localTrail.last = { x, y };
+      localTrail.dist = 0;
     },
 
     // Add a trail segment along the drag path. Returns true if a segment was added.
@@ -747,29 +800,7 @@ export function createInteractions() {
       forces.dragPos.x = x;
       forces.dragPos.y = y;
       if (prefersReducedMotion()) return;
-      const dx = x - lastTrail.x;
-      const dy = y - lastTrail.y;
-      trailDist += Math.sqrt(dx * dx + dy * dy);
-      if (trailDist > TRAIL.SPACING) {
-        pushCapped(
-          trailSegments,
-          {
-            x,
-            y,
-            prev: { x: lastTrail.x, y: lastTrail.y },
-            width: TRAIL.WIDTH_MIN + Math.random() * TRAIL.WIDTH_RANGE,
-            opacity: TRAIL.OPACITY_MIN + Math.random() * TRAIL.OPACITY_RANGE,
-            life: 0,
-            maxLife: TRAIL.LIFE_MIN + Math.random() * TRAIL.LIFE_RANGE,
-            phase: Math.random() * Math.PI * 2,
-          },
-          TRAIL.MAX,
-        );
-        lastTrail = { x, y };
-        trailDist = 0;
-        return true;
-      }
-      return false;
+      return spawnTrailSegment(localTrail, x, y);
     },
 
     // Decay impulse strength each frame.

@@ -57,7 +57,9 @@ body.light-appearance .sky-link-glow {
   opacity: 0;
   transition:
     opacity 0.25s ease,
-    translate 0.06s linear;
+    translate 0.06s linear,
+    width 0.15s ease-out,
+    height 0.15s ease-out;
   will-change: translate, opacity;
 }
 .sky-link-cursor {
@@ -82,6 +84,18 @@ body:not([data-active-theme]) .sky-link-cursor {
 .sky-link-cursor.visible,
 .sky-link-cursor-ring.visible {
   opacity: 1;
+}
+/* Pressed look while the peer's drag is captured, mirroring #cursor's press
+   state: dot swells, ring tightens. Sizes track the cursor's press constants
+   (DOT_SIZE_PRESS / RING_SIZE_PRESS), like the rest sizes above track its
+   defaults. */
+.sky-link-cursor.pressing {
+  width: 16px;
+  height: 16px;
+}
+.sky-link-cursor-ring.pressing {
+  width: 20px;
+  height: 20px;
 }
 /* Well glow, mirroring #cursor.gravity-well: the ring swells its shadow with the
    peer's streamed --well-strength. */

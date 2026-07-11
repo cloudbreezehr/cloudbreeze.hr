@@ -24,11 +24,13 @@ import { prefersReducedMotion } from "../motion.js";
  * @param {number}      [opts.duration]    - Animation duration in ms (default: 600)
  * @param {number}      [opts.maxScale]    - Final scale multiplier (default: 4)
  * @param {number}      [opts.startOpacity] - Starting opacity (default: 0.6)
- * @param {string}      [opts.sound]       - Voice to play (default: "drop")
+ * @param {string|null} [opts.sound]       - Voice to play (default: "drop");
+ *                                            null (or "") spawns the ring silent
  */
 export function spawnRipple(x, y, opts) {
   if (prefersReducedMotion()) return;
-  playSfx(opts.sound || "drop");
+  const sound = opts.sound === undefined ? "drop" : opts.sound;
+  if (sound) playSfx(sound);
   const parent = opts.parent || document.body;
   const count = opts.count || 1;
   const staggerMs = opts.staggerMs || 150;

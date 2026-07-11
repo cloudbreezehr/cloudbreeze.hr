@@ -6,6 +6,7 @@ import {
   applyHoverDrift,
   createInteractions,
 } from "../../js/interactions.js";
+import { TRAIL } from "../../js/interactions.constants.js";
 
 // The force helpers are the one choke point every particle module passes
 // through, so remote pointers folded in here reach every particle on the
@@ -164,9 +165,13 @@ describe("interactions — remote pointers as force sources", () => {
 // assert what the well visuals render without a real canvas.
 function recordingCtx() {
   const halos = [];
+  // Trail segments are the only thing drawn with stroke(), so this count is a
+  // clean probe for "did a drag trail render this frame".
+  const counts = { strokes: 0 };
   const grad = { addColorStop() {} };
   return {
     halos,
+    counts,
     // Bounds the distant-well "blooms on this slice" gate reads via ctx.canvas.
     canvas: { width: 1000, height: 1000 },
     createRadialGradient(x0, y0, r0, x1, y1, r1) {
@@ -181,7 +186,9 @@ function recordingCtx() {
     moveTo() {},
     lineTo() {},
     quadraticCurveTo() {},
-    stroke() {},
+    stroke() {
+      counts.strokes++;
+    },
     set fillStyle(_) {},
     set strokeStyle(_) {},
     set lineWidth(_) {},
@@ -294,5 +301,36 @@ describe("interactions — mirrored well visuals across the seam", () => {
     inter.burst(100, 100, wellPal, { strength: 8, well: 1 });
     inter.draw(ctx, wellPal, forces);
     expect(ctx.halos.length).toBeGreaterThan(before);
+  });
+
+  it("mirrors a linked peer's drag trail across the seam", () => {
+    const inter = createInteractions();
+    const ctx = recordingCtx();
+    const dragging = (x) =>
+      makeForces({ remotePointers: [remote(x, 100, { isDragging: true })] });
+    // First frame pins the trail origin to the peer's cursor — no segment yet.
+    inter.draw(ctx, wellPal, dragging(100));
+    const before = ctx.counts.strokes;
+    // Moving the peer past the segment spacing spawns and strokes a trail seg.
+    inter.draw(ctx, wellPal, dragging(100 + TRAIL.SPACING + 10));
+    expect(ctx.counts.strokes).toBeGreaterThan(before);
+  });
+
+  it("leaves no trail for a peer that is only hovering", () => {
+    const inter = createInteractions();
+    const ctx = recordingCtx();
+    inter.draw(
+      ctx,
+      wellPal,
+      makeForces({ remotePointers: [remote(100, 100)] }),
+    );
+    const before = ctx.counts.strokes;
+    // A big move while not dragging must not lay down a trail.
+    inter.draw(
+      ctx,
+      wellPal,
+      makeForces({ remotePointers: [remote(600, 100)] }),
+    );
+    expect(ctx.counts.strokes).toBe(before);
   });
 });

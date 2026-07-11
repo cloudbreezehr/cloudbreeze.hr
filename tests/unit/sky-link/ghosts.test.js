@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { createCursorGhosts } from "../../../js/sky-link/ghosts.js";
+import { WELL } from "../../../js/interactions.constants.js";
 
 // The peer cursor is a pair of DOM elements on the cursor layer, styled like
 // #cursor. Tests drive update() with seam-style remote pointers and inspect the
@@ -27,6 +28,9 @@ const ring = () => document.querySelector(".sky-link-cursor-ring");
 describe("sky-link/ghosts", () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // happy-dom has no Web Animations API; the well-activation pulse spawns a
+    // ring that assigns animate().onfinish, so stub it like the ripple test.
+    Element.prototype.animate = vi.fn(() => ({ onfinish: null }));
     document.body.innerHTML = "";
   });
 
@@ -54,6 +58,36 @@ describe("sky-link/ghosts", () => {
     ghosts.update([remote({ wellStrength: 0.8 })], canvas);
     expect(ring().classList.contains("gravity-well")).toBe(true);
     expect(ring().style.getPropertyValue("--well-strength")).toBe("0.800");
+  });
+
+  it("mirrors the origin cursor's pressed state while the peer drags", () => {
+    const ghosts = createCursorGhosts();
+    ghosts.update([remote({ isDragging: true, x: 400 })], canvas);
+    expect(dot().classList.contains("pressing")).toBe(true);
+    expect(ring().classList.contains("pressing")).toBe(true);
+    // Releasing the drag drops the pressed look.
+    ghosts.update([remote({ isDragging: false, x: 400 })], canvas);
+    expect(dot().classList.contains("pressing")).toBe(false);
+    expect(ring().classList.contains("pressing")).toBe(false);
+  });
+
+  it("blooms the well-pulse ring once when a peer's well activates in view", () => {
+    const ghosts = createCursorGhosts();
+    const pulses = () => document.querySelectorAll(".well-pulse-ring").length;
+    // Not charging yet: nothing blooms.
+    ghosts.update([remote({ x: 400, wellStrength: 0 })], canvas);
+    expect(pulses()).toBe(0);
+    // Activates (0 → charging) and keeps charging: the pulse fires exactly
+    // once, not on every subsequent frame it stays charged.
+    ghosts.update([remote({ x: 400, wellStrength: 0.3 })], canvas);
+    ghosts.update([remote({ x: 400, wellStrength: 0.6 })], canvas);
+    expect(pulses()).toBe(WELL.PULSE_RING_COUNT);
+  });
+
+  it("does not pulse for a well that activates outside this viewport", () => {
+    const ghosts = createCursorGhosts();
+    ghosts.update([remote({ x: -50, wellStrength: 0.5 })], canvas);
+    expect(document.querySelectorAll(".well-pulse-ring")).toHaveLength(0);
   });
 
   it("fades a departed peer cursor out, then removes its elements", () => {

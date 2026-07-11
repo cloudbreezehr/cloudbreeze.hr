@@ -15,6 +15,8 @@
 // this viewport — the ghost-hand discovery.
 
 import { defineConstants } from "../dev/registry.js";
+import { spawnRipple } from "../effects/ripple.js";
+import { WELL } from "../interactions.constants.js";
 
 const GHOST = defineConstants("skyLink.ghost", {
   REMOVE_MS: {
@@ -41,7 +43,9 @@ export function createCursorGhosts() {
     ring.className = "sky-link-cursor-ring";
     ring.setAttribute("aria-hidden", "true");
     document.body.append(dot, ring);
-    return { dot, ring, removeTimer: 0 };
+    // prevWell tracks the peer's last well charge so a 0→charging transition
+    // fires the activation pulse once, not every frame it stays charged.
+    return { dot, ring, removeTimer: 0, prevWell: 0 };
   }
 
   // Centre the element on (x, y), matching how cursor.js places #cursor.
@@ -82,9 +86,28 @@ export function createCursorGhosts() {
         place(c.ring, rp.x, rp.y);
         c.dot.classList.add("visible");
         c.ring.classList.add("visible");
+        // Mirror the origin cursor's pressed look while its drag is captured —
+        // dot swells, ring tightens — so the ghost reads as pressing, not idle.
+        c.dot.classList.toggle("pressing", !!rp.isDragging);
+        c.ring.classList.toggle("pressing", !!rp.isDragging);
         const well = rp.wellStrength || 0;
         c.ring.style.setProperty("--well-strength", well.toFixed(3));
         c.ring.classList.toggle("gravity-well", well > 0);
+        // The peer's well just activated in view: bloom the same pulse ring it
+        // spawned on its own screen. Silent — the origin already sounded it, so
+        // this side answers with the visual only, like the mirrored burst.
+        if (well > 0 && c.prevWell === 0) {
+          spawnRipple(rp.x, rp.y, {
+            className: "well-pulse-ring",
+            count: WELL.PULSE_RING_COUNT,
+            staggerMs: WELL.PULSE_RING_STAGGER_MS,
+            duration: WELL.PULSE_RING_DURATION_MS,
+            maxScale: WELL.PULSE_RING_MAX_SCALE,
+            startOpacity: WELL.PULSE_RING_OPACITY,
+            sound: null,
+          });
+        }
+        c.prevWell = well;
 
         // A neighbour's captured drag physically inside this viewport is the
         // feature's flagship moment — celebrate it once per page load.
@@ -101,9 +124,8 @@ export function createCursorGhosts() {
       // Fade out (then remove) cursors whose pointer has left this viewport.
       for (const [id, c] of cursors) {
         if (present.has(id)) continue;
-        c.dot.classList.remove("visible");
-        c.ring.classList.remove("visible");
-        c.ring.classList.remove("gravity-well");
+        c.dot.classList.remove("visible", "pressing");
+        c.ring.classList.remove("visible", "pressing", "gravity-well");
         if (!c.removeTimer) {
           c.removeTimer = setTimeout(() => {
             c.dot.remove();
