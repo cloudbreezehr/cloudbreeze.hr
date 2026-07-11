@@ -1696,10 +1696,6 @@ const VOICES = {
   },
 };
 
-// Play a named voice. World/effect voices route through the per-theme effects
-// bus; pass `ui: true` for theme-agnostic cues (toggle, unlock) that should
-// play dry. Any other options are forwarded to the voice (e.g. a buildup
-// tick's `progress`). No-op when sound is off, unavailable, or name unknown.
 // Map a viewport x-coordinate to a stereo pan (-1 left … +1 right). Callers
 // that know where an effect happened pass `pan: panForX(x)` to playSfx.
 export function panForX(x) {
@@ -1708,6 +1704,10 @@ export function panForX(x) {
   return Math.max(-1, Math.min(1, (x / w) * 2 - 1));
 }
 
+// Play a named voice. World/effect voices route through the per-theme effects
+// bus; pass `ui: true` for theme-agnostic cues (toggle, unlock) that should
+// play dry. Any other options are forwarded to the voice (e.g. a buildup
+// tick's `progress`). No-op when sound is off, unavailable, or name unknown.
 export function playSfx(name, { ui = false, pan, ...opts } = {}) {
   if (!isSoundEnabled()) return;
   // Skip until a gesture has unlocked audio — otherwise sounds attempted on
