@@ -7,6 +7,7 @@
 // `{ candidates }`); one persistent element whose rows are rebuilt per letter.
 
 import { defineConstants } from "../dev/registry.js";
+import { isDevActive } from "../dev/active.js";
 
 export const SACC = defineConstants("effects.spellAccumulator", {
   MIN_LETTERS: {
@@ -31,13 +32,6 @@ export const SACC = defineConstants("effects.spellAccumulator", {
     description: "How long a finished word stays on screen before fading (ms)",
   },
 });
-
-// The karaoke reveal — dimmed un-pressed letters and the full candidate list —
-// is gated to the dev console while the feature bakes; everyone else sees only
-// the letters they've pressed.
-function devViewActive() {
-  return document.body.classList.contains("dev-active");
-}
 
 export function initSpellAccumulatorHud() {
   const root = document.createElement("div");
@@ -92,7 +86,7 @@ export function initSpellAccumulatorHud() {
     // mid-match never flash in its place.
     if (detail.completed) {
       lastCandidates = [];
-      root.classList.toggle("spell-acc--dev", devViewActive());
+      root.classList.toggle("spell-acc--dev", isDevActive());
       root.replaceChildren(
         buildRow(
           {
@@ -110,7 +104,7 @@ export function initSpellAccumulatorHud() {
 
     lastCandidates = candidates;
     root.classList.remove("spell-acc--complete");
-    const dev = devViewActive();
+    const dev = isDevActive();
     root.classList.toggle("spell-acc--dev", dev);
 
     const lead = candidates[0];

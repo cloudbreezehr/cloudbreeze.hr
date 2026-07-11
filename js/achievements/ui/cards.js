@@ -29,6 +29,7 @@ import { CLOUD_CHECK_SVG, CLOUD_LOCK_SVG, CLOUD_HIDDEN_SVG } from "./icons.js";
 import { buildTraitBadge } from "./traits.js";
 import { scrollAndHighlight } from "../../scroll-highlight.js";
 import { bindClickable } from "../../clickable.js";
+import { isDevActive } from "../../dev/active.js";
 
 // ── Tooltip Constants ──
 const HIDDEN_HINT_PLACEHOLDER = "Hidden — unlock to reveal the hint";
@@ -138,7 +139,7 @@ const showsHints = () => helpLevel === "hints";
 function resolveHintText(ach, isUnlocked, isRelocked) {
   if (isUnlocked || isRelocked) return ach.hint;
   if (ach.hidden) {
-    if (document.body.classList.contains("dev-active")) return ach.hint;
+    if (isDevActive()) return ach.hint;
     if (showsHints()) return ach.hint;
     return showsClues() ? HIDDEN_HINT_PLACEHOLDER : null;
   }
@@ -151,12 +152,9 @@ function resolveHintText(ach, isUnlocked, isRelocked) {
 // count: create it, update it, or drop it. Shared by the full render and the
 // live per-card refresh so repeats update without rebuilding the panel.
 //
-// Whether the re-earn tally should show. Gated to the dev console
-// (body.dev-active) while the feature bakes; the condition is expected to
-// change (e.g. only past 100% completion), so callers ask this rather than
-// testing the class themselves.
+// Whether the re-earn tally should show — currently only when dev views are on.
 function tallyVisible() {
-  return document.body.classList.contains("dev-active");
+  return isDevActive();
 }
 
 // Writes are guarded to the value actually changing: the panel carries a
