@@ -164,26 +164,33 @@ body[data-active-theme="wanted"] {
   --theme-primary: #ff6a00;
   --theme-glow: 255, 106, 0;
   --logo-text-color: #f4ead3;
-  --logo-accent-color: #ff6a00;
+  --logo-accent-color: var(--theme-primary);
   --theme-bg: #101010;
+  /* Comic ink + cream — the theme's outline/shadow black and its paper tone.
+     Kept distinct from --theme-bg / --logo-text-color (same values, different
+     roles); the -rgb variants back the translucent uses. */
+  --wanted-ink: #101010;
+  --wanted-ink-rgb: 16, 16, 16;
+  --wanted-cream: #f4ead3;
+  --wanted-cream-rgb: 244, 234, 211;
   /* Buttons read as hard-edged stickers — flat fills, ink outline below. */
-  --theme-btn-bg: #ff6a00;
+  --theme-btn-bg: var(--theme-primary);
   --theme-btn-before-bg: #1aa6a0;
-  --theme-btn-shadow: 4px 4px 0 #101010;
-  --theme-btn-hover-shadow: 6px 6px 0 #101010;
+  --theme-btn-shadow: 4px 4px 0 var(--wanted-ink);
+  --theme-btn-hover-shadow: 6px 6px 0 var(--wanted-ink);
 }
 
 /* The backdrop is painted by the renderer onto the suppressed bg-canvas, so no
    canvas filter is needed. */
 body[data-active-theme="wanted"] .cloud-svg {
   filter: contrast(1.4) brightness(0.9)
-    drop-shadow(2px 2px 0 rgba(16, 16, 16, 0.8));
+    drop-shadow(2px 2px 0 rgba(var(--wanted-ink-rgb), 0.8));
 }
 
 body[data-active-theme="wanted"] #cursor {
   box-shadow:
-    -3px -3px 4px rgba(244, 234, 211, 0.35) inset,
-    1px 1px 2px rgba(16, 16, 16, 0.5) inset;
+    -3px -3px 4px rgba(var(--wanted-cream-rgb), 0.35) inset,
+    1px 1px 2px rgba(var(--wanted-ink-rgb), 0.5) inset;
 }
 body[data-active-theme="wanted"] #cursor-ring {
   border-color: rgba(var(--theme-glow), 0.7);
@@ -194,7 +201,7 @@ body[data-active-theme="wanted"]::before {
   content: "";
   position: fixed;
   inset: 14px;
-  border: 6px solid #101010;
+  border: 6px solid var(--wanted-ink);
   border-radius: 3px;
   pointer-events: none;
   z-index: var(--z-wanted-hud);
@@ -206,26 +213,26 @@ body[data-active-theme="wanted"]::before {
 
 /* Nav — bold cream links, gold sticker CTA. */
 body[data-active-theme="wanted"] .nav-links a {
-  color: #f4ead3;
+  color: var(--wanted-cream);
   font-weight: 700;
-  text-shadow: 1.5px 1.5px 0 #101010;
+  text-shadow: 1.5px 1.5px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .nav-links a.nav-cta {
-  color: #101010;
+  color: var(--wanted-ink);
   background: #ffd23f;
-  border: 2px solid #101010;
-  box-shadow: 3px 3px 0 #101010;
+  border: 2px solid var(--wanted-ink);
+  box-shadow: 3px 3px 0 var(--wanted-ink);
   text-shadow: none;
 }
 
 /* Hero tag — an orange sticker instead of the thin ruled label. */
 body[data-active-theme="wanted"] .hero-tag {
-  color: #101010;
+  color: var(--wanted-ink);
   background: #ffd23f;
   padding: 5px 14px;
-  border: 2px solid #101010;
+  border: 2px solid var(--wanted-ink);
   border-radius: 3px;
-  box-shadow: 3px 3px 0 #101010;
+  box-shadow: 3px 3px 0 var(--wanted-ink);
   font-weight: 700;
 }
 body[data-active-theme="wanted"] .hero-tag::before,
@@ -236,51 +243,51 @@ body[data-active-theme="wanted"] .hero-tag::after {
 /* Hero title — comic lettering: solid fill, thick ink outline, hard shadow.
    Overrides the gradient text-clip (which went muddy over the halftone). */
 body[data-active-theme="wanted"] .hero-title .line-1 {
-  color: #f4ead3;
-  -webkit-text-fill-color: #f4ead3;
-  -webkit-text-stroke: 3px #101010;
-  text-shadow: 7px 7px 0 #101010;
+  color: var(--wanted-cream);
+  -webkit-text-fill-color: var(--wanted-cream);
+  -webkit-text-stroke: 3px var(--wanted-ink);
+  text-shadow: 7px 7px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .hero-title .line-2 {
   background: none;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  color: #ff6a00;
-  -webkit-text-fill-color: #ff6a00;
-  -webkit-text-stroke: 3px #101010;
-  text-shadow: 7px 7px 0 #101010;
+  color: var(--theme-primary);
+  -webkit-text-fill-color: var(--theme-primary);
+  -webkit-text-stroke: 3px var(--wanted-ink);
+  text-shadow: 7px 7px 0 var(--wanted-ink);
 }
 
 /* Hero sub — legible cream with an ink drop instead of faint grey. */
 body[data-active-theme="wanted"] .hero-sub {
-  color: #f4ead3;
+  color: var(--wanted-cream);
   opacity: 1;
   font-weight: 500;
-  text-shadow: 1.5px 1.5px 0 #101010;
+  text-shadow: 1.5px 1.5px 0 var(--wanted-ink);
 }
 
 /* Primary button — squared, thick ink outline, dark label on the orange fill. */
 body[data-active-theme="wanted"] .btn-primary {
-  border: 3px solid #101010;
+  border: 3px solid var(--wanted-ink);
   border-radius: 5px;
 }
 body[data-active-theme="wanted"] .btn-primary span {
-  color: #101010;
+  color: var(--wanted-ink);
   font-weight: 700;
 }
 /* Ghost button — a cream sticker that lifts onto its shadow on hover. */
 body[data-active-theme="wanted"] .btn-ghost {
-  color: #101010;
-  background: #f4ead3;
-  border: 3px solid #101010;
+  color: var(--wanted-ink);
+  background: var(--wanted-cream);
+  border: 3px solid var(--wanted-ink);
   border-radius: 5px;
-  box-shadow: 4px 4px 0 #101010;
+  box-shadow: 4px 4px 0 var(--wanted-ink);
   font-weight: 700;
 }
 body[data-active-theme="wanted"] .btn-ghost:hover {
-  color: #101010;
+  color: var(--wanted-ink);
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 #101010;
+  box-shadow: 6px 6px 0 var(--wanted-ink);
 }
 
 /* Service cards — dark panels with an orange outline and a hard ink shadow
@@ -291,19 +298,19 @@ body[data-active-theme="wanted"] .services-grid {
 }
 body[data-active-theme="wanted"] .service-card {
   background: #14110c;
-  border: 3px solid #ff6a00;
+  border: 3px solid var(--theme-primary);
   border-radius: 5px;
-  box-shadow: 6px 6px 0 #101010;
+  box-shadow: 6px 6px 0 var(--wanted-ink);
   transition:
     transform 0.3s ease,
     box-shadow 0.3s ease;
 }
 body[data-active-theme="wanted"] .service-card:hover {
   transform: translate(-3px, -3px);
-  box-shadow: 9px 9px 0 #101010;
+  box-shadow: 9px 9px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .service-num {
-  color: #ff6a00;
+  color: var(--theme-primary);
 }
 body[data-active-theme="wanted"] .service-icon {
   color: #1aa6a0;
@@ -313,49 +320,49 @@ body[data-active-theme="wanted"] .service-title {
   color: #ffd23f;
 }
 body[data-active-theme="wanted"] .service-desc {
-  color: rgba(244, 234, 211, 0.72);
+  color: rgba(var(--wanted-cream-rgb), 0.72);
 }
 
 /* About — bold cream heading with an orange accent word. */
 body[data-active-theme="wanted"] .about-heading {
-  color: #f4ead3;
-  text-shadow: 2px 2px 0 #101010;
+  color: var(--wanted-cream);
+  text-shadow: 2px 2px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .about-heading em {
   background: none;
   -webkit-background-clip: border-box;
   background-clip: border-box;
-  color: #ff6a00;
-  -webkit-text-fill-color: #ff6a00;
+  color: var(--theme-primary);
+  -webkit-text-fill-color: var(--theme-primary);
 }
 body[data-active-theme="wanted"] .about-body {
-  color: rgba(244, 234, 211, 0.75);
+  color: rgba(var(--wanted-cream-rgb), 0.75);
 }
 
 /* Contact — outlined panel and sticker-style links. */
 body[data-active-theme="wanted"] .contact-card {
   background: #14110c;
-  border: 3px solid #ff6a00;
+  border: 3px solid var(--theme-primary);
   border-radius: 6px;
-  box-shadow: 8px 8px 0 #101010;
+  box-shadow: 8px 8px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .contact-heading {
-  color: #f4ead3;
-  text-shadow: 2px 2px 0 #101010;
+  color: var(--wanted-cream);
+  text-shadow: 2px 2px 0 var(--wanted-ink);
 }
 body[data-active-theme="wanted"] .contact-sub {
-  color: rgba(244, 234, 211, 0.72);
+  color: rgba(var(--wanted-cream-rgb), 0.72);
 }
 body[data-active-theme="wanted"] .contact-link {
-  color: #f4ead3;
-  border: 2px solid #101010;
+  color: var(--wanted-cream);
+  border: 2px solid var(--wanted-ink);
   border-radius: 4px;
-  background: rgba(255, 106, 0, 0.12);
+  background: rgba(var(--theme-glow), 0.12);
 }
 body[data-active-theme="wanted"] .contact-link:hover {
-  color: #101010;
+  color: var(--wanted-ink);
   background: #ffd23f;
-  border-color: #101010;
+  border-color: var(--wanted-ink);
 }
 
 body[data-active-theme="wanted"]::after {
