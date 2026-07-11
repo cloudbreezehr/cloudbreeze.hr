@@ -212,6 +212,9 @@ export function createSpellMatcher(
     const matchedWord = matchedId
       ? targets.find((t) => t.id === matchedId).letters
       : null;
+    // A completed word ends the segment: wipe every word's progress so the
+    // fat-finger tolerance can't leave sibling fragments mid-match behind it.
+    if (matchedId) reset();
     // Live buildup signals for the cursor: how far into the nearest word we
     // are (0..1, never a sustained 1 — completion resets it) and how much
     // surplus charge is stacked while parked before the final letter.

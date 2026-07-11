@@ -239,6 +239,17 @@ describe("themes/spell-trigger", () => {
         ).toBeUndefined();
       });
 
+      it("clears every word's progress once one completes", () => {
+        const m = createSpellMatcher([
+          { id: "storm", name: "STORM" },
+          { id: "star", name: "STAR" },
+        ]);
+        // STAR is left at "ST" by the fat-finger tolerance while STORM
+        // finishes; completing STORM wipes that fragment too.
+        expect(spell(m, "STORM").matchedId).toBe("storm");
+        expect(m.state().candidates).toEqual([]);
+      });
+
       it("carries surplus charge for the accumulator", () => {
         const m = createSpellMatcher([
           { id: "boom", name: "BOOM", chargeChar: "O" },
