@@ -5,7 +5,7 @@
 // stagger cleanly.  buildAchievementToast is exported as the canonical
 // toast renderer so persisted entries render identically to live ones.
 
-import { SETS, getReachableAchievements, sumPoints } from "../registry.js";
+import { SETS, getCoreAchievements, sumPoints } from "../registry.js";
 import { rarityTierFor } from "../tiers.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "../progress.js";
 import { getPref } from "../storage.js";
@@ -532,9 +532,9 @@ function renderCompletionCard() {
   canvas.height = CARD_H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
-  const reachable = getReachableAchievements();
-  const count = reachable.length;
-  const points = sumPoints(reachable);
+  const core = getCoreAchievements();
+  const count = core.length;
+  const points = sumPoints(core);
 
   const bg = ctx.createLinearGradient(0, 0, 0, CARD_H);
   bg.addColorStop(0, "#0a1628");

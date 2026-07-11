@@ -8,6 +8,7 @@ import {
   getAchievement,
   sumPoints,
   getSetPrereqs,
+  getCoreAchievements,
   getAllNonMeta,
   getSpeedrunGoal,
   getReachableAchievements,
@@ -265,6 +266,25 @@ describe("getSetPrereqs", () => {
 
   it("returns an empty list for unknown sets", () => {
     expect(getSetPrereqs("no-such-set")).toEqual([]);
+  });
+});
+
+describe("getCoreAchievements", () => {
+  it("returns the reachable, non-meta, non-bonus achievements as objects", () => {
+    const core = getCoreAchievements();
+    for (const a of core) expect(a).toHaveProperty("id");
+    const ids = new Set(core.map((a) => a.id));
+    for (const a of ACHIEVEMENTS) {
+      const shouldCount = a.set !== "meta" && !isBonus(a) && isReachable(a);
+      expect(ids.has(a.id)).toBe(shouldCount);
+    }
+  });
+
+  it("is the object form of getAllNonMeta (same membership)", () => {
+    const coreIds = getCoreAchievements()
+      .map((a) => a.id)
+      .sort();
+    expect(coreIds).toEqual([...getAllNonMeta()].sort());
   });
 });
 

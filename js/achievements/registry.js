@@ -1934,27 +1934,35 @@ export function getSetPrereqs(setId) {
 }
 
 /**
- * Get all core non-meta achievement IDs (for the completionist check and the
- * completion strip's denominator). Excludes device-unreachable entries so
- * completion stays earnable, and bonus entries so the un-schedulable ones don't
- * gate 100% — they push past it instead.
+ * The core completion set as achievement objects: non-meta, non-bonus, and
+ * reachable on this device — the single source of truth for what the core
+ * 100% comprises. Excludes device-unreachable entries so completion stays
+ * earnable, and bonus entries so the un-schedulable ones push past 100% rather
+ * than gate it. Callers needing ids map over it (getAllNonMeta).
  */
-export function getAllNonMeta() {
+export function getCoreAchievements() {
   return ACHIEVEMENTS.filter(
     (a) => a.set !== "meta" && !isBonus(a) && isReachable(a),
-  ).map((a) => a.id);
+  );
+}
+
+/**
+ * The core completion set as ids — the completionist check and the completion
+ * strip's denominator. See getCoreAchievements for the membership rule.
+ */
+export function getAllNonMeta() {
+  return getCoreAchievements().map((a) => a.id);
 }
 
 /**
  * Get the achievement ids a speedrun must re-earn to finish: the core
- * completion set (as getAllNonMeta) minus `patient` entries — a run is a
- * single sitting, so entries that only real elapsed time can earn don't
- * gate it.
+ * completion set minus `patient` entries — a run is a single sitting, so
+ * entries that only real elapsed time can earn don't gate it.
  */
 export function getSpeedrunGoal() {
-  return ACHIEVEMENTS.filter(
-    (a) => a.set !== "meta" && !isBonus(a) && !a.patient && isReachable(a),
-  ).map((a) => a.id);
+  return getCoreAchievements()
+    .filter((a) => !a.patient)
+    .map((a) => a.id);
 }
 
 /**
