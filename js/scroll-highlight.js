@@ -105,12 +105,28 @@ function applyHighlight(el) {
   // Force a reflow so the browser commits the class removal before the
   // re-add — otherwise the animation doesn't restart on consecutive calls.
   void el.offsetHeight;
-  el.classList.add(HIGHLIGHT_CLASS);
+
+  // animationend bubbles, and the highlight animation may run on `el`
+  // itself or on a descendant (some highlight targets shine an inner
+  // element). Tearing down on *any* animationend would let an unrelated
+  // child animation cut the highlight short. Learn the highlight's own
+  // animation from the animationstart the class triggers, then clean up only
+  // when that same animation ends, so no keyframe name is baked into this
+  // generic helper.
   el.addEventListener(
-    "animationend",
-    () => el.classList.remove(HIGHLIGHT_CLASS),
+    "animationstart",
+    (start) => {
+      const highlightAnim = start.animationName;
+      el.addEventListener("animationend", function onEnd(end) {
+        if (end.animationName !== highlightAnim) return;
+        el.classList.remove(HIGHLIGHT_CLASS);
+        el.removeEventListener("animationend", onEnd);
+      });
+    },
     { once: true },
   );
+
+  el.classList.add(HIGHLIGHT_CLASS);
 }
 
 function findScrollableAncestor(el) {
