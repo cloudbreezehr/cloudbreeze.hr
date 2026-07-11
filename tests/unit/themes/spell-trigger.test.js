@@ -262,6 +262,18 @@ describe("themes/spell-trigger", () => {
           chargeChar: "O",
         });
       });
+
+      it("flags a candidate as maxed once charge reaches the cap", () => {
+        const m = createSpellMatcher([
+          { id: "boom", name: "BOOM", chargeChar: "O", chargeMax: () => 2 },
+        ]);
+        "BOO".split("").forEach((ch, i) => m.feed(ch, i)); // parked, charge 0
+        expect(m.state().candidates[0].maxed).toBe(false);
+        m.feed("O", 10); // charge 1, below cap
+        expect(m.state().candidates[0].maxed).toBe(false);
+        m.feed("O", 11); // charge 2, at cap
+        expect(m.state().candidates[0].maxed).toBe(true);
+      });
     });
 
     it("reports live progress and charge for the cursor buildup", () => {

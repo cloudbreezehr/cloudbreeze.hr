@@ -48,6 +48,23 @@
   text-shadow: 0 0 10px rgba(255, 200, 110, 0.5);
 }
 
+/* At the charge cap the surplus letters / count glow hotter and pulse, so it's
+   clear further mashing does nothing — and it marks the overkill moment. */
+.spell-acc__word--maxed .spell-acc__letter--charge,
+.spell-acc__word--maxed .spell-acc__count {
+  color: rgba(255, 200, 130, 1);
+  animation: spell-acc-maxed 700ms ease-in-out infinite;
+}
+@keyframes spell-acc-maxed {
+  0%,
+  100% {
+    text-shadow: 0 0 10px rgba(255, 170, 80, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 18px rgba(255, 150, 60, 0.95);
+  }
+}
+
 /* Un-pressed letters: hidden from normal users, dimmed in for the dev view. */
 .spell-acc__letter--empty {
   display: none;

@@ -186,6 +186,26 @@ describe("effects/spell-accumulator", () => {
     expect(root().classList.contains("spell-acc--complete")).toBe(true);
   });
 
+  it("marks a row maxed when the candidate is at its charge cap", async () => {
+    await mount();
+    document.body.classList.add("dev-active"); // show surplus regardless of width
+    progress([cand("BOOM", 3, { charge: 2, chargeChar: "O", maxed: true })]);
+    expect(root().querySelector(".spell-acc__word--maxed")).not.toBeNull();
+  });
+
+  it("marks the completed word maxed when it finished at the cap", async () => {
+    await mount();
+    window.dispatchEvent(
+      new CustomEvent("spell-progress", {
+        detail: {
+          candidates: [],
+          completed: { word: "BOOM", charge: 2, chargeChar: "O", maxed: true },
+        },
+      }),
+    );
+    expect(root().querySelector(".spell-acc__word--maxed")).not.toBeNull();
+  });
+
   it("caps surplus letters to a ×N count when the row would overflow", async () => {
     await mount();
     // happy-dom has no layout; stub it so the row overflows and each glyph

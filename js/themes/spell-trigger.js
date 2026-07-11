@@ -117,6 +117,15 @@ export function createSpellMatcher(
   const stray = new Map(targets.map((t) => [t.id, 0]));
   let lastTime = -Infinity;
 
+  // Charge cap for a target (number, live getter, or null = uncapped) and
+  // whether a given charge has reached it.
+  const resolveMax = (t) =>
+    typeof t.chargeMax === "function" ? t.chargeMax() : t.chargeMax;
+  const isMaxed = (t, c) => {
+    const max = resolveMax(t);
+    return c > 0 && max != null && c >= max;
+  };
+
   function reset() {
     for (const t of targets) {
       prog.set(t.id, 0);
@@ -169,8 +178,7 @@ export function createSpellMatcher(
         // Recognised either way, so it keeps the run alive (no stray).
         stray.set(t.id, 0);
         chargeMatched = true;
-        const max =
-          typeof t.chargeMax === "function" ? t.chargeMax() : t.chargeMax;
+        const max = resolveMax(t);
         if (max == null || charge.get(t.id) < max) {
           advanced = true;
           charged = true;
@@ -212,6 +220,7 @@ export function createSpellMatcher(
     const matched = matchedId ? targets.find((t) => t.id === matchedId) : null;
     const matchedWord = matched ? matched.letters : null;
     const matchedChargeChar = matched ? matched.chargeChar : null;
+    const matchedMaxed = matched ? isMaxed(matched, matchedCharge) : false;
     // A completed word ends the segment: wipe every word's progress so the
     // fat-finger tolerance can't leave sibling fragments mid-match behind it.
     if (matchedId) reset();
@@ -247,6 +256,7 @@ export function createSpellMatcher(
       matchedWord,
       matchedChargeChar,
       matchedCharge,
+      matchedMaxed,
       // A maxed-out charge letter is recognised, not a miss — so it never goes
       // red even though it didn't advance.
       brokeStreak,
@@ -269,6 +279,7 @@ export function createSpellMatcher(
         matched: prog.get(t.id),
         charge: charge.get(t.id),
         chargeChar: t.chargeChar,
+        maxed: isMaxed(t, charge.get(t.id)),
       }))
       .sort((a, b) => b.matched - a.matched);
     return { candidates };
@@ -593,6 +604,7 @@ export function initSpellTrigger() {
         word: result.matchedWord,
         charge: result.matchedCharge,
         chargeChar: result.matchedChargeChar,
+        maxed: result.matchedMaxed,
       };
     }
     window.dispatchEvent(new CustomEvent("spell-progress", { detail }));

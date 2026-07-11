@@ -68,6 +68,7 @@ export function initSpellAccumulatorHud() {
     const row = document.createElement("div");
     row.className = "spell-acc__word";
     if (isLead) row.classList.add("spell-acc__word--lead");
+    if (cand.maxed) row.classList.add("spell-acc__word--maxed");
 
     let chargeAt = -1;
     if (cand.charge > 0 && cand.chargeChar) {
@@ -135,9 +136,14 @@ export function initSpellAccumulatorHud() {
       lastCandidates = [];
       root.classList.remove("spell-acc--complete");
       root.classList.toggle("spell-acc--dev", isDevActive());
-      const { word, charge = 0, chargeChar = null } = detail.completed;
+      const {
+        word,
+        charge = 0,
+        chargeChar = null,
+        maxed = false,
+      } = detail.completed;
       const row = buildRow(
-        { word, matched: word.length, charge, chargeChar },
+        { word, matched: word.length, charge, chargeChar, maxed },
         true,
       );
       root.replaceChildren(row);
