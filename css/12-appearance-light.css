@@ -4,17 +4,15 @@ body.light-appearance {
 }
 
 /* The element surfaces below are the DEFAULT light treatment — white-ish cards,
-   ink text, a light cursor. They apply to the default look and to themes that
-   have a light variant (frozen, rainy, blocky, paper, vhs add their own tint on
-   top). They are suppressed under `.theme-dark-only` themes (deep-sea,
-   upside-down, constellation — set in canvas.js from the registry `darkOnly`
-   flag), which have no bright form and keep their dark identity in light mode;
-   without this guard, their dark pages would show white cards and ink text.
+   ink text, a light cursor. They apply to the default look and to any theme with
+   a light variant (which layers its own tint on top). They are suppressed under
+   `.theme-dark-only` themes — those flagged `darkOnly` in the theme registry —
+   which have no bright form and keep their dark identity in light mode; without
+   this guard, their dark pages would show white cards and ink text.
    The exclusion is wrapped in :where() so it adds ZERO specificity — a bare
    :not(.theme-dark-only) would outrank a theme's own same-specificity element
-   override (e.g. paper's pencil #cursor) and clobber it; :where keeps these at
-   their original weight so source order still lets a theme win where it sets
-   its own surfaces. */
+   override and clobber it; :where keeps these at their original weight so source
+   order still lets a theme win where it sets its own surfaces. */
 body.light-appearance:where(:not(.theme-dark-only)) .section-label {
   color: var(--sky-5);
 }
