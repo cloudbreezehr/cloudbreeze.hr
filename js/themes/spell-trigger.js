@@ -209,9 +209,9 @@ export function createSpellMatcher(
         matchedLen = c.len;
       }
     }
-    const matchedWord = matchedId
-      ? targets.find((t) => t.id === matchedId).letters
-      : null;
+    const matched = matchedId ? targets.find((t) => t.id === matchedId) : null;
+    const matchedWord = matched ? matched.letters : null;
+    const matchedChargeChar = matched ? matched.chargeChar : null;
     // A completed word ends the segment: wipe every word's progress so the
     // fat-finger tolerance can't leave sibling fragments mid-match behind it.
     if (matchedId) reset();
@@ -245,6 +245,7 @@ export function createSpellMatcher(
       charged,
       matchedId,
       matchedWord,
+      matchedChargeChar,
       matchedCharge,
       // A maxed-out charge letter is recognised, not a miss — so it never goes
       // red even though it didn't advance.
@@ -587,7 +588,13 @@ export function initSpellTrigger() {
     // Broadcast the words in progress so a live display can mirror them; a
     // finished word rides along so the display can flash it before clearing.
     const detail = matcher.state();
-    if (result.matchedId) detail.completed = { word: result.matchedWord };
+    if (result.matchedId) {
+      detail.completed = {
+        word: result.matchedWord,
+        charge: result.matchedCharge,
+        chargeChar: result.matchedChargeChar,
+      };
+    }
     window.dispatchEvent(new CustomEvent("spell-progress", { detail }));
     if (result.matchedId) {
       actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);

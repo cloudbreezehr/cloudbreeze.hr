@@ -29,12 +29,16 @@ describe("spell accumulator integration", () => {
       toggleTheme: () => {},
     }));
     vi.doMock("../../js/effects/incantations.js", () => ({
-      INCANTATIONS: [],
+      INCANTATIONS: [
+        { word: "BOOM", chargeChar: "O", chargeMax: () => 10, cast: () => {} },
+      ],
     }));
     vi.doMock("../../js/motion.js", () => ({
       prefersReducedMotion: () => true,
     }));
-    vi.doMock("../../js/audio/toggle.js", () => ({ revealSoundToggle: () => {} }));
+    vi.doMock("../../js/audio/toggle.js", () => ({
+      revealSoundToggle: () => {},
+    }));
     vi.doMock("../../js/terminal/index.js", () => ({
       isTerminalOpen: () => false,
     }));
@@ -95,5 +99,14 @@ describe("spell accumulator integration", () => {
     // starts from nothing, so the accumulator doesn't resurface it.
     type("A");
     expect(shown()).toBe(false);
+  });
+
+  it("carries a charged word's surplus through to the accumulator", () => {
+    // Reduced motion is mocked on, so the merge animation is skipped and the
+    // charged word lands straight on its clean form.
+    type("BOOOOM"); // BOOM + two surplus O's
+    expect(shown()).toBe(true);
+    expect(visibleText()).toBe("BOOM");
+    expect(acc().classList.contains("spell-acc--complete")).toBe(true);
   });
 });

@@ -8,6 +8,7 @@
 
 import { defineConstants } from "../dev/registry.js";
 import { isDevActive } from "../dev/active.js";
+import { prefersReducedMotion } from "../motion.js";
 
 export const SACC = defineConstants("effects.spellAccumulator", {
   MIN_LETTERS: {
@@ -30,6 +31,14 @@ export const SACC = defineConstants("effects.spellAccumulator", {
     max: 4000,
     step: 100,
     description: "How long a finished word stays on screen before fading (ms)",
+  },
+  COLLAPSE_MS: {
+    value: 420,
+    min: 100,
+    max: 2000,
+    step: 20,
+    description:
+      "How long surplus charge letters take to merge into the word (ms)",
   },
 });
 
@@ -86,19 +95,25 @@ export function initSpellAccumulatorHud() {
     // mid-match never flash in its place.
     if (detail.completed) {
       lastCandidates = [];
+      root.classList.remove("spell-acc--complete");
       root.classList.toggle("spell-acc--dev", isDevActive());
-      root.replaceChildren(
-        buildRow(
-          {
-            word: detail.completed.word,
-            matched: detail.completed.word.length,
-          },
-          true,
-        ),
+      const { word, charge = 0, chargeChar = null } = detail.completed;
+      const row = buildRow(
+        { word, matched: word.length, charge, chargeChar },
+        true,
       );
-      root.classList.add("spell-acc--visible", "spell-acc--complete");
+      root.replaceChildren(row);
+      root.classList.add("spell-acc--visible");
       clearTimeout(lingerTimer);
-      lingerTimer = setTimeout(conceal, SACC.COMPLETE_HOLD_MS);
+
+      const surplus = [...row.querySelectorAll(".spell-acc__letter--charge")];
+      if (surplus.length && !prefersReducedMotion() && canAnimate(surplus[0])) {
+        mergeCharge(row, surplus, popComplete);
+      } else {
+        // No charge, reduced motion, or no WAAPI: land straight on the word.
+        surplus.forEach((s) => s.remove());
+        popComplete();
+      }
       return;
     }
 
@@ -121,6 +136,78 @@ export function initSpellAccumulatorHud() {
     root.classList.add("spell-acc--visible");
     clearTimeout(lingerTimer);
     lingerTimer = setTimeout(conceal, SACC.LINGER_MS);
+  }
+
+  function canAnimate(el) {
+    return typeof el.animate === "function";
+  }
+
+  // The surplus charge letters shrink away while the word's two halves slide
+  // together to meet in the middle. Sliding both sides (not just the tail)
+  // keeps the word centred throughout the collapse, so it doesn't lurch back
+  // to centre once the surplus — and the width it held — is gone.
+  function mergeCharge(row, surplus, onDone) {
+    const all = [...row.children];
+    const leading = all.slice(0, all.indexOf(surplus[0]));
+    const trailing = all.slice(
+      all.lastIndexOf(surplus[surplus.length - 1]) + 1,
+    );
+    // Width the row loses when the surplus goes; each half travels half of it.
+    const lost = trailing.length
+      ? trailing[0].getBoundingClientRect().left -
+        surplus[0].getBoundingClientRect().left
+      : 0;
+    const half = lost / 2;
+    const opts = {
+      duration: SACC.COLLAPSE_MS,
+      easing: "ease-in",
+      fill: "forwards",
+    };
+    const sideAnims = [
+      ...leading.map((el) =>
+        el.animate(
+          [
+            { transform: "translateX(0)" },
+            { transform: `translateX(${half}px)` },
+          ],
+          opts,
+        ),
+      ),
+      ...trailing.map((el) =>
+        el.animate(
+          [
+            { transform: "translateX(0)" },
+            { transform: `translateX(-${half}px)` },
+          ],
+          opts,
+        ),
+      ),
+    ];
+    let last = null;
+    for (const s of surplus) {
+      last = s.animate(
+        [
+          { opacity: 1, transform: "scale(1)" },
+          { opacity: 0, transform: "scale(0)" },
+        ],
+        opts,
+      );
+    }
+    last.onfinish = () => {
+      // Remove the collapsed surplus, then cancel the side slides so the halves
+      // rest at their natural (now centred) positions. Leaving the fill would
+      // stack the slide on top of the layout re-centre and shift them too far.
+      surplus.forEach((s) => s.remove());
+      for (const a of sideAnims) a.cancel();
+      onDone();
+    };
+  }
+
+  // Land on the finished word: brighten-pop it and start the fade timer.
+  function popComplete() {
+    root.classList.add("spell-acc--complete");
+    clearTimeout(lingerTimer);
+    lingerTimer = setTimeout(conceal, SACC.COMPLETE_HOLD_MS);
   }
 
   function conceal() {

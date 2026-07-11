@@ -12,12 +12,28 @@ describe("effects/spell-accumulator", () => {
     vi.useFakeTimers();
     document.body.innerHTML = "";
     document.body.className = "";
+    // Motion on by default; the merge animation runs. Element.animate is
+    // shimmed (happy-dom has none) to fire onfinish so the merge completes.
+    window.matchMedia = vi.fn().mockReturnValue({
+      matches: false,
+      addEventListener() {},
+      removeEventListener() {},
+    });
+    if (!Element.prototype.animate) {
+      Element.prototype.animate = function () {
+        const handle = { onfinish: null, cancel() {} };
+        queueMicrotask(() => handle.onfinish && handle.onfinish());
+        return handle;
+      };
+    }
   });
 
   afterEach(() => {
     if (hud) hud.stop();
     hud = null;
     vi.useRealTimers();
+    delete window.matchMedia;
+    delete Element.prototype.animate;
   });
 
   async function mount() {
@@ -144,5 +160,29 @@ describe("effects/spell-accumulator", () => {
     );
     vi.advanceTimersByTime(SACC.COMPLETE_HOLD_MS + 1);
     expect(root().classList.contains("spell-acc--visible")).toBe(false);
+  });
+
+  it("merges surplus charge letters into the word, landing on the clean word", async () => {
+    await mount();
+    window.dispatchEvent(
+      new CustomEvent("spell-progress", {
+        detail: {
+          candidates: [],
+          completed: { word: "BOOM", charge: 3, chargeChar: "O" },
+        },
+      }),
+    );
+    // The full charged echo shows first: B O O + three surplus O's + M.
+    expect([...letters()].map((l) => l.textContent).join("")).toBe("BOOOOOM");
+    expect(root().querySelectorAll(".spell-acc__letter--charge")).toHaveLength(
+      3,
+    );
+    // After the merge animation, the surplus is gone and the clean word remains.
+    await Promise.resolve();
+    expect([...letters()].map((l) => l.textContent).join("")).toBe("BOOM");
+    expect(root().querySelectorAll(".spell-acc__letter--charge")).toHaveLength(
+      0,
+    );
+    expect(root().classList.contains("spell-acc--complete")).toBe(true);
   });
 });
