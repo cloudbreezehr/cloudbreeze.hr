@@ -40,6 +40,14 @@ export const SACC = defineConstants("effects.spellAccumulator", {
     description:
       "How long surplus charge letters take to merge into the word (ms)",
   },
+  MAX_WIDTH_FRACTION: {
+    value: 0.9,
+    min: 0.3,
+    max: 1,
+    step: 0.05,
+    description:
+      "Fraction of the viewport the row may fill before surplus letters cap to a ×N count",
+  },
 });
 
 export function initSpellAccumulatorHud() {
@@ -86,6 +94,36 @@ export function initSpellAccumulatorHud() {
     return row;
   }
 
+  // Keep the row within a fraction of the viewport: while the surplus letters
+  // fit they all show (a wide screen sees the run grow as it's typed), but once
+  // the row would overflow, the tail collapses to a live ×N count of the true
+  // charge. Measured, so the cap scales with the actual viewport and font.
+  function fitCharge(row, charge) {
+    const surplus = [...row.querySelectorAll(".spell-acc__letter--charge")];
+    if (!surplus.length) return;
+    const maxWidth = window.innerWidth * SACC.MAX_WIDTH_FRACTION;
+    if (row.getBoundingClientRect().width <= maxWidth) return;
+
+    // Uniform advance in this monospace row, so the drop count is arithmetic.
+    const advance =
+      surplus.length > 1
+        ? surplus[1].getBoundingClientRect().left -
+          surplus[0].getBoundingClientRect().left
+        : surplus[0].getBoundingClientRect().width;
+
+    const count = document.createElement("span");
+    count.className = "spell-acc__count";
+    count.textContent = `×${charge}`;
+    surplus[surplus.length - 1].after(count);
+
+    const overflow = row.getBoundingClientRect().width - maxWidth;
+    const drop =
+      advance > 0
+        ? Math.min(surplus.length, Math.ceil(overflow / advance))
+        : surplus.length;
+    for (let i = 0; i < drop; i++) surplus[surplus.length - 1 - i].remove();
+  }
+
   function render(detail) {
     const candidates = detail.candidates || [];
 
@@ -105,13 +143,19 @@ export function initSpellAccumulatorHud() {
       root.replaceChildren(row);
       root.classList.add("spell-acc--visible");
       clearTimeout(lingerTimer);
+      fitCharge(row, charge);
 
-      const surplus = [...row.querySelectorAll(".spell-acc__letter--charge")];
-      if (surplus.length && !prefersReducedMotion() && canAnimate(surplus[0])) {
-        mergeCharge(row, surplus, popComplete);
+      // The surplus letters and any ×N count collapse together into the word.
+      const middle = [
+        ...row.querySelectorAll(
+          ".spell-acc__letter--charge, .spell-acc__count",
+        ),
+      ];
+      if (middle.length && !prefersReducedMotion() && canAnimate(middle[0])) {
+        mergeCharge(row, middle, popComplete);
       } else {
         // No charge, reduced motion, or no WAAPI: land straight on the word.
-        surplus.forEach((s) => s.remove());
+        middle.forEach((el) => el.remove());
         popComplete();
       }
       return;
@@ -132,7 +176,9 @@ export function initSpellAccumulatorHud() {
     }
 
     const rows = dev ? candidates : [lead];
-    root.replaceChildren(...rows.map((c, i) => buildRow(c, i === 0)));
+    const built = rows.map((c, i) => buildRow(c, i === 0));
+    root.replaceChildren(...built);
+    built.forEach((el, i) => fitCharge(el, rows[i].charge));
     root.classList.add("spell-acc--visible");
     clearTimeout(lingerTimer);
     lingerTimer = setTimeout(conceal, SACC.LINGER_MS);
@@ -142,20 +188,19 @@ export function initSpellAccumulatorHud() {
     return typeof el.animate === "function";
   }
 
-  // The surplus charge letters shrink away while the word's two halves slide
-  // together to meet in the middle. Sliding both sides (not just the tail)
-  // keeps the word centred throughout the collapse, so it doesn't lurch back
-  // to centre once the surplus — and the width it held — is gone.
-  function mergeCharge(row, surplus, onDone) {
+  // The surplus charge letters (and any ×N count) shrink away while the word's
+  // two halves slide together to meet in the middle. Sliding both sides (not
+  // just the tail) keeps the word centred throughout the collapse, so it
+  // doesn't lurch back to centre once the middle — and the width it held — is
+  // gone.
+  function mergeCharge(row, middle, onDone) {
     const all = [...row.children];
-    const leading = all.slice(0, all.indexOf(surplus[0]));
-    const trailing = all.slice(
-      all.lastIndexOf(surplus[surplus.length - 1]) + 1,
-    );
-    // Width the row loses when the surplus goes; each half travels half of it.
+    const leading = all.slice(0, all.indexOf(middle[0]));
+    const trailing = all.slice(all.lastIndexOf(middle[middle.length - 1]) + 1);
+    // Width the row loses when the middle goes; each half travels half of it.
     const lost = trailing.length
       ? trailing[0].getBoundingClientRect().left -
-        surplus[0].getBoundingClientRect().left
+        middle[0].getBoundingClientRect().left
       : 0;
     const half = lost / 2;
     const opts = {
@@ -184,8 +229,8 @@ export function initSpellAccumulatorHud() {
       ),
     ];
     let last = null;
-    for (const s of surplus) {
-      last = s.animate(
+    for (const el of middle) {
+      last = el.animate(
         [
           { opacity: 1, transform: "scale(1)" },
           { opacity: 0, transform: "scale(0)" },
@@ -194,10 +239,10 @@ export function initSpellAccumulatorHud() {
       );
     }
     last.onfinish = () => {
-      // Remove the collapsed surplus, then cancel the side slides so the halves
+      // Remove the collapsed middle, then cancel the side slides so the halves
       // rest at their natural (now centred) positions. Leaving the fill would
       // stack the slide on top of the layout re-centre and shift them too far.
-      surplus.forEach((s) => s.remove());
+      middle.forEach((el) => el.remove());
       for (const a of sideAnims) a.cancel();
       onDone();
     };

@@ -40,6 +40,13 @@
   color: rgba(255, 224, 150, 0.95);
   text-shadow: 0 0 10px rgba(255, 200, 110, 0.5);
 }
+/* Live count that stands in for the surplus letters once the row would overflow. */
+.spell-acc__count {
+  align-self: center;
+  font-size: 0.8em;
+  color: rgba(255, 224, 150, 0.95);
+  text-shadow: 0 0 10px rgba(255, 200, 110, 0.5);
+}
 
 /* Un-pressed letters: hidden from normal users, dimmed in for the dev view. */
 .spell-acc__letter--empty {

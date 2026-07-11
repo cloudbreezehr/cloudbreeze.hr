@@ -185,4 +185,50 @@ describe("effects/spell-accumulator", () => {
     );
     expect(root().classList.contains("spell-acc--complete")).toBe(true);
   });
+
+  it("caps surplus letters to a ×N count when the row would overflow", async () => {
+    await mount();
+    // happy-dom has no layout; stub it so the row overflows and each glyph
+    // advances a fixed step (uniform, as in the real monospace row).
+    const ADV = 10;
+    const originalWidth = window.innerWidth;
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: 333,
+    });
+    const rectSpy = vi
+      .spyOn(Element.prototype, "getBoundingClientRect")
+      .mockImplementation(function () {
+        if (this.classList.contains("spell-acc__word")) {
+          const w = this.children.length * ADV;
+          return { left: 0, right: w, width: w, top: 0, bottom: 0, height: 0 };
+        }
+        const idx = this.parentElement
+          ? [...this.parentElement.children].indexOf(this)
+          : 0;
+        return {
+          left: idx * ADV,
+          right: idx * ADV + ADV,
+          width: ADV,
+          top: 0,
+          bottom: 0,
+          height: 0,
+        };
+      });
+
+    progress([cand("BOOM", 3, { charge: 40, chargeChar: "O" })]);
+
+    const count = root().querySelector(".spell-acc__count");
+    expect(count).not.toBeNull();
+    expect(count.textContent).toBe("×40"); // the true charge, not the shown glyphs
+    const shown = root().querySelectorAll(".spell-acc__letter--charge").length;
+    expect(shown).toBeGreaterThan(0); // some glyphs kept
+    expect(shown).toBeLessThan(40); // but capped below the true count
+
+    rectSpy.mockRestore();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      value: originalWidth,
+    });
+  });
 });
