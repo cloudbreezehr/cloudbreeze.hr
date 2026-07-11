@@ -57,6 +57,10 @@ export const SPELL_STRAY_BUDGET = 4;
 // Names shorter than this aren't spell targets — guards a future one- or
 // two-letter name from completing on a stray tap or two.
 const MIN_SPELL_LEN = 3;
+// Least chain depth a letter must reach to light green ("advance"). A lone
+// first letter is ambiguous among every word that shares it, so crediting it
+// would flash green for idle taps — only a genuine continuation counts.
+const GREEN_MIN_DEPTH = 2;
 
 // ── Letter-pop feedback ──
 // The pop overlays the tapped glyph in the same font, so it reads as a coloured
@@ -84,8 +88,9 @@ function normalizeName(s) {
 
 // Pure matcher: feed one uppercase letter at a time. Returns whether the
 // letter advanced any name's progress, the id of a name that just completed
-// (if any), the charge it completed with, and whether it broke an in-progress
-// streak (a dead letter tapped while mid-spell — drives the miss feedback).
+// (if any), the charge it completed with, whether it broke an in-progress
+// streak, and a `feedback` tier for the letter pop (advance / transition /
+// broke / none).
 // Forgiving: a non-matching letter doesn't reset progress immediately —
 // `strayBudget` of them in a row is tolerated (fat-finger / hunting), and an
 // idle gap longer than gapMs clears everything. A target may declare a
@@ -125,6 +130,7 @@ export function createSpellMatcher(
     lastTime = now;
     const hadProgress = targets.some((t) => prog.get(t.id) > 0);
     let advanced = false;
+    let advancedDepth = 0; // deepest chain reached this letter (green threshold)
     let charged = false; // a charge counter ticked up this letter
     let chargeMatched = false; // a charge letter landed, even if already maxed
     let matchedId = null;
@@ -139,6 +145,7 @@ export function createSpellMatcher(
         advanced = true;
         stray.set(t.id, 0); // a correct letter resets the tolerance
         const next = i + 1;
+        if (next > advancedDepth) advancedDepth = next;
         if (next === t.letters.length) {
           completions.push({
             id: t.id,
@@ -168,6 +175,7 @@ export function createSpellMatcher(
           advanced = true;
           charged = true;
           charge.set(t.id, charge.get(t.id) + 1);
+          if (i > advancedDepth) advancedDepth = i;
         }
       } else if (i > 0) {
         // A non-matching letter mid-word. Tolerate a run of them (fat-finger /
@@ -211,6 +219,21 @@ export function createSpellMatcher(
       if (frac > progress) progress = frac;
       if (charge.get(t.id) > liveCharge) liveCharge = charge.get(t.id);
     }
+    const brokeStreak = !advanced && !chargeMatched && hadProgress;
+    // Letter-pop tier: green only when a chain reached GREEN_MIN_DEPTH, yellow
+    // when a letter diverts to another word mid-spell, red on a dead letter,
+    // else silent.
+    let feedback = "none";
+    if (advanced) {
+      feedback =
+        advancedDepth >= GREEN_MIN_DEPTH
+          ? "advance"
+          : hadProgress
+            ? "transition"
+            : "none";
+    } else if (brokeStreak) {
+      feedback = "broke";
+    }
     return {
       advanced,
       charged,
@@ -218,7 +241,8 @@ export function createSpellMatcher(
       matchedCharge,
       // A maxed-out charge letter is recognised, not a miss — so it never goes
       // red even though it didn't advance.
-      brokeStreak: !advanced && !chargeMatched && hadProgress,
+      brokeStreak,
+      feedback,
       progress,
       liveCharge,
     };
@@ -314,8 +338,9 @@ function glyphAtPoint(x, y) {
   return { raw: text.charAt(fallback), rect: null, font };
 }
 
-// status: "advance" (green, blooms) or "broke" (red, shakes). The pop is a
-// coloured copy of the tapped glyph laid exactly over it, fading in place.
+// status: "advance" (green) and "transition" (yellow) bloom in place; "broke"
+// (red) shakes. The pop is a coloured copy of the tapped glyph laid exactly
+// over it, fading in place.
 function popGlyph(glyph, fallbackX, fallbackY, status) {
   if (prefersReducedMotion()) return;
   const el = document.createElement("span");
@@ -570,15 +595,13 @@ export function initSpellTrigger() {
     const letter = glyph.raw.toUpperCase();
     if (letter < "A" || letter > "Z") return;
     lastPointer = { x: e.clientX, y: e.clientY };
-    const { advanced, brokeStreak } = runMatch(letter, {
+    const { feedback } = runMatch(letter, {
       x: e.clientX,
       y: e.clientY,
     });
-    // Pop the tapped glyph green when it advanced a name, red + shake when a
-    // mid-spell tap fell on a dead letter. Letters that begin nothing (no
-    // streak to break) stay silent so casual taps don't litter the page.
-    if (advanced) popGlyph(glyph, e.clientX, e.clientY, "advance");
-    else if (brokeStreak) popGlyph(glyph, e.clientX, e.clientY, "broke");
+    // Pop the tapped glyph per the matcher's feedback tier. "none" — a lone or
+    // ambiguous tap — stays silent so casual taps don't litter the page.
+    if (feedback !== "none") popGlyph(glyph, e.clientX, e.clientY, feedback);
   }
 
   document.addEventListener("pointermove", onPointerMove, { passive: true });

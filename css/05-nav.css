@@ -97,9 +97,10 @@ nav.nav-light.scrolled {
 }
 
 /* Spell-to-toggle feedback — a coloured ghost of the tapped letter laid over
-   it: green when the tap advances a name, red + shake on a wasted mid-spell
-   tap. The font (family/size/weight/…) is copied from the tapped element inline
-   by JS so it overlays exactly; self-cleaning via the Web Animations API. */
+   it: green when the tap extends a word, yellow when it diverts to another
+   mid-spell, red + shake on a dead tap. The font (family/size/weight/…) is
+   copied from the tapped element inline by JS so it overlays exactly;
+   self-cleaning via the Web Animations API. */
 .spell-pop {
   position: fixed;
   z-index: var(--z-cursor-ring);
@@ -108,6 +109,10 @@ nav.nav-light.scrolled {
 .spell-pop--advance {
   color: rgb(120, 224, 156);
   text-shadow: 0 0 8px rgba(120, 224, 156, 0.55);
+}
+.spell-pop--transition {
+  color: rgb(240, 200, 110);
+  text-shadow: 0 0 8px rgba(240, 200, 110, 0.5);
 }
 .spell-pop--broke {
   color: rgb(235, 116, 116);

@@ -96,6 +96,38 @@ describe("themes/spell-trigger", () => {
       expect(m.feed("Z", 0).brokeStreak).toBe(false);
     });
 
+    describe("letter-pop feedback tier", () => {
+      it("stays silent on a lone starting letter — too ambiguous to credit", () => {
+        const m = createSpellMatcher(NAMES);
+        expect(m.feed("P", 0).feedback).toBe("none"); // begins PAPER, only 1 deep
+      });
+
+      it("advances (green) once a chain reaches depth two", () => {
+        const m = createSpellMatcher(NAMES);
+        m.feed("P", 0);
+        expect(m.feed("A", 1).feedback).toBe("advance"); // PA — genuinely building
+      });
+
+      it("advances (green) on the completing letter", () => {
+        const m = createSpellMatcher(NAMES);
+        expect(spell(m, "PAPER").feedback).toBe("advance");
+      });
+
+      it("transitions (yellow) when a letter diverts to another word mid-spell", () => {
+        const m = createSpellMatcher(NAMES);
+        m.feed("P", 0);
+        m.feed("A", 1); // PAPER at depth 2
+        expect(m.feed("V", 2).feedback).toBe("transition"); // starts VHS instead
+      });
+
+      it("breaks (red) on a dead letter mid-spell", () => {
+        const m = createSpellMatcher(NAMES);
+        m.feed("P", 0);
+        m.feed("A", 1);
+        expect(m.feed("Z", 2).feedback).toBe("broke"); // advances nothing
+      });
+    });
+
     it("resets progress after an idle gap longer than the window", () => {
       const m = createSpellMatcher(NAMES);
       m.feed("P", 0);
