@@ -1,0 +1,60 @@
+/* ── Spell Accumulator ── */
+/* A subtle row of the letters being spelled, low-centre on the viewport.
+   Normal users see only the letters they've entered — un-pressed letters
+   collapse away so the target word never leaks. When the dev console is active
+   (.spell-acc--dev) the full candidate word(s) show with un-pressed letters
+   dimmed in, karaoke-style. The opacity fade is a plain CSS transition, so the
+   global reduced-motion clamp snaps it off for free. */
+.spell-acc {
+  position: fixed;
+  left: 50%;
+  bottom: 7vh;
+  transform: translateX(-50%);
+  z-index: var(--z-spell-hud);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3em;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 240ms ease-out;
+}
+.spell-acc--visible {
+  opacity: 1;
+}
+
+.spell-acc__word {
+  display: flex;
+  gap: 0.14em;
+  font-family: ui-monospace, "SF Mono", "Fira Code", monospace;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.spell-acc__letter {
+  color: rgba(214, 228, 255, 0.92);
+  text-shadow: 0 0 10px rgba(150, 185, 255, 0.45);
+}
+.spell-acc__letter--charge {
+  color: rgba(255, 224, 150, 0.95);
+  text-shadow: 0 0 10px rgba(255, 200, 110, 0.5);
+}
+
+/* Un-pressed letters: hidden from normal users, dimmed in for the dev view. */
+.spell-acc__letter--empty {
+  display: none;
+}
+.spell-acc--dev .spell-acc__letter--empty {
+  display: inline;
+  color: rgba(200, 214, 245, 0.3);
+  text-shadow: none;
+}
+
+/* Dev view lists every candidate; the leading (deepest) one stands out. */
+.spell-acc--dev .spell-acc__word {
+  opacity: 0.65;
+}
+.spell-acc--dev .spell-acc__word--lead {
+  opacity: 1;
+}

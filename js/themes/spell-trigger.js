@@ -248,7 +248,25 @@ export function createSpellMatcher(
     };
   }
 
-  return { feed, reset };
+  // Snapshot of the words currently in progress, deepest match first. Each
+  // candidate carries its full letters, how many have been entered, and any
+  // surplus charge — enough for a caller to show the entered prefix alone or
+  // the whole word.
+  function state() {
+    const candidates = targets
+      .filter((t) => prog.get(t.id) > 0)
+      .map((t) => ({
+        id: t.id,
+        word: t.letters,
+        matched: prog.get(t.id),
+        charge: charge.get(t.id),
+        chargeChar: t.chargeChar,
+      }))
+      .sort((a, b) => b.matched - a.matched);
+    return { candidates };
+  }
+
+  return { feed, reset, state };
 }
 
 // Bounding rect of a single character in a text node, or null when layout
@@ -559,6 +577,10 @@ export function initSpellTrigger() {
     const result = matcher.feed(letter, Date.now());
     applyCharge(result.progress, result.liveCharge);
     if (result.charged) kick();
+    // Broadcast the words in progress so a live display can mirror them.
+    window.dispatchEvent(
+      new CustomEvent("spell-progress", { detail: matcher.state() }),
+    );
     if (result.matchedId) {
       actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);
     }

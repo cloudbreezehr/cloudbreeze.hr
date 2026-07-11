@@ -208,6 +208,51 @@ describe("themes/spell-trigger", () => {
       expect(res.brokeStreak).toBe(false);
     });
 
+    describe("state() — accumulator snapshot", () => {
+      it("reports no candidates before any letter", () => {
+        const m = createSpellMatcher(NAMES);
+        expect(m.state().candidates).toEqual([]);
+      });
+
+      it("reports an in-progress word with its full letters and matched count", () => {
+        const m = createSpellMatcher(NAMES);
+        m.feed("P", 0);
+        m.feed("A", 1);
+        expect(m.state().candidates).toContainEqual(
+          expect.objectContaining({ id: "paper", word: "PAPER", matched: 2 }),
+        );
+      });
+
+      it("orders candidates deepest-match first", () => {
+        const m = createSpellMatcher(NAMES);
+        m.feed("P", 0);
+        m.feed("A", 1); // PAPER at depth 2
+        m.feed("V", 2); // VHS starts at depth 1; PAPER keeps its lead
+        expect(m.state().candidates[0].id).toBe("paper");
+      });
+
+      it("drops a word from the snapshot once it completes", () => {
+        const m = createSpellMatcher(NAMES);
+        spell(m, "VHS");
+        expect(
+          m.state().candidates.find((c) => c.id === "vhs"),
+        ).toBeUndefined();
+      });
+
+      it("carries surplus charge for the accumulator", () => {
+        const m = createSpellMatcher([
+          { id: "boom", name: "BOOM", chargeChar: "O" },
+        ]);
+        "BOO".split("").forEach((ch, i) => m.feed(ch, i)); // parked, expecting M
+        m.feed("O", 10); // a surplus O
+        expect(m.state().candidates[0]).toMatchObject({
+          matched: 3,
+          charge: 1,
+          chargeChar: "O",
+        });
+      });
+    });
+
     it("reports live progress and charge for the cursor buildup", () => {
       const m = createSpellMatcher([
         { id: "boom", name: "BOOM", chargeChar: "O" },

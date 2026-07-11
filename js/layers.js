@@ -72,6 +72,9 @@ const LAYERS = Object.freeze({
   // Run clock — deliberately shares the theme-effect tier; a corner HUD over
   // content, under wipes and panels.
   Z_SPEEDRUN_HUD: 100,
+  // Spell accumulator — deliberately shares the theme-effect tier; a low-centre
+  // HUD over content, under wipes and panels.
+  Z_SPELL_HUD: 100,
 
   // ── Transition wipes (200–299) ──
   Z_THEME_WIPE: 200,
