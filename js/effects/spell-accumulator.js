@@ -23,6 +23,13 @@ export const SACC = defineConstants("effects.spellAccumulator", {
     step: 100,
     description: "How long the accumulator lingers after the last letter (ms)",
   },
+  COMPLETE_HOLD_MS: {
+    value: 800,
+    min: 100,
+    max: 4000,
+    step: 100,
+    description: "How long a finished word stays on screen before fading (ms)",
+  },
 });
 
 // The karaoke reveal — dimmed un-pressed letters and the full candidate list —
@@ -43,29 +50,66 @@ export function initSpellAccumulatorHud() {
 
   // One row per candidate word: a span per letter, un-pressed ones tagged so
   // CSS can collapse them (normal) or dim them (dev). Surplus charge letters
-  // follow as pressed glyphs — entered too, just past the word's last slot.
+  // are pressed glyphs, inserted right after the last chargeChar already
+  // entered — that's where they were typed, before any letters still to come,
+  // so BOOOOM reads B O O O O M, not B O O M O O.
   function buildRow(cand, isLead) {
     const row = document.createElement("div");
     row.className = "spell-acc__word";
     if (isLead) row.classList.add("spell-acc__word--lead");
+
+    let chargeAt = -1;
+    if (cand.charge > 0 && cand.chargeChar) {
+      for (let i = 0; i < cand.matched; i++) {
+        if (cand.word[i] === cand.chargeChar) chargeAt = i;
+      }
+    }
+
     for (let i = 0; i < cand.word.length; i++) {
       const span = document.createElement("span");
       span.className = "spell-acc__letter";
       if (i >= cand.matched) span.classList.add("spell-acc__letter--empty");
       span.textContent = cand.word[i];
       row.appendChild(span);
-    }
-    for (let i = 0; i < cand.charge && cand.chargeChar; i++) {
-      const span = document.createElement("span");
-      span.className = "spell-acc__letter spell-acc__letter--charge";
-      span.textContent = cand.chargeChar;
-      row.appendChild(span);
+      if (i === chargeAt) {
+        for (let c = 0; c < cand.charge; c++) {
+          const cs = document.createElement("span");
+          cs.className = "spell-acc__letter spell-acc__letter--charge";
+          cs.textContent = cand.chargeChar;
+          row.appendChild(cs);
+        }
+      }
     }
     return row;
   }
 
-  function render(candidates) {
+  function render(detail) {
+    const candidates = detail.candidates || [];
+
+    // A finished word takes over the display: show it whole for a beat, then
+    // fade — so the speller sees the full word they landed rather than it
+    // vanishing on the last keystroke, and the fragments other words were left
+    // mid-match never flash in its place.
+    if (detail.completed) {
+      lastCandidates = [];
+      root.classList.toggle("spell-acc--dev", devViewActive());
+      root.replaceChildren(
+        buildRow(
+          {
+            word: detail.completed.word,
+            matched: detail.completed.word.length,
+          },
+          true,
+        ),
+      );
+      root.classList.add("spell-acc--visible", "spell-acc--complete");
+      clearTimeout(lingerTimer);
+      lingerTimer = setTimeout(conceal, SACC.COMPLETE_HOLD_MS);
+      return;
+    }
+
     lastCandidates = candidates;
+    root.classList.remove("spell-acc--complete");
     const dev = devViewActive();
     root.classList.toggle("spell-acc--dev", dev);
 
@@ -91,14 +135,14 @@ export function initSpellAccumulatorHud() {
   }
 
   function onProgress(e) {
-    render(e.detail?.candidates || []);
+    render(e.detail || {});
   }
   // Re-render live when the dev console toggles so the reveal switches over
   // without waiting for the next letter.
   function onAchievement(e) {
     const t = e.detail?.type;
     if (t === "dev-console-open" || t === "dev-console-close") {
-      render(lastCandidates);
+      render({ candidates: lastCandidates });
     }
   }
   window.addEventListener("spell-progress", onProgress);

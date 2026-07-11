@@ -58,3 +58,23 @@
 .spell-acc--dev .spell-acc__word--lead {
   opacity: 1;
 }
+
+/* A finished word brightens and pops briefly before it fades out. */
+.spell-acc--complete .spell-acc__letter {
+  color: rgba(236, 244, 255, 1);
+  text-shadow: 0 0 14px rgba(170, 200, 255, 0.7);
+}
+.spell-acc--complete .spell-acc__word {
+  animation: spell-acc-complete 260ms ease-out;
+}
+@keyframes spell-acc-complete {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

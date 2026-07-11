@@ -95,13 +95,23 @@ describe("effects/spell-accumulator", () => {
     expect(words()).toHaveLength(2);
   });
 
-  it("appends surplus charge letters as pressed glyphs", async () => {
+  it("inserts surplus charge letters right after the entered chargeChar run", async () => {
     await mount();
     document.body.classList.add("dev-active");
     progress([cand("BOOM", 3, { charge: 2, chargeChar: "O" })]);
-    expect(root().querySelectorAll(".spell-acc__letter--charge")).toHaveLength(
-      2,
+    const spans = [...letters()];
+    // B O O + (O O charge) + M — the extra O's sit before the pending M.
+    expect(spans.map((l) => l.textContent).join("")).toBe("BOOOOM");
+    expect(
+      spans.filter((l) => l.classList.contains("spell-acc__letter--charge")),
+    ).toHaveLength(2);
+    const lastCharge = spans.findLastIndex((l) =>
+      l.classList.contains("spell-acc__letter--charge"),
     );
+    const pendingM = spans.findIndex((l) =>
+      l.classList.contains("spell-acc__letter--empty"),
+    );
+    expect(lastCharge).toBeLessThan(pendingM);
   });
 
   it("hides after the linger window with no further letters", async () => {
@@ -112,10 +122,27 @@ describe("effects/spell-accumulator", () => {
     expect(root().classList.contains("spell-acc--visible")).toBe(false);
   });
 
-  it("hides immediately when a word completes and leaves no candidates", async () => {
+  it("hides when nothing is in progress", async () => {
     await mount();
     progress([cand("PAPER", 3)]);
     progress([]);
+    expect(root().classList.contains("spell-acc--visible")).toBe(false);
+  });
+
+  it("flashes the whole completed word, then fades after the hold", async () => {
+    await mount();
+    window.dispatchEvent(
+      new CustomEvent("spell-progress", {
+        detail: { candidates: [], completed: { word: "STORM" } },
+      }),
+    );
+    expect(root().classList.contains("spell-acc--visible")).toBe(true);
+    // The full word shows — no un-pressed letters left over.
+    expect([...letters()].map((l) => l.textContent).join("")).toBe("STORM");
+    expect(root().querySelectorAll(".spell-acc__letter--empty")).toHaveLength(
+      0,
+    );
+    vi.advanceTimersByTime(SACC.COMPLETE_HOLD_MS + 1);
     expect(root().classList.contains("spell-acc--visible")).toBe(false);
   });
 });

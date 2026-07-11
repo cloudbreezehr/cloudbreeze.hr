@@ -209,6 +209,9 @@ export function createSpellMatcher(
         matchedLen = c.len;
       }
     }
+    const matchedWord = matchedId
+      ? targets.find((t) => t.id === matchedId).letters
+      : null;
     // Live buildup signals for the cursor: how far into the nearest word we
     // are (0..1, never a sustained 1 — completion resets it) and how much
     // surplus charge is stacked while parked before the final letter.
@@ -238,6 +241,7 @@ export function createSpellMatcher(
       advanced,
       charged,
       matchedId,
+      matchedWord,
       matchedCharge,
       // A maxed-out charge letter is recognised, not a miss — so it never goes
       // red even though it didn't advance.
@@ -577,10 +581,11 @@ export function initSpellTrigger() {
     const result = matcher.feed(letter, Date.now());
     applyCharge(result.progress, result.liveCharge);
     if (result.charged) kick();
-    // Broadcast the words in progress so a live display can mirror them.
-    window.dispatchEvent(
-      new CustomEvent("spell-progress", { detail: matcher.state() }),
-    );
+    // Broadcast the words in progress so a live display can mirror them; a
+    // finished word rides along so the display can flash it before clearing.
+    const detail = matcher.state();
+    if (result.matchedId) detail.completed = { word: result.matchedWord };
+    window.dispatchEvent(new CustomEvent("spell-progress", { detail }));
     if (result.matchedId) {
       actions.get(result.matchedId)?.(castOrigin(point), result.matchedCharge);
     }
