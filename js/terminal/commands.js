@@ -285,7 +285,11 @@ export function createCommands(deps) {
       name: "deploy",
       summary: "ship it",
       run() {
-        castWord("DEPLOY");
+        if (!castWord("DEPLOY")) {
+          return {
+            lines: ["deploy: rollback — the release never left the pad."],
+          };
+        }
         return { lines: ["Deploying to production… done.", "Ship it. 🚀"] };
       },
     },

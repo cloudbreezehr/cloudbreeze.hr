@@ -195,8 +195,13 @@ describe("terminal/commands", () => {
   });
 
   it("deploy ships via the DEPLOY spell", () => {
-    run("deploy");
+    expect(run("deploy").lines[0]).toContain("Deploying to production");
     expect(deps.castWord).toHaveBeenCalledWith("DEPLOY");
+  });
+
+  it("deploy rolls back when the DEPLOY spell is unavailable", () => {
+    deps.castWord.mockReturnValueOnce(false);
+    expect(run("deploy").lines[0]).toContain("rollback");
   });
 
   it("passport with no args issues a code and copies it", () => {
