@@ -15,7 +15,10 @@
 // ever visible at once, while two real windows can both be visible side by
 // side. Every rect carries the sender's current visibility, and every
 // consumer of "linked" state (glow, world-anchoring, force/effect admission)
-// keys off the visible peer set, never merely the known one.
+// keys off the visible peer set, never merely the known one — and off this
+// window's own visibility too: a channel reaches backgrounded contexts, so a
+// hidden window keeps hearing a foreground sibling's visible rects, but it is
+// beside nothing on screen and links to no one until it is itself seen.
 //
 // Everything is desktop-coordinate math from peers.js; this module owns the
 // transport (channel, heartbeats, expiry) and the DOM touchpoints (body
@@ -159,9 +162,17 @@ export function initSkyLink() {
     glows.set(side, el);
   }
 
+  // Peers this window is visibly linked to right now: none while this window
+  // is itself hidden (behind another tab or occluded), otherwise every peer
+  // reporting itself visible. The local half of the visibility handshake —
+  // peers.js owns the remote half.
+  function linkedPeers() {
+    return document.hidden ? [] : registry.visiblePeers();
+  }
+
   function refreshGlows() {
     const strongest = { left: 0, right: 0, top: 0, bottom: 0 };
-    for (const peer of registry.visiblePeers()) {
+    for (const peer of linkedPeers()) {
       const side = sideToward(selfRect, peer.rect);
       const gap = edgeGap(selfRect, peer.rect);
       const intensity = Math.max(0, 1 - gap / SKY_LINK.GLOW_RANGE_PX);
@@ -177,7 +188,7 @@ export function initSkyLink() {
   // The body class flips with any live peer; the achievement event fires
   // only when the window count grows, so heartbeats stay silent.
   function refreshLinkState() {
-    const windows = registry.visiblePeers().length + 1;
+    const windows = linkedPeers().length + 1;
     document.body.classList.toggle("sky-linked", windows > 1);
     if (windows > linkedWindows) {
       window.dispatchEvent(
@@ -222,6 +233,12 @@ export function initSkyLink() {
     if (document.hidden) {
       postRect(false);
       lastSentJson = ""; // force a fresh send once visible again
+      // Hidden ⇒ linkedPeers() is empty, so drop our own glow and link now
+      // rather than wait for a peer beat to recompute it. The visible edge
+      // deliberately doesn't do the same: a sibling's visible flag is stale
+      // across a switch, so re-link only off its next incoming rect, which
+      // carries its true current visibility.
+      refreshLinkState();
     } else {
       announce(Date.now());
     }
@@ -281,6 +298,12 @@ export function initSkyLink() {
   channel.onmessage = (e) => {
     const msg = e.data;
     if (!msg || msg.id === id) return;
+    // While hidden, this window still tracks peer geometry (rect/bye) but
+    // admits none of a peer's live input — pointer forces, effects, casts — so
+    // it stays beside no one until it is itself seen.
+    const liveInput =
+      msg.kind === "pointer" || msg.kind === "effect" || msg.kind === "cast";
+    if (liveInput && document.hidden) return;
     if (msg.kind === "rect") {
       // One world needs one arrangement: a window on a different sky —
       // time-traveling via #sky=, or left open past midnight — never
@@ -391,7 +414,7 @@ export function initSkyLink() {
     );
   }
 
-  setPeerRectsSource(() => registry.visiblePeers().map((peer) => peer.rect));
+  setPeerRectsSource(() => linkedPeers().map((peer) => peer.rect));
   setRemotePointersSource(() =>
     pointers.all().map((ptr) => {
       const local = toLocal(ptr, selfRect);

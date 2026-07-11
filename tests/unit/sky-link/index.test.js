@@ -561,6 +561,9 @@ describe("sky-link/index — inert environments", () => {
 describe("sky-link/index — hidden windows", () => {
   let cleanup;
   let hidden;
+  let seed;
+  let selfRect;
+  let seam;
 
   beforeEach(async () => {
     vi.useFakeTimers();
@@ -579,10 +582,14 @@ describe("sky-link/index — hidden windows", () => {
       configurable: true,
       get: () => hidden,
     });
+    document.body.className = "";
     document.body.innerHTML = "";
     vi.resetModules();
+    seed = (await import("../../../js/daily/random.js")).skySeedKey();
+    seam = await import("../../../js/sky-link/seam.js");
     const mod = await import("../../../js/sky-link/index.js");
     cleanup = mod.initSkyLink();
+    selfRect = viewportDesktopRect(window);
   });
 
   afterEach(() => {
@@ -591,6 +598,29 @@ describe("sky-link/index — hidden windows", () => {
     vi.unstubAllGlobals();
     delete document.hidden;
   });
+
+  function injectVisiblePeer(id = "peer-1") {
+    channels[0].onmessage({
+      data: {
+        kind: "rect",
+        id,
+        seed,
+        rect: {
+          x: selfRect.x + selfRect.w + 100,
+          y: selfRect.y,
+          w: 200,
+          h: 200,
+        },
+        visible: true,
+      },
+    });
+  }
+
+  function rightGlowOn() {
+    return document
+      .querySelector('.sky-link-glow[data-side="right"]')
+      .classList.contains("on");
+  }
 
   it("goes quiet while hidden and resumes announcing when visible", async () => {
     const { SKY_LINK } = await import("../../../js/sky-link/index.js");
@@ -620,5 +650,97 @@ describe("sky-link/index — hidden windows", () => {
     hidden = false;
     document.dispatchEvent(new Event("visibilitychange"));
     expect(rects().at(-1).visible).toBe(true);
+  });
+
+  it("does not link, glow, or chime while itself hidden, even off a visible peer", () => {
+    // A background tab keeps hearing a foreground sibling's visible rects over
+    // the shared channel — it must stay beside no one until it is itself seen.
+    hidden = true;
+    const events = [];
+    window.addEventListener("achievement", (e) => events.push(e.detail));
+    injectVisiblePeer();
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(rightGlowOn()).toBe(false);
+    expect(events.some((d) => d.type === "sky-link")).toBe(false);
+  });
+
+  it("switching to a background tab neither flashes the glow nor chimes", () => {
+    // The alt-tab race: this tab was hidden while a sibling broadcast visible;
+    // it becomes visible, then the sibling's own visible:false correction
+    // arrives. Nothing links across the switch, so nothing glows or sounds.
+    hidden = true;
+    injectVisiblePeer();
+    const events = [];
+    window.addEventListener("achievement", (e) => events.push(e.detail));
+
+    hidden = false;
+    document.dispatchEvent(new Event("visibilitychange"));
+    channels[0].onmessage({
+      data: {
+        kind: "rect",
+        id: "peer-1",
+        seed,
+        rect: {
+          x: selfRect.x + selfRect.w + 100,
+          y: selfRect.y,
+          w: 200,
+          h: 200,
+        },
+        visible: false,
+      },
+    });
+
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(rightGlowOn()).toBe(false);
+    expect(events.some((d) => d.type === "sky-link")).toBe(false);
+  });
+
+  it("drops its own glow and link the instant it goes hidden while linked", () => {
+    injectVisiblePeer();
+    expect(document.body.classList.contains("sky-linked")).toBe(true);
+    expect(rightGlowOn()).toBe(true);
+
+    hidden = true;
+    document.dispatchEvent(new Event("visibilitychange"));
+    expect(document.body.classList.contains("sky-linked")).toBe(false);
+    expect(rightGlowOn()).toBe(false);
+  });
+
+  it("admits no peer pointer, effect, or cast while itself hidden", () => {
+    // Peer is registered (the rect handshake runs while hidden) but its live
+    // input must not reach a window itself beside no one. All three kinds share
+    // one gate — assert each so a later per-handler split can't regress.
+    injectVisiblePeer();
+    hidden = true;
+    const point = { x: selfRect.x + 10, y: selfRect.y + 10 };
+    const effects = [];
+    const casts = [];
+    window.addEventListener("sky-link-effect", (e) => effects.push(e.detail));
+    window.addEventListener("sky-link-cast", (e) => casts.push(e.detail));
+
+    channels[0].onmessage({
+      data: {
+        kind: "pointer",
+        id: "peer-1",
+        pointer: { x: point.x, y: point.y, active: true },
+      },
+    });
+    channels[0].onmessage({
+      data: { kind: "effect", id: "peer-1", point, strength: 1, well: 0.5 },
+    });
+    channels[0].onmessage({
+      data: {
+        kind: "cast",
+        id: "peer-1",
+        seed,
+        word: "RAIN",
+        point,
+        charge: 0,
+      },
+    });
+
+    expect(seam.remotePointers()).toHaveLength(0);
+    expect(effects).toHaveLength(0);
+    expect(casts).toHaveLength(0);
   });
 });
