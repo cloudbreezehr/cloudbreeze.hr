@@ -11,7 +11,7 @@
 // other code paths that show their own greeting toast — keeping every
 // greeting under the same throttle.
 
-import { getReachableAchievements } from "./registry.js";
+import { getReachableAchievements, countCoreBonus } from "./registry.js";
 import { resolveProgressCurrent, resolveProgressTotal } from "./progress.js";
 import * as storage from "./storage.js";
 
@@ -79,15 +79,18 @@ export function maybeShowWelcomeBack(showActivationToast) {
   if (Date.now() - readLastGreeted() < THROTTLE_MS) return;
 
   if (!storage.isActive()) return;
-  // Count against what this device can earn, so the "still hidden" tally never
-  // strands a touch user above a total they can't actually reach.
-  const reachable = getReachableAchievements();
-  const reachableIds = new Set(reachable.map((a) => a.id));
-  const unlockedCount = storage
-    .getUnlocked()
-    .filter((u) => reachableIds.has(u.id)).length;
-  if (unlockedCount <= 0) return;
-  const remaining = reachable.length - unlockedCount;
+  
+  // The "still hidden" tally counts only the core, reachable set. Bonus secrets
+  // stay entirely hidden — counting them would reveal they exist and keep the
+  // greeting firing past a full core completion; reachability stops a touch user
+  // being stranded above a total they can't reach.
+  const unlockedIds = new Set(storage.getUnlocked().map((u) => u.id));
+  const { coreTotal, coreUnlocked, bonusUnlocked } = countCoreBonus(
+    getReachableAchievements(),
+    (id) => unlockedIds.has(id),
+  );
+  if (coreUnlocked + bonusUnlocked <= 0) return;
+  const remaining = coreTotal - coreUnlocked;
   if (remaining <= 0) return;
 
   // Mark the session greeted up-front so a fast double-init (hot

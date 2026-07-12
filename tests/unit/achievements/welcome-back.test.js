@@ -66,6 +66,23 @@ describe("achievements/welcome-back", () => {
     expect(showActivationToast).not.toHaveBeenCalled();
   });
 
+  it("does not count bonus secrets in the tally — silent once core is complete", async () => {
+    const { getReachableAchievements, isBonus } =
+      await import("../../../js/achievements/registry.js");
+    storage.activate();
+    // Every core (non-bonus) reachable achievement earned; only entirely-hidden
+    // bonus/calendar secrets remain. The greeting must not reveal they exist.
+    const reachable = getReachableAchievements();
+    for (const ach of reachable) {
+      if (!isBonus(ach)) storage.unlock(ach.id);
+    }
+    expect(reachable.some(isBonus)).toBe(true);
+
+    mod.maybeShowWelcomeBack(showActivationToast);
+    vi.advanceTimersByTime(PAST_SETTLE_MS);
+    expect(showActivationToast).not.toHaveBeenCalled();
+  });
+
   it("points at the nearest in-progress achievement", async () => {
     const { ACHIEVEMENTS } =
       await import("../../../js/achievements/registry.js");
