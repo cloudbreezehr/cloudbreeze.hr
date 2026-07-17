@@ -1,0 +1,24 @@
+# Commits ignored by git blame — whole-tree prettier reformats that only
+# re-wrapped lines. Line history flows through them to the real change.
+#
+# Opt in locally once with:
+#   git config blame.ignoreRevsFile .git-blame-ignore-revs
+# GitHub's blame view reads this file automatically.
+
+# Format all JS, CSS, and HTML files with Prettier
+ab372bf9ab93642e2ecc8f62b56fa612b42a0fb9
+
+# Run formatter
+31d9a5ffe799a9beee11b769b84ecee851fdbb9a
+
+# Run formatter
+10e10cc637f0eb9a31bed2c12052f702d0eb3ff4
+
+# Run formatter over all files
+74f3c07145b1a664a9a319a875992fe61e1e9aaf
+
+# Run formatter over all files
+671a6be65c98bee31ac2ad60b287f5e5ca7f5691
+
+# Format toast.js with prettier
+d4d4017e748405503425e67b706bb56dedbb7f89
