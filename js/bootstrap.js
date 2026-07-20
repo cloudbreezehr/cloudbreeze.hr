@@ -17,6 +17,11 @@ import { getList, hasFlag, onUrlChange } from "./url-params.js";
 const PROD_HOSTNAME = "cloudbreeze.hr";
 const POSTHOG_API_KEY = "phc_DkjMmwyEb9HyRG6kwmabdvkhmjZm2tid95gBK7sJkw3i";
 
+// Master switch for the whole analytics subsystem.
+// When off, the analytics module is never imported, so nothing under
+// js/analytics/ is fetched and no bridge listeners attach.
+const ANALYTICS_ENABLED = true;
+
 const PARALLAX_LAYERS = [
   { selector: ".hero-tag", rate: 0.12 },
   { selector: ".hero-title .line-1", rate: 0.06 },
@@ -115,8 +120,10 @@ async function wireKeyboardHotkeys({ onKey }) {
 // entry's `init` receives the imported module's exports and may
 // itself be async (resolved through the same load() error handler).
 const MODULES = [
-  // Analytics
-  { path: "./analytics/index.js", init: wireAnalytics },
+  // Analytics — omitted entirely when disabled
+  ...(ANALYTICS_ENABLED
+    ? [{ path: "./analytics/index.js", init: wireAnalytics }]
+    : []),
 
   // Page chrome
   {
