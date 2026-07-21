@@ -79,7 +79,7 @@ export function maybeShowWelcomeBack(showActivationToast) {
   if (Date.now() - readLastGreeted() < THROTTLE_MS) return;
 
   if (!storage.isActive()) return;
-  
+
   // The "still hidden" tally counts only the core, reachable set. Bonus secrets
   // stay entirely hidden — counting them would reveal they exist and keep the
   // greeting firing past a full core completion; reachability stops a touch user
