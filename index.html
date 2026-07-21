@@ -5,24 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
     <!--
-      Content Security Policy (see proposals doc).  script-src 'self' is
-      the load-bearing line: no inline scripts, no remote scripts, no
-      eval.  style-src keeps 'unsafe-inline' because dynamic appearance,
-      theme, and effect code set element.style.* at runtime; tightening
-      that is a known follow-up (would need nonces or a classList-only
-      refactor).
-      frame-ancestors and report-to aren't expressible via meta — those
-      land when the site moves behind Cloudflare.
+      Content Security Policy.  script-src stays close to 'self' — no inline
+      scripts, no eval; the one remote origin is the Cloudflare Web Analytics
+      beacon (its reporting endpoint is the matching connect-src origin).
+      style-src keeps 'unsafe-inline' because dynamic appearance, theme, and
+      effect code set element.style.* at runtime; tightening that is a known
+      follow-up (would need nonces or a classList-only refactor).
+      frame-ancestors and report-to aren't expressible via meta — they'd
+      need response headers.
     -->
     <meta
       http-equiv="Content-Security-Policy"
       content="
         default-src 'self';
-        script-src 'self';
+        script-src 'self' https://static.cloudflareinsights.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
         font-src https://fonts.gstatic.com;
         img-src 'self' data:;
-        connect-src 'self' https://eu.i.posthog.com https://api.open-meteo.com https://ipwho.is;
+        connect-src 'self' https://eu.i.posthog.com https://api.open-meteo.com https://ipwho.is https://cloudflareinsights.com;
         object-src 'none';
         base-uri 'self';
         form-action 'self';
